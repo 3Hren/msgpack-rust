@@ -1,1 +1,7 @@
 *.pro
+msgpack-rust.config
+msgpack-rust.creator
+msgpack-rust.creator.user
+msgpack-rust.files
+msgpack-rust.includes
+target
