@@ -25,6 +25,8 @@ enum Marker {
     U64,
     FixedString(u8),
     Str8,
+    Str16,
+    Str32,
 }
 
 impl FromPrimitive for Marker {
@@ -44,6 +46,8 @@ impl FromPrimitive for Marker {
             0xce => Some(Marker::U32),
             0xcf => Some(Marker::U64),
             0xd9 => Some(Marker::Str8),
+            0xda => Some(Marker::Str16),
+            0xdb => Some(Marker::Str32),
             _ => None,
         }
     }
@@ -198,7 +202,19 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
                 Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
             }
         }
-        _ => unimplemented!()
+        Marker::Str16 => {
+            match rd.read_u16::<byteorder::BigEndian>() {
+                Ok(size) => Ok(size as u32),
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        Marker::Str32 => {
+            match rd.read_u32::<byteorder::BigEndian>() {
+                Ok(size) => Ok(size),
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
     }
 }
 
@@ -206,11 +222,11 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
 ///
 /// According to the spec, the string's data must to be encoded using UTF-8.
 /// Returns number of bytes actually read.
-pub fn read_str_data<R>(rd: &mut R, buf: &mut [u8]) -> Result<u32>
-    where R: Read
-{
-    unimplemented!();
-}
+//pub fn read_str_data<R>(rd: &mut R, buf: &mut [u8]) -> Result<u32>
+//    where R: Read
+//{
+//    unimplemented!();
+//}
 
 #[cfg(test)]
 mod testing {
@@ -401,7 +417,16 @@ fn from_unsigned_invalid_unknown_marker() {
 }
 
 #[test]
-fn from_fixstr_read_str_len() {
+fn from_fixstr_min_read_str_len() {
+    let buf: &[u8] = &[0xa0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_str_len(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_fixstr_rnd_read_str_len() {
     let buf: &[u8] = &[0xaa];
     let mut cur = Cursor::new(buf);
 
@@ -410,7 +435,25 @@ fn from_fixstr_read_str_len() {
 }
 
 #[test]
-fn from_str8_read_str_len() {
+fn from_fixstr_max_read_str_len() {
+    let buf: &[u8] = &[0xbf];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(31, read_str_len(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_str8_min_read_str_len() {
+    let buf: &[u8] = &[0xd9, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_str_len(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_str8_rnd_read_str_len() {
     let buf: &[u8] = &[0xd9, 0x0a];
     let mut cur = Cursor::new(buf);
 
@@ -418,6 +461,90 @@ fn from_str8_read_str_len() {
     assert_eq!(2, cur.position());
 }
 
+#[test]
+fn from_str8_read_str_len_eof() {
+    let buf: &[u8] = &[0xd9];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_str_len(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_str8_max_read_str_len() {
+    let buf: &[u8] = &[0xd9, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(255, read_str_len(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_str16_min_read_str_len() {
+    let buf: &[u8] = &[0xda, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_str_len(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_str16_max_read_str_len() {
+    let buf: &[u8] = &[0xda, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(65535, read_str_len(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_str16_read_str_len_eof() {
+    let buf: &[u8] = &[0xda, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_str_len(&mut cur).err().unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_str32_min_read_str_len() {
+    let buf: &[u8] = &[0xdb, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_str_len(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_str32_max_read_str_len() {
+    let buf: &[u8] = &[0xdb, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(4294967295, read_str_len(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_str32_read_str_len_eof() {
+    let buf: &[u8] = &[0xdb, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_str_len(&mut cur).err().unwrap());
+    assert_eq!(4, cur.position());
+}
+
+#[test]
+fn from_null_read_str_len() {
+    let buf: &[u8] = &[0xc0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+        read_str_len(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
 
 //#[test]
 //fn from_str_fixstr() {
