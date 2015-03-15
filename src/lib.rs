@@ -222,11 +222,34 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
 ///
 /// According to the spec, the string's data must to be encoded using UTF-8.
 /// Returns number of bytes actually read.
-//pub fn read_str_data<R>(rd: &mut R, buf: &mut [u8]) -> Result<u32>
-//    where R: Read
-//{
-//    unimplemented!();
-//}
+pub fn read_str<R>(rd: &mut R, mut buf: &mut [u8]) -> Result<u32>
+    where R: Read
+{
+    let len = try!(read_str_len(rd));
+    if buf.len() < len as usize {
+        // return buffer size too small
+        unimplemented!();
+    }
+
+    match io::copy(rd, &mut buf) {
+        Ok(size) => Ok(size as u32),
+        Err(..) => unimplemented!(),
+    }
+}
+
+/// Tries to read a string data from the reader and make a borrowed slice from it.
+pub fn read_str_borrow(rd: &[u8]) -> Result<&[u8]> {
+    let mut cur = io::Cursor::new(rd);
+    let len = try!(read_str_len(&mut cur));
+
+    if rd.len() < len as usize {
+        // return buffer size too small
+        unimplemented!();
+    }
+
+    let start = cur.position() as usize;
+    Ok(&rd[start .. start + len as usize])
+}
 
 #[cfg(test)]
 mod testing {
@@ -546,14 +569,27 @@ fn from_null_read_str_len() {
     assert_eq!(1, cur.position());
 }
 
-//#[test]
-//fn from_str_fixstr() {
-//    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
-//    let out: &[u8] = &[0u8; 16];
-//    let mut cur = Cursor::new(buf);
+#[test]
+fn from_str_fixstr() {
+    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let mut cur = Cursor::new(buf);
 
-//    assert_eq!(10, read_str_len(&mut cur).unwrap());
-//    assert_eq!(1, cur.position());
-//}
+    let mut out: &mut [u8] = &mut [0u8; 16];
+
+    assert_eq!(10, read_str(&mut cur, &mut out).unwrap());
+    assert_eq!(11, cur.position());
+
+    assert!(buf[1..11] == out[0..10]);
+}
+
+#[test]
+fn from_str_fixstr_borrow() {
+    let mut buf: &mut [u8] = &mut [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+
+    let out = read_str_borrow(&buf).unwrap();
+
+    assert_eq!(10, out.len());
+    assert!([0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65] == out[0..10]);
+}
 
 } // mod testing
