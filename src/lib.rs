@@ -96,6 +96,7 @@ pub enum Error {
     InvalidMarker(MarkerError),     // Marker type error.
     InvalidMarkerRead(ReadError),   // IO error while reading marker.
     InvalidDataRead(ReadError),     // IO error while reading data.
+    BufferSizeTooSmall(u32),        // Too small buffer provided to copy all the data.
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -227,8 +228,7 @@ pub fn read_str<R>(rd: &mut R, mut buf: &mut [u8]) -> Result<u32>
 {
     let len = try!(read_str_len(rd));
     if buf.len() < len as usize {
-        // return buffer size too small
-        unimplemented!();
+        return Err(Error::BufferSizeTooSmall(len))
     }
 
     match io::copy(rd, &mut buf) {
@@ -241,12 +241,6 @@ pub fn read_str<R>(rd: &mut R, mut buf: &mut [u8]) -> Result<u32>
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8]> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
-
-    if rd.len() < len as usize {
-        // return buffer size too small
-        unimplemented!();
-    }
-
     let start = cur.position() as usize;
     Ok(&rd[start .. start + len as usize])
 }
@@ -570,7 +564,7 @@ fn from_null_read_str_len() {
 }
 
 #[test]
-fn from_str_fixstr() {
+fn from_str_strfix() {
     let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     let mut cur = Cursor::new(buf);
 
@@ -583,7 +577,18 @@ fn from_str_fixstr() {
 }
 
 #[test]
-fn from_str_fixstr_borrow() {
+fn from_str_strfix_buffer_too_small() {
+    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let mut cur = Cursor::new(buf);
+
+    let mut out: &mut [u8] = &mut [0u8; 9];
+
+    assert_eq!(Error::BufferSizeTooSmall(10), read_str(&mut cur, &mut out).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_str_strfix_ref() {
     let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
 
     let out = read_str_ref(&buf).unwrap();
