@@ -16,6 +16,7 @@ const FIXSTR_SIZE : u8 = 0x1f;
 
 enum Marker {
     Fixnum(u8),
+    NegativeFixnum(i8),
     Null,
     True,
     False,
@@ -37,6 +38,7 @@ impl FromPrimitive for Marker {
     fn from_u64(n: u64) -> Option<Marker> {
         match n {
             val @ 0x00 ... 0x7f => Some(Marker::Fixnum(val as u8)),
+            val @ 0xe0 ... 0xff => Some(Marker::NegativeFixnum(val as i8)),
             val @ 0xa0 ... 0xbf => Some(Marker::FixedString((val as u8) & FIXSTR_SIZE)),
             0xc0 => Some(Marker::Null),
             0xc2 => Some(Marker::False),
@@ -148,6 +150,12 @@ pub fn read_positive_fixnum_exact<R>(rd: &mut R) -> Result<u8>
         Ok(Marker::Fixnum(val)) => Ok(val),
         Ok(..) => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
         Err(err) => Err(err),
+pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::NegativeFixnum(val) => Ok(val),
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
@@ -595,6 +603,33 @@ fn from_str_strfix_ref() {
 
     assert_eq!(10, out.len());
     assert!(buf[1..11] == out[0..10])
+}
+
+#[test]
+fn from_negative_fixnum_min() {
+    let buf: &[u8] = &[0xe0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-32, read_nfix(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_negative_fixnum_max() {
+    let buf: &[u8] = &[0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-1, read_nfix(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_negative_fixnum_type_mismatch() {
+    let buf: &[u8] = &[0xc0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_nfix(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
 }
 
 } // mod testing
