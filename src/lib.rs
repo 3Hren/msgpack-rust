@@ -238,7 +238,7 @@ pub fn read_str<R>(rd: &mut R, mut buf: &mut [u8]) -> Result<u32>
 }
 
 /// Tries to read a string data from the reader and make a borrowed slice from it.
-pub fn read_str_borrow(rd: &[u8]) -> Result<&[u8]> {
+pub fn read_str_ref(rd: &[u8]) -> Result<&[u8]> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
 
@@ -586,7 +586,7 @@ fn from_str_fixstr() {
 fn from_str_fixstr_borrow() {
     let mut buf: &mut [u8] = &mut [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
 
-    let out = read_str_borrow(&buf).unwrap();
+    let out = read_str_ref(&buf).unwrap();
 
     assert_eq!(10, out.len());
     assert!([0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65] == out[0..10]);
