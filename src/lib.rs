@@ -589,7 +589,7 @@ fn from_str_fixstr_borrow() {
     let out = read_str_ref(&buf).unwrap();
 
     assert_eq!(10, out.len());
-    assert!([0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65] == out[0..10]);
+    assert!(buf[1..11] == out[0..10])
 }
 
 } // mod testing
