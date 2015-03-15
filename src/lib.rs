@@ -146,10 +146,12 @@ pub fn read_bool<R>(rd: &mut R) -> Result<bool>
 pub fn read_positive_fixnum_exact<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
-    match read_marker(rd) {
-        Ok(Marker::Fixnum(val)) => Ok(val),
-        Ok(..) => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
-        Err(err) => Err(err),
+    match try!(read_marker(rd)) {
+        Marker::Fixnum(val) => Ok(val),
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
+}
+
 pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
