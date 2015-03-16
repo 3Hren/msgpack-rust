@@ -24,6 +24,7 @@ enum Marker {
     U16,
     U32,
     U64,
+    I8,
     FixedString(u8),
     Str8,
     Str16,
@@ -47,6 +48,7 @@ impl FromPrimitive for Marker {
             0xcd => Some(Marker::U16),
             0xce => Some(Marker::U32),
             0xcf => Some(Marker::U64),
+            0xd0 => Some(Marker::I8),
             0xd9 => Some(Marker::Str8),
             0xda => Some(Marker::Str16),
             0xdb => Some(Marker::Str32),
@@ -143,6 +145,7 @@ pub fn read_bool<R>(rd: &mut R) -> Result<bool>
 }
 
 // Tries to read exact positive fixnum from the reader.
+// TODO: Maybe rename to something less verbose.
 pub fn read_positive_fixnum_exact<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
@@ -160,6 +163,23 @@ pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
+
+/// Tries to read strictly i8 value from the reader.
+pub fn read_i8<R>(rd: &mut R) -> Result<i8>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::I8 => {
+            match rd.read_i8() {
+                Ok(val)  => Ok(val),
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
+}
+
+// TODO: read_i8, i16, i32, i64
 
 /// Tries to read and decode an unsigned integer from the reader.
 pub fn read_u64<R>(rd: &mut R) -> Result<u64>
@@ -631,6 +651,42 @@ fn from_negative_fixnum_type_mismatch() {
     let mut cur = Cursor::new(buf);
 
     assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_nfix(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_i8_min() {
+    let buf: &[u8] = &[0xd0, 0x80];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-128, read_i8(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i8_max() {
+    let buf: &[u8] = &[0xd0, 0x7f];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(127, read_i8(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i8_type_mismatch() {
+    let buf: &[u8] = &[0xc0, 0x80];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i8(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_i8_unexpected_eof() {
+    let buf: &[u8] = &[0xd0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i8(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
