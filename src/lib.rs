@@ -26,6 +26,7 @@ enum Marker {
     U64,
     I8,
     I16,
+    I32,
     FixedString(u8),
     Str8,
     Str16,
@@ -51,6 +52,7 @@ impl FromPrimitive for Marker {
             0xcf => Some(Marker::U64),
             0xd0 => Some(Marker::I8),
             0xd1 => Some(Marker::I16),
+            0xd2 => Some(Marker::I32),
             0xd9 => Some(Marker::Str8),
             0xda => Some(Marker::Str16),
             0xdb => Some(Marker::Str32),
@@ -195,7 +197,21 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16>
     }
 }
 
-// TODO: i32, i64
+pub fn read_i32<R>(rd: &mut R) -> Result<i32>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::I32 => {
+            match rd.read_i32::<byteorder::BigEndian>() {
+                Ok(val)  => Ok(val),
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
+}
+
+// TODO: i64
 
 /// Tries to read and decode an unsigned integer from the reader.
 pub fn read_u64<R>(rd: &mut R) -> Result<u64>
@@ -740,6 +756,42 @@ fn from_i16_unexpected_eof() {
 
     assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i16(&mut cur).err().unwrap());
     assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i32_min() {
+    let buf: &[u8] = &[0xd2, 0x80, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-2147483648, read_i32(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_i32_max() {
+    let buf: &[u8] = &[0xd2, 0x7f, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(2147483647, read_i32(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_i32_type_mismatch() {
+    let buf: &[u8] = &[0xc0, 0x80, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i32(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_i32_unexpected_eof() {
+    let buf: &[u8] = &[0xd2, 0x7f, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i32(&mut cur).err().unwrap());
+    assert_eq!(4, cur.position());
 }
 
 } // mod testing
