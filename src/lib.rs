@@ -27,6 +27,7 @@ enum Marker {
     I8,
     I16,
     I32,
+    I64,
     FixedString(u8),
     Str8,
     Str16,
@@ -53,6 +54,7 @@ impl FromPrimitive for Marker {
             0xd0 => Some(Marker::I8),
             0xd1 => Some(Marker::I16),
             0xd2 => Some(Marker::I32),
+            0xd3 => Some(Marker::I64),
             0xd9 => Some(Marker::Str8),
             0xda => Some(Marker::Str16),
             0xdb => Some(Marker::Str32),
@@ -183,6 +185,7 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8>
     }
 }
 
+/// Tries to read strictly i16 value from the reader.
 pub fn read_i16<R>(rd: &mut R) -> Result<i16>
     where R: Read
 {
@@ -197,6 +200,7 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16>
     }
 }
 
+/// Tries to read strictly i32 value from the reader.
 pub fn read_i32<R>(rd: &mut R) -> Result<i32>
     where R: Read
 {
@@ -211,7 +215,20 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32>
     }
 }
 
-// TODO: i64
+/// Tries to read strictly i64 value from the reader.
+pub fn read_i64<R>(rd: &mut R) -> Result<i64>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::I64 => {
+            match rd.read_i64::<byteorder::BigEndian>() {
+                Ok(val)  => Ok(val),
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
+}
 
 /// Tries to read and decode an unsigned integer from the reader.
 pub fn read_u64<R>(rd: &mut R) -> Result<u64>
@@ -792,6 +809,42 @@ fn from_i32_unexpected_eof() {
 
     assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i32(&mut cur).err().unwrap());
     assert_eq!(4, cur.position());
+}
+
+#[test]
+fn from_i64_min() {
+    let buf: &[u8] = &[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-9223372036854775808, read_i64(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_i64_max() {
+    let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(9223372036854775807, read_i64(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_i64_type_mismatch() {
+    let buf: &[u8] = &[0xc0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i64(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_i64_unexpected_eof() {
+    let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i64(&mut cur).err().unwrap());
+    assert_eq!(8, cur.position());
 }
 
 } // mod testing
