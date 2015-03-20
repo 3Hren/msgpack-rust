@@ -151,8 +151,7 @@ pub fn read_bool<R>(rd: &mut R) -> Result<bool>
 }
 
 // Tries to read exact positive fixnum from the reader.
-// TODO: Maybe rename to something less verbose.
-pub fn read_positive_fixnum_exact<R>(rd: &mut R) -> Result<u8>
+pub fn read_pfix<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
     match try!(read_marker(rd)) {
@@ -382,13 +381,13 @@ fn from_positive_fixnum() {
     let buf: &[u8] = &[0x00, 0x7f, 0x20];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(0u8, read_positive_fixnum_exact(&mut cur).unwrap());
+    assert_eq!(0u8, read_pfix(&mut cur).unwrap());
     assert_eq!(1, cur.position());
 
-    assert_eq!(127u8, read_positive_fixnum_exact(&mut cur).unwrap());
+    assert_eq!(127u8, read_pfix(&mut cur).unwrap());
     assert_eq!(2, cur.position());
 
-    assert_eq!(32u8, read_positive_fixnum_exact(&mut cur).unwrap());
+    assert_eq!(32u8, read_pfix(&mut cur).unwrap());
     assert_eq!(3, cur.position());
 }
 
