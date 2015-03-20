@@ -1002,4 +1002,13 @@ fn from_empty_array_read_size() {
     assert_eq!(1, cur.position());
 }
 
+#[test]
+fn from_fixarray_max_read_size() {
+    let buf: &[u8] = &[0x9f, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(15, read_array_size(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
 } // mod testing
