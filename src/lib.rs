@@ -174,12 +174,7 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I8 => {
-            match rd.read_i8() {
-                Ok(val)  => Ok(val),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
+        Marker::I8 => Ok(try!(read_i8_data(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -189,12 +184,7 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I16 => {
-            match rd.read_i16::<byteorder::BigEndian>() {
-                Ok(val)  => Ok(val),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
+        Marker::I16 => Ok(try!(read_i16_data(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -204,12 +194,7 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I32 => {
-            match rd.read_i32::<byteorder::BigEndian>() {
-                Ok(val)  => Ok(val),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
+        Marker::I32 => Ok(try!(read_i32_data(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -219,12 +204,7 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I64 => {
-            match rd.read_i64::<byteorder::BigEndian>() {
-                Ok(val)  => Ok(val),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
+        Marker::I64 => Ok(try!(read_i64_data(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -261,6 +241,62 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64>
         }
         Ok(..)   => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
         Err(err) => Err(err),
+    }
+}
+
+/// Tries to read exactly 1 byte from the reader and interpret it as an i8.
+fn read_i8_data<R>(rd: &mut R) -> Result<i8>
+    where R: Read
+{
+    match rd.read_i8() {
+        Ok(val)  => Ok(val),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+/// Tries to read exactly 2 bytes from the reader and interpret them as a big-endian i16.
+fn read_i16_data<R>(rd: &mut R) -> Result<i16>
+    where R: Read
+{
+    match rd.read_i16::<byteorder::BigEndian>() {
+        Ok(val)  => Ok(val),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+/// Tries to read exactly 4 bytes from the reader and interpret them as a big-endian i32.
+fn read_i32_data<R>(rd: &mut R) -> Result<i32>
+    where R: Read
+{
+    match rd.read_i32::<byteorder::BigEndian>() {
+        Ok(val)  => Ok(val),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+/// Tries to read exactly 8 bytes from the reader and interpret them as a big-endian i64.
+fn read_i64_data<R>(rd: &mut R) -> Result<i64>
+    where R: Read
+{
+    match rd.read_i64::<byteorder::BigEndian>() {
+        Ok(val)  => Ok(val),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+/// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
+/// them as a big-endian i64.
+// TODO: Deserialization: nfix, pfix, int 8/16/32/64 and uint 8/16/32/64 -> Integer (i64|u64).
+pub fn read_integer<R>(rd: &mut R) -> Result<i64>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::NegativeFixnum(val) => Ok(val as i64),
+        Marker::I8  => Ok(try!(read_i8_data(rd))  as i64),
+        Marker::I16 => Ok(try!(read_i16_data(rd)) as i64),
+        Marker::I32 => Ok(try!(read_i32_data(rd)) as i64),
+        Marker::I64 => Ok(try!(read_i64_data(rd))),
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
@@ -844,6 +880,96 @@ fn from_i64_unexpected_eof() {
 
     assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i64(&mut cur).err().unwrap());
     assert_eq!(8, cur.position());
+}
+
+#[test]
+fn from_nfix_min_read_integer() {
+    let buf: &[u8] = &[0xe0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-32, read_integer(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_nfix_max_read_integer() {
+    let buf: &[u8] = &[0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-1, read_integer(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_i8_min_read_integer() {
+    let buf: &[u8] = &[0xd0, 0x80];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-128, read_integer(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i8_max_read_integer() {
+    let buf: &[u8] = &[0xd0, 0x7f];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(127, read_integer(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i16_min_read_integer() {
+    let buf: &[u8] = &[0xd1, 0x80, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-32768, read_integer(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_i16_max_read_integer() {
+    let buf: &[u8] = &[0xd1, 0x7f, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(32767, read_integer(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_i32_min_read_integer() {
+    let buf: &[u8] = &[0xd2, 0x80, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-2147483648, read_integer(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_i32_max_read_integer() {
+    let buf: &[u8] = &[0xd2, 0x7f, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(2147483647, read_integer(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_i64_min_read_integer() {
+    let buf: &[u8] = &[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-9223372036854775808, read_integer(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_i64_max_read_integer() {
+    let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(9223372036854775807, read_integer(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
 }
 
 } // mod testing
