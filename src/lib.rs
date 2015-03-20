@@ -712,7 +712,7 @@ fn from_str_strfix_ref() {
 }
 
 #[test]
-fn from_negative_fixnum_min() {
+fn from_nfix_min() {
     let buf: &[u8] = &[0xe0];
     let mut cur = Cursor::new(buf);
 
@@ -721,7 +721,7 @@ fn from_negative_fixnum_min() {
 }
 
 #[test]
-fn from_negative_fixnum_max() {
+fn from_nfix_max() {
     let buf: &[u8] = &[0xff];
     let mut cur = Cursor::new(buf);
 
@@ -730,7 +730,7 @@ fn from_negative_fixnum_max() {
 }
 
 #[test]
-fn from_negative_fixnum_type_mismatch() {
+fn from_nfix_type_mismatch() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
