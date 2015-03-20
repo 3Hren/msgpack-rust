@@ -15,7 +15,7 @@ pub const MSGPACK_VERSION : u32 = 5;
 const FIXSTR_SIZE : u8 = 0x1f;
 
 enum Marker {
-    Fixnum(u8),
+    PositiveFixnum(u8),
     NegativeFixnum(i8),
     Null,
     True,
@@ -41,7 +41,7 @@ impl FromPrimitive for Marker {
 
     fn from_u64(n: u64) -> Option<Marker> {
         match n {
-            val @ 0x00 ... 0x7f => Some(Marker::Fixnum(val as u8)),
+            val @ 0x00 ... 0x7f => Some(Marker::PositiveFixnum(val as u8)),
             val @ 0xe0 ... 0xff => Some(Marker::NegativeFixnum(val as i8)),
             val @ 0xa0 ... 0xbf => Some(Marker::FixedString((val as u8) & FIXSTR_SIZE)),
             0xc0 => Some(Marker::Null),
@@ -155,7 +155,7 @@ pub fn read_pfix<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::Fixnum(val) => Ok(val),
+        Marker::PositiveFixnum(val) => Ok(val),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -214,7 +214,7 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64>
     where R: Read
 {
     match read_marker(rd) {
-        Ok(Marker::Fixnum(val)) => Ok(val as u64),
+        Ok(Marker::PositiveFixnum(val)) => Ok(val as u64),
         Ok(Marker::U8) => {
             match rd.read_u8() {
                 Ok(val)  => Ok(val as u64),
