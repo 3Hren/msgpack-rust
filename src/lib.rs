@@ -12,7 +12,8 @@ use byteorder::{ReadBytesExt};
 
 pub const MSGPACK_VERSION : u32 = 5;
 
-const FIXSTR_SIZE : u8 = 0x1f;
+const FIXSTR_SIZE   : u8 = 0x1f;
+const FIXARRAY_SIZE : u8 = 0x0f;
 
 enum Marker {
     PositiveFixnum(u8),
@@ -32,6 +33,7 @@ enum Marker {
     Str8,
     Str16,
     Str32,
+    FixedArray(u8),
 }
 
 impl FromPrimitive for Marker {
@@ -43,6 +45,7 @@ impl FromPrimitive for Marker {
         match n {
             val @ 0x00 ... 0x7f => Some(Marker::PositiveFixnum(val as u8)),
             val @ 0xe0 ... 0xff => Some(Marker::NegativeFixnum(val as i8)),
+            val @ 0x90 ... 0x9f => Some(Marker::FixedArray((val as u8) & FIXARRAY_SIZE)),
             val @ 0xa0 ... 0xbf => Some(Marker::FixedString((val as u8) & FIXSTR_SIZE)),
             0xc0 => Some(Marker::Null),
             0xc2 => Some(Marker::False),
@@ -284,6 +287,11 @@ fn read_i64_data<R>(rd: &mut R) -> Result<i64>
     }
 }
 
+pub enum Integer {
+    U64(u64),
+    I64(i64),
+}
+
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
 /// them as a big-endian i64.
 // TODO: Deserialization: nfix, pfix, int 8/16/32/64 and uint 8/16/32/64 -> Integer (i64|u64).
@@ -357,6 +365,19 @@ pub fn read_str_ref(rd: &[u8]) -> Result<&[u8]> {
     let len = try!(read_str_len(&mut cur));
     let start = cur.position() as usize;
     Ok(&rd[start .. start + len as usize])
+}
+
+/// Tries to read up to 5 bytes from the reader and interpret them as a big-endian u32 array size.
+///
+/// Array format family stores a sequence of elements in 1, 3, or 5 bytes of extra bytes in
+/// addition to the elements.
+pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixedArray(size) => Ok(size as u32),
+        _ => unimplemented!()
+    }
 }
 
 #[cfg(test)]
@@ -970,6 +991,15 @@ fn from_i64_max_read_integer() {
 
     assert_eq!(9223372036854775807, read_integer(&mut cur).unwrap());
     assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_empty_array_read_size() {
+    let buf: &[u8] = &[0x90];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_array_size(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
 }
 
 } // mod testing
