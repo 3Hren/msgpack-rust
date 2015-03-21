@@ -34,6 +34,8 @@ enum Marker {
     Str16,
     Str32,
     FixedArray(u8),
+    Array16,
+    Array32,
 }
 
 impl FromPrimitive for Marker {
@@ -61,6 +63,8 @@ impl FromPrimitive for Marker {
             0xd9 => Some(Marker::Str8),
             0xda => Some(Marker::Str16),
             0xdb => Some(Marker::Str32),
+            0xdc => Some(Marker::Array16),
+            0xdd => Some(Marker::Array32),
             _ => None,
         }
     }
@@ -294,7 +298,7 @@ pub enum Integer {
 
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
 /// them as a big-endian i64.
-// TODO: Deserialization: nfix, pfix, int 8/16/32/64 and uint 8/16/32/64 -> Integer (i64|u64).
+/// TODO: Deserialization: nfix, pfix, int 8/16/32/64 and uint 8/16/32/64 -> Integer (i64|u64).
 pub fn read_integer<R>(rd: &mut R) -> Result<i64>
     where R: Read
 {
@@ -376,7 +380,19 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
 {
     match try!(read_marker(rd)) {
         Marker::FixedArray(size) => Ok(size as u32),
-        _ => unimplemented!()
+        Marker::Array16 => {
+            match rd.read_u16::<byteorder::BigEndian>() {
+                Ok(size) => Ok(size as u32),
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        Marker::Array32 => {
+            match rd.read_u32::<byteorder::BigEndian>() {
+                Ok(size) => Ok(size),
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
     }
 }
 
@@ -1011,6 +1027,69 @@ fn from_fixarray_max_read_size() {
     let mut cur = Cursor::new(buf);
 
     assert_eq!(15, read_array_size(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_array16_min_read_size() {
+    let buf: &[u8] = &[0xdc, 0x00, 0x10];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(16, read_array_size(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_array16_max_read_size() {
+    let buf: &[u8] = &[0xdc, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(65535, read_array_size(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_array16_unexpected_eof_read_size() {
+    let buf: &[u8] = &[0xdc, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_array_size(&mut cur).err().unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_array32_min_read_size() {
+    let buf: &[u8] = &[0xdd, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_array_size(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_array32_max_read_size() {
+    let buf: &[u8] = &[0xdd, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(4294967295, read_array_size(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_array32_unexpected_eof_read_size() {
+    let buf: &[u8] = &[0xdd, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_array_size(&mut cur).err().unwrap());
+    assert_eq!(4, cur.position());
+}
+
+#[test]
+fn from_null_read_size() {
+    let buf: &[u8] = &[0xc0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_array_size(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
