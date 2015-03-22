@@ -30,6 +30,8 @@ enum Marker {
     I16,
     I32,
     I64,
+    F32,
+    F64,
     FixedString(u8),
     Str8,
     Str16,
@@ -55,8 +57,11 @@ impl FromPrimitive for Marker {
             val @ 0x90 ... 0x9f => Some(Marker::FixedArray((val as u8) & FIXARRAY_SIZE)),
             val @ 0xa0 ... 0xbf => Some(Marker::FixedString((val as u8) & FIXSTR_SIZE)),
             0xc0 => Some(Marker::Null),
+            0xc1 => None, // Marked in MessagePack spec as never used.
             0xc2 => Some(Marker::False),
             0xc3 => Some(Marker::True),
+            0xca => Some(Marker::F32),
+            0xcb => Some(Marker::F64),
             0xcc => Some(Marker::U8),
             0xcd => Some(Marker::U16),
             0xce => Some(Marker::U32),
@@ -303,6 +308,17 @@ pub enum Integer {
     I64(i64),
 }
 
+pub enum Float {
+    F32(f32),
+    F64(f64),
+}
+
+pub enum Value {
+    Null,
+    Integer(Integer),
+    Float(Float),
+}
+
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
 /// them as a big-endian i64.
 /// TODO: Deserialization: nfix, pfix, int 8/16/32/64 and uint 8/16/32/64 -> Integer (i64|u64).
@@ -421,6 +437,24 @@ fn read_size_u32<R>(rd: &mut R) -> Result<u32>
     }
 }
 
+fn read_data_f32<R>(rd: &mut R) -> Result<f32>
+    where R: Read
+{
+    match rd.read_f32::<byteorder::BigEndian>() {
+        Ok(data) => Ok(data),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+fn read_data_f64<R>(rd: &mut R) -> Result<f64>
+    where R: Read
+{
+    match rd.read_f64::<byteorder::BigEndian>() {
+        Ok(data) => Ok(data),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
 #[unstable = "documentation required"]
 pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
     where R: Read
@@ -430,6 +464,26 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
         Marker::Map16 => Ok(try!(read_size_u16(rd)) as u32),
         Marker::Map32 => Ok(try!(read_size_u32(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+    }
+}
+
+#[unstable = "documentation"]
+pub fn read_f32<R>(rd: &mut R) -> Result<f32>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::F32 => Ok(try!(read_data_f32(rd))),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+    }
+}
+
+#[unstable = "docs"]
+pub fn read_f64<R>(rd: &mut R) -> Result<f64>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::F64 => Ok(try!(read_data_f64(rd))),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
     }
 }
 
@@ -1181,6 +1235,104 @@ fn from_null_read_map_size() {
     let mut cur = Cursor::new(buf);
 
     assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_map_size(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_f32_zero_plus() {
+    let buf: &[u8] = &[0xca, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0.0, read_f32(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_f32_max() {
+    let buf: &[u8] = &[0xca, 0x7f, 0x7f, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(3.4028234e38_f32, read_f32(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_f32_inf() {
+    use std::f32;
+
+    let buf: &[u8] = &[0xca, 0x7f, 0x80, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(f32::INFINITY, read_f32(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_f32_neg_inf() {
+    use std::f32;
+
+    let buf: &[u8] = &[0xca, 0xff, 0x80, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(f32::NEG_INFINITY, read_f32(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_null_read_f32() {
+    let buf: &[u8] = &[0xc0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_f32(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_f64_zero_plus() {
+    let buf: &[u8] = &[0xcb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0.0, read_f64(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_f64_zero_minus() {
+    let buf: &[u8] = &[0xcb, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-0.0, read_f64(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_f64_inf() {
+    use std::f64;
+
+    let buf: &[u8] = &[0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(f64::INFINITY, read_f64(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_f64_neg_inf() {
+    use std::f64;
+
+    let buf: &[u8] = &[0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(f64::NEG_INFINITY, read_f64(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_null_read_f64() {
+    let buf: &[u8] = &[0xc0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_f64(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
