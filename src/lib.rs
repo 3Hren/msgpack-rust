@@ -14,6 +14,7 @@ pub const MSGPACK_VERSION : u32 = 5;
 
 const FIXSTR_SIZE   : u8 = 0x1f;
 const FIXARRAY_SIZE : u8 = 0x0f;
+const FIXMAP_SIZE   : u8 = 0x0f;
 
 enum Marker {
     PositiveFixnum(u8),
@@ -36,6 +37,9 @@ enum Marker {
     FixedArray(u8),
     Array16,
     Array32,
+    FixedMap(u8),
+    Map16,
+    Map32,
 }
 
 impl FromPrimitive for Marker {
@@ -47,6 +51,7 @@ impl FromPrimitive for Marker {
         match n {
             val @ 0x00 ... 0x7f => Some(Marker::PositiveFixnum(val as u8)),
             val @ 0xe0 ... 0xff => Some(Marker::NegativeFixnum(val as i8)),
+            val @ 0x80 ... 0x8f => Some(Marker::FixedMap((val as u8) & FIXMAP_SIZE)),
             val @ 0x90 ... 0x9f => Some(Marker::FixedArray((val as u8) & FIXARRAY_SIZE)),
             val @ 0xa0 ... 0xbf => Some(Marker::FixedString((val as u8) & FIXSTR_SIZE)),
             0xc0 => Some(Marker::Null),
@@ -65,6 +70,8 @@ impl FromPrimitive for Marker {
             0xdb => Some(Marker::Str32),
             0xdc => Some(Marker::Array16),
             0xdd => Some(Marker::Array32),
+            0xde => Some(Marker::Map16),
+            0xdf => Some(Marker::Map32),
             _ => None,
         }
     }
@@ -396,6 +403,36 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
     }
 }
 
+fn read_size_u16<R>(rd: &mut R) -> Result<u16>
+    where R: Read
+{
+    match rd.read_u16::<byteorder::BigEndian>() {
+        Ok(size) => Ok(size),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+fn read_size_u32<R>(rd: &mut R) -> Result<u32>
+    where R: Read
+{
+    match rd.read_u32::<byteorder::BigEndian>() {
+        Ok(size) => Ok(size),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+#[unstable = "documentation required"]
+pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixedMap(size) => Ok(size as u32),
+        Marker::Map16 => Ok(try!(read_size_u16(rd)) as u32),
+        Marker::Map32 => Ok(try!(read_size_u32(rd))),
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+    }
+}
+
 #[cfg(test)]
 mod testing {
 
@@ -577,10 +614,10 @@ fn from_unsigned_invalid_marker() {
 
 #[test]
 fn from_unsigned_invalid_unknown_marker() {
-    let buf: &[u8] = &[0x80];
+    let buf: &[u8] = &[0xc4];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0x80)), read_u64(&mut cur).err().unwrap());
+    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc4)), read_u64(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
@@ -1085,11 +1122,65 @@ fn from_array32_unexpected_eof_read_size() {
 }
 
 #[test]
-fn from_null_read_size() {
+fn from_null_read_array_size() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
     assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_array_size(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_fixmap_min_read_size() {
+    let buf: &[u8] = &[0x80];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_map_size(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_fixmap_max_read_size() {
+    let buf: &[u8] = &[0x8f];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(15, read_map_size(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_map16_min_read_size() {
+    let buf: &[u8] = &[0xde, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_map_size(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_map16_max_read_size() {
+    let buf: &[u8] = &[0xde, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(65535, read_map_size(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_map32_min_read_size() {
+    let buf: &[u8] = &[0xdf, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_map_size(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_null_read_map_size() {
+    let buf: &[u8] = &[0xc0, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_map_size(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
