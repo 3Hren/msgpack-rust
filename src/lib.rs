@@ -36,12 +36,16 @@ enum Marker {
     Str8,
     Str16,
     Str32,
+    Bin8,
+    Bin16,
+    Bin32,
     FixedArray(u8),
     Array16,
     Array32,
     FixedMap(u8),
     Map16,
     Map32,
+    FixExt1,
 }
 
 impl FromPrimitive for Marker {
@@ -60,6 +64,9 @@ impl FromPrimitive for Marker {
             0xc1 => None, // Marked in MessagePack spec as never used.
             0xc2 => Some(Marker::False),
             0xc3 => Some(Marker::True),
+            0xc4 => Some(Marker::Bin8),
+            0xc5 => Some(Marker::Bin16),
+            0xc6 => Some(Marker::Bin32),
             0xca => Some(Marker::F32),
             0xcb => Some(Marker::F64),
             0xcc => Some(Marker::U8),
@@ -70,6 +77,8 @@ impl FromPrimitive for Marker {
             0xd1 => Some(Marker::I16),
             0xd2 => Some(Marker::I32),
             0xd3 => Some(Marker::I64),
+            0xd4 => Some(Marker::FixExt1),
+            // TODO: Other ext's.
             0xd9 => Some(Marker::Str8),
             0xda => Some(Marker::Str16),
             0xdb => Some(Marker::Str32),
@@ -419,20 +428,38 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
     }
 }
 
-fn read_size_u16<R>(rd: &mut R) -> Result<u16>
+fn read_data_i8<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
-    match rd.read_u16::<byteorder::BigEndian>() {
-        Ok(size) => Ok(size),
+    match rd.read_i8() {
+        Ok(data) => Ok(data),
         Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
     }
 }
 
-fn read_size_u32<R>(rd: &mut R) -> Result<u32>
+fn read_data_u8<R>(rd: &mut R) -> Result<u8>
+    where R: Read
+{
+    match rd.read_u8() {
+        Ok(data) => Ok(data),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+fn read_data_u16<R>(rd: &mut R) -> Result<u16>
+    where R: Read
+{
+    match rd.read_u16::<byteorder::BigEndian>() {
+        Ok(data) => Ok(data),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+fn read_data_u32<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
     match rd.read_u32::<byteorder::BigEndian>() {
-        Ok(size) => Ok(size),
+        Ok(data) => Ok(data),
         Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
     }
 }
@@ -461,8 +488,8 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
 {
     match try!(read_marker(rd)) {
         Marker::FixedMap(size) => Ok(size as u32),
-        Marker::Map16 => Ok(try!(read_size_u16(rd)) as u32),
-        Marker::Map32 => Ok(try!(read_size_u32(rd))),
+        Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Map32 => Ok(try!(read_data_u32(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
     }
 }
@@ -484,6 +511,31 @@ pub fn read_f64<R>(rd: &mut R) -> Result<f64>
     match try!(read_marker(rd)) {
         Marker::F64 => Ok(try!(read_data_f64(rd))),
         _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+    }
+}
+
+pub fn read_bin_len<R>(rd: &mut R) -> Result<u32>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::Bin8  => Ok(try!(read_data_u8(rd)) as u32),
+        Marker::Bin16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Bin32 => Ok(try!(read_data_u32(rd))),
+        _             => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+    }
+}
+
+#[unstable = "untested"]
+pub fn read_ext1<R>(rd: &mut R) -> Result<(i8, u8)>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixExt1 => {
+            let id   = try!(read_data_i8(rd));
+            let data = try!(read_data_u8(rd));
+            Ok((id, data))
+        }
+        _               => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
     }
 }
 
@@ -668,10 +720,10 @@ fn from_unsigned_invalid_marker() {
 
 #[test]
 fn from_unsigned_invalid_unknown_marker() {
-    let buf: &[u8] = &[0xc4];
+    let buf: &[u8] = &[0xc1];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc4)), read_u64(&mut cur).err().unwrap());
+    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)), read_u64(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
@@ -1334,6 +1386,15 @@ fn from_null_read_f64() {
 
     assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_f64(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_fixext1_read_ext_info() {
+    let buf: &[u8] = &[0xd4, 0x01, 0x02];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!((1, 2), read_ext1(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
 }
 
 } // mod testing
