@@ -48,6 +48,8 @@ enum Marker {
     FixExt1,
     FixExt2,
     FixExt4,
+    FixExt8,
+    FixExt16,
 }
 
 impl FromPrimitive for Marker {
@@ -82,8 +84,8 @@ impl FromPrimitive for Marker {
             0xd4 => Some(Marker::FixExt1),
             0xd5 => Some(Marker::FixExt2),
             0xd6 => Some(Marker::FixExt4),
-            // TODO: FixExt8
-            // TODO: FixExt16
+            0xd7 => Some(Marker::FixExt8),
+            0xd8 => Some(Marker::FixExt16),
             // TODO: Ext8
             // TODO: Ext16
             // TODO: Ext32
@@ -577,6 +579,42 @@ pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4])>
                     Ok((id, out))
                 }
                 Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        _ => unimplemented!()
+    }
+}
+
+#[unstable = "docs, error cases, type mismatch, unsufficient bytes, extra bytes"]
+pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8])>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixExt8 => {
+            let id = try!(read_data_i8(rd));
+            let mut out = [0u8; 8];
+
+            match io::copy(&mut rd.take(8), &mut out.as_mut_slice()) {
+                Ok(8) => Ok((id, out)),
+                _ => unimplemented!()
+            }
+        }
+        _ => unimplemented!()
+    }
+}
+
+#[unstable = "docs, error cases, type mismatch, unsufficient bytes, extra bytes"]
+pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16])>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixExt16 => {
+            let id = try!(read_data_i8(rd));
+            let mut out = [0u8; 16];
+
+            match io::copy(&mut rd.take(16), &mut out.as_mut_slice()) {
+                Ok(16) => Ok((id, out)),
+                _ => unimplemented!()
             }
         }
         _ => unimplemented!()
@@ -1457,6 +1495,29 @@ fn from_fixext4_read_fixext4() {
 
     assert_eq!((1, [0x00, 0x00, 0x00, 0x02]), read_fixext4(&mut cur).unwrap());
     assert_eq!(6, cur.position());
+}
+
+#[test]
+fn from_fixext8_read_fixext8() {
+    let buf: &[u8] = &[0xd7, 0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!((1, [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]),
+               read_fixext8(&mut cur).unwrap());
+    assert_eq!(10, cur.position());
+}
+
+#[test]
+fn from_fixext16_read_fixext16() {
+    let buf: &[u8] = &[0xd8, 0x01,
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!((1, [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]),
+               read_fixext16(&mut cur).unwrap());
+    assert_eq!(18, cur.position());
 }
 
 } // mod testing
