@@ -46,6 +46,8 @@ enum Marker {
     Map16,
     Map32,
     FixExt1,
+    FixExt2,
+    FixExt4,
 }
 
 impl FromPrimitive for Marker {
@@ -78,7 +80,13 @@ impl FromPrimitive for Marker {
             0xd2 => Some(Marker::I32),
             0xd3 => Some(Marker::I64),
             0xd4 => Some(Marker::FixExt1),
-            // TODO: Other ext's.
+            0xd5 => Some(Marker::FixExt2),
+            0xd6 => Some(Marker::FixExt4),
+            // TODO: FixExt8
+            // TODO: FixExt16
+            // TODO: Ext8
+            // TODO: Ext16
+            // TODO: Ext32
             0xd9 => Some(Marker::Str8),
             0xda => Some(Marker::Str16),
             0xdb => Some(Marker::Str32),
@@ -389,6 +397,7 @@ pub fn read_str<R>(rd: &mut R, mut buf: &mut [u8]) -> Result<u32>
         return Err(Error::BufferSizeTooSmall(len))
     }
 
+    // TODO: WTF? Copy only `len` bytes.
     match io::copy(rd, &mut buf) {
         Ok(size) => Ok(size as u32),
         Err(..) => unimplemented!(),
@@ -525,8 +534,8 @@ pub fn read_bin_len<R>(rd: &mut R) -> Result<u32>
     }
 }
 
-#[unstable = "untested"]
-pub fn read_ext1<R>(rd: &mut R) -> Result<(i8, u8)>
+#[unstable = "docs"]
+pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8)>
     where R: Read
 {
     match try!(read_marker(rd)) {
@@ -535,7 +544,42 @@ pub fn read_ext1<R>(rd: &mut R) -> Result<(i8, u8)>
             let data = try!(read_data_u8(rd));
             Ok((id, data))
         }
-        _               => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+    }
+}
+
+#[unstable = "docs"]
+pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, u16)>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixExt2 => {
+            let id   = try!(read_data_i8(rd));
+            let data = try!(read_data_u16(rd));
+            Ok((id, data))
+        }
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+    }
+}
+
+#[unstable = "docs; contains unsafe code"]
+pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4])>
+    where R: Read
+{
+    use std::mem;
+
+    match try!(read_marker(rd)) {
+        Marker::FixExt4 => {
+            let id   = try!(read_data_i8(rd));
+            match rd.read_u32::<byteorder::LittleEndian>() {
+                Ok(data) => {
+                    let out : [u8; 4] = unsafe { mem::transmute(data) };
+                    Ok((id, out))
+                }
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
+        _ => unimplemented!()
     }
 }
 
@@ -1389,12 +1433,30 @@ fn from_null_read_f64() {
 }
 
 #[test]
-fn from_fixext1_read_ext_info() {
+fn from_fixext1_read_fixext1() {
     let buf: &[u8] = &[0xd4, 0x01, 0x02];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!((1, 2), read_ext1(&mut cur).unwrap());
+    assert_eq!((1, 2), read_fixext1(&mut cur).unwrap());
     assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_fixext2_read_fixext2() {
+    let buf: &[u8] = &[0xd5, 0x01, 0x00, 0x02];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!((1, 2), read_fixext2(&mut cur).unwrap());
+    assert_eq!(4, cur.position());
+}
+
+#[test]
+fn from_fixext4_read_fixext4() {
+    let buf: &[u8] = &[0xd6, 0x01, 0x00, 0x00, 0x00, 0x02];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!((1, [0x00, 0x00, 0x00, 0x02]), read_fixext4(&mut cur).unwrap());
+    assert_eq!(6, cur.position());
 }
 
 } // mod testing
