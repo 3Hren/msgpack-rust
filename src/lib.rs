@@ -50,6 +50,9 @@ enum Marker {
     FixExt4,
     FixExt8,
     FixExt16,
+    Ext8,
+    Ext16,
+    Ext32,
 }
 
 impl FromPrimitive for Marker {
@@ -71,6 +74,9 @@ impl FromPrimitive for Marker {
             0xc4 => Some(Marker::Bin8),
             0xc5 => Some(Marker::Bin16),
             0xc6 => Some(Marker::Bin32),
+            0xc7 => Some(Marker::Ext8),
+            0xc8 => Some(Marker::Ext16),
+            0xc9 => Some(Marker::Ext32),
             0xca => Some(Marker::F32),
             0xcb => Some(Marker::F64),
             0xcc => Some(Marker::U8),
@@ -86,9 +92,6 @@ impl FromPrimitive for Marker {
             0xd6 => Some(Marker::FixExt4),
             0xd7 => Some(Marker::FixExt8),
             0xd8 => Some(Marker::FixExt16),
-            // TODO: Ext8
-            // TODO: Ext16
-            // TODO: Ext32
             0xd9 => Some(Marker::Str8),
             0xda => Some(Marker::Str16),
             0xdb => Some(Marker::Str32),
@@ -619,6 +622,38 @@ pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16])>
         }
         _ => unimplemented!()
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ExtMeta {
+    typeid: i8,
+    size: u32,
+}
+
+#[unstable = "docs, errors, from fixext1/2/4/8/16"]
+pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta>
+    where R: Read
+{
+    let meta = match try!(read_marker(rd)) {
+        Marker::Ext8 => {
+            let size = try!(read_data_u8(rd));
+            let typeid = try!(read_data_i8(rd));
+            ExtMeta { typeid: typeid, size: size as u32 }
+        }
+        Marker::Ext16 => {
+            let size = try!(read_data_u16(rd));
+            let typeid = try!(read_data_i8(rd));
+            ExtMeta { typeid: typeid, size: size as u32 }
+        }
+        Marker::Ext32 => {
+            let size = try!(read_data_u32(rd));
+            let typeid = try!(read_data_i8(rd));
+            ExtMeta { typeid: typeid, size: size }
+        }
+        _ => unimplemented!()
+    };
+
+    Ok(meta)
 }
 
 #[cfg(test)]
@@ -1518,6 +1553,33 @@ fn from_fixext16_read_fixext16() {
                     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]),
                read_fixext16(&mut cur).unwrap());
     assert_eq!(18, cur.position());
+}
+
+#[test]
+fn from_ext8_read_ext_meta() {
+    let buf: &[u8] = &[0xc7, 0xff, 0x01];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(ExtMeta { typeid: 1, size: 255 }, read_ext_meta(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_ext16_read_ext_meta() {
+    let buf: &[u8] = &[0xc8, 0xff, 0xff, 0x01];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(ExtMeta { typeid: 1, size: 65535 }, read_ext_meta(&mut cur).unwrap());
+    assert_eq!(4, cur.position());
+}
+
+#[test]
+fn from_ext32_read_ext_meta() {
+    let buf: &[u8] = &[0xc9, 0xff, 0xff, 0xff, 0xff, 0x01];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(ExtMeta { typeid: 1, size: 4294967295 }, read_ext_meta(&mut cur).unwrap());
+    assert_eq!(6, cur.position());
 }
 
 } // mod testing
