@@ -570,7 +570,7 @@ pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4])>
 
     match try!(read_marker(rd)) {
         Marker::FixExt4 => {
-            let id   = try!(read_data_i8(rd));
+            let id = try!(read_data_i8(rd));
             match rd.read_u32::<byteorder::LittleEndian>() {
                 Ok(data) => {
                     let out : [u8; 4] = unsafe { mem::transmute(data) };
