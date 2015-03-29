@@ -630,11 +630,36 @@ pub struct ExtMeta {
     size: u32,
 }
 
-#[unstable = "docs, errors, from fixext1/2/4/8/16"]
+#[unstable = "docs, errors"]
 pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta>
     where R: Read
 {
     let meta = match try!(read_marker(rd)) {
+        Marker::FixExt1 => {
+            let size = 1;
+            let typeid = try!(read_data_i8(rd));
+            ExtMeta { typeid: typeid, size: size as u32 }
+        }
+        Marker::FixExt2 => {
+            let size = 2;
+            let typeid = try!(read_data_i8(rd));
+            ExtMeta { typeid: typeid, size: size as u32 }
+        }
+        Marker::FixExt4 => {
+            let size = 4;
+            let typeid = try!(read_data_i8(rd));
+            ExtMeta { typeid: typeid, size: size as u32 }
+        }
+        Marker::FixExt8 => {
+            let size = 8;
+            let typeid = try!(read_data_i8(rd));
+            ExtMeta { typeid: typeid, size: size as u32 }
+        }
+        Marker::FixExt16 => {
+            let size = 16;
+            let typeid = try!(read_data_i8(rd));
+            ExtMeta { typeid: typeid, size: size as u32 }
+        }
         Marker::Ext8 => {
             let size = try!(read_data_u8(rd));
             let typeid = try!(read_data_i8(rd));
@@ -1553,6 +1578,51 @@ fn from_fixext16_read_fixext16() {
                     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]),
                read_fixext16(&mut cur).unwrap());
     assert_eq!(18, cur.position());
+}
+
+#[test]
+fn from_fixext1_read_ext_meta() {
+    let buf: &[u8] = &[0xd4, 0x01];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(ExtMeta { typeid: 1, size: 1 }, read_ext_meta(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_fixext2_read_ext_meta() {
+    let buf: &[u8] = &[0xd5, 0x01];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(ExtMeta { typeid: 1, size: 2 }, read_ext_meta(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_fixext4_read_ext_meta() {
+    let buf: &[u8] = &[0xd6, 0x01];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(ExtMeta { typeid: 1, size: 4 }, read_ext_meta(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_fixext8_read_ext_meta() {
+    let buf: &[u8] = &[0xd7, 0x01];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(ExtMeta { typeid: 1, size: 8 }, read_ext_meta(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_fixext16_read_ext_meta() {
+    let buf: &[u8] = &[0xd8, 0x01];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(ExtMeta { typeid: 1, size: 16 }, read_ext_meta(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
 }
 
 #[test]
