@@ -281,41 +281,31 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64>
     }
 }
 
-/// Tries to read exactly 1 byte from the reader and interpret it as an i8.
-fn read_data_i8<R>(rd: &mut R) -> Result<i8>
-    where R: Read
-{
-    match rd.read_i8() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
-
-fn read_data_u8<R>(rd: &mut R) -> Result<u8>
-    where R: Read
-{
-    match rd.read_u8() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
-
 macro_rules! make_read_data_fn {
-    ($t:ty, $name:ident, $reader:ident) => {
+    (deduce, $reader:ident, $decoder:ident, 0)
+        => ($reader.$decoder(););
+    (deduce, $reader:ident, $decoder:ident, 1)
+        => ($reader.$decoder::<byteorder::BigEndian>(););
+    (gen, $t:ty, $d:tt, $name:ident, $decoder:ident) => {
         fn $name<R>(rd: &mut R) -> Result<$t>
             where R: Read
         {
-            match rd.$reader::<byteorder::BigEndian>() {
+            match make_read_data_fn!(deduce, rd, $decoder, $d) {
                 Ok(data) => Ok(data),
                 Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
             }
         }
-    }
+    };
+    (u8,    $name:ident, $decoder:ident) => (make_read_data_fn!(gen, u8, 0, $name, $decoder););
+    (i8,    $name:ident, $decoder:ident) => (make_read_data_fn!(gen, i8, 0, $name, $decoder););
+    ($t:ty, $name:ident, $decoder:ident) => (make_read_data_fn!(gen, $t, 1, $name, $decoder););
 }
 
+make_read_data_fn!(u8,  read_data_u8,  read_u8);
 make_read_data_fn!(u16, read_data_u16, read_u16);
 make_read_data_fn!(u32, read_data_u32, read_u32);
 make_read_data_fn!(u64, read_data_u64, read_u64);
+make_read_data_fn!(i8,  read_data_i8,  read_i8);
 make_read_data_fn!(i16, read_data_i16, read_i16);
 make_read_data_fn!(i32, read_data_i32, read_i32);
 make_read_data_fn!(i64, read_data_i64, read_i64);
