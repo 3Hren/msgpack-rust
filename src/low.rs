@@ -353,6 +353,21 @@ pub fn read_integer<R>(rd: &mut R) -> Result<i64>
     }
 }
 
+/// Yes, it is slower, because of ADT, but more convenient.
+pub fn read_integer_new<R>(rd: &mut R) -> Result<Integer>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::NegativeFixnum(val) => Ok(Integer::I64(val as i64)),
+        Marker::I8  => Ok(Integer::I64(try!(read_data_i8(rd))  as i64)),
+        Marker::I16 => Ok(Integer::I64(try!(read_data_i16(rd)) as i64)),
+        Marker::I32 => Ok(Integer::I64(try!(read_data_i32(rd)) as i64)),
+        Marker::I64 => Ok(Integer::I64(try!(read_data_i64(rd)))),
+        Marker::U64 => Ok(Integer::U64(try!(read_data_u64(rd)))),
+        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
+}
+
 /// Tries to read a string's size from the reader.
 ///
 /// String format family stores an byte array in 1, 2, 3, or 5 bytes of extra bytes in addition to
@@ -460,6 +475,15 @@ fn read_data_u32<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
     match rd.read_u32::<byteorder::BigEndian>() {
+        Ok(data) => Ok(data),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+    }
+}
+
+fn read_data_u64<R>(rd: &mut R) -> Result<u64>
+    where R: Read
+{
+    match rd.read_u64::<byteorder::BigEndian>() {
         Ok(data) => Ok(data),
         Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
     }
@@ -651,9 +675,12 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
 #[cfg(test)]
 mod testing {
 
+extern crate test;
+
 use std::io::{Cursor};
 
 use super::*;
+use self::test::Bencher;
 
 #[test]
 fn from_nil() {
@@ -1259,6 +1286,30 @@ fn from_i64_max_read_integer() {
 
     assert_eq!(9223372036854775807, read_integer(&mut cur).unwrap());
     assert_eq!(9, cur.position());
+}
+
+#[bench]
+fn from_i64_read_integer(b: &mut Bencher) {
+    let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+
+    b.iter(|| {
+        let mut cur = Cursor::new(buf);
+
+        let res = read_integer(&mut cur).unwrap();
+        test::black_box(res);
+    });
+}
+
+#[bench]
+fn from_i64_read_integer_new_version(b: &mut Bencher) {
+    let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+
+    b.iter(|| {
+        let mut cur = Cursor::new(buf);
+
+        let res = read_integer_new(&mut cur).unwrap();
+        test::black_box(res);
+    });
 }
 
 #[test]

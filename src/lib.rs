@@ -4,6 +4,7 @@
 
 #![feature(core)]
 #![feature(io)]
+#![cfg_attr(test, feature(test))]
 
 extern crate byteorder;
 
