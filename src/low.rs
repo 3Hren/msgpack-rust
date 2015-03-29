@@ -321,6 +321,7 @@ fn read_i64_data<R>(rd: &mut R) -> Result<i64>
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum Integer {
     U64(u64),
     I64(i64),
@@ -331,10 +332,9 @@ pub enum Float {
     F64(f64),
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-    Null,
     Integer(Integer),
-    Float(Float),
 }
 
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
@@ -646,6 +646,15 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta>
     let meta = ExtMeta { typeid: typeid, size: size };
 
     Ok(meta)
+}
+
+pub fn read_value<R>(rd: &mut R) -> Result<Value>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::I32 => Ok(Value::Integer(Integer::I64(try!(read_i32_data(rd)) as i64))),
+        _ => unimplemented!()
+    }
 }
 
 #[cfg(test)]
@@ -1617,6 +1626,15 @@ fn from_ext32_read_ext_meta() {
 
     assert_eq!(ExtMeta { typeid: 1, size: 4294967295 }, read_ext_meta(&mut cur).unwrap());
     assert_eq!(6, cur.position());
+}
+
+#[test]
+fn from_i32_decode_value() {
+    let buf: &[u8] = &[0xd2, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Value::Integer(Integer::I64(-1)), read_value(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
 }
 
 } // mod testing
