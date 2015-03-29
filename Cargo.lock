@@ -2,19 +2,11 @@
 name = "msgpack"
 version = "0.1.0"
 dependencies = [
- "byteorder 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "byteorder 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
-
-[[package]]
-name = "bswap"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "byteorder"
-version = "0.3.1"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "bswap 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 

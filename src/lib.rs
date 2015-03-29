@@ -597,7 +597,7 @@ pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8])>
             let id = try!(read_data_i8(rd));
             let mut out = [0u8; 8];
 
-            match io::copy(&mut rd.take(8), &mut out.as_mut_slice()) {
+            match io::copy(&mut rd.take(8), &mut &mut out[..]) {
                 Ok(8) => Ok((id, out)),
                 _ => unimplemented!()
             }
@@ -615,7 +615,7 @@ pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16])>
             let id = try!(read_data_i8(rd));
             let mut out = [0u8; 16];
 
-            match io::copy(&mut rd.take(16), &mut out.as_mut_slice()) {
+            match io::copy(&mut rd.take(16), &mut &mut out[..]) {
                 Ok(16) => Ok((id, out)),
                 _ => unimplemented!()
             }
