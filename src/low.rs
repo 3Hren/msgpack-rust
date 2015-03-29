@@ -1,8 +1,8 @@
-use std; // For std::result, use std::result instead.
 use std::num::FromPrimitive;
 use std::error;
 use std::io;
 use std::io::Read;
+use std::result;
 
 use byteorder::{self, ReadBytesExt};
 
@@ -146,7 +146,7 @@ pub enum Error {
     BufferSizeTooSmall(u32),        // Too small buffer provided to copy all the data.
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = result::Result<T, Error>;
 
 fn read_marker<R>(rd: &mut R) -> Result<Marker>
     where R: Read
