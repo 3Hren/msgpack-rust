@@ -162,47 +162,48 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker>
     }
 }
 
-/// Tries to read nil value from the reader.
+/// Tries to decode a nil value from the reader.
+#[stable(since = "0.1.0")]
 pub fn read_nil<R>(rd: &mut R) -> Result<()>
     where R: Read
 {
-    let marker = try!(read_marker(rd));
-
-    match marker {
+    match try!(read_marker(rd)) {
         Marker::Null => Ok(()),
         _            => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
     }
 }
 
-/// Tries to read bool value from the reader.
+/// Tries to decode a bool value from the reader.
+#[stable(since = "0.1.0")]
 pub fn read_bool<R>(rd: &mut R) -> Result<bool>
     where R: Read
 {
-    let marker = try!(read_marker(rd));
-
-    match marker {
+    match try!(read_marker(rd)) {
         Marker::True  => Ok(true),
         Marker::False => Ok(false),
         _             => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
     }
 }
 
-// Tries to read exact positive fixnum from the reader.
+/// Tries to decode an exactly positive fixnum from the reader.
+#[stable(since = "0.1.0")]
 pub fn read_pfix<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::PositiveFixnum(val) => Ok(val),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _                           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
+/// Tries to decode an exactly negative fixnum from the reader.
+#[stable(since = "0.1.0")]
 pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::NegativeFixnum(val) => Ok(val),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _                           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
@@ -212,7 +213,7 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8>
 {
     match try!(read_marker(rd)) {
         Marker::I8 => Ok(try!(read_data_i8(rd))),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _          => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
