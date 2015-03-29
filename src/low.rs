@@ -291,36 +291,6 @@ fn read_data_i8<R>(rd: &mut R) -> Result<i8>
     }
 }
 
-/// Tries to read exactly 2 bytes from the reader and interpret them as a big-endian i16.
-fn read_data_i16<R>(rd: &mut R) -> Result<i16>
-    where R: Read
-{
-    match rd.read_i16::<byteorder::BigEndian>() {
-        Ok(val)  => Ok(val),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
-
-/// Tries to read exactly 4 bytes from the reader and interpret them as a big-endian i32.
-fn read_data_i32<R>(rd: &mut R) -> Result<i32>
-    where R: Read
-{
-    match rd.read_i32::<byteorder::BigEndian>() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
-
-/// Tries to read exactly 8 bytes from the reader and interpret them as a big-endian i64.
-fn read_data_i64<R>(rd: &mut R) -> Result<i64>
-    where R: Read
-{
-    match rd.read_i64::<byteorder::BigEndian>() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
-
 fn read_data_u8<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
@@ -330,50 +300,27 @@ fn read_data_u8<R>(rd: &mut R) -> Result<u8>
     }
 }
 
-fn read_data_u16<R>(rd: &mut R) -> Result<u16>
-    where R: Read
-{
-    match rd.read_u16::<byteorder::BigEndian>() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+macro_rules! make_read_data_fn {
+    ($t:ty, $name:ident, $reader:ident) => {
+        fn $name<R>(rd: &mut R) -> Result<$t>
+            where R: Read
+        {
+            match rd.$reader::<byteorder::BigEndian>() {
+                Ok(data) => Ok(data),
+                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+            }
+        }
     }
 }
 
-fn read_data_u32<R>(rd: &mut R) -> Result<u32>
-    where R: Read
-{
-    match rd.read_u32::<byteorder::BigEndian>() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
-
-fn read_data_u64<R>(rd: &mut R) -> Result<u64>
-    where R: Read
-{
-    match rd.read_u64::<byteorder::BigEndian>() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
-
-fn read_data_f32<R>(rd: &mut R) -> Result<f32>
-    where R: Read
-{
-    match rd.read_f32::<byteorder::BigEndian>() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
-
-fn read_data_f64<R>(rd: &mut R) -> Result<f64>
-    where R: Read
-{
-    match rd.read_f64::<byteorder::BigEndian>() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-    }
-}
+make_read_data_fn!(u16, read_data_u16, read_u16);
+make_read_data_fn!(u32, read_data_u32, read_u32);
+make_read_data_fn!(u64, read_data_u64, read_u64);
+make_read_data_fn!(i16, read_data_i16, read_i16);
+make_read_data_fn!(i32, read_data_i32, read_i32);
+make_read_data_fn!(i64, read_data_i64, read_i64);
+make_read_data_fn!(f32, read_data_f32, read_f32);
+make_read_data_fn!(f64, read_data_f64, read_f64);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Integer {
