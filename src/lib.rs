@@ -634,49 +634,20 @@ pub struct ExtMeta {
 pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta>
     where R: Read
 {
-    let meta = match try!(read_marker(rd)) {
-        Marker::FixExt1 => {
-            let size = 1;
-            let typeid = try!(read_data_i8(rd));
-            ExtMeta { typeid: typeid, size: size as u32 }
-        }
-        Marker::FixExt2 => {
-            let size = 2;
-            let typeid = try!(read_data_i8(rd));
-            ExtMeta { typeid: typeid, size: size as u32 }
-        }
-        Marker::FixExt4 => {
-            let size = 4;
-            let typeid = try!(read_data_i8(rd));
-            ExtMeta { typeid: typeid, size: size as u32 }
-        }
-        Marker::FixExt8 => {
-            let size = 8;
-            let typeid = try!(read_data_i8(rd));
-            ExtMeta { typeid: typeid, size: size as u32 }
-        }
-        Marker::FixExt16 => {
-            let size = 16;
-            let typeid = try!(read_data_i8(rd));
-            ExtMeta { typeid: typeid, size: size as u32 }
-        }
-        Marker::Ext8 => {
-            let size = try!(read_data_u8(rd));
-            let typeid = try!(read_data_i8(rd));
-            ExtMeta { typeid: typeid, size: size as u32 }
-        }
-        Marker::Ext16 => {
-            let size = try!(read_data_u16(rd));
-            let typeid = try!(read_data_i8(rd));
-            ExtMeta { typeid: typeid, size: size as u32 }
-        }
-        Marker::Ext32 => {
-            let size = try!(read_data_u32(rd));
-            let typeid = try!(read_data_i8(rd));
-            ExtMeta { typeid: typeid, size: size }
-        }
+    let size = match try!(read_marker(rd)) {
+        Marker::FixExt1  => 1,
+        Marker::FixExt2  => 2,
+        Marker::FixExt4  => 4,
+        Marker::FixExt8  => 8,
+        Marker::FixExt16 => 16,
+        Marker::Ext8     => try!(read_data_u8(rd))  as u32,
+        Marker::Ext16    => try!(read_data_u16(rd)) as u32,
+        Marker::Ext32    => try!(read_data_u32(rd)),
         _ => unimplemented!()
     };
+
+    let typeid = try!(read_data_i8(rd));
+    let meta = ExtMeta { typeid: typeid, size: size };
 
     Ok(meta)
 }
