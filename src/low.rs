@@ -1227,24 +1227,20 @@ fn from_i64_max_read_integer() {
 
 #[bench]
 fn from_i64_read_integer(b: &mut Bencher) {
-    let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
     b.iter(|| {
-        let mut cur = Cursor::new(buf);
-
-        let res = read_integer(&mut cur).unwrap();
+        let res = read_integer(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
 }
 
 #[bench]
 fn from_i64_read_integer_new_version(b: &mut Bencher) {
-    let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
     b.iter(|| {
-        let mut cur = Cursor::new(buf);
-
-        let res = read_integer_new(&mut cur).unwrap();
+        let res = read_integer_new(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
 }
