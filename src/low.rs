@@ -211,7 +211,7 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I8 => Ok(try!(read_i8_data(rd))),
+        Marker::I8 => Ok(try!(read_data_i8(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -221,7 +221,7 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I16 => Ok(try!(read_i16_data(rd))),
+        Marker::I16 => Ok(try!(read_data_i16(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -231,7 +231,7 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I32 => Ok(try!(read_i32_data(rd))),
+        Marker::I32 => Ok(try!(read_data_i32(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -241,7 +241,7 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I64 => Ok(try!(read_i64_data(rd))),
+        Marker::I64 => Ok(try!(read_data_i64(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -282,17 +282,17 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64>
 }
 
 /// Tries to read exactly 1 byte from the reader and interpret it as an i8.
-fn read_i8_data<R>(rd: &mut R) -> Result<i8>
+fn read_data_i8<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
     match rd.read_i8() {
-        Ok(val)  => Ok(val),
+        Ok(data) => Ok(data),
         Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
     }
 }
 
 /// Tries to read exactly 2 bytes from the reader and interpret them as a big-endian i16.
-fn read_i16_data<R>(rd: &mut R) -> Result<i16>
+fn read_data_i16<R>(rd: &mut R) -> Result<i16>
     where R: Read
 {
     match rd.read_i16::<byteorder::BigEndian>() {
@@ -302,21 +302,21 @@ fn read_i16_data<R>(rd: &mut R) -> Result<i16>
 }
 
 /// Tries to read exactly 4 bytes from the reader and interpret them as a big-endian i32.
-fn read_i32_data<R>(rd: &mut R) -> Result<i32>
+fn read_data_i32<R>(rd: &mut R) -> Result<i32>
     where R: Read
 {
     match rd.read_i32::<byteorder::BigEndian>() {
-        Ok(val)  => Ok(val),
+        Ok(data) => Ok(data),
         Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
     }
 }
 
 /// Tries to read exactly 8 bytes from the reader and interpret them as a big-endian i64.
-fn read_i64_data<R>(rd: &mut R) -> Result<i64>
+fn read_data_i64<R>(rd: &mut R) -> Result<i64>
     where R: Read
 {
     match rd.read_i64::<byteorder::BigEndian>() {
-        Ok(val)  => Ok(val),
+        Ok(data) => Ok(data),
         Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
     }
 }
@@ -345,10 +345,10 @@ pub fn read_integer<R>(rd: &mut R) -> Result<i64>
 {
     match try!(read_marker(rd)) {
         Marker::NegativeFixnum(val) => Ok(val as i64),
-        Marker::I8  => Ok(try!(read_i8_data(rd))  as i64),
-        Marker::I16 => Ok(try!(read_i16_data(rd)) as i64),
-        Marker::I32 => Ok(try!(read_i32_data(rd)) as i64),
-        Marker::I64 => Ok(try!(read_i64_data(rd))),
+        Marker::I8  => Ok(try!(read_data_i8(rd))  as i64),
+        Marker::I16 => Ok(try!(read_data_i16(rd)) as i64),
+        Marker::I32 => Ok(try!(read_data_i32(rd)) as i64),
+        Marker::I64 => Ok(try!(read_data_i64(rd))),
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
@@ -435,15 +435,6 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
             }
         }
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
-    }
-}
-
-fn read_data_i8<R>(rd: &mut R) -> Result<i8>
-    where R: Read
-{
-    match rd.read_i8() {
-        Ok(data) => Ok(data),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
     }
 }
 
@@ -652,7 +643,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I32 => Ok(Value::Integer(Integer::I64(try!(read_i32_data(rd)) as i64))),
+        Marker::I32 => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
         _ => unimplemented!()
     }
 }
