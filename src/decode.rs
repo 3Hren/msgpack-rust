@@ -265,24 +265,6 @@ pub fn read_u32<R>(rd: &mut R) -> Result<u32>
     unimplemented!()
 }
 
-// TODO: read_signed_integer not strictly.
-// TODO: read_unsigned_integer not strictly.
-// TODO: high::read_integer -> Integer.
-
-/// Tries to read and decode an unsigned integer from the reader.
-pub fn read_u64<R>(rd: &mut R) -> Result<u64>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val as u64),
-        Marker::U8  => Ok(try!(read_data_u8(rd))  as u64),
-        Marker::U16 => Ok(try!(read_data_u16(rd)) as u64),
-        Marker::U32 => Ok(try!(read_data_u32(rd)) as u64),
-        Marker::U64 => Ok(try!(read_data_u64(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
-    }
-}
-
 macro_rules! make_read_data_fn {
     (deduce, $reader:ident, $decoder:ident, 0)
         => ($reader.$decoder(););
@@ -331,9 +313,29 @@ pub enum Value {
 }
 
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
+/// them as a big-endian u64.
+///
+/// The function tries to decode only unsigned integer values that are always non-negative.
+#[unstable(reason = "not sure about name")]
+pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val as u64),
+        Marker::U8  => Ok(try!(read_data_u8(rd))  as u64),
+        Marker::U16 => Ok(try!(read_data_u16(rd)) as u64),
+        Marker::U32 => Ok(try!(read_data_u32(rd)) as u64),
+        Marker::U64 => Ok(try!(read_data_u64(rd))),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
+}
+
+/// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
 /// them as a big-endian i64.
-/// TODO: Deserialization: nfix, pfix, int 8/16/32/64 and uint 8/16/32/64 -> Integer (i64|u64).
-pub fn read_integer<R>(rd: &mut R) -> Result<i64>
+///
+/// The function tries to decode only signed integer values that can potentially be negative.
+#[unstable(reason = "not sure about name")]
+pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64>
     where R: Read
 {
     match try!(read_marker(rd)) {
@@ -347,7 +349,8 @@ pub fn read_integer<R>(rd: &mut R) -> Result<i64>
 }
 
 /// Yes, it is slower, because of ADT, but more convenient.
-pub fn read_integer_new<R>(rd: &mut R) -> Result<Integer>
+#[unstable(reason = "move to high-level module; complete; test")]
+pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
     where R: Read
 {
     match try!(read_marker(rd)) {
@@ -683,122 +686,128 @@ fn from_positive_fixnum() {
 }
 
 #[test]
-fn from_unsigned_fixnum() {
+fn from_unsigned_fixnum_read_u64_loosely() {
     let buf: &[u8] = &[0x00, 0x7f, 0x20];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(0u64, read_u64(&mut cur).unwrap());
+    assert_eq!(0u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(1, cur.position());
 
-    assert_eq!(127u64, read_u64(&mut cur).unwrap());
+    assert_eq!(127u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(2, cur.position());
 
-    assert_eq!(32u64, read_u64(&mut cur).unwrap());
+    assert_eq!(32u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(3, cur.position());
 }
 
 #[test]
-fn from_unsigned_u8() {
+fn from_unsigned_u8_read_u64_loosely() {
     let buf: &[u8] = &[0xcc, 0x80, 0xcc, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(128u64, read_u64(&mut cur).unwrap());
+    assert_eq!(128u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(2, cur.position());
 
-    assert_eq!(255u64, read_u64(&mut cur).unwrap());
+    assert_eq!(255u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(4, cur.position());
 }
 
 #[test]
-fn from_unsigned_u8_invalid_data_read() {
+fn from_unsigned_u8_incomplete_read_u64_loosely() {
     let buf: &[u8] = &[0xcc];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_u64(&mut cur).err().unwrap());
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_u64_loosely(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
 #[test]
-fn from_unsigned_u16() {
+fn from_unsigned_u16_read_u64_loosely() {
     let buf: &[u8] = &[0xcd, 0x01, 0x00, 0xcd, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(256u64, read_u64(&mut cur).unwrap());
+    assert_eq!(256u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(3, cur.position());
 
-    assert_eq!(65535u64, read_u64(&mut cur).unwrap());
+    assert_eq!(65535u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(6, cur.position());
 }
 
 #[test]
-fn from_unsigned_u16_invalid_data_read() {
+fn from_unsigned_u16_incomplete_read_u64_loosely() {
     let buf: &[u8] = &[0xcd];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_u64(&mut cur).err().unwrap());
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_u64_loosely(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
 #[test]
-fn from_unsigned_u32() {
+fn from_unsigned_u32_read_u64_loosely() {
     let buf: &[u8] = &[0xce, 0x00, 0x01, 0x00, 0x00, 0xce, 0xff, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(65536u64, read_u64(&mut cur).unwrap());
+    assert_eq!(65536u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(5, cur.position());
 
-    assert_eq!(4294967295u64, read_u64(&mut cur).unwrap());
+    assert_eq!(4294967295u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(10, cur.position());
 }
 
 #[test]
-fn from_unsigned_u32_invalid_data_read() {
+fn from_unsigned_u32_incomplete_read_u64_loosely() {
     let buf: &[u8] = &[0xce];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_u64(&mut cur).err().unwrap());
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_u64_loosely(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
 #[test]
-fn from_unsigned_u64() {
+fn from_unsigned_u64_read_u64_loosely() {
     let buf: &[u8] = &[
         0xcf, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
         0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
     ];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(4294967296u64, read_u64(&mut cur).unwrap());
+    assert_eq!(4294967296u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(9, cur.position());
 
-    assert_eq!(18446744073709551615u64, read_u64(&mut cur).unwrap());
+    assert_eq!(18446744073709551615u64, read_u64_loosely(&mut cur).unwrap());
     assert_eq!(18, cur.position());
 }
 
 #[test]
-fn from_unsigned_u64_invalid_data_read() {
+fn from_unsigned_u64_incomplete_read_u64_loosely() {
     let buf: &[u8] = &[0xcf];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_u64(&mut cur).err().unwrap());
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_u64_loosely(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
 #[test]
-fn from_unsigned_invalid_marker() {
+fn from_unsigned_invalid_marker_read_u64_loosely() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_u64(&mut cur).err().unwrap());
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+        read_u64_loosely(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
 #[test]
-fn from_unsigned_invalid_unknown_marker() {
+fn from_unsigned_invalid_unknown_marker_read_u64_loosely() {
     let buf: &[u8] = &[0xc1];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)), read_u64(&mut cur).err().unwrap());
+    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)),
+        read_u64_loosely(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
@@ -1138,93 +1147,103 @@ fn from_i64_unexpected_eof() {
 }
 
 #[test]
-fn from_nfix_min_read_integer() {
+fn from_nfix_min_read_i64_loosely() {
     let buf: &[u8] = &[0xe0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(-32, read_integer(&mut cur).unwrap());
+    assert_eq!(-32, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(1, cur.position());
 }
 
 #[test]
-fn from_nfix_max_read_integer() {
+fn from_nfix_max_read_i64_loosely() {
     let buf: &[u8] = &[0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(-1, read_integer(&mut cur).unwrap());
+    assert_eq!(-1, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(1, cur.position());
 }
 
 #[test]
-fn from_i8_min_read_integer() {
+fn from_i8_min_read_i64_loosely() {
     let buf: &[u8] = &[0xd0, 0x80];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(-128, read_integer(&mut cur).unwrap());
+    assert_eq!(-128, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(2, cur.position());
 }
 
 #[test]
-fn from_i8_max_read_integer() {
+fn from_i8_max_read_i64_loosely() {
     let buf: &[u8] = &[0xd0, 0x7f];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(127, read_integer(&mut cur).unwrap());
+    assert_eq!(127, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(2, cur.position());
 }
 
 #[test]
-fn from_i16_min_read_integer() {
+fn from_i16_min_read_i64_loosely() {
     let buf: &[u8] = &[0xd1, 0x80, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(-32768, read_integer(&mut cur).unwrap());
+    assert_eq!(-32768, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(3, cur.position());
 }
 
 #[test]
-fn from_i16_max_read_integer() {
+fn from_i16_max_read_i64_loosely() {
     let buf: &[u8] = &[0xd1, 0x7f, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(32767, read_integer(&mut cur).unwrap());
+    assert_eq!(32767, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(3, cur.position());
 }
 
 #[test]
-fn from_i32_min_read_integer() {
+fn from_i32_min_read_i64_loosely() {
     let buf: &[u8] = &[0xd2, 0x80, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(-2147483648, read_integer(&mut cur).unwrap());
+    assert_eq!(-2147483648, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(5, cur.position());
 }
 
 #[test]
-fn from_i32_max_read_integer() {
+fn from_i32_max_read_i64_loosely() {
     let buf: &[u8] = &[0xd2, 0x7f, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(2147483647, read_integer(&mut cur).unwrap());
+    assert_eq!(2147483647, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(5, cur.position());
 }
 
 #[test]
-fn from_i64_min_read_integer() {
+fn from_i64_min_read_i64_loosely() {
     let buf: &[u8] = &[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(-9223372036854775808, read_integer(&mut cur).unwrap());
+    assert_eq!(-9223372036854775808, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(9, cur.position());
 }
 
 #[test]
-fn from_i64_max_read_integer() {
+fn from_i64_max_read_i64_loosely() {
     let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(9223372036854775807, read_integer(&mut cur).unwrap());
+    assert_eq!(9223372036854775807, read_i64_loosely(&mut cur).unwrap());
     assert_eq!(9, cur.position());
+}
+
+#[bench]
+fn from_i64_read_u64_loosely(b: &mut Bencher) {
+    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+
+    b.iter(|| {
+        let res = read_u64_loosely(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
 }
 
 #[bench]
@@ -1233,16 +1252,6 @@ fn from_i64_read_integer(b: &mut Bencher) {
 
     b.iter(|| {
         let res = read_integer(&mut &buf[..]).unwrap();
-        test::black_box(res);
-    });
-}
-
-#[bench]
-fn from_i64_read_integer_new_version(b: &mut Bencher) {
-    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
-
-    b.iter(|| {
-        let res = read_integer_new(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
 }
@@ -1258,11 +1267,11 @@ fn from_i8_read_i8(b: &mut Bencher) {
 }
 
 #[bench]
-fn from_u8_read_u64(b: &mut Bencher) {
+fn from_u8_read_u64_loosely(b: &mut Bencher) {
     let buf = [0xcc, 0xff];
 
     b.iter(|| {
-        let res = read_u64(&mut &buf[..]).unwrap();
+        let res = read_u64_loosely(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
 }
