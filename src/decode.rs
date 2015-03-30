@@ -247,10 +247,15 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64>
     }
 }
 
+/// Tries to read exactly 2 bytes from the reader and decode them as u8.
+#[stable(since = "0.1.0")]
 pub fn read_u8<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
-    unimplemented!()
+    match try!(read_marker(rd)) {
+        Marker::U8 => Ok(try!(read_data_u8(rd))),
+        _          => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
 }
 
 pub fn read_u16<R>(rd: &mut R) -> Result<u16>
@@ -1052,6 +1057,42 @@ fn from_i8_unexpected_eof() {
 }
 
 #[test]
+fn from_u8_min() {
+    let buf: &[u8] = &[0xcc, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_u8(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_u8_max() {
+    let buf: &[u8] = &[0xcc, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(255, read_u8(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_u8_type_mismatch() {
+    let buf: &[u8] = &[0xc0, 0x80];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_u8(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_u8_unexpected_eof() {
+    let buf: &[u8] = &[0xcc];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_u8(&mut cur).err().unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
 fn from_i16_min() {
     let buf: &[u8] = &[0xd1, 0x80, 0x00];
     let mut cur = Cursor::new(buf);
@@ -1673,6 +1714,24 @@ fn from_str8_decode_value() {
         read_value(&mut cur).unwrap());
     assert_eq!(34, cur.position());
 }
+
+// TODO: Need low::Error & Error with heap allocated objects.
+//#[test]
+//fn from_str8_with_unnecessary_bytes_decode_value() {
+//    let buf: &[u8] = &[
+//        0xd9, // Type.
+//        0x20, // Size
+//        0x42, // B
+//        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
+//        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
+//        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30
+//    ];
+//    let mut cur = Cursor::new(buf);
+
+//    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+//        read_value(&mut cur).err().unwrap());
+//    assert_eq!(33, cur.position());
+//}
 
 // TODO: decode_value_ref(&'a [u8]) -> &'a ValueRef<'a>
 
