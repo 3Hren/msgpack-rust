@@ -8,7 +8,7 @@ fn from_bin8_min_read_len() {
     let buf: &[u8] = &[0xc4, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(0, msgpack::low::read_bin_len(&mut cur).unwrap());
+    assert_eq!(0, msgpack::decode::read_bin_len(&mut cur).unwrap());
     assert_eq!(2, cur.position());
 }
 
@@ -17,7 +17,7 @@ fn from_bin8_max_read_len() {
     let buf: &[u8] = &[0xc4, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(255, msgpack::low::read_bin_len(&mut cur).unwrap());
+    assert_eq!(255, msgpack::decode::read_bin_len(&mut cur).unwrap());
     assert_eq!(2, cur.position());
 }
 
@@ -27,7 +27,7 @@ fn from_bin8_eof_read_len() {
     let mut cur = Cursor::new(buf);
 
     assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        msgpack::low::read_bin_len(&mut cur).err().unwrap());
+        msgpack::decode::read_bin_len(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
@@ -37,7 +37,7 @@ fn from_null_read_len() {
     let mut cur = Cursor::new(buf);
 
     assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
-        msgpack::low::read_bin_len(&mut cur).err().unwrap());
+        msgpack::decode::read_bin_len(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
 
@@ -46,7 +46,7 @@ fn from_bin16_max_read_len() {
     let buf: &[u8] = &[0xc5, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(65535, msgpack::low::read_bin_len(&mut cur).unwrap());
+    assert_eq!(65535, msgpack::decode::read_bin_len(&mut cur).unwrap());
     assert_eq!(3, cur.position());
 }
 
@@ -55,6 +55,6 @@ fn from_bin32_max_read_len() {
     let buf: &[u8] = &[0xc6, 0xff, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(4294967295, msgpack::low::read_bin_len(&mut cur).unwrap());
+    assert_eq!(4294967295, msgpack::decode::read_bin_len(&mut cur).unwrap());
     assert_eq!(5, cur.position());
 }

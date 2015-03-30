@@ -8,6 +8,7 @@
 
 extern crate byteorder;
 
-pub mod low;
+pub mod decode;
 
-pub use low::{Error, ReadError, MarkerError};
+/// Temporary. Move to error.rs module.
+pub use decode::{Error, ReadError, MarkerError};

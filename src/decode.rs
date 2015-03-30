@@ -247,38 +247,39 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64>
     }
 }
 
+pub fn read_u8<R>(rd: &mut R) -> Result<u8>
+    where R: Read
+{
+    unimplemented!()
+}
+
+pub fn read_u16<R>(rd: &mut R) -> Result<u16>
+    where R: Read
+{
+    unimplemented!()
+}
+
+pub fn read_u32<R>(rd: &mut R) -> Result<u32>
+    where R: Read
+{
+    unimplemented!()
+}
+
+// TODO: read_signed_integer not strictly.
+// TODO: read_unsigned_integer not strictly.
+// TODO: high::read_integer -> Integer.
+
 /// Tries to read and decode an unsigned integer from the reader.
 pub fn read_u64<R>(rd: &mut R) -> Result<u64>
     where R: Read
 {
-    match read_marker(rd) {
-        Ok(Marker::PositiveFixnum(val)) => Ok(val as u64),
-        Ok(Marker::U8) => {
-            match rd.read_u8() {
-                Ok(val)  => Ok(val as u64),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
-        Ok(Marker::U16) => {
-            match rd.read_u16::<byteorder::BigEndian>() {
-                Ok(val)  => Ok(val as u64),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
-        Ok(Marker::U32) => {
-            match rd.read_u32::<byteorder::BigEndian>() {
-                Ok(val)  => Ok(val as u64),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
-        Ok(Marker::U64) => {
-            match rd.read_u64::<byteorder::BigEndian>() {
-                Ok(val)  => Ok(val),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
-        Ok(..)   => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
-        Err(err) => Err(err),
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val as u64),
+        Marker::U8  => Ok(try!(read_data_u8(rd))  as u64),
+        Marker::U16 => Ok(try!(read_data_u16(rd)) as u64),
+        Marker::U32 => Ok(try!(read_data_u32(rd)) as u64),
+        Marker::U64 => Ok(try!(read_data_u64(rd))),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
@@ -1242,6 +1243,26 @@ fn from_i64_read_integer_new_version(b: &mut Bencher) {
 
     b.iter(|| {
         let res = read_integer_new(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
+}
+
+#[bench]
+fn from_i8_read_i8(b: &mut Bencher) {
+    let buf = [0xd0, 0xff];
+
+    b.iter(|| {
+        let res = read_i8(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
+}
+
+#[bench]
+fn from_u8_read_u64(b: &mut Bencher) {
+    let buf = [0xcc, 0xff];
+
+    b.iter(|| {
+        let res = read_u64(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
 }
