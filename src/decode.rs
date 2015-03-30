@@ -310,6 +310,7 @@ pub enum Float {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Integer(Integer),
+    String(String),
 }
 
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
@@ -609,7 +610,19 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I32 => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
+        Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
+        Marker::Str8 => {
+            let len = try!(read_data_u8(rd)) as u64;
+            let mut buf = Vec::with_capacity(len as usize);
+
+            match io::copy(&mut rd.take(len), &mut buf) {
+                Ok(size) if size == len => {
+                    Ok(Value::String(String::from_utf8(buf).unwrap())) // TODO: Do not unwrap, use Error.
+                }
+                Ok(..)  => unimplemented!(), // TODO: Return Error with read buffer anyway?
+                Err(..) => unimplemented!(),
+            }
+        }
         _ => unimplemented!()
     }
 }
@@ -1642,5 +1655,25 @@ fn from_i32_decode_value() {
     assert_eq!(Value::Integer(Integer::I64(-1)), read_value(&mut cur).unwrap());
     assert_eq!(5, cur.position());
 }
+
+#[test]
+fn from_str8_decode_value() {
+    let buf: &[u8] = &[
+        0xd9, // Type.
+        0x20, // Size
+        0x42, // B
+        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
+        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
+        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
+        0x45  // E
+    ];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Value::String("B123456789012345678901234567890E".to_string()),
+        read_value(&mut cur).unwrap());
+    assert_eq!(34, cur.position());
+}
+
+// TODO: decode_value_ref(&'a [u8]) -> &'a ValueRef<'a>
 
 } // mod testing
