@@ -134,7 +134,7 @@ impl error::FromError<byteorder::Error> for ReadError {
 
 #[derive(PartialEq, Debug)]
 pub enum MarkerError {
-    TypeMismatch,
+    TypeMismatch, // TODO: Consider saving actual marker.
     Unexpected(u8),
 }
 
@@ -350,7 +350,7 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64>
         Marker::I16 => Ok(try!(read_data_i16(rd)) as i64),
         Marker::I32 => Ok(try!(read_data_i32(rd)) as i64),
         Marker::I64 => Ok(try!(read_data_i64(rd))),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
@@ -377,29 +377,12 @@ pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
 pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
-    let marker = try!(read_marker(rd));
-
-    match marker {
+    match try!(read_marker(rd)) {
         Marker::FixedString(size) => Ok(size as u32),
-        Marker::Str8 => {
-            match rd.read_u8() {
-                Ok(size) => Ok(size as u32),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
-        Marker::Str16 => {
-            match rd.read_u16::<byteorder::BigEndian>() {
-                Ok(size) => Ok(size as u32),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
-        Marker::Str32 => {
-            match rd.read_u32::<byteorder::BigEndian>() {
-                Ok(size) => Ok(size),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
-            }
-        }
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        Marker::Str8  => Ok(try!(read_data_u8(rd))  as u32),
+        Marker::Str16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Str32 => Ok(try!(read_data_u32(rd))),
+        _             => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
     }
 }
 
@@ -423,6 +406,7 @@ pub fn read_str<R>(rd: &mut R, mut buf: &mut [u8]) -> Result<u32>
 }
 
 /// Tries to read a string data from the reader and make a borrowed slice from it.
+#[unstable(reason = "it is be better to return &str")]
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8]> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
