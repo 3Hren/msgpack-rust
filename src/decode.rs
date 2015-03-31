@@ -3,6 +3,7 @@ use std::error;
 use std::io;
 use std::io::Read;
 use std::result;
+use std::str::{from_utf8, Utf8Error};
 
 use byteorder::{self, ReadBytesExt};
 
@@ -139,11 +140,14 @@ pub enum MarkerError {
 }
 
 #[derive(PartialEq, Debug)]
+#[unstable(reason = "may be set &[u8] in some errors, utf8 for example")]
 pub enum Error {
     InvalidMarker(MarkerError),     // Marker type error.
     InvalidMarkerRead(ReadError),   // IO error while reading marker.
     InvalidDataRead(ReadError),     // IO error while reading data.
     BufferSizeTooSmall(u32),        // Too small buffer provided to copy all the data.
+    InvalidDataCopy(u32, ReadError),    // The string, binary or ext has been read partially.
+    InvalidUtf8(u32, Utf8Error),    // Invalid UTF8 sequence.
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -389,24 +393,30 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
 /// Tries to read a string data from the reader and copy it to the buffer provided.
 ///
 /// According to the spec, the string's data must to be encoded using UTF-8.
-/// Returns number of bytes actually read.
-pub fn read_str<R>(rd: &mut R, mut buf: &mut [u8]) -> Result<u32>
+#[unstable(reason = "docs; example; signature; less `as`")]
+pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str>
     where R: Read
 {
     let len = try!(read_str_len(rd));
+
     if buf.len() < len as usize {
         return Err(Error::BufferSizeTooSmall(len))
     }
 
-    // TODO: WTF? Copy only `len` bytes.
-    match io::copy(rd, &mut buf) {
-        Ok(size) => Ok(size as u32),
-        Err(..) => unimplemented!(),
+    match io::copy(&mut rd.take(len as u64), &mut &mut buf[..len as usize]) {
+        Ok(size) if size == len as u64 => {
+            match from_utf8(&buf[..len as usize]) {
+                Ok(decoded) => Ok(decoded),
+                Err(err)    => Err(Error::InvalidUtf8(len, err)),
+            }
+        }
+        Ok(size) => Err(Error::InvalidDataCopy(size as u32, ReadError::UnexpectedEOF)),
+        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
     }
 }
 
 /// Tries to read a string data from the reader and make a borrowed slice from it.
-#[unstable(reason = "it is be better to return &str")]
+#[unstable(reason = "it is better to return &str")]
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8]> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
@@ -603,7 +613,6 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
         Marker::Str8 => {
             let len = try!(read_data_u8(rd)) as u64;
             let mut buf = Vec::with_capacity(len as usize);
-
             match io::copy(&mut rd.take(len), &mut buf) {
                 Ok(size) if size == len => {
                     Ok(Value::String(String::from_utf8(buf).unwrap())) // TODO: Do not unwrap, use Error.
@@ -625,6 +634,7 @@ use std::io::{Cursor};
 
 use super::*;
 use self::test::Bencher;
+use std::str::Utf8Error;
 
 #[test]
 fn from_nil() {
@@ -950,10 +960,55 @@ fn from_str_strfix() {
 
     let mut out: &mut [u8] = &mut [0u8; 16];
 
-    assert_eq!(10, read_str(&mut cur, &mut out).unwrap());
+    assert_eq!("le message", read_str(&mut cur, &mut out).unwrap());
     assert_eq!(11, cur.position());
+}
 
-    assert!(buf[1..11] == out[0..10]);
+#[test]
+fn from_str_strfix_extra_data() {
+    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    let mut out: &mut [u8] = &mut [0u8; 16];
+
+    assert_eq!("le message", read_str(&mut cur, &mut out).unwrap());
+    assert_eq!(11, cur.position());
+}
+
+#[test]
+fn from_str_strfix_exact_buffer() {
+    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let mut cur = Cursor::new(buf);
+
+    let mut out: &mut [u8] = &mut [0u8; 10];
+
+    assert_eq!("le message", read_str(&mut cur, &mut out).unwrap());
+    assert_eq!(11, cur.position());
+}
+
+#[test]
+fn from_str_strfix_insufficient_bytes() {
+    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67];
+    let mut cur = Cursor::new(buf);
+
+    let mut out: &mut [u8] = &mut [0u8; 16];
+
+    assert_eq!(Error::InvalidDataCopy(9, ReadError::UnexpectedEOF),
+        read_str(&mut cur, &mut out).err().unwrap());
+    assert_eq!(10, cur.position());
+}
+
+#[test]
+fn from_str_strfix_invalid_utf8() {
+    // Invalid 2 Octet Sequence.
+    let buf: &[u8] = &[0xa2, 0xc3, 0x28];
+    let mut cur = Cursor::new(buf);
+
+    let mut out: &mut [u8] = &mut [0u8; 16];
+
+    assert_eq!(Error::InvalidUtf8(2, Utf8Error::InvalidByte(0x0)),
+        read_str(&mut cur, &mut out).err().unwrap());
+    assert_eq!(3, cur.position());
 }
 
 #[test]
