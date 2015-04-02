@@ -8,7 +8,9 @@
 
 extern crate byteorder;
 
-pub mod decode;
+pub const MSGPACK_VERSION : u32 = 5;
+
+pub mod core;
 
 /// Temporary. Move to error.rs module.
-pub use decode::{Error, ReadError, MarkerError};
+pub use core::{Error, ReadError, MarkerError};
