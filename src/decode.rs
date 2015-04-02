@@ -262,16 +262,34 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8>
     }
 }
 
+#[unstable(reason = "docs")]
 pub fn read_u16<R>(rd: &mut R) -> Result<u16>
     where R: Read
 {
-    unimplemented!()
+    match try!(read_marker(rd)) {
+        Marker::U16 => Ok(try!(read_data_u16(rd))),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
 }
 
+#[unstable(reason = "docs")]
 pub fn read_u32<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
-    unimplemented!()
+    match try!(read_marker(rd)) {
+        Marker::U32 => Ok(try!(read_data_u32(rd))),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
+}
+
+#[unstable(reason = "docs")]
+pub fn read_u64<R>(rd: &mut R) -> Result<u64>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::U64 => Ok(try!(read_data_u64(rd))),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+    }
 }
 
 macro_rules! make_read_data_fn {
@@ -1129,6 +1147,24 @@ fn from_u8_unexpected_eof() {
 
     assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_u8(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_u16_min() {
+    let buf: &[u8] = &[0xcd, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(0, read_u16(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_u32_max() {
+    let buf: &[u8] = &[0xce, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(4294967295, read_u32(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
 }
 
 #[test]
