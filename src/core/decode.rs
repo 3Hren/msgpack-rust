@@ -373,6 +373,20 @@ pub fn read_bin_len<R>(rd: &mut R) -> Result<u32>
     }
 }
 
+#[unstable(reason = "docs; not sure about naming")]
+pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8]> {
+    let mut cur = io::Cursor::new(rd);
+    let len = try!(read_bin_len(&mut cur)) as usize;
+
+    let pos = cur.position() as usize;
+
+    if rd.len() < pos + len {
+        Err(Error::InvalidDataRead(ReadError::UnexpectedEOF))
+    } else {
+        Ok(&rd[pos .. pos + len])
+    }
+}
+
 #[unstable = "docs"]
 pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8)>
     where R: Read

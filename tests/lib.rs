@@ -1143,6 +1143,21 @@ fn from_ext32_read_ext_meta() {
 }
 
 #[test]
+fn from_bin8_read_zero_copy() {
+    let buf = [0xc4, 0x05, 0x00, 0x00, 0x2a, 0x00, 0x00];
+
+    assert_eq!([0x00, 0x00, 0x2a, 0x00, 0x00], read_bin_borrow(&mut &buf[..]).unwrap());
+}
+
+#[test]
+fn from_bin8_read_zero_copy_insufficient_bytes() {
+    let buf = [0xc4, 0x05, 0x00, 0x00, 0x2a, 0x00];
+
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_bin_borrow(&mut &buf[..]));
+}
+
+#[test]
 fn from_i32_decode_value() {
     let buf: &[u8] = &[0xd2, 0xff, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
@@ -1169,7 +1184,6 @@ fn from_str8_decode_value() {
     assert_eq!(34, cur.position());
 }
 
-// TODO: Need low::Error & Error with heap allocated objects.
 //#[test]
 //fn from_str8_with_unnecessary_bytes_decode_value() {
 //    let buf: &[u8] = &[
@@ -1182,8 +1196,7 @@ fn from_str8_decode_value() {
 //    ];
 //    let mut cur = Cursor::new(buf);
 
-//    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-//        read_value(&mut cur));
+//    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_value(&mut cur));
 //    assert_eq!(33, cur.position());
 //}
 
