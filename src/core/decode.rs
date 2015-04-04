@@ -68,6 +68,7 @@ pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
 }
 
 /// Tries to read strictly i8 value from the reader.
+#[stable(since = "0.1.0")]
 pub fn read_i8<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
@@ -78,32 +79,35 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8>
 }
 
 /// Tries to read strictly i16 value from the reader.
+#[stable(since = "0.1.0")]
 pub fn read_i16<R>(rd: &mut R) -> Result<i16>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::I16 => Ok(try!(read_data_i16(rd))),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
 /// Tries to read strictly i32 value from the reader.
+#[stable(since = "0.1.0")]
 pub fn read_i32<R>(rd: &mut R) -> Result<i32>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::I32 => Ok(try!(read_data_i32(rd))),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
 /// Tries to read strictly i64 value from the reader.
+#[stable(since = "0.1.0")]
 pub fn read_i64<R>(rd: &mut R) -> Result<i64>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::I64 => Ok(try!(read_data_i64(rd))),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
@@ -118,7 +122,8 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8>
     }
 }
 
-#[unstable(reason = "docs")]
+/// Tries to read exactly 3 bytes from the reader and decode them as u16.
+#[unstable(reason = "more docs")]
 pub fn read_u16<R>(rd: &mut R) -> Result<u16>
     where R: Read
 {
@@ -128,7 +133,8 @@ pub fn read_u16<R>(rd: &mut R) -> Result<u16>
     }
 }
 
-#[unstable(reason = "docs")]
+/// Tries to read exactly 5 bytes from the reader and decode them as u32.
+#[unstable(reason = "more docs")]
 pub fn read_u32<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
@@ -138,7 +144,8 @@ pub fn read_u32<R>(rd: &mut R) -> Result<u32>
     }
 }
 
-#[unstable(reason = "docs")]
+/// Tries to read exactly 5 bytes from the reader and decode them as u64
+#[unstable(reason = "more docs")]
 pub fn read_u64<R>(rd: &mut R) -> Result<u64>
     where R: Read
 {
@@ -244,7 +251,7 @@ pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
         Marker::I32 => Ok(Integer::I64(try!(read_data_i32(rd)) as i64)),
         Marker::I64 => Ok(Integer::I64(try!(read_data_i64(rd)))),
         Marker::U64 => Ok(Integer::U64(try!(read_data_u64(rd)))),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
     }
 }
 
