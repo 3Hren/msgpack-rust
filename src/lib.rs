@@ -3,7 +3,6 @@
 #![unstable = "this library is still in rapid development"]
 
 #![feature(core)]
-#![feature(io)]
 #![cfg_attr(test, feature(test))]
 
 extern crate byteorder;

@@ -8,6 +8,16 @@ use std::str::Utf8Error;
 use msgpack::core::*;
 use msgpack::core::decode::*;
 
+// Hack, because of PartialEq trait removal from io::Error.
+macro_rules! assert_err {
+    ($expected:pat, $actual:expr) => ({
+        match $actual {
+            Err($expected) => {}
+            c @ _ => panic!("assertion failed: `(expected == actual)` (actual: `{:?}`)", c)
+        }
+    })
+}
+
 #[test]
 fn from_bin8_min_read_len() {
     let buf: &[u8] = &[0xc4, 0x00];
@@ -31,8 +41,8 @@ fn from_bin8_eof_read_len() {
     let buf: &[u8] = &[0xc4];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        decode::read_bin_len(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        decode::read_bin_len(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -41,8 +51,8 @@ fn from_null_read_len() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
-        decode::read_bin_len(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch),
+        decode::read_bin_len(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -78,7 +88,7 @@ fn from_nil_invalid_marker() {
     let buf: &[u8] = &[0xc1];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)), read_nil(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)), read_nil(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -87,8 +97,7 @@ fn from_nil_invalid_marker_read() {
     let buf: &[u8] = &[];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarkerRead(ReadError::UnexpectedEOF),
-        read_nil(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarkerRead(ReadError::UnexpectedEOF), read_nil(&mut cur));
     assert_eq!(0, cur.position());
 }
 
@@ -157,8 +166,8 @@ fn from_unsigned_u8_incomplete_read_u64_loosely() {
     let buf: &[u8] = &[0xcc];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        read_u64_loosely(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_u64_loosely(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -179,8 +188,8 @@ fn from_unsigned_u16_incomplete_read_u64_loosely() {
     let buf: &[u8] = &[0xcd];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        read_u64_loosely(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_u64_loosely(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -201,8 +210,8 @@ fn from_unsigned_u32_incomplete_read_u64_loosely() {
     let buf: &[u8] = &[0xce];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        read_u64_loosely(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_u64_loosely(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -226,8 +235,8 @@ fn from_unsigned_u64_incomplete_read_u64_loosely() {
     let buf: &[u8] = &[0xcf];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        read_u64_loosely(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_u64_loosely(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -236,8 +245,8 @@ fn from_unsigned_invalid_marker_read_u64_loosely() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
-        read_u64_loosely(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch),
+        read_u64_loosely(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -246,8 +255,8 @@ fn from_unsigned_invalid_unknown_marker_read_u64_loosely() {
     let buf: &[u8] = &[0xc1];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)),
-        read_u64_loosely(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)),
+        read_u64_loosely(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -301,8 +310,8 @@ fn from_str8_read_str_len_eof() {
     let buf: &[u8] = &[0xd9];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        read_str_len(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_str_len(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -338,8 +347,8 @@ fn from_str16_read_str_len_eof() {
     let buf: &[u8] = &[0xda, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        read_str_len(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_str_len(&mut cur));
     assert_eq!(2, cur.position());
 }
 
@@ -366,8 +375,8 @@ fn from_str32_read_str_len_eof() {
     let buf: &[u8] = &[0xdb, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        read_str_len(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        read_str_len(&mut cur));
     assert_eq!(4, cur.position());
 }
 
@@ -376,8 +385,8 @@ fn from_null_read_str_len() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
-        read_str_len(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch),
+        read_str_len(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -421,8 +430,8 @@ fn from_str_strfix_insufficient_bytes() {
 
     let mut out: &mut [u8] = &mut [0u8; 16];
 
-    assert_eq!(Error::InvalidDataCopy(9, ReadError::UnexpectedEOF),
-        read_str(&mut cur, &mut out).err().unwrap());
+    assert_err!(Error::InvalidDataCopy(9, ReadError::UnexpectedEOF),
+        read_str(&mut cur, &mut out));
     assert_eq!(10, cur.position());
 }
 
@@ -434,8 +443,8 @@ fn from_str_strfix_invalid_utf8() {
 
     let mut out: &mut [u8] = &mut [0u8; 16];
 
-    assert_eq!(Error::InvalidUtf8(2, Utf8Error::InvalidByte(0x0)),
-        read_str(&mut cur, &mut out).err().unwrap());
+    assert_err!(Error::InvalidUtf8(2, Utf8Error::InvalidByte(0x0)),
+        read_str(&mut cur, &mut out));
     assert_eq!(3, cur.position());
 }
 
@@ -446,7 +455,7 @@ fn from_str_strfix_buffer_too_small() {
 
     let mut out: &mut [u8] = &mut [0u8; 9];
 
-    assert_eq!(Error::BufferSizeTooSmall(10), read_str(&mut cur, &mut out).err().unwrap());
+    assert_err!(Error::BufferSizeTooSmall(10), read_str(&mut cur, &mut out));
     assert_eq!(1, cur.position());
 }
 
@@ -483,7 +492,7 @@ fn from_nfix_type_mismatch() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_nfix(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_nfix(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -510,7 +519,7 @@ fn from_i8_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i8(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i8(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -519,7 +528,7 @@ fn from_i8_unexpected_eof() {
     let buf: &[u8] = &[0xd0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i8(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i8(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -546,7 +555,7 @@ fn from_u8_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_u8(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_u8(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -555,7 +564,7 @@ fn from_u8_unexpected_eof() {
     let buf: &[u8] = &[0xcc];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_u8(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_u8(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -600,7 +609,7 @@ fn from_i16_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i16(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i16(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -609,7 +618,7 @@ fn from_i16_unexpected_eof() {
     let buf: &[u8] = &[0xd1, 0x7f];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i16(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i16(&mut cur));
     assert_eq!(2, cur.position());
 }
 
@@ -636,7 +645,7 @@ fn from_i32_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i32(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i32(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -645,7 +654,7 @@ fn from_i32_unexpected_eof() {
     let buf: &[u8] = &[0xd2, 0x7f, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i32(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i32(&mut cur));
     assert_eq!(4, cur.position());
 }
 
@@ -672,7 +681,7 @@ fn from_i64_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i64(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_i64(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -681,7 +690,7 @@ fn from_i64_unexpected_eof() {
     let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i64(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_i64(&mut cur));
     assert_eq!(8, cur.position());
 }
 
@@ -819,7 +828,7 @@ fn from_array16_unexpected_eof_read_size() {
     let buf: &[u8] = &[0xdc, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_array_size(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_array_size(&mut cur));
     assert_eq!(2, cur.position());
 }
 
@@ -846,7 +855,7 @@ fn from_array32_unexpected_eof_read_size() {
     let buf: &[u8] = &[0xdd, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_array_size(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF), read_array_size(&mut cur));
     assert_eq!(4, cur.position());
 }
 
@@ -855,7 +864,7 @@ fn from_null_read_array_size() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_array_size(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_array_size(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -909,7 +918,7 @@ fn from_null_read_map_size() {
     let buf: &[u8] = &[0xc0, 0x00, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_map_size(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_map_size(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -958,7 +967,7 @@ fn from_null_read_f32() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_f32(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_f32(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -1007,7 +1016,7 @@ fn from_null_read_f64() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch), read_f64(&mut cur).err().unwrap());
+    assert_err!(Error::InvalidMarker(MarkerError::TypeMismatch), read_f64(&mut cur));
     assert_eq!(1, cur.position());
 }
 
@@ -1173,8 +1182,8 @@ fn from_str8_decode_value() {
 //    ];
 //    let mut cur = Cursor::new(buf);
 
-//    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-//        read_value(&mut cur).err().unwrap());
+//    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+//        read_value(&mut cur));
 //    assert_eq!(33, cur.position());
 //}
 

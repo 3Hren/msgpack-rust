@@ -1,4 +1,4 @@
-use std::error;
+use std::convert::From;
 use std::io;
 use std::io::Read;
 use std::num::FromPrimitive;
@@ -18,7 +18,7 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker>
                 None         => Err(Error::InvalidMarker(MarkerError::Unexpected(val))),
             }
         }
-        Err(err) => Err(Error::InvalidMarkerRead(error::FromError::from_error(err))),
+        Err(err) => Err(Error::InvalidMarkerRead(From::from(err))),
     }
 }
 
@@ -159,7 +159,7 @@ macro_rules! make_read_data_fn {
         {
             match make_read_data_fn!(deduce, rd, $decoder, $d) {
                 Ok(data) => Ok(data),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+                Err(err) => Err(Error::InvalidDataRead(From::from(err))),
             }
         }
     };
@@ -285,7 +285,7 @@ pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str>
             }
         }
         Ok(size) => Err(Error::InvalidDataCopy(size as u32, ReadError::UnexpectedEOF)),
-        Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+        Err(err) => Err(Error::InvalidDataRead(From::from(err))),
     }
 }
 
@@ -310,13 +310,13 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
         Marker::Array16 => {
             match rd.read_u16::<byteorder::BigEndian>() {
                 Ok(size) => Ok(size as u32),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+                Err(err) => Err(Error::InvalidDataRead(From::from(err))),
             }
         }
         Marker::Array32 => {
             match rd.read_u32::<byteorder::BigEndian>() {
                 Ok(size) => Ok(size),
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+                Err(err) => Err(Error::InvalidDataRead(From::from(err))),
             }
         }
         _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
@@ -408,7 +408,7 @@ pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4])>
                     let out : [u8; 4] = unsafe { mem::transmute(data) };
                     Ok((id, out))
                 }
-                Err(err) => Err(Error::InvalidDataRead(error::FromError::from_error(err))),
+                Err(err) => Err(Error::InvalidDataRead(From::from(err))),
             }
         }
         _ => unimplemented!()

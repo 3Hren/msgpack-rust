@@ -1,4 +1,4 @@
-use std::error;
+use std::convert;
 use std::io;
 use std::result;
 use std::num::FromPrimitive;
@@ -102,27 +102,28 @@ impl FromPrimitive for Marker {
 ///
 /// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
 /// case: an unexpected EOF.
-#[derive(PartialEq, Debug)]
+#[unstable(reason = "remove Debug trait")]
+#[derive(Debug)]
 pub enum ReadError {
     UnexpectedEOF,
     IO(io::Error),
 }
 
-impl error::FromError<io::Error> for ReadError {
-    fn from_error(err: io::Error) -> ReadError { ReadError::IO(err) }
+impl convert::From<io::Error> for ReadError {
+    fn from(err: io::Error) -> ReadError { ReadError::IO(err) }
 }
 
-impl error::FromError<ReadError> for io::Error {
-    fn from_error(err: ReadError) -> io::Error {
+impl convert::From<ReadError> for io::Error {
+    fn from(err: ReadError) -> io::Error {
         match err {
             ReadError::IO(err) => err,
-            ReadError::UnexpectedEOF => io::Error::new(io::ErrorKind::Other, "unexpected EOF", None)
+            ReadError::UnexpectedEOF => io::Error::new(io::ErrorKind::Other, "unexpected EOF")
         }
     }
 }
 
-impl error::FromError<byteorder::Error> for ReadError {
-    fn from_error(err: byteorder::Error) -> ReadError {
+impl convert::From<byteorder::Error> for ReadError {
+    fn from(err: byteorder::Error) -> ReadError {
         match err {
             byteorder::Error::UnexpectedEOF => ReadError::UnexpectedEOF,
             byteorder::Error::Io(err) => ReadError::IO(err),
@@ -130,14 +131,15 @@ impl error::FromError<byteorder::Error> for ReadError {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[unstable(reason = "remove Debug trait")]
+#[derive(Debug)]
 pub enum MarkerError {
     TypeMismatch, // TODO: Consider saving actual marker.
     Unexpected(u8),
 }
 
-#[derive(PartialEq, Debug)]
-#[unstable(reason = "may be set &[u8] in some errors, utf8 for example")]
+#[unstable(reason = "may be set &[u8] in some errors, utf8 for example; remove Debug trait")]
+#[derive(Debug)]
 pub enum Error {
     InvalidMarker(MarkerError),     // Marker type error.
     InvalidMarkerRead(ReadError),   // IO error while reading marker.
