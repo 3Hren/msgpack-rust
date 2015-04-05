@@ -280,7 +280,7 @@ pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str>
 }
 
 /// Tries to read a string data from the reader and make a borrowed slice from it.
-#[unstable(reason = "it is better to return &str")]
+#[unstable(reason = "it is better to return &str; may panic on len mismatch")]
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8]> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
