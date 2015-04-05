@@ -151,4 +151,21 @@ pub enum Error {
 
 pub type Result<T> = result::Result<T, Error>;
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Integer {
+    U64(u64),
+    I64(i64),
+}
+
+pub enum Float {
+    F32(f32),
+    F64(f64),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Value {
+    Integer(Integer),
+    String(String),
+}
+
 pub mod decode;

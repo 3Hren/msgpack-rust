@@ -6,7 +6,7 @@ use std::str::from_utf8;
 
 use byteorder::{self, ReadBytesExt};
 
-use super::{Marker, Error, MarkerError, ReadError, Result};
+use super::{Marker, Error, MarkerError, ReadError, Result, Integer, Value};
 
 fn read_marker<R>(rd: &mut R) -> Result<Marker>
     where R: Read
@@ -185,23 +185,6 @@ make_read_data_fn!(i32, read_data_i32, read_i32);
 make_read_data_fn!(i64, read_data_i64, read_i64);
 make_read_data_fn!(f32, read_data_f32, read_f32);
 make_read_data_fn!(f64, read_data_f64, read_f64);
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Integer {
-    U64(u64),
-    I64(i64),
-}
-
-pub enum Float {
-    F32(f32),
-    F64(f64),
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Value {
-    Integer(Integer),
-    String(String),
-}
 
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
 /// them as a big-endian u64.
@@ -508,6 +491,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
         Marker::Str8 => {
             let len = try!(read_data_u8(rd)) as u64;
             let mut buf = Vec::with_capacity(len as usize);
+            // TODO: Use core function, passing buf as slice.
             match io::copy(&mut rd.take(len), &mut buf) {
                 Ok(size) if size == len => {
                     Ok(Value::String(String::from_utf8(buf).unwrap())) // TODO: Do not unwrap, use Error.
