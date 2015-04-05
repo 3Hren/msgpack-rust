@@ -256,8 +256,29 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
 
 /// Tries to read a string data from the reader and copy it to the buffer provided.
 ///
-/// According to the spec, the string's data must to be encoded using UTF-8.
-#[unstable(reason = "docs; example; signature; less `as`")]
+/// On success returns a borrowed string type, allowing to view the copyed bytes as properly utf-8
+/// string.
+/// According to the spec, the string's data must to be encoded using utf-8.
+///
+/// # Failure
+///
+/// Returns `Err` in the following cases:
+///
+///  - if any IO error (including unexpected EOF) occurs, while reading an `rd`.
+///  - if the `out` buffer size is too small to keep all copyed data.
+///  - if the data is not utf-8, with a description as to why the provided data is not utf-8 and
+///    with a size of bytes actually copyed to be able to get them from `out`.
+///
+/// # Examples
+/// ```
+/// use msgpack::core::decode::read_str;
+///
+/// let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+/// let mut out = [0u8; 16];
+///
+/// assert_eq!("le message", read_str(&mut &buf[..], &mut &mut out[..]).unwrap());
+/// ```
+#[unstable(reason = "less `as`")]
 pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str>
     where R: Read
 {
