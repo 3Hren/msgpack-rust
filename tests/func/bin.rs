@@ -26,7 +26,7 @@ fn from_bin8_eof_read_len() {
     let buf: &[u8] = &[0xc4];
     let mut cur = Cursor::new(buf);
 
-    assert_err!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        decode::read_bin_len(&mut cur));
+    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
+        decode::read_bin_len(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }

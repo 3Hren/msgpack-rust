@@ -6,7 +6,7 @@ use std::str::from_utf8;
 
 use byteorder::{self, ReadBytesExt};
 
-use super::{Marker, Error, MarkerError, ReadError, Result, Integer, Value};
+use super::{Marker, Error, MarkerError, ReadError, Result, Integer};
 
 fn read_marker<R>(rd: &mut R) -> Result<Marker>
     where R: Read
@@ -504,6 +504,37 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta>
     Ok(meta)
 }
 
+/// TODO: Markdown.
+/// Contains: owned value decoding, owned error; owned result.
+pub mod value {
+
+use std::convert;
+use std::io;
+use std::io::Read;
+use std::result;
+use std::str::Utf8Error;
+
+use super::{read_marker, read_data_u8, read_data_i32};
+use super::super::{Marker, Value, Integer, ReadError};
+use super::super::super::core;
+
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    Core(core::Error),
+    InvalidDataCopy(Vec<u8>, ReadError),
+    /// The decoded data is not valid UTF-8, provides the original data and the corresponding error.
+    InvalidUtf8(Vec<u8>, Utf8Error),
+}
+
+impl convert::From<core::Error> for Error {
+    fn from(err: core::Error) -> Error {
+        Error::Core(err)
+    }
+}
+
+pub type Result<T> = result::Result<T, Error>;
+
+#[unstable(reason = "docs; examples; incomplete")]
 pub fn read_value<R>(rd: &mut R) -> Result<Value>
     where R: Read
 {
@@ -517,13 +548,15 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
                 Ok(size) if size == len => {
                     Ok(Value::String(String::from_utf8(buf).unwrap())) // TODO: Do not unwrap, use Error.
                 }
-                Ok(..)  => unimplemented!(), // TODO: Return Error with read buffer anyway?
+                Ok(..)  => Err(Error::InvalidDataCopy(buf, ReadError::UnexpectedEOF)),
                 Err(..) => unimplemented!(),
             }
         }
         _ => unimplemented!()
     }
 }
+
+} // mod value
 
 #[cfg(test)]
 mod testing {

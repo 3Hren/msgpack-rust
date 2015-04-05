@@ -109,6 +109,23 @@ pub enum ReadError {
     IO(io::Error),
 }
 
+// TODO: This is a hack, because io::Error has PartialEq sometimes.
+impl PartialEq for ReadError {
+    fn eq(&self, other: &ReadError) -> bool {
+        match (self, other) {
+            (&ReadError::UnexpectedEOF, &ReadError::UnexpectedEOF) => true,
+            (&ReadError::IO(ref lhs),   &ReadError::IO(ref rhs)) => {
+                lhs.kind() == rhs.kind()
+            }
+            _ => false
+        }
+    }
+
+    fn ne(&self, other: &ReadError) -> bool {
+        return !self.eq(other);
+    }
+}
+
 impl convert::From<io::Error> for ReadError {
     fn from(err: io::Error) -> ReadError { ReadError::IO(err) }
 }
@@ -132,18 +149,19 @@ impl convert::From<byteorder::Error> for ReadError {
 }
 
 #[unstable(reason = "remove Debug trait")]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MarkerError {
     TypeMismatch, // TODO: Consider saving actual marker.
     Unexpected(u8),
 }
 
 #[unstable(reason = "may be set &[u8] in some errors, utf8 for example; remove Debug trait")]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     InvalidMarker(MarkerError),     // Marker type error.
     InvalidMarkerRead(ReadError),   // IO error while reading marker.
     InvalidDataRead(ReadError),     // IO error while reading data.
+    // TODO: These errors only used in functions with data copy (str, bin, ext). Maybe we need another error enum for them?
     BufferSizeTooSmall(u32),        // Too small buffer provided to copy all the data.
     InvalidDataCopy(u32, ReadError),    // The string, binary or ext has been read partially.
     InvalidUtf8(u32, Utf8Error),    // Invalid UTF8 sequence.
