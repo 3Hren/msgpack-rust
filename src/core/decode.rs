@@ -293,7 +293,8 @@ pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> result::Result<&'r 
     read_str_data(rd, len, &mut buf[0..ulen])
 }
 
-fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> result::Result<&'r str, DecodeStringError<'r>>
+fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8])
+    -> result::Result<&'r str, DecodeStringError<'r>>
     where R: Read
 {
     debug_assert_eq!(len as usize, buf.len());
@@ -305,6 +306,7 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> result::Resul
     // Trying to copy exact `len` bytes.
     match io::copy(&mut rd.take(len as u64), &mut cur) {
         Ok(size) if size == len as u64 => {
+            // Release buffer owning from cursor.
             let buf = cur.into_inner();
 
             match from_utf8(buf) {
