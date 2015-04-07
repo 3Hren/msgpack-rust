@@ -536,8 +536,8 @@ use std::io::Read;
 use std::result;
 use std::str::Utf8Error;
 
-use super::{read_marker, read_data_u8, read_data_i32};
-use super::super::{Marker, Value, Integer, ReadError};
+use super::{read_marker, read_data_u8, read_data_i32, read_str_data};
+use super::super::{Marker, Value, Integer, ReadError, DecodeStringError};
 use super::super::super::core;
 
 #[derive(Debug, PartialEq)]
@@ -554,6 +554,16 @@ impl convert::From<core::Error> for Error {
     }
 }
 
+impl<'a> convert::From<DecodeStringError<'a>> for Error {
+    fn from(err: DecodeStringError) -> Error {
+        match err {
+            DecodeStringError::Core(err) => Error::Core(err),
+            DecodeStringError::InvalidDataCopy(buf, err) => Error::InvalidDataCopy(buf.to_vec(), err),
+            DecodeStringError::InvalidUtf8(buf, err) => Error::InvalidUtf8(buf.to_vec(), err),
+        }
+    }
+}
+
 pub type Result<T> = result::Result<T, Error>;
 
 #[unstable(reason = "docs; examples; incomplete")]
@@ -563,26 +573,18 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
     match try!(read_marker(rd)) {
         Marker::Null => Ok(Value::Null),
         Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
+        // TODO: Other integers.
+        // TODO: Floats.
         Marker::Str8 => {
             let len = try!(read_data_u8(rd)) as u64;
 
             let mut buf = Vec::with_capacity(len as usize);
+            buf.resize(len as usize, 0);
 
-            // TODO: Use core function, passing buf as slice.
-            match io::copy(&mut rd.take(len), &mut buf) {
-                Ok(size) if size == len => {
-                    match String::from_utf8(buf) {
-                        Ok(val) => Ok(Value::String(val)),
-                        Err(err) => {
-                            let utf8_error = err.utf8_error();
-                            Err(Error::InvalidUtf8(err.into_bytes(), utf8_error))
-                        }
-                    }
-                }
-                Ok(..)  => Err(Error::InvalidDataCopy(buf, ReadError::UnexpectedEOF)),
-                Err(..) => unimplemented!(),
-            }
+            Ok(Value::String(try!(read_str_data(rd, len as u32, &mut buf[..])).to_string()))
         }
+        // TODO: Other strings.
+        // TODO: Vec/Map/Bin/Ext.
         _ => unimplemented!()
     }
 }
