@@ -18,3 +18,6 @@ pub use core::decode::{
 
 /// Temporary. Move to error.rs module.
 pub use core::{Error, ReadError, MarkerError};
+
+#[cfg(test)]
+mod bench;
