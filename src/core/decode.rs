@@ -546,7 +546,13 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
             // TODO: Use core function, passing buf as slice.
             match io::copy(&mut rd.take(len), &mut buf) {
                 Ok(size) if size == len => {
-                    Ok(Value::String(String::from_utf8(buf).unwrap())) // TODO: Do not unwrap, use Error.
+                    match String::from_utf8(buf) {
+                        Ok(val) => Ok(Value::String(val)),
+                        Err(err) => {
+                            let utf8_error = err.utf8_error();
+                            Err(Error::InvalidUtf8(err.into_bytes(), utf8_error))
+                        }
+                    }
                 }
                 Ok(..)  => Err(Error::InvalidDataCopy(buf, ReadError::UnexpectedEOF)),
                 Err(..) => unimplemented!(),

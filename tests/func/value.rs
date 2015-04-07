@@ -1,4 +1,5 @@
 use std::io::Cursor;
+use std::str::Utf8Error;
 
 use msgpack::core::{Value, Integer, ReadError};
 use msgpack::core::decode::value::*;
@@ -45,6 +46,17 @@ fn from_str8_with_unnecessary_bytes_decode_value() {
     assert_eq!(Error::InvalidDataCopy(buf[2..].to_vec(), ReadError::UnexpectedEOF),
         read_value(&mut cur).err().unwrap());
     assert_eq!(33, cur.position());
+}
+
+#[test]
+fn from_str8_invalid_utf8() {
+    // Invalid 2 Octet Sequence.
+    let buf: &[u8] = &[0xd9, 0x02, 0xc3, 0x28];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Error::InvalidUtf8(buf[2..].to_vec(), Utf8Error::InvalidByte(0x0)),
+        read_value(&mut cur).err().unwrap());
+    assert_eq!(4, cur.position());
 }
 
 // TODO: decode_value_ref(&'a [u8]) -> &'a ValueRef<'a>
