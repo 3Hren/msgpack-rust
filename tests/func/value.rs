@@ -5,6 +5,15 @@ use msgpack::core::{Value, Integer, ReadError};
 use msgpack::core::decode::value::*;
 
 #[test]
+fn from_null_decode_value() {
+    let buf: &[u8] = &[0xc0, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Value::Null, read_value(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
 fn from_i32_decode_value() {
     let buf: &[u8] = &[0xd2, 0xff, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);

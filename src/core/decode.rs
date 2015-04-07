@@ -552,6 +552,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
     where R: Read
 {
     match try!(read_marker(rd)) {
+        Marker::Null => Ok(Value::Null),
         Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
         Marker::Str8 => {
             let len = try!(read_data_u8(rd)) as u64;

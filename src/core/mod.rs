@@ -182,6 +182,7 @@ pub enum Float {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
+    Null,
     Integer(Integer),
     String(String),
 }
