@@ -587,14 +587,13 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
         Marker::FixedArray(len) => {
             let mut vec = Vec::with_capacity(len as usize);
 
-            for i in 0..len {
-                println!("{}", i);
+            for _ in 0..len {
                 vec.push(try!(read_value(rd)));
             }
 
             Ok(Value::Array(vec))
         }
-        // TODO: Vec/Map/Bin/Ext.
+        // TODO: Map/Bin/Ext.
         _ => unimplemented!()
     }
 }
