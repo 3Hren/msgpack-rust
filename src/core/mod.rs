@@ -167,6 +167,20 @@ pub enum Error {
     InvalidUtf8(u32, Utf8Error),    // Invalid UTF8 sequence.
 }
 
+#[unstable(reason = "Core? Shit name!")]
+#[derive(Debug, PartialEq)]
+pub enum DecodeStringError<'a> {
+    Core(Error),
+    InvalidDataCopy(&'a [u8], ReadError),
+    InvalidUtf8(&'a [u8], Utf8Error),
+}
+
+impl<'a> convert::From<Error> for DecodeStringError<'a> {
+    fn from(err: Error) -> DecodeStringError<'a> {
+        DecodeStringError::Core(err)
+    }
+}
+
 pub type Result<T> = result::Result<T, Error>;
 
 #[derive(Clone, Debug, PartialEq)]

@@ -2,11 +2,12 @@ use std::convert::From;
 use std::io;
 use std::io::{Cursor, Read};
 use std::num::FromPrimitive;
+use std::result;
 use std::str::from_utf8;
 
 use byteorder::{self, ReadBytesExt};
 
-use super::{Marker, Error, MarkerError, ReadError, Result, Integer};
+use super::{Marker, Error, MarkerError, ReadError, Result, Integer, DecodeStringError};
 
 fn read_marker<R>(rd: &mut R) -> Result<Marker>
     where R: Read
@@ -279,37 +280,43 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
 /// assert_eq!("le message", read_str(&mut &buf[..], &mut &mut out[..]).unwrap());
 /// ```
 #[unstable(reason = "less `as`")]
-pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str>
+pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> result::Result<&'r str, DecodeStringError<'r>>
     where R: Read
 {
     let len = try!(read_str_len(rd));
     let ulen = len as usize;
 
     if buf.len() < ulen {
-        return Err(Error::BufferSizeTooSmall(len))
+        return Err(DecodeStringError::Core(Error::BufferSizeTooSmall(len)))
     }
 
     read_str_data(rd, len, &mut buf[0..ulen])
 }
 
-fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r str>
+fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> result::Result<&'r str, DecodeStringError<'r>>
     where R: Read
 {
     debug_assert_eq!(len as usize, buf.len());
 
-    // We need cursor here, because in common case we cannot guarantee, that copying will be
+    // We need cursor here, because in the common case we cannot guarantee, that copying will be
     // performed in a single step.
     let mut cur = Cursor::new(buf);
 
+    // Trying to copy exact `len` bytes.
     match io::copy(&mut rd.take(len as u64), &mut cur) {
         Ok(size) if size == len as u64 => {
-            match from_utf8(cur.into_inner()) {
+            let buf = cur.into_inner();
+
+            match from_utf8(buf) {
                 Ok(decoded) => Ok(decoded),
-                Err(err)    => Err(Error::InvalidUtf8(len, err)),
+                Err(err)    => Err(DecodeStringError::InvalidUtf8(buf, err)),
             }
         }
-        Ok(size) => Err(Error::InvalidDataCopy(size as u32, ReadError::UnexpectedEOF)),
-        Err(err) => Err(Error::InvalidDataRead(From::from(err))),
+        Ok(size) => {
+            let buf = cur.into_inner();
+            Err(DecodeStringError::InvalidDataCopy(&buf[..size as usize], ReadError::UnexpectedEOF))
+        }
+        Err(err) => Err(DecodeStringError::Core(Error::InvalidDataRead(From::from(err)))),
     }
 }
 

@@ -390,7 +390,7 @@ fn from_str_strfix_insufficient_bytes() {
 
     let mut out: &mut [u8] = &mut [0u8; 16];
 
-    assert_eq!(Error::InvalidDataCopy(9, ReadError::UnexpectedEOF),
+    assert_eq!(DecodeStringError::InvalidDataCopy(&[0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67], ReadError::UnexpectedEOF),
         read_str(&mut cur, &mut out).err().unwrap());
     assert_eq!(10, cur.position());
 }
@@ -403,7 +403,7 @@ fn from_str_strfix_invalid_utf8() {
 
     let mut out: &mut [u8] = &mut [0u8; 16];
 
-    assert_eq!(Error::InvalidUtf8(2, Utf8Error::InvalidByte(0x0)),
+    assert_eq!(DecodeStringError::InvalidUtf8(&[0xc3, 0x28], Utf8Error::InvalidByte(0x0)),
         read_str(&mut cur, &mut out).err().unwrap());
     assert_eq!(3, cur.position());
 }
@@ -415,7 +415,7 @@ fn from_str_strfix_buffer_too_small() {
 
     let mut out: &mut [u8] = &mut [0u8; 9];
 
-    assert_eq!(Error::BufferSizeTooSmall(10),
+    assert_eq!(DecodeStringError::Core(Error::BufferSizeTooSmall(10)),
         read_str(&mut cur, &mut out).err().unwrap());
     assert_eq!(1, cur.position());
 }
