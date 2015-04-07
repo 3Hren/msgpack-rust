@@ -14,6 +14,15 @@ fn from_null_decode_value() {
 }
 
 #[test]
+fn from_pfix_decode_value() {
+    let buf: &[u8] = &[0x1f];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Value::Integer(Integer::U64(31)), read_value(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
 fn from_i32_decode_value() {
     let buf: &[u8] = &[0xd2, 0xff, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
@@ -66,6 +75,17 @@ fn from_str8_invalid_utf8() {
     assert_eq!(Error::InvalidUtf8(buf[2..].to_vec(), Utf8Error::InvalidByte(0x0)),
         read_value(&mut cur).err().unwrap());
     assert_eq!(4, cur.position());
+}
+
+#[test]
+fn from_array_of_two_integers() {
+    let buf: &[u8] = &[0x92, 0x04, 0x2a];
+    let mut cur = Cursor::new(buf);
+
+    let vec = vec![Value::Integer(Integer::U64(4)), Value::Integer(Integer::U64(42))];
+    assert_eq!(Value::Array(vec),
+        read_value(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
 }
 
 // TODO: decode_value_ref(&'a [u8]) -> &'a ValueRef<'a>

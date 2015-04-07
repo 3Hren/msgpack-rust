@@ -201,6 +201,7 @@ pub enum Value {
     Null,
     Integer(Integer),
     String(String),
+    Array(Vec<Value>),
 }
 
 pub mod decode;

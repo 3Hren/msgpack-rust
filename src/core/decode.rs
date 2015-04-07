@@ -571,6 +571,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
 {
     match try!(read_marker(rd)) {
         Marker::Null => Ok(Value::Null),
+        Marker::PositiveFixnum(v) => Ok(Value::Integer(Integer::U64(v as u64))),
         Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
         // TODO: Other integers.
         // TODO: Floats.
@@ -583,6 +584,16 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
             Ok(Value::String(try!(read_str_data(rd, len as u32, &mut buf[..])).to_string()))
         }
         // TODO: Other strings.
+        Marker::FixedArray(len) => {
+            let mut vec = Vec::with_capacity(len as usize);
+
+            for i in 0..len {
+                println!("{}", i);
+                vec.push(try!(read_value(rd)));
+            }
+
+            Ok(Value::Array(vec))
+        }
         // TODO: Vec/Map/Bin/Ext.
         _ => unimplemented!()
     }
