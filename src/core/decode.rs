@@ -1,6 +1,6 @@
 use std::convert::From;
 use std::io;
-use std::io::Read;
+use std::io::{Cursor, Read};
 use std::num::FromPrimitive;
 use std::str::from_utf8;
 
@@ -283,14 +283,27 @@ pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str>
     where R: Read
 {
     let len = try!(read_str_len(rd));
+    let ulen = len as usize;
 
-    if buf.len() < len as usize {
+    if buf.len() < ulen {
         return Err(Error::BufferSizeTooSmall(len))
     }
 
-    match io::copy(&mut rd.take(len as u64), &mut &mut buf[..len as usize]) {
+    read_str_data(rd, len, &mut buf[0..ulen])
+}
+
+fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r str>
+    where R: Read
+{
+    debug_assert_eq!(len as usize, buf.len());
+
+    // We need cursor here, because in common case we cannot guarantee, that copying will be
+    // performed in a single step.
+    let mut cur = Cursor::new(buf);
+
+    match io::copy(&mut rd.take(len as u64), &mut cur) {
         Ok(size) if size == len as u64 => {
-            match from_utf8(&buf[..len as usize]) {
+            match from_utf8(cur.into_inner()) {
                 Ok(decoded) => Ok(decoded),
                 Err(err)    => Err(Error::InvalidUtf8(len, err)),
             }
@@ -542,7 +555,9 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
         Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
         Marker::Str8 => {
             let len = try!(read_data_u8(rd)) as u64;
+
             let mut buf = Vec::with_capacity(len as usize);
+
             // TODO: Use core function, passing buf as slice.
             match io::copy(&mut rd.take(len), &mut buf) {
                 Ok(size) if size == len => {
