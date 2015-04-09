@@ -6,3 +6,4 @@ authors = ["Evgeny Safronov <division494@gmail.com>"]
 
 [dependencies]
 byteorder = "*"
+rustc-serialize = "0.3"
