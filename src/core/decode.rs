@@ -603,15 +603,27 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
 
 pub mod serialize {
 
+use std::convert::From;
 use std::io::Read;
 use std::result;
 
 use serialize;
 
+use super::super::super::core;
 use super::super::Marker;
 use super::read_marker;
 
-use super::value::Error;
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    /// The actual value type isn't equal with the given one.
+    TypeMismatch,
+}
+
+impl From<core::Error> for Error {
+    fn from(err: core::Error) -> Error {
+        Error::TypeMismatch
+    }
+}
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -634,7 +646,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_nil(&mut self) -> Result<()> {
         match try!(read_marker(&mut self.rd)) {
             Marker::Null => Ok(()),
-            _ => unimplemented!(),
+            _            => Err(Error::TypeMismatch)
         }
     }
 
