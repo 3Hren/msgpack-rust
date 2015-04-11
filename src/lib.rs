@@ -27,9 +27,9 @@ pub use core::{Error, ReadError, MarkerError};
 #[cfg(test)]
 mod bench;
 
-/// Stage 1. Low-level decoding functions.
-/// Stage 2. Value decoding functions.
-/// Stage 3. Deserialization.
-/// Stage 4. Low-level encoding functions.
-/// Stage 5. Value encoding functions.
-/// Stage 6. Serialization.
+// Stage 1. Low-level decoding functions.
+// Stage 2. Value decoding functions.
+// Stage 3. Deserialization.
+// Stage 4. Low-level encoding functions.
+// Stage 5. Value encoding functions.
+// Stage 6. Serialization.
