@@ -608,9 +608,10 @@ use std::result;
 
 use serialize;
 
-pub enum Error {
-    None,
-}
+use super::super::Marker;
+use super::read_marker;
+
+use super::value::Error;
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -630,7 +631,12 @@ impl<R: Read> Decoder<R> {
 impl<R: Read> serialize::Decoder for Decoder<R> {
     type Error = Error;
 
-    fn read_nil(&mut self) -> Result<()> { unimplemented!() }
+    fn read_nil(&mut self) -> Result<()> {
+        match try!(read_marker(&mut self.rd)) {
+            Marker::Null => Ok(()),
+            _ => unimplemented!(),
+        }
+    }
 
     fn read_usize(&mut self) -> Result<usize> { unimplemented!() }
     fn read_u64(&mut self) -> Result<u64> { unimplemented!() }
