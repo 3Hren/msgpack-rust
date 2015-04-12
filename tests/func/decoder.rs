@@ -38,3 +38,21 @@ mod null {
         }
     } // mod fail
 } // mod null
+
+mod bool {
+    use std::io::Cursor;
+
+    use serialize::Decodable;
+
+    use msgpack::Decoder;
+
+    #[test]
+    fn pass() {
+        let buf = [0xc2];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(false, Decodable::decode(&mut decoder).ok().unwrap());
+    }
+}

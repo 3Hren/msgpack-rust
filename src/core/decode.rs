@@ -660,7 +660,14 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_i32(&mut self) -> Result<i32> { unimplemented!() }
     fn read_i16(&mut self) -> Result<i16> { unimplemented!() }
     fn read_i8(&mut self) -> Result<i8> { unimplemented!() }
-    fn read_bool(&mut self) -> Result<bool> { unimplemented!() }
+
+    fn read_bool(&mut self) -> Result<bool> {
+        match try!(read_marker(&mut self.rd)) {
+            Marker::False => Ok(false),
+            _ => unimplemented!(),
+        }
+    }
+
     fn read_f64(&mut self) -> Result<f64> { unimplemented!() }
     fn read_f32(&mut self) -> Result<f32> { unimplemented!() }
     fn read_char(&mut self) -> Result<char> { unimplemented!() }
