@@ -109,7 +109,7 @@ pub enum ReadError {
     IO(io::Error),
 }
 
-// TODO: This is a hack, because io::Error has PartialEq sometimes.
+// TODO: This is a hack, because io::Error has PartialEq once.
 impl PartialEq for ReadError {
     fn eq(&self, other: &ReadError) -> bool {
         match (self, other) {
@@ -163,6 +163,7 @@ pub enum Error {
     InvalidDataRead(ReadError),     // IO error while reading data.
     // TODO: These errors only used in functions with data copy (str, bin, ext). Maybe we need another error enum for them?
     BufferSizeTooSmall(u32),        // Too small buffer provided to copy all the data.
+    // TODO: Remove.
     InvalidDataCopy(u32, ReadError),    // The string, binary or ext has been read partially.
     InvalidUtf8(u32, Utf8Error),    // Invalid UTF8 sequence.
 }
