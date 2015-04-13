@@ -155,23 +155,20 @@ pub enum MarkerError {
     Unexpected(u8),
 }
 
-#[unstable(reason = "may be set &[u8] in some errors, utf8 for example; remove Debug trait")]
+#[unstable(reason = "remove Debug trait; drop MarkerError")]
 #[derive(Debug, PartialEq)]
 pub enum Error {
     InvalidMarker(MarkerError),     // Marker type error.
     InvalidMarkerRead(ReadError),   // IO error while reading marker.
     InvalidDataRead(ReadError),     // IO error while reading data.
-    // TODO: These errors only used in functions with data copy (str, bin, ext). Maybe we need another error enum for them?
-    BufferSizeTooSmall(u32),        // Too small buffer provided to copy all the data.
-    // TODO: Remove.
-    InvalidDataCopy(u32, ReadError),    // The string, binary or ext has been read partially.
-    InvalidUtf8(u32, Utf8Error),    // Invalid UTF8 sequence.
 }
 
 #[unstable(reason = "Core? Shit name!")]
 #[derive(Debug, PartialEq)]
 pub enum DecodeStringError<'a> {
     Core(Error),
+    /// The given buffer is too small to accumulate specified amount of bytes.
+    BufferSizeTooSmall(u32),
     InvalidDataCopy(&'a [u8], ReadError),
     InvalidUtf8(&'a [u8], Utf8Error),
 }

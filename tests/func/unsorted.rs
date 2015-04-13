@@ -415,7 +415,7 @@ fn from_str_strfix_buffer_too_small() {
 
     let mut out: &mut [u8] = &mut [0u8; 9];
 
-    assert_eq!(DecodeStringError::Core(Error::BufferSizeTooSmall(10)),
+    assert_eq!(DecodeStringError::BufferSizeTooSmall(10),
         read_str(&mut cur, &mut out).err().unwrap());
     assert_eq!(1, cur.position());
 }

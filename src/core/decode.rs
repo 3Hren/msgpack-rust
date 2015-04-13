@@ -287,7 +287,7 @@ pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> result::Result<&'r 
     let ulen = len as usize;
 
     if buf.len() < ulen {
-        return Err(DecodeStringError::Core(Error::BufferSizeTooSmall(len)))
+        return Err(DecodeStringError::BufferSizeTooSmall(len))
     }
 
     read_str_data(rd, len, &mut buf[0..ulen])
@@ -557,6 +557,7 @@ impl<'a> convert::From<DecodeStringError<'a>> for Error {
     fn from(err: DecodeStringError) -> Error {
         match err {
             DecodeStringError::Core(err) => Error::Core(err),
+            DecodeStringError::BufferSizeTooSmall(..) => unimplemented!(),
             DecodeStringError::InvalidDataCopy(buf, err) => Error::InvalidDataCopy(buf.to_vec(), err),
             DecodeStringError::InvalidUtf8(buf, err) => Error::InvalidUtf8(buf.to_vec(), err),
         }
@@ -627,10 +628,9 @@ pub enum Error {
 impl From<core::Error> for Error {
     fn from(err: core::Error) -> Error {
         match err {
-            core::Error::InvalidMarker(..)   => Error::TypeMismatch,
+            core::Error::InvalidMarker(..)      => Error::TypeMismatch,
             core::Error::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             core::Error::InvalidDataRead(err)   => Error::InvalidDataRead(err),
-            _ => unimplemented!()
         }
     }
 }
