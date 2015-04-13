@@ -148,19 +148,15 @@ impl convert::From<byteorder::Error> for ReadError {
     }
 }
 
-#[unstable(reason = "remove Debug trait")]
-#[derive(Debug, PartialEq)]
-pub enum MarkerError {
-    TypeMismatch, // TODO: Consider saving actual marker.
-    Unexpected(u8),
-}
-
 #[unstable(reason = "remove Debug trait; drop MarkerError")]
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    InvalidMarker(MarkerError),     // Marker type error.
-    InvalidMarkerRead(ReadError),   // IO error while reading marker.
-    InvalidDataRead(ReadError),     // IO error while reading data.
+    /// Marker type error.
+    TypeMismatch, // TODO: Consider saving actual marker.
+    /// IO error while reading marker.
+    InvalidMarkerRead(ReadError),
+    /// IO error while reading data.
+    InvalidDataRead(ReadError),
 }
 
 #[unstable(reason = "Core? Shit name!")]

@@ -9,7 +9,7 @@ fn from_null_read_len() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         decode::read_bin_len(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -46,7 +46,7 @@ fn from_nil_invalid_marker() {
     let buf: &[u8] = &[0xc1];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)),
+    assert_eq!(Error::TypeMismatch,
         read_nil(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -205,7 +205,7 @@ fn from_unsigned_invalid_marker_read_u64_loosely() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_u64_loosely(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -215,7 +215,7 @@ fn from_unsigned_invalid_unknown_marker_read_u64_loosely() {
     let buf: &[u8] = &[0xc1];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::Unexpected(0xc1)),
+    assert_eq!(Error::TypeMismatch,
         read_u64_loosely(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -345,7 +345,7 @@ fn from_null_read_str_len() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_str_len(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -453,7 +453,7 @@ fn from_nfix_type_mismatch() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_nfix(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -481,7 +481,7 @@ fn from_i8_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_i8(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -519,7 +519,7 @@ fn from_u8_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_u8(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -575,7 +575,7 @@ fn from_i16_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_i16(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -613,7 +613,7 @@ fn from_i32_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_i32(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -651,7 +651,7 @@ fn from_i64_type_mismatch() {
     let buf: &[u8] = &[0xc0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_i64(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -838,7 +838,7 @@ fn from_null_read_array_size() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_array_size(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -893,7 +893,7 @@ fn from_null_read_map_size() {
     let buf: &[u8] = &[0xc0, 0x00, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_map_size(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -943,7 +943,7 @@ fn from_null_read_f32() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_f32(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }
@@ -993,7 +993,7 @@ fn from_null_read_f64() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidMarker(MarkerError::TypeMismatch),
+    assert_eq!(Error::TypeMismatch,
         read_f64(&mut cur).err().unwrap());
     assert_eq!(1, cur.position());
 }

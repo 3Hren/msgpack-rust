@@ -7,7 +7,7 @@ use std::str::from_utf8;
 
 use byteorder::{self, ReadBytesExt};
 
-use super::{Marker, Error, MarkerError, ReadError, Result, Integer, DecodeStringError};
+use super::{Marker, Error, ReadError, Result, Integer, DecodeStringError};
 
 fn read_marker<R>(rd: &mut R) -> Result<Marker>
     where R: Read
@@ -16,7 +16,7 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker>
         Ok(val) => {
             match FromPrimitive::from_u8(val) {
                 Some(marker) => Ok(marker),
-                None         => Err(Error::InvalidMarker(MarkerError::Unexpected(val))),
+                None         => Err(Error::TypeMismatch),
             }
         }
         Err(err) => Err(Error::InvalidMarkerRead(From::from(err))),
@@ -30,7 +30,7 @@ pub fn read_nil<R>(rd: &mut R) -> Result<()>
 {
     match try!(read_marker(rd)) {
         Marker::Null => Ok(()),
-        _            => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _            => Err(Error::TypeMismatch)
     }
 }
 
@@ -42,7 +42,7 @@ pub fn read_bool<R>(rd: &mut R) -> Result<bool>
     match try!(read_marker(rd)) {
         Marker::True  => Ok(true),
         Marker::False => Ok(false),
-        _             => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _             => Err(Error::TypeMismatch)
     }
 }
 
@@ -53,7 +53,7 @@ pub fn read_pfix<R>(rd: &mut R) -> Result<u8>
 {
     match try!(read_marker(rd)) {
         Marker::PositiveFixnum(val) => Ok(val),
-        _                           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _                           => Err(Error::TypeMismatch),
     }
 }
 
@@ -64,7 +64,7 @@ pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
 {
     match try!(read_marker(rd)) {
         Marker::NegativeFixnum(val) => Ok(val),
-        _                           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _                           => Err(Error::TypeMismatch),
     }
 }
 
@@ -75,7 +75,7 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8>
 {
     match try!(read_marker(rd)) {
         Marker::I8 => Ok(try!(read_data_i8(rd))),
-        _          => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _          => Err(Error::TypeMismatch),
     }
 }
 
@@ -86,7 +86,7 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16>
 {
     match try!(read_marker(rd)) {
         Marker::I16 => Ok(try!(read_data_i16(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -97,7 +97,7 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32>
 {
     match try!(read_marker(rd)) {
         Marker::I32 => Ok(try!(read_data_i32(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -108,7 +108,7 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64>
 {
     match try!(read_marker(rd)) {
         Marker::I64 => Ok(try!(read_data_i64(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -119,7 +119,7 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8>
 {
     match try!(read_marker(rd)) {
         Marker::U8 => Ok(try!(read_data_u8(rd))),
-        _          => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _          => Err(Error::TypeMismatch),
     }
 }
 
@@ -130,7 +130,7 @@ pub fn read_u16<R>(rd: &mut R) -> Result<u16>
 {
     match try!(read_marker(rd)) {
         Marker::U16 => Ok(try!(read_data_u16(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -141,7 +141,7 @@ pub fn read_u32<R>(rd: &mut R) -> Result<u32>
 {
     match try!(read_marker(rd)) {
         Marker::U32 => Ok(try!(read_data_u32(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -152,7 +152,7 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64>
 {
     match try!(read_marker(rd)) {
         Marker::U64 => Ok(try!(read_data_u64(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -201,7 +201,7 @@ pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64>
         Marker::U16 => Ok(try!(read_data_u16(rd)) as u64),
         Marker::U32 => Ok(try!(read_data_u32(rd)) as u64),
         Marker::U64 => Ok(try!(read_data_u64(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -219,7 +219,7 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64>
         Marker::I16 => Ok(try!(read_data_i16(rd)) as i64),
         Marker::I32 => Ok(try!(read_data_i32(rd)) as i64),
         Marker::I64 => Ok(try!(read_data_i64(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -235,7 +235,7 @@ pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
         Marker::I32 => Ok(Integer::I64(try!(read_data_i32(rd)) as i64)),
         Marker::I64 => Ok(Integer::I64(try!(read_data_i64(rd)))),
         Marker::U64 => Ok(Integer::U64(try!(read_data_u64(rd)))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch)),
+        _           => Err(Error::TypeMismatch),
     }
 }
 
@@ -251,7 +251,7 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
         Marker::Str8  => Ok(try!(read_data_u8(rd))  as u32),
         Marker::Str16 => Ok(try!(read_data_u16(rd)) as u32),
         Marker::Str32 => Ok(try!(read_data_u32(rd))),
-        _             => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _             => Err(Error::TypeMismatch)
     }
 }
 
@@ -352,7 +352,7 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
                 Err(err) => Err(Error::InvalidDataRead(From::from(err))),
             }
         }
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _ => Err(Error::TypeMismatch)
     }
 }
 
@@ -364,7 +364,7 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
         Marker::FixedMap(size) => Ok(size as u32),
         Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
         Marker::Map32 => Ok(try!(read_data_u32(rd))),
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _ => Err(Error::TypeMismatch)
     }
 }
 
@@ -374,7 +374,7 @@ pub fn read_f32<R>(rd: &mut R) -> Result<f32>
 {
     match try!(read_marker(rd)) {
         Marker::F32 => Ok(try!(read_data_f32(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _           => Err(Error::TypeMismatch)
     }
 }
 
@@ -384,7 +384,7 @@ pub fn read_f64<R>(rd: &mut R) -> Result<f64>
 {
     match try!(read_marker(rd)) {
         Marker::F64 => Ok(try!(read_data_f64(rd))),
-        _           => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _           => Err(Error::TypeMismatch)
     }
 }
 
@@ -395,7 +395,7 @@ pub fn read_bin_len<R>(rd: &mut R) -> Result<u32>
         Marker::Bin8  => Ok(try!(read_data_u8(rd)) as u32),
         Marker::Bin16 => Ok(try!(read_data_u16(rd)) as u32),
         Marker::Bin32 => Ok(try!(read_data_u32(rd))),
-        _             => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _             => Err(Error::TypeMismatch)
     }
 }
 
@@ -423,7 +423,7 @@ pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8)>
             let data = try!(read_data_u8(rd));
             Ok((id, data))
         }
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _ => Err(Error::TypeMismatch)
     }
 }
 
@@ -437,7 +437,7 @@ pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, u16)>
             let data = try!(read_data_u16(rd));
             Ok((id, data))
         }
-        _ => Err(Error::InvalidMarker(MarkerError::TypeMismatch))
+        _ => Err(Error::TypeMismatch)
     }
 }
 
@@ -629,7 +629,7 @@ pub enum Error {
 impl From<core::Error> for Error {
     fn from(err: core::Error) -> Error {
         match err {
-            core::Error::InvalidMarker(..)      => Error::TypeMismatch,
+            core::Error::TypeMismatch           => Error::TypeMismatch,
             core::Error::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             core::Error::InvalidDataRead(err)   => Error::InvalidDataRead(err),
         }

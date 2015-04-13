@@ -22,7 +22,7 @@ pub use core::decode::serialize::{
 };
 
 /// Temporary. Move to error.rs module.
-pub use core::{Error, ReadError, MarkerError};
+pub use core::{Error, ReadError};
 
 #[cfg(test)]
 mod bench;
