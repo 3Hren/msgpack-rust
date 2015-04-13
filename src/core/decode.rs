@@ -663,8 +663,9 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
 
     fn read_bool(&mut self) -> Result<bool> {
         match try!(read_marker(&mut self.rd)) {
+            Marker::True  => Ok(true),
             Marker::False => Ok(false),
-            _ => unimplemented!(),
+            _             => Err(Error::TypeMismatch)
         }
     }
 
