@@ -606,6 +606,7 @@ pub mod serialize {
 
 use std::convert::From;
 use std::io::Read;
+use std::num;
 use std::result;
 
 use serialize;
@@ -664,7 +665,14 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         Ok(try!(read_u64_loosely(&mut self.rd)))
     }
 
-    fn read_u32(&mut self) -> Result<u32> { unimplemented!() }
+    fn read_u32(&mut self) -> Result<u32> {
+        let val = try!(read_u64_loosely(&mut self.rd));
+        match num::from_u64(val) {
+            Some(val) => Ok(val),
+            None      => unimplemented!(),//Err(Error::TypeMismatch),
+        }
+    }
+
     fn read_u16(&mut self) -> Result<u16> { unimplemented!() }
     fn read_u8(&mut self) -> Result<u8> { unimplemented!() }
 

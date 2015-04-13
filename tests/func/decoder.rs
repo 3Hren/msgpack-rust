@@ -97,4 +97,14 @@ mod unspecified {
 
         assert_eq!(18446744073709551615u64, Decodable::decode(&mut decoder).ok().unwrap());
     }
+
+    #[test]
+    fn pass_u32() {
+        let buf = [0xce, 0xff, 0xff, 0xff, 0xff];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(4294967295u32, Decodable::decode(&mut decoder).ok().unwrap());
+    }
 }
