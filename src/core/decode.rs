@@ -611,9 +611,10 @@ use std::result;
 use serialize;
 
 use super::super::super::core;
-use super::super::{Marker, ReadError};
+use super::super::ReadError;
 use super::{
-    read_marker,
+    read_nil,
+    read_bool,
     read_u64_loosely
 };
 
@@ -654,10 +655,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     type Error = Error;
 
     fn read_nil(&mut self) -> Result<()> {
-        match try!(read_marker(&mut self.rd)) {
-            Marker::Null => Ok(()),
-            _            => Err(Error::TypeMismatch)
-        }
+        Ok(try!(read_nil(&mut self.rd)))
     }
 
     fn read_usize(&mut self) -> Result<usize> { unimplemented!() }
@@ -677,11 +675,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_i8(&mut self) -> Result<i8> { unimplemented!() }
 
     fn read_bool(&mut self) -> Result<bool> {
-        match try!(read_marker(&mut self.rd)) {
-            Marker::True  => Ok(true),
-            Marker::False => Ok(false),
-            _             => Err(Error::TypeMismatch)
-        }
+        Ok(try!(read_bool(&mut self.rd)))
     }
 
     fn read_f64(&mut self) -> Result<f64> { unimplemented!() }
