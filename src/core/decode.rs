@@ -619,7 +619,7 @@ use super::{
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    /// The actual value type isn't equal with the given one.
+    /// The actual value type isn't equal with the expected one.
     TypeMismatch,
     InvalidMarkerRead(ReadError),
     InvalidDataRead(ReadError),
