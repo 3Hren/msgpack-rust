@@ -188,6 +188,18 @@ make_read_data_fn!(f32, read_data_f32, read_f32);
 make_read_data_fn!(f64, read_data_f64, read_f64);
 
 #[unstable(reason = "not sure about name; docs")]
+pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val as u16),
+        Marker::U8  => Ok(try!(read_data_u8(rd)) as u16),
+        Marker::U16 => Ok(try!(read_data_u16(rd))),
+        _           => Err(Error::TypeMismatch),
+    }
+}
+
+#[unstable(reason = "not sure about name; docs")]
 pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
@@ -619,7 +631,6 @@ pub mod serialize {
 
 use std::convert::From;
 use std::io::Read;
-use std::num;
 use std::result;
 
 use serialize;
@@ -629,6 +640,7 @@ use super::super::ReadError;
 use super::{
     read_nil,
     read_bool,
+    read_u16_loosely,
     read_u32_loosely,
     read_u64_loosely
 };
@@ -688,11 +700,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     }
 
     fn read_u16(&mut self) -> Result<u16> {
-        let val = try!(read_u64_loosely(&mut self.rd));
-        match num::from_u64(val) {
-            Some(val) => Ok(val),
-            None      => unimplemented!(),//Err(Error::TypeMismatch),
-        }
+        Ok(try!(read_u16_loosely(&mut self.rd)))
     }
 
     fn read_u8(&mut self) -> Result<u8> { unimplemented!() }
