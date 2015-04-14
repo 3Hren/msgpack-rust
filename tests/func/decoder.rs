@@ -83,10 +83,14 @@ mod bool {
 
 mod unspecified {
     use std::io::Cursor;
+    use std::result;
 
     use serialize::Decodable;
 
     use msgpack::Decoder;
+    use msgpack::core::decode::serialize::Error;
+
+    type Result<T> = result::Result<T, Error>;
 
     #[test]
     fn pass_u64() {
@@ -106,5 +110,26 @@ mod unspecified {
         let mut decoder = Decoder::new(cur);
 
         assert_eq!(4294967295u32, Decodable::decode(&mut decoder).ok().unwrap());
+    }
+
+    #[test]
+    fn fail_u32_from_u64() {
+        let buf = [0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        let res: Result<u32> = Decodable::decode(&mut decoder);
+        assert_eq!(Error::TypeMismatch, res.err().unwrap());
+    }
+
+    #[test]
+    fn pass_u16() {
+        let buf = [0xcd, 0xff, 0xff];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(65535u16, Decodable::decode(&mut decoder).ok().unwrap());
     }
 }

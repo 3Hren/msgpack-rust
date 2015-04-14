@@ -187,6 +187,19 @@ make_read_data_fn!(i64, read_data_i64, read_i64);
 make_read_data_fn!(f32, read_data_f32, read_f32);
 make_read_data_fn!(f64, read_data_f64, read_f64);
 
+#[unstable(reason = "not sure about name; docs")]
+pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val as u32),
+        Marker::U8  => Ok(try!(read_data_u8(rd))  as u32),
+        Marker::U16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::U32 => Ok(try!(read_data_u32(rd))),
+        _           => Err(Error::TypeMismatch),
+    }
+}
+
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
 /// them as a big-endian u64.
 ///
@@ -616,6 +629,7 @@ use super::super::ReadError;
 use super::{
     read_nil,
     read_bool,
+    read_u32_loosely,
     read_u64_loosely
 };
 
@@ -659,6 +673,10 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         Ok(try!(read_nil(&mut self.rd)))
     }
 
+    fn read_bool(&mut self) -> Result<bool> {
+        Ok(try!(read_bool(&mut self.rd)))
+    }
+
     fn read_usize(&mut self) -> Result<usize> { unimplemented!() }
 
     fn read_u64(&mut self) -> Result<u64> {
@@ -666,6 +684,10 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     }
 
     fn read_u32(&mut self) -> Result<u32> {
+        Ok(try!(read_u32_loosely(&mut self.rd)))
+    }
+
+    fn read_u16(&mut self) -> Result<u16> {
         let val = try!(read_u64_loosely(&mut self.rd));
         match num::from_u64(val) {
             Some(val) => Ok(val),
@@ -673,7 +695,6 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         }
     }
 
-    fn read_u16(&mut self) -> Result<u16> { unimplemented!() }
     fn read_u8(&mut self) -> Result<u8> { unimplemented!() }
 
     fn read_isize(&mut self) -> Result<isize> { unimplemented!() }
@@ -681,10 +702,6 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_i32(&mut self) -> Result<i32> { unimplemented!() }
     fn read_i16(&mut self) -> Result<i16> { unimplemented!() }
     fn read_i8(&mut self) -> Result<i8> { unimplemented!() }
-
-    fn read_bool(&mut self) -> Result<bool> {
-        Ok(try!(read_bool(&mut self.rd)))
-    }
 
     fn read_f64(&mut self) -> Result<f64> { unimplemented!() }
     fn read_f32(&mut self) -> Result<f32> { unimplemented!() }
