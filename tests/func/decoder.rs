@@ -142,4 +142,14 @@ mod unspecified {
 
         assert_eq!(255u8, Decodable::decode(&mut decoder).ok().unwrap());
     }
+
+    #[test]
+    fn pass_usize() {
+        let buf = [0xcc, 0xff];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(255us, Decodable::decode(&mut decoder).ok().unwrap());
+    }
 }
