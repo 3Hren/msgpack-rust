@@ -152,4 +152,54 @@ mod unspecified {
 
         assert_eq!(255us, Decodable::decode(&mut decoder).ok().unwrap());
     }
+
+    #[test]
+    fn pass_i64() {
+        let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(9223372036854775807i64, Decodable::decode(&mut decoder).ok().unwrap());
+    }
+
+    #[test]
+    fn pass_i32() {
+        let buf = [0xd2, 0x7f, 0xff, 0xff, 0xff];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(2147483647i32, Decodable::decode(&mut decoder).ok().unwrap());
+    }
+
+    #[test]
+    fn pass_i16() {
+        let buf = [0xd1, 0x7f, 0xff];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(32767i16, Decodable::decode(&mut decoder).ok().unwrap());
+    }
+
+    #[test]
+    fn pass_i8() {
+        let buf = [0xd0, 0x7f];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(127i8, Decodable::decode(&mut decoder).unwrap());
+    }
+
+    #[test]
+    fn pass_isize() {
+        let buf = [0xd0, 0x7f];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(127is, Decodable::decode(&mut decoder).unwrap());
+    }
 }

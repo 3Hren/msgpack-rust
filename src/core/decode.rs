@@ -241,6 +241,42 @@ pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64>
     }
 }
 
+#[unstable(reason = "not sure about name; docs; untested")]
+pub fn read_i8_loosely<R>(rd: &mut R) -> Result<i8>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::NegativeFixnum(val) => Ok(val),
+        Marker::I8  => Ok(try!(read_data_i8(rd))),
+        _           => Err(Error::TypeMismatch),
+    }
+}
+
+#[unstable(reason = "not sure about name; docs; untested")]
+pub fn read_i16_loosely<R>(rd: &mut R) -> Result<i16>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::NegativeFixnum(val) => Ok(val as i16),
+        Marker::I8  => Ok(try!(read_data_i8(rd)) as i16),
+        Marker::I16 => Ok(try!(read_data_i16(rd))),
+        _           => Err(Error::TypeMismatch),
+    }
+}
+
+#[unstable(reason = "not sure about name; docs; untested")]
+pub fn read_i32_loosely<R>(rd: &mut R) -> Result<i32>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::NegativeFixnum(val) => Ok(val as i32),
+        Marker::I8  => Ok(try!(read_data_i8(rd))  as i32),
+        Marker::I16 => Ok(try!(read_data_i16(rd)) as i32),
+        Marker::I32 => Ok(try!(read_data_i32(rd))),
+        _           => Err(Error::TypeMismatch),
+    }
+}
+
 /// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
 /// them as a big-endian i64.
 ///
@@ -655,7 +691,11 @@ use super::{
     read_u8_loosely,
     read_u16_loosely,
     read_u32_loosely,
-    read_u64_loosely
+    read_u64_loosely,
+    read_i8_loosely,
+    read_i16_loosely,
+    read_i32_loosely,
+    read_i64_loosely,
 };
 
 #[derive(Debug, PartialEq)]
@@ -725,15 +765,31 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         }
     }
 
-    fn read_isize(&mut self) -> Result<isize> { unimplemented!() }
+    fn read_i8(&mut self) -> Result<i8> {
+        Ok(try!(read_i8_loosely(&mut self.rd)))
+    }
 
-    fn read_i64(&mut self) -> Result<i64> { unimplemented!() }
-    fn read_i32(&mut self) -> Result<i32> { unimplemented!() }
-    fn read_i16(&mut self) -> Result<i16> { unimplemented!() }
-    fn read_i8(&mut self) -> Result<i8> { unimplemented!() }
+    fn read_i16(&mut self) -> Result<i16> {
+        Ok(try!(read_i16_loosely(&mut self.rd)))
+    }
 
-    fn read_f64(&mut self) -> Result<f64> { unimplemented!() }
+    fn read_i32(&mut self) -> Result<i32> {
+        Ok(try!(read_i32_loosely(&mut self.rd)))
+    }
+
+    fn read_i64(&mut self) -> Result<i64> {
+        Ok(try!(read_i64_loosely(&mut self.rd)))
+    }
+
+    fn read_isize(&mut self) -> Result<isize> {
+        match num::from_i64(try!(self.read_i64())) {
+            Some(val) => Ok(val),
+            None      => Err(Error::TypeMismatch),
+        }
+    }
+
     fn read_f32(&mut self) -> Result<f32> { unimplemented!() }
+    fn read_f64(&mut self) -> Result<f64> { unimplemented!() }
 
     fn read_char(&mut self) -> Result<char> { unimplemented!() }
 
