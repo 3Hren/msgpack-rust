@@ -696,6 +696,8 @@ use super::{
     read_i16_loosely,
     read_i32_loosely,
     read_i64_loosely,
+    read_f32,
+    read_f64,
 };
 
 #[derive(Debug, PartialEq)]
@@ -788,8 +790,13 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         }
     }
 
-    fn read_f32(&mut self) -> Result<f32> { unimplemented!() }
-    fn read_f64(&mut self) -> Result<f64> { unimplemented!() }
+    fn read_f32(&mut self) -> Result<f32> {
+        Ok(try!(read_f32(&mut self.rd)))
+    }
+
+    fn read_f64(&mut self) -> Result<f64> {
+        Ok(try!(read_f64(&mut self.rd)))
+    }
 
     fn read_char(&mut self) -> Result<char> { unimplemented!() }
 

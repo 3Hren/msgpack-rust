@@ -185,11 +185,6 @@ pub enum Integer {
     I64(i64),
 }
 
-pub enum Float {
-    F32(f32),
-    F64(f64),
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Null,

@@ -202,4 +202,24 @@ mod unspecified {
 
         assert_eq!(127is, Decodable::decode(&mut decoder).unwrap());
     }
+
+    #[test]
+    fn pass_f32() {
+        let buf = [0xca, 0x7f, 0x7f, 0xff, 0xff];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(3.4028234e38_f32, Decodable::decode(&mut decoder).unwrap());
+    }
+
+    #[test]
+    fn pass_f64() {
+        let buf = [0xcb, 0x40, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+
+        assert_eq!(42f64, Decodable::decode(&mut decoder).unwrap());
+    }
 }
