@@ -698,6 +698,8 @@ use super::{
     read_i64_loosely,
     read_f32,
     read_f64,
+    read_str_len,
+    read_str_data,
 };
 
 #[derive(Debug, PartialEq)]
@@ -714,6 +716,17 @@ impl From<core::Error> for Error {
             core::Error::TypeMismatch           => Error::TypeMismatch,
             core::Error::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             core::Error::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+        }
+    }
+}
+
+impl<'a> From<core::DecodeStringError<'a>> for Error {
+    fn from(err: core::DecodeStringError) -> Error {
+        match err {
+            core::DecodeStringError::Core(err) => From::from(err),
+            core::DecodeStringError::BufferSizeTooSmall(..)    => unimplemented!(),
+            core::DecodeStringError::InvalidDataCopy(..) => unimplemented!(),
+            core::DecodeStringError::InvalidUtf8(..)     => unimplemented!(),
         }
     }
 }
@@ -800,7 +813,14 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
 
     fn read_char(&mut self) -> Result<char> { unimplemented!() }
 
-    fn read_str(&mut self) -> Result<String> { unimplemented!() }
+    fn read_str(&mut self) -> Result<String> {
+        let len = try!(read_str_len(&mut self.rd));
+
+        let mut buf = Vec::with_capacity(len as usize);
+        buf.resize(len as usize, 0);
+
+        Ok(try!(read_str_data(&mut self.rd, len, &mut buf[..])).to_string())
+    }
 
     fn read_enum<T, F>(&mut self, name: &str, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }

@@ -222,4 +222,15 @@ mod unspecified {
 
         assert_eq!(42f64, Decodable::decode(&mut decoder).unwrap());
     }
+
+    #[test]
+    fn pass_string() {
+        let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: String = Decodable::decode(&mut decoder).unwrap();
+
+        assert_eq!("le message".to_string(), actual);
+    }
 }
