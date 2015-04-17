@@ -233,4 +233,26 @@ mod unspecified {
 
         assert_eq!("le message".to_string(), actual);
     }
+
+    #[test]
+    fn pass_tuple() {
+        let buf = [0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: (u32, u32) = Decodable::decode(&mut decoder).unwrap();
+
+        assert_eq!((42, 100500), actual);
+    }
+
+    #[test]
+    fn fail_tuple_len_mismatch() {
+        let buf = [0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Result<(u32,)> = Decodable::decode(&mut decoder);
+
+        assert_eq!(Error::LengthMismatch(2), actual.err().unwrap());
+    }
 }

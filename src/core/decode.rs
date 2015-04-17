@@ -700,14 +700,17 @@ use super::{
     read_f64,
     read_str_len,
     read_str_data,
+    read_array_size,
 };
 
+#[unstable(reason = "docs; incomplete")]
 #[derive(Debug, PartialEq)]
 pub enum Error {
     /// The actual value type isn't equal with the expected one.
     TypeMismatch,
     InvalidMarkerRead(ReadError),
     InvalidDataRead(ReadError),
+    LengthMismatch(u32),
 }
 
 impl From<core::Error> for Error {
@@ -720,6 +723,7 @@ impl From<core::Error> for Error {
     }
 }
 
+#[unstable(reason = "docs; incomplete")]
 impl<'a> From<core::DecodeStringError<'a>> for Error {
     fn from(err: core::DecodeStringError) -> Error {
         match err {
@@ -746,6 +750,7 @@ impl<R: Read> Decoder<R> {
 }
 
 #[allow(unused)]
+#[unstable(reason = "docs; examples; incomplete")]
 impl<R: Read> serialize::Decoder for Decoder<R> {
     type Error = Error;
 
@@ -839,9 +844,24 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
 
     fn read_tuple<T, F>(&mut self, len: usize, f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
-    fn read_tuple_arg<T, F>(&mut self, a_idx: usize, f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        let actual = try!(read_array_size(&mut self.rd));
+
+        if len == actual as usize {
+            f(self)
+        } else {
+            Err(Error::LengthMismatch(actual))
+        }
+    }
+
+    // We don't care about index argument.
+    fn read_tuple_arg<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        f(self)
+    }
+
     fn read_tuple_struct<T, F>(&mut self, s_name: &str, len: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
     fn read_tuple_struct_arg<T, F>(&mut self, a_idx: usize, f: F) -> Result<T>
