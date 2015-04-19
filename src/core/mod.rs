@@ -1,7 +1,7 @@
 use std::convert;
 use std::io;
 use std::result;
-use std::num::FromPrimitive;
+use std::num::{FromPrimitive, ToPrimitive};
 use std::str::Utf8Error;
 
 use byteorder;
@@ -100,52 +100,53 @@ impl FromPrimitive for Marker {
     }
 }
 
-pub trait ToByte {
-    fn to_byte(n: Self) -> u8;
-}
+impl ToPrimitive for Marker {
+    fn to_i64(&self) -> Option<i64> {
+        Some(ToPrimitive::to_u64(self).unwrap() as i64)
+    }
 
-impl ToByte for Marker {
-    fn to_byte(n: Marker) -> u8 {
-        match n {
-//            PositiveFixnum(u8),
-//            NegativeFixnum(i8),
-            Marker::Null => 0xc0,
-//            True,
-//            False,
-//            U8,
-//            U16,
-//            U32,
-//            U64,
-//            I8,
-//            I16,
-//            I32,
-//            I64,
-//            F32,
-//            F64,
-//            FixedString(u8),
-//            Str8,
-//            Str16,
-//            Str32,
-//            Bin8,
-//            Bin16,
-//            Bin32,
-//            FixedArray(u8),
-//            Array16,
-//            Array32,
-//            FixedMap(u8),
-//            Map16,
-//            Map32,
-//            FixExt1,
-//            FixExt2,
-//            FixExt4,
-//            FixExt8,
-//            FixExt16,
-//            Ext8,
-//            Ext16,
-//            Ext32,
-//            Reserved,
-            _ => unimplemented!()
-        }
+    fn to_u64(&self) -> Option<u64> {
+        let byte = match *self {
+            Marker::PositiveFixnum(..) => unimplemented!(),
+            Marker::NegativeFixnum(..) => unimplemented!(),
+            Marker::Null               => 0xc0,
+            Marker::True               => unimplemented!(),
+            Marker::False              => unimplemented!(),
+            Marker::U8                 => unimplemented!(),
+            Marker::U16                => unimplemented!(),
+            Marker::U32                => unimplemented!(),
+            Marker::U64                => unimplemented!(),
+            Marker::I8                 => unimplemented!(),
+            Marker::I16                => unimplemented!(),
+            Marker::I32                => unimplemented!(),
+            Marker::I64                => unimplemented!(),
+            Marker::F32                => unimplemented!(),
+            Marker::F64                => unimplemented!(),
+            Marker::FixedString(..)    => unimplemented!(),
+            Marker::Str8               => unimplemented!(),
+            Marker::Str16              => unimplemented!(),
+            Marker::Str32              => unimplemented!(),
+            Marker::Bin8               => unimplemented!(),
+            Marker::Bin16              => unimplemented!(),
+            Marker::Bin32              => unimplemented!(),
+            Marker::FixedArray(..)     => unimplemented!(),
+            Marker::Array16            => unimplemented!(),
+            Marker::Array32            => unimplemented!(),
+            Marker::FixedMap(..)       => unimplemented!(),
+            Marker::Map16              => unimplemented!(),
+            Marker::Map32              => unimplemented!(),
+            Marker::FixExt1            => unimplemented!(),
+            Marker::FixExt2            => unimplemented!(),
+            Marker::FixExt4            => unimplemented!(),
+            Marker::FixExt8            => unimplemented!(),
+            Marker::FixExt16           => unimplemented!(),
+            Marker::Ext8               => unimplemented!(),
+            Marker::Ext16              => unimplemented!(),
+            Marker::Ext32              => unimplemented!(),
+            Marker::Reserved           => unimplemented!(),
+        };
+
+        Some(byte as u64)
     }
 }
 
