@@ -874,8 +874,15 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_tuple_struct_arg<T, F>(&mut self, a_idx: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
 
-    fn read_option<T, F>(&mut self, f: F) -> Result<T>
-        where F: FnMut(&mut Self, bool) -> Result<T> { unimplemented!() }
+    fn read_option<T, F>(&mut self, mut f: F) -> Result<T>
+        where F: FnMut(&mut Self, bool) -> Result<T>
+    {
+        match f(self, true) {
+            Ok(val) => Ok(val),
+            Err(Error::TypeMismatch(Marker::Null)) => f(self, false),
+            Err(err) => Err(err)
+        }
+    }
 
     fn read_seq<T, F>(&mut self, f: F) -> Result<T>
         where F: FnOnce(&mut Self, usize) -> Result<T> { unimplemented!() }
