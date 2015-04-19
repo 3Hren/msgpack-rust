@@ -22,6 +22,7 @@ mod null {
         use rustc_serialize::Decodable;
 
         use msgpack::Decoder;
+        use msgpack::Marker;
         use msgpack::core::decode::serialize::Error;
 
         type Result<T> = result::Result<T, Error>;
@@ -34,7 +35,7 @@ mod null {
             let mut decoder = Decoder::new(cur);
 
             let res: Result<()> = Decodable::decode(&mut decoder);
-            assert_eq!(Error::TypeMismatch, res.err().unwrap());
+            assert_eq!(Error::TypeMismatch(Marker::Reserved), res.err().unwrap());
         }
     } // mod fail
 } // mod null
@@ -64,6 +65,7 @@ mod bool {
         use rustc_serialize::Decodable;
 
         use msgpack::Decoder;
+        use msgpack::Marker;
         use msgpack::core::decode::serialize::Error;
 
         type Result<T> = result::Result<T, Error>;
@@ -76,7 +78,7 @@ mod bool {
             let mut decoder = Decoder::new(cur);
 
             let res: Result<bool> = Decodable::decode(&mut decoder);
-            assert_eq!(Error::TypeMismatch, res.err().unwrap());
+            assert_eq!(Error::TypeMismatch(Marker::PositiveFixnum(0)), res.err().unwrap());
         }
     }
 }
@@ -88,6 +90,7 @@ mod unspecified {
     use rustc_serialize::Decodable;
 
     use msgpack::Decoder;
+    use msgpack::Marker;
     use msgpack::core::decode::serialize::Error;
 
     type Result<T> = result::Result<T, Error>;
@@ -120,7 +123,7 @@ mod unspecified {
         let mut decoder = Decoder::new(cur);
 
         let res: Result<u32> = Decodable::decode(&mut decoder);
-        assert_eq!(Error::TypeMismatch, res.err().unwrap());
+        assert_eq!(Error::TypeMismatch(Marker::U64), res.err().unwrap());
     }
 
     #[test]

@@ -48,6 +48,7 @@ pub enum Marker {
     Ext8,
     Ext16,
     Ext32,
+    Reserved,
 }
 
 impl FromPrimitive for Marker {
@@ -153,7 +154,7 @@ impl convert::From<byteorder::Error> for ReadError {
 #[derive(Debug, PartialEq)]
 pub enum Error {
     /// Marker type error.
-    TypeMismatch, // TODO: Consider saving actual marker.
+    TypeMismatch(Marker),
     /// IO error while reading marker.
     InvalidMarkerRead(ReadError),
     /// IO error while reading data.
