@@ -2,6 +2,7 @@ use std::io::Cursor;
 
 use msgpack::core::*;
 use msgpack::core::decode::*;
+use msgpack::core::encode::*;
 
 #[test]
 fn from_nil() {
@@ -30,4 +31,12 @@ fn from_nil_invalid_marker_read() {
     assert_eq!(Error::InvalidMarkerRead(ReadError::UnexpectedEOF),
         read_nil(&mut cur).err().unwrap());
     assert_eq!(0, cur.position());
+}
+
+#[test]
+fn pack() {
+    let mut buf = [0x00];
+
+    assert_eq!(1, write_nil(&mut &mut buf[..]).unwrap());
+    assert_eq!([0xc0], buf);
 }

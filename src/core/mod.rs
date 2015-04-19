@@ -100,6 +100,55 @@ impl FromPrimitive for Marker {
     }
 }
 
+pub trait ToByte {
+    fn to_byte(n: Self) -> u8;
+}
+
+impl ToByte for Marker {
+    fn to_byte(n: Marker) -> u8 {
+        match n {
+//            PositiveFixnum(u8),
+//            NegativeFixnum(i8),
+            Marker::Null => 0xc0,
+//            True,
+//            False,
+//            U8,
+//            U16,
+//            U32,
+//            U64,
+//            I8,
+//            I16,
+//            I32,
+//            I64,
+//            F32,
+//            F64,
+//            FixedString(u8),
+//            Str8,
+//            Str16,
+//            Str32,
+//            Bin8,
+//            Bin16,
+//            Bin32,
+//            FixedArray(u8),
+//            Array16,
+//            Array32,
+//            FixedMap(u8),
+//            Map16,
+//            Map32,
+//            FixExt1,
+//            FixExt2,
+//            FixExt4,
+//            FixExt8,
+//            FixExt16,
+//            Ext8,
+//            Ext16,
+//            Ext32,
+//            Reserved,
+            _ => unimplemented!()
+        }
+    }
+}
+
 /// An error type for reading bytes from the reader.
 ///
 /// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
@@ -196,3 +245,4 @@ pub enum Value {
 }
 
 pub mod decode;
+pub mod encode;
