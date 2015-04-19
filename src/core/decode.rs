@@ -712,6 +712,8 @@ pub enum Error {
     InvalidMarkerRead(ReadError),
     InvalidDataRead(ReadError),
     LengthMismatch(u32),
+    /// Uncategorized error.
+    Uncategorized(String),
 }
 
 impl From<core::Error> for Error {
@@ -921,7 +923,9 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         f(self)
     }
 
-    fn error(&mut self, err: &str) -> Error { unimplemented!() }
+    fn error(&mut self, err: &str) -> Error {
+        Error::Uncategorized(err.to_string())
+    }
 }
 
 }
