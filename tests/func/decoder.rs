@@ -336,4 +336,26 @@ mod unspecified {
         let actual: Vec<u8> = Decodable::decode(&mut decoder).unwrap();
         assert_eq!(vec![0, 128], actual);
     }
+
+    #[test]
+    fn pass_map() {
+        use std::collections::HashMap;
+
+        let buf = [
+            0x82, // 2 (size)
+            0xa3, 0x69, 0x6e, 0x74, // 'int'
+            0xcc, 0x80, // 128
+            0xa3, 0x6b, 0x65, 0x79, // 'key'
+            0x2a // 42
+        ];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: HashMap<String, u8> = Decodable::decode(&mut decoder).unwrap();
+        let mut expected = HashMap::new();
+        expected.insert("int".to_string(), 128);
+        expected.insert("key".to_string(), 42);
+
+        assert_eq!(expected, actual);
+    }
 }

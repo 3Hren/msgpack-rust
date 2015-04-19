@@ -701,6 +701,7 @@ use super::{
     read_str_len,
     read_str_data,
     read_array_size,
+    read_map_size,
 };
 
 #[unstable(reason = "docs; incomplete")]
@@ -901,11 +902,24 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     }
 
     fn read_map<T, F>(&mut self, f: F) -> Result<T>
-        where F: FnOnce(&mut Self, usize) -> Result<T> { unimplemented!() }
-    fn read_map_elt_key<T, F>(&mut self, idx: usize, f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
-    fn read_map_elt_val<T, F>(&mut self, idx: usize, f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
+        where F: FnOnce(&mut Self, usize) -> Result<T>
+    {
+        let len = try!(read_map_size(&mut self.rd)) as usize;
+
+        f(self, len)
+    }
+
+    fn read_map_elt_key<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        f(self)
+    }
+
+    fn read_map_elt_val<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        f(self)
+    }
 
     fn error(&mut self, err: &str) -> Error { unimplemented!() }
 }
