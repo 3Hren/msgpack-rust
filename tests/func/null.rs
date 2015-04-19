@@ -6,7 +6,7 @@ use msgpack::core::decode::*;
 use msgpack::core::encode::*;
 
 #[test]
-fn from_nil() {
+fn pass_read_nil() {
     let buf: &[u8] = &[0xc0];
     let mut cur = Cursor::new(buf);
 
@@ -15,7 +15,7 @@ fn from_nil() {
 }
 
 #[test]
-fn from_nil_invalid_marker() {
+fn fail_read_nil_invalid_marker() {
     let buf: &[u8] = &[0xc1];
     let mut cur = Cursor::new(buf);
 
@@ -25,7 +25,7 @@ fn from_nil_invalid_marker() {
 }
 
 #[test]
-fn from_nil_invalid_marker_read() {
+fn fail_read_nil_invalid_marker_read() {
     let buf: &[u8] = &[];
     let mut cur = Cursor::new(buf);
 
