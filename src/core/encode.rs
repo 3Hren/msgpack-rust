@@ -3,6 +3,7 @@ use std::io::Write;
 use byteorder::{WriteBytesExt};
 
 use super::{
+    Error,
     Marker,
     Result,
     ToByte,
@@ -13,7 +14,7 @@ fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<()>
 {
     match wr.write_u8(ToByte::to_byte(marker)) {
         Ok(())   => Ok(()),
-        Err(..) => unimplemented!()// Err(Error::InvalidMarkerWrite(From::from(err)))
+        Err(err) => Err(Error::InvalidMarkerWrite(From::from(err)))
     }
 }
 

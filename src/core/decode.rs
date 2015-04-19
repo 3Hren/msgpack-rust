@@ -722,6 +722,7 @@ impl From<core::Error> for Error {
             core::Error::TypeMismatch(marker)   => Error::TypeMismatch(marker),
             core::Error::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             core::Error::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+            core::Error::InvalidMarkerWrite(..) => unimplemented!()
         }
     }
 }
