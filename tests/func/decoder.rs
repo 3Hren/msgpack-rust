@@ -326,4 +326,14 @@ mod unspecified {
         let actual: Result<Option<u8>> = Decodable::decode(&mut decoder);
         assert_eq!(Error::TypeMismatch(Marker::Reserved), actual.err().unwrap());
     }
+
+    #[test]
+    fn pass_vector() {
+        let buf = [0x92, 0x00, 0xcc, 0x80];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Vec<u8> = Decodable::decode(&mut decoder).unwrap();
+        assert_eq!(vec![0, 128], actual);
+    }
 }

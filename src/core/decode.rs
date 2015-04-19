@@ -862,7 +862,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         }
     }
 
-    // We don't care about index argument.
+    // In case of MessagePack don't care about argument indexing.
     fn read_tuple_arg<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
@@ -887,9 +887,18 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     }
 
     fn read_seq<T, F>(&mut self, f: F) -> Result<T>
-        where F: FnOnce(&mut Self, usize) -> Result<T> { unimplemented!() }
-    fn read_seq_elt<T, F>(&mut self, idx: usize, f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
+        where F: FnOnce(&mut Self, usize) -> Result<T>
+    {
+        let len = try!(read_array_size(&mut self.rd)) as usize;
+
+        f(self, len)
+    }
+
+    fn read_seq_elt<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        f(self)
+    }
 
     fn read_map<T, F>(&mut self, f: F) -> Result<T>
         where F: FnOnce(&mut Self, usize) -> Result<T> { unimplemented!() }
