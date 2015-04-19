@@ -283,4 +283,24 @@ mod unspecified {
 
         assert_eq!(Decoded { id: 42, value: 100500 }, actual);
     }
+
+    #[test]
+    fn pass_option_some() {
+        let buf = [0x1f];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Option<u8> = Decodable::decode(&mut decoder).unwrap();
+        assert_eq!(Some(31), actual);
+    }
+
+    #[test]
+    fn pass_option_none() {
+        let buf = [0xc0];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Option<u8> = Decodable::decode(&mut decoder).unwrap();
+        assert_eq!(None, actual);
+    }
 }
