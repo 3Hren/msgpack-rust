@@ -150,7 +150,7 @@ impl convert::From<byteorder::Error> for ReadError {
     }
 }
 
-#[unstable(reason = "remove Debug trait; drop MarkerError")]
+#[unstable(reason = "remove Debug trait")]
 #[derive(Debug, PartialEq)]
 pub enum Error {
     /// Marker type error.
