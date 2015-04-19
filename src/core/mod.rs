@@ -51,6 +51,7 @@ pub enum Marker {
     Reserved,
 }
 
+// TODO: Consider using own trait without Option packing/unpacking.
 impl FromPrimitive for Marker {
     fn from_i64(n: i64) -> Option<Marker> {
         FromPrimitive::from_u64(n as u64)
@@ -100,6 +101,7 @@ impl FromPrimitive for Marker {
     }
 }
 
+// TODO: Consider using own trait without Option packing/unpacking.
 impl ToPrimitive for Marker {
     fn to_i64(&self) -> Option<i64> {
         Some(ToPrimitive::to_u64(self).unwrap() as i64)
