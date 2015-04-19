@@ -9,6 +9,9 @@ use super::{
     Result,
 };
 
+// TODO: Consider own Error/Result types for encode module.
+// Errors: IntegerTooLarge, MarkerWriteError(IO), DataWriteError(IO).
+
 fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<()>
     where W: Write
 {
@@ -25,5 +28,18 @@ pub fn write_nil<W>(wr: &mut W) -> Result<usize>
     where W: Write
 {
     try!(write_marker(wr, Marker::Null));
+    Ok(1)
+}
+
+// With strictly type checking.
+pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<usize>
+    where W: Write
+{
+    if val < 128 {
+        try!(write_marker(wr, Marker::PositiveFixnum(val)));
+    } else {
+        unimplemented!()
+    }
+
     Ok(1)
 }
