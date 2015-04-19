@@ -298,6 +298,16 @@ mod unspecified {
     }
 
     #[test]
+    fn pass_option_some_null() {
+        let buf = [0xc0];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Option<()> = Decodable::decode(&mut decoder).unwrap();
+        assert_eq!(Some(()), actual);
+    }
+
+    #[test]
     fn pass_option_none() {
         let buf = [0xc0];
         let cur = Cursor::new(&buf[..]);
@@ -305,5 +315,15 @@ mod unspecified {
         let mut decoder = Decoder::new(cur);
         let actual: Option<u8> = Decodable::decode(&mut decoder).unwrap();
         assert_eq!(None, actual);
+    }
+
+    #[test]
+    fn fail_option_u8_from_reserved() {
+        let buf = [0xc1];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Result<Option<u8>> = Decodable::decode(&mut decoder);
+        assert_eq!(Error::TypeMismatch(Marker::Reserved), actual.err().unwrap());
     }
 }
