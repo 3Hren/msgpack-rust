@@ -13,6 +13,10 @@ pub const MSGPACK_VERSION : u32 = 5;
 
 pub mod core;
 
+pub use core::{
+    Marker,
+};
+
 pub use core::decode::{
     read_nil,
 };

@@ -10,7 +10,8 @@ const FIXSTR_SIZE   : u8 = 0x1f;
 const FIXARRAY_SIZE : u8 = 0x0f;
 const FIXMAP_SIZE   : u8 = 0x0f;
 
-enum Marker {
+#[derive(Debug, PartialEq)]
+pub enum Marker {
     PositiveFixnum(u8),
     NegativeFixnum(i8),
     Null,
