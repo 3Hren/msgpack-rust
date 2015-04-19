@@ -1,6 +1,6 @@
 #![feature(core)]
 
 extern crate msgpack;
-extern crate rustc_serialize as serialize;
+extern crate rustc_serialize;
 
 mod func;

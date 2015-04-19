@@ -1,7 +1,7 @@
 mod null {
     use std::io::Cursor;
 
-    use serialize::Decodable;
+    use rustc_serialize::Decodable;
 
     use msgpack::Decoder;
 
@@ -19,7 +19,7 @@ mod null {
         use std::io::Cursor;
         use std::result;
 
-        use serialize::Decodable;
+        use rustc_serialize::Decodable;
 
         use msgpack::Decoder;
         use msgpack::core::decode::serialize::Error;
@@ -42,7 +42,7 @@ mod null {
 mod bool {
     use std::io::Cursor;
 
-    use serialize::Decodable;
+    use rustc_serialize::Decodable;
 
     use msgpack::Decoder;
 
@@ -61,7 +61,7 @@ mod bool {
         use std::io::Cursor;
         use std::result;
 
-        use serialize::Decodable;
+        use rustc_serialize::Decodable;
 
         use msgpack::Decoder;
         use msgpack::core::decode::serialize::Error;
@@ -85,7 +85,7 @@ mod unspecified {
     use std::io::Cursor;
     use std::result;
 
-    use serialize::Decodable;
+    use rustc_serialize::Decodable;
 
     use msgpack::Decoder;
     use msgpack::core::decode::serialize::Error;
@@ -254,5 +254,33 @@ mod unspecified {
         let actual: Result<(u32,)> = Decodable::decode(&mut decoder);
 
         assert_eq!(Error::LengthMismatch(2), actual.err().unwrap());
+    }
+
+    #[test]
+    fn pass_tuple_struct() {
+        let buf = [0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
+        let cur = Cursor::new(&buf[..]);
+
+        #[derive(Debug, PartialEq, RustcDecodable)]
+        struct Decoded(u32, u32);
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Decoded = Decodable::decode(&mut decoder).unwrap();
+
+        assert_eq!(Decoded(42, 100500), actual);
+    }
+
+    #[test]
+    fn pass_struct() {
+        let buf = [0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
+        let cur = Cursor::new(&buf[..]);
+
+        #[derive(Debug, PartialEq, RustcDecodable)]
+        struct Decoded { id: u32, value: u32 };
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Decoded = Decodable::decode(&mut decoder).unwrap();
+
+        assert_eq!(Decoded { id: 42, value: 100500 }, actual);
     }
 }
