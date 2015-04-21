@@ -1,7 +1,4 @@
-use std::io;
-
-use msgpack::encode::Error;
-use msgpack::encode::write_nil;
+use msgpack::core::encode::*;
 
 #[test]
 fn pass_pack() {

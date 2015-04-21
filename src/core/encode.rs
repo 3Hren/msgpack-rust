@@ -29,19 +29,34 @@ impl convert::From<byteorder::Error> for WriteError {
 pub enum Error {
     /// IO error while writing marker.
     InvalidMarkerWrite(WriteError),
-//    InvalidFixedValueWrite(io::Error),
+    InvalidFixedValueWrite(WriteError),
 //    InvalidDataWrite(io::Error),
 //    IntegerTooLarge,
 }
 
+#[unstable(reason = "unwrap")]
 fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     where W: Write
 {
+    // TODO: Should never panics, but looks creepy. Use own trait instead.
     let byte = marker.to_u8().unwrap();
 
     match wr.write_u8(byte) {
         Ok(())   => Ok(()),
         Err(err) => Err(Error::InvalidMarkerWrite(From::from(err)))
+    }
+}
+
+#[unstable(reason = "unwrap")]
+fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
+    where W: Write
+{
+    // TODO: Should never panics, but looks creepy. Use own trait instead.
+    let byte = marker.to_u8().unwrap();
+
+    match wr.write_u8(byte) {
+        Ok(())   => Ok(()),
+        Err(err) => Err(Error::InvalidFixedValueWrite(From::from(err)))
     }
 }
 
@@ -57,7 +72,7 @@ pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), Error>
     where W: Write
 {
     if val < 128 {
-        write_marker(wr, Marker::PositiveFixnum(val))
+        write_fixval(wr, Marker::PositiveFixnum(val))
     } else {
         unimplemented!()
     }
