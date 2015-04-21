@@ -114,7 +114,7 @@ impl ToPrimitive for Marker {
             Marker::Null                => 0xc0,
             Marker::True                => unimplemented!(),
             Marker::False               => unimplemented!(),
-            Marker::U8                  => unimplemented!(),
+            Marker::U8                  => 0xcc,
             Marker::U16                 => unimplemented!(),
             Marker::U32                 => unimplemented!(),
             Marker::U64                 => unimplemented!(),
