@@ -1,18 +1,40 @@
+use std::convert;
+use std::io;
 use std::io::Write;
 use std::num::ToPrimitive;
+use std::result::Result;
 
-use byteorder::{WriteBytesExt};
+use byteorder;
+use byteorder::WriteBytesExt;
 
 use super::{
-    Error,
     Marker,
-    Result,
 };
 
-// TODO: Consider own Error/Result types for encode module.
-// Errors: IntegerTooLarge, MarkerWriteError(IO), DataWriteError(IO).
+#[derive(Debug)]
+pub enum WriteError {
+    Io(io::Error),
+}
 
-fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<()>
+impl convert::From<byteorder::Error> for WriteError {
+    fn from(err: byteorder::Error) -> WriteError {
+        match err {
+            byteorder::Error::UnexpectedEOF => unimplemented!(),
+            byteorder::Error::Io(err) => WriteError::Io(err),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum Error {
+    /// IO error while writing marker.
+    InvalidMarkerWrite(WriteError),
+//    InvalidFixedValueWrite(io::Error),
+//    InvalidDataWrite(io::Error),
+//    IntegerTooLarge,
+}
+
+fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     where W: Write
 {
     let byte = marker.to_u8().unwrap();
@@ -23,23 +45,20 @@ fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<()>
     }
 }
 
-#[unstable(reason = "docs; stabilize Result variant; not sure about returning num of bytes written")]
-pub fn write_nil<W>(wr: &mut W) -> Result<usize>
+#[unstable(reason = "docs; stabilize Result variant")]
+pub fn write_nil<W>(wr: &mut W) -> Result<(), Error>
     where W: Write
 {
-    try!(write_marker(wr, Marker::Null));
-    Ok(1)
+    write_marker(wr, Marker::Null)
 }
 
 // With strictly type checking.
-pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<usize>
+pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), Error>
     where W: Write
 {
     if val < 128 {
-        try!(write_marker(wr, Marker::PositiveFixnum(val)));
+        write_marker(wr, Marker::PositiveFixnum(val))
     } else {
         unimplemented!()
     }
-
-    Ok(1)
 }

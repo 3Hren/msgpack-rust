@@ -202,34 +202,6 @@ impl convert::From<byteorder::Error> for ReadError {
     }
 }
 
-#[derive(Debug)]
-pub enum WriteError {
-    IO(io::Error),
-}
-
-impl convert::From<byteorder::Error> for WriteError {
-    fn from(err: byteorder::Error) -> WriteError {
-        match err {
-            byteorder::Error::UnexpectedEOF => unimplemented!(),
-            byteorder::Error::Io(err) => WriteError::IO(err),
-        }
-    }
-}
-
-impl PartialEq for WriteError {
-    fn eq(&self, other: &WriteError) -> bool {
-        match (self, other) {
-            (&WriteError::IO(ref lhs), &WriteError::IO(ref rhs)) => {
-                lhs.kind() == rhs.kind()
-            }
-        }
-    }
-
-    fn ne(&self, other: &WriteError) -> bool {
-        return !self.eq(other);
-    }
-}
-
 #[unstable(reason = "remove Debug trait; incomplete")]
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -239,8 +211,6 @@ pub enum Error {
     InvalidMarkerRead(ReadError),
     /// IO error while reading data.
     InvalidDataRead(ReadError),
-    /// IO error while writing marker.
-    InvalidMarkerWrite(WriteError),
 }
 
 #[unstable(reason = "Core? Shit name!")]

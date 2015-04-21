@@ -17,9 +17,7 @@ pub use core::{
     Marker,
 };
 
-pub use core::decode::{
-    read_nil,
-};
+pub use core::encode;
 
 pub use core::decode::serialize::{
     Decoder,
