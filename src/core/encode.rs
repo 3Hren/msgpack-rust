@@ -25,6 +25,7 @@ impl convert::From<byteorder::Error> for WriteError {
     }
 }
 
+// TODO: Split Error for each function, permitting each function to return variant with impossible values.
 #[derive(Debug)]
 pub enum Error {
     /// Unable to write the value with the given type
@@ -102,6 +103,13 @@ macro_rules! make_write_data_fn {
 }
 
 make_write_data_fn!(u8,  write_data_u8,  write_u8);
+make_write_data_fn!(u16, write_data_u16, write_u16);
+make_write_data_fn!(u32, write_data_u32, write_u32);
+make_write_data_fn!(u64, write_data_u64, write_u64);
+make_write_data_fn!(i8,  write_data_i8,  write_i8);
+make_write_data_fn!(i16, write_data_i16, write_i16);
+make_write_data_fn!(i32, write_data_i32, write_i32);
+make_write_data_fn!(i64, write_data_i64, write_i64);
 
 // With strictly type checking.
 pub fn write_u8<W>(wr: &mut W, val: u8) -> Result<(), Error>
@@ -110,4 +118,60 @@ pub fn write_u8<W>(wr: &mut W, val: u8) -> Result<(), Error>
     try!(write_marker(wr, Marker::U8));
 
     write_data_u8(wr, val)
+}
+
+pub fn write_u16<W>(wr: &mut W, val: u16) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::U16));
+
+    write_data_u16(wr, val)
+}
+
+pub fn write_u32<W>(wr: &mut W, val: u32) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::U32));
+
+    write_data_u32(wr, val)
+}
+
+pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::U64));
+
+    write_data_u64(wr, val)
+}
+
+pub fn write_i8<W>(wr: &mut W, val: i8) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::I8));
+
+    write_data_i8(wr, val)
+}
+
+pub fn write_i16<W>(wr: &mut W, val: i16) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::I16));
+
+    write_data_i16(wr, val)
+}
+
+pub fn write_i32<W>(wr: &mut W, val: i32) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::I32));
+
+    write_data_i32(wr, val)
+}
+
+pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::I64));
+
+    write_data_i64(wr, val)
 }
