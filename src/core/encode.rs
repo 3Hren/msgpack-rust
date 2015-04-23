@@ -82,6 +82,16 @@ pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), Error>
     }
 }
 
+pub fn write_nfix<W>(wr: &mut W, val: i8) -> Result<(), Error>
+    where W: Write
+{
+    if -32 <= val && val < 0 {
+        write_fixval(wr, Marker::NegativeFixnum(val))
+    } else {
+        Err(Error::TypeMismatch)
+    }
+}
+
 macro_rules! make_write_data_fn {
     (deduce, $writer:ident, $encoder:ident, 0, $val:ident)
         => ($writer.$encoder($val););

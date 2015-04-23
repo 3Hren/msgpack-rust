@@ -66,6 +66,15 @@ fn pass_pack_u64() {
 }
 
 #[test]
+fn pass_pack_nfix() {
+    let mut buf = [0x00];
+
+    write_nfix(&mut &mut buf[..], -32).ok().unwrap();
+
+    assert_eq!([0xe0], buf);
+}
+
+#[test]
 fn pass_pack_i8() {
     let mut buf = [0x00, 0x00];
 

@@ -110,7 +110,7 @@ impl ToPrimitive for Marker {
     fn to_u64(&self) -> Option<u64> {
         let byte = match *self {
             Marker::PositiveFixnum(val) => val,
-            Marker::NegativeFixnum(..)  => unimplemented!(),
+            Marker::NegativeFixnum(val) => val as u8,
             Marker::Null                => 0xc0,
             Marker::True                => unimplemented!(),
             Marker::False               => unimplemented!(),
