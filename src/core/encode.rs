@@ -177,3 +177,25 @@ pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), Error>
     try!(write_marker(wr, Marker::I64));
     write_data_i64(wr, val)
 }
+
+/// [Write Me].
+///
+/// According to the MessagePack specification, the serializer SHOULD use the format which
+/// represents the data in the smallest number of bytes.
+pub fn write_uint<W>(wr: &mut W, val: u64) -> Result<Marker, Error>
+    where W: Write
+{
+    if val < 128 {
+        let marker = Marker::PositiveFixnum(val as u8);
+
+        write_fixval(wr, marker).map(|_| marker)
+    } else if val < 256 {
+        write_u8(wr, val as u8).map(|_| Marker::U8)
+    } else if val < 65536 {
+        write_u16(wr, val as u16).map(|_| Marker::U16)
+    } else if val < 4294967296 {
+        write_u32(wr, val as u32).map(|_| Marker::U32)
+    } else {
+        write_u64(wr, val).map(|_| Marker::U64)
+    }
+}
