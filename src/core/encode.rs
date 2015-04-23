@@ -126,7 +126,6 @@ pub fn write_u8<W>(wr: &mut W, val: u8) -> Result<(), Error>
     where W: Write
 {
     try!(write_marker(wr, Marker::U8));
-
     write_data_u8(wr, val)
 }
 
@@ -134,7 +133,6 @@ pub fn write_u16<W>(wr: &mut W, val: u16) -> Result<(), Error>
     where W: Write
 {
     try!(write_marker(wr, Marker::U16));
-
     write_data_u16(wr, val)
 }
 
@@ -142,7 +140,6 @@ pub fn write_u32<W>(wr: &mut W, val: u32) -> Result<(), Error>
     where W: Write
 {
     try!(write_marker(wr, Marker::U32));
-
     write_data_u32(wr, val)
 }
 
@@ -150,7 +147,6 @@ pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), Error>
     where W: Write
 {
     try!(write_marker(wr, Marker::U64));
-
     write_data_u64(wr, val)
 }
 
@@ -158,7 +154,6 @@ pub fn write_i8<W>(wr: &mut W, val: i8) -> Result<(), Error>
     where W: Write
 {
     try!(write_marker(wr, Marker::I8));
-
     write_data_i8(wr, val)
 }
 
@@ -166,7 +161,6 @@ pub fn write_i16<W>(wr: &mut W, val: i16) -> Result<(), Error>
     where W: Write
 {
     try!(write_marker(wr, Marker::I16));
-
     write_data_i16(wr, val)
 }
 
@@ -174,7 +168,6 @@ pub fn write_i32<W>(wr: &mut W, val: i32) -> Result<(), Error>
     where W: Write
 {
     try!(write_marker(wr, Marker::I32));
-
     write_data_i32(wr, val)
 }
 
@@ -182,6 +175,5 @@ pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), Error>
     where W: Write
 {
     try!(write_marker(wr, Marker::I64));
-
     write_data_i64(wr, val)
 }
