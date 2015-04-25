@@ -124,19 +124,24 @@ impl ToPrimitive for Marker {
             Marker::I64                 => 0xd3,
             Marker::F32                 => 0xca,
             Marker::F64                 => 0xcb,
+
             Marker::FixedString(..)     => unimplemented!(),
             Marker::Str8                => unimplemented!(),
             Marker::Str16               => unimplemented!(),
             Marker::Str32               => unimplemented!(),
+
             Marker::Bin8                => unimplemented!(),
             Marker::Bin16               => unimplemented!(),
             Marker::Bin32               => unimplemented!(),
+
             Marker::FixedArray(..)      => unimplemented!(),
             Marker::Array16             => unimplemented!(),
             Marker::Array32             => unimplemented!(),
+
             Marker::FixedMap(..)        => unimplemented!(),
             Marker::Map16               => unimplemented!(),
             Marker::Map32               => unimplemented!(),
+
             Marker::FixExt1             => unimplemented!(),
             Marker::FixExt2             => unimplemented!(),
             Marker::FixExt4             => unimplemented!(),
@@ -145,6 +150,7 @@ impl ToPrimitive for Marker {
             Marker::Ext8                => unimplemented!(),
             Marker::Ext16               => unimplemented!(),
             Marker::Ext32               => unimplemented!(),
+
             Marker::Reserved            => 0xc1,
         };
 
@@ -156,14 +162,14 @@ impl ToPrimitive for Marker {
 ///
 /// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
 /// case: an unexpected EOF.
-#[unstable(reason = "remove Debug trait")]
+#[unstable(reason = "remove Debug trait; maybe rename IO variant to Io")]
 #[derive(Debug)]
 pub enum ReadError {
     UnexpectedEOF,
     IO(io::Error),
 }
 
-// TODO: This is a hack, because io::Error has PartialEq once.
+#[unstable(reason = "this is a hack, because io::Error has PartialEq once; will be removed")]
 impl PartialEq for ReadError {
     fn eq(&self, other: &ReadError) -> bool {
         match (self, other) {
