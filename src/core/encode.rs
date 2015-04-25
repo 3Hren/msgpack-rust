@@ -68,7 +68,7 @@ fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
 pub fn write_nil<W>(wr: &mut W) -> Result<(), Error>
     where W: Write
 {
-    write_marker(wr, Marker::Null)
+    write_fixval(wr, Marker::Null)
 }
 
 pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), Error>

@@ -14,7 +14,7 @@ fn fail_pack_too_small_buffer() {
     let mut buf = [];
 
     match write_nil(&mut &mut buf[..]) {
-        Err(Error::InvalidMarkerWrite(..)) => (),
+        Err(Error::InvalidFixedValueWrite(..)) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }
