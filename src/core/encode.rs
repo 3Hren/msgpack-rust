@@ -71,6 +71,15 @@ pub fn write_nil<W>(wr: &mut W) -> Result<(), Error>
     write_marker(wr, Marker::Null)
 }
 
+pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), Error>
+    where W: Write
+{
+    match val {
+        true  => write_fixval(wr, Marker::True),
+        false => write_fixval(wr, Marker::False)
+    }
+}
+
 // With strictly type checking.
 pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), Error>
     where W: Write

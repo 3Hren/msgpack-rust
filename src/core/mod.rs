@@ -112,8 +112,8 @@ impl ToPrimitive for Marker {
             Marker::PositiveFixnum(val) => val,
             Marker::NegativeFixnum(val) => val as u8,
             Marker::Null                => 0xc0,
-            Marker::True                => unimplemented!(),
-            Marker::False               => unimplemented!(),
+            Marker::True                => 0xc3,
+            Marker::False               => 0xc2,
             Marker::U8                  => 0xcc,
             Marker::U16                 => 0xcd,
             Marker::U32                 => 0xce,
@@ -145,7 +145,7 @@ impl ToPrimitive for Marker {
             Marker::Ext8                => unimplemented!(),
             Marker::Ext16               => unimplemented!(),
             Marker::Ext32               => unimplemented!(),
-            Marker::Reserved            => unimplemented!(),
+            Marker::Reserved            => 0xc1,
         };
 
         Some(byte as u64)
