@@ -120,6 +120,8 @@ make_write_data_fn!(i8,  write_data_i8,  write_i8);
 make_write_data_fn!(i16, write_data_i16, write_i16);
 make_write_data_fn!(i32, write_data_i32, write_i32);
 make_write_data_fn!(i64, write_data_i64, write_i64);
+make_write_data_fn!(f32, write_data_f32, write_f32);
+make_write_data_fn!(f64, write_data_f64, write_f64);
 
 // With strictly type checking.
 pub fn write_u8<W>(wr: &mut W, val: u8) -> Result<(), Error>
@@ -220,4 +222,18 @@ pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, Error>
     } else {
         write_i64(wr, val).map(|_| Marker::I64)
     }
+}
+
+pub fn write_f32<W>(wr: &mut W, val: f32) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::F32));
+    write_data_f32(wr, val)
+}
+
+pub fn write_f64<W>(wr: &mut W, val: f64) -> Result<(), Error>
+    where W: Write
+{
+    try!(write_marker(wr, Marker::F64));
+    write_data_f64(wr, val)
 }
