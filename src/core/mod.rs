@@ -125,10 +125,10 @@ impl ToPrimitive for Marker {
             Marker::F32                 => 0xca,
             Marker::F64                 => 0xcb,
 
-            Marker::FixedString(..)     => unimplemented!(),
-            Marker::Str8                => unimplemented!(),
-            Marker::Str16               => unimplemented!(),
-            Marker::Str32               => unimplemented!(),
+            Marker::FixedString(len)    => 0xa0 | (len & FIXSTR_SIZE),
+            Marker::Str8                => 0xd9,
+            Marker::Str16               => 0xda,
+            Marker::Str32               => 0xdb,
 
             Marker::Bin8                => unimplemented!(),
             Marker::Bin16               => unimplemented!(),

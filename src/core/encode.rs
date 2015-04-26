@@ -246,3 +246,25 @@ pub fn write_f64<W>(wr: &mut W, val: f64) -> Result<(), Error>
     try!(write_marker(wr, Marker::F64));
     write_data_f64(wr, val)
 }
+
+/// Writes the most efficient string length implementation to the given buffer.
+///
+/// This function is useful when you want to get full control for writing the data itself, for
+/// example, when using non-blocking socket.
+pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
+    where W: Write
+{
+    if len < 32 {
+        let marker = Marker::FixedString(len as u8);
+        write_fixval(wr, marker).map(|_| marker)
+    } else if len < 256 {
+        try!(write_marker(wr, Marker::Str8));
+        write_data_u8(wr, len as u8).map(|_| Marker::Str8)
+    } else if len < 65536 {
+        try!(write_marker(wr, Marker::Str16));
+        write_data_u16(wr, len as u16).map(|_| Marker::Str16)
+    } else {
+        try!(write_marker(wr, Marker::Str32));
+        write_data_u32(wr, len).map(|_| Marker::Str32)
+    }
+}
