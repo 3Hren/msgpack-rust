@@ -3,3 +3,4 @@ mod bool;
 mod int;
 mod float;
 mod string;
+mod bin;

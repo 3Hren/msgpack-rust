@@ -111,17 +111,22 @@ impl ToPrimitive for Marker {
         let byte = match *self {
             Marker::PositiveFixnum(val) => val,
             Marker::NegativeFixnum(val) => val as u8,
+
             Marker::Null                => 0xc0,
+
             Marker::True                => 0xc3,
             Marker::False               => 0xc2,
+
             Marker::U8                  => 0xcc,
             Marker::U16                 => 0xcd,
             Marker::U32                 => 0xce,
             Marker::U64                 => 0xcf,
+
             Marker::I8                  => 0xd0,
             Marker::I16                 => 0xd1,
             Marker::I32                 => 0xd2,
             Marker::I64                 => 0xd3,
+
             Marker::F32                 => 0xca,
             Marker::F64                 => 0xcb,
 
@@ -130,9 +135,9 @@ impl ToPrimitive for Marker {
             Marker::Str16               => 0xda,
             Marker::Str32               => 0xdb,
 
-            Marker::Bin8                => unimplemented!(),
-            Marker::Bin16               => unimplemented!(),
-            Marker::Bin32               => unimplemented!(),
+            Marker::Bin8                => 0xc4,
+            Marker::Bin16               => 0xc5,
+            Marker::Bin32               => 0xc6,
 
             Marker::FixedArray(..)      => unimplemented!(),
             Marker::Array16             => unimplemented!(),

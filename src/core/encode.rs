@@ -268,3 +268,18 @@ pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
         write_data_u32(wr, len).map(|_| Marker::Str32)
     }
 }
+
+pub fn write_bin_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
+    where W: Write
+{
+    if len < 256 {
+        try!(write_marker(wr, Marker::Bin8));
+        write_data_u8(wr, len as u8).map(|_| Marker::Bin8)
+    } else if len < 65536 {
+        try!(write_marker(wr, Marker::Bin16));
+        write_data_u16(wr, len as u16).map(|_| Marker::Bin16)
+    } else {
+        try!(write_marker(wr, Marker::Bin32));
+        write_data_u32(wr, len).map(|_| Marker::Bin32)
+    }
+}
