@@ -139,9 +139,9 @@ impl ToPrimitive for Marker {
             Marker::Bin16               => 0xc5,
             Marker::Bin32               => 0xc6,
 
-            Marker::FixedArray(..)      => unimplemented!(),
-            Marker::Array16             => unimplemented!(),
-            Marker::Array32             => unimplemented!(),
+            Marker::FixedArray(len)     => 0x90 | (len & FIXARRAY_SIZE),
+            Marker::Array16             => 0xdc,
+            Marker::Array32             => 0xdd,
 
             Marker::FixedMap(..)        => unimplemented!(),
             Marker::Map16               => unimplemented!(),

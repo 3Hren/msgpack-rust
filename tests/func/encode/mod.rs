@@ -4,3 +4,4 @@ mod int;
 mod float;
 mod string;
 mod bin;
+mod array;
