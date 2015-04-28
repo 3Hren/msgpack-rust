@@ -298,3 +298,18 @@ pub fn write_array_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
         write_data_u32(wr, len).map(|_| Marker::Array32)
     }
 }
+
+pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
+    where W: Write
+{
+    if len < 16 {
+        let marker = Marker::FixedMap(len as u8);
+        write_fixval(wr, marker).map(|_| marker)
+    } else if len < 65536 {
+        try!(write_marker(wr, Marker::Map16));
+        write_data_u16(wr, len as u16).map(|_| Marker::Map16)
+    } else {
+        try!(write_marker(wr, Marker::Map32));
+        write_data_u32(wr, len).map(|_| Marker::Map32)
+    }
+}

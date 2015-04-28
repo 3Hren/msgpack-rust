@@ -143,9 +143,9 @@ impl ToPrimitive for Marker {
             Marker::Array16             => 0xdc,
             Marker::Array32             => 0xdd,
 
-            Marker::FixedMap(..)        => unimplemented!(),
-            Marker::Map16               => unimplemented!(),
-            Marker::Map32               => unimplemented!(),
+            Marker::FixedMap(len)       => 0x80 | (len & FIXMAP_SIZE),
+            Marker::Map16               => 0xde,
+            Marker::Map32               => 0xdf,
 
             Marker::FixExt1             => unimplemented!(),
             Marker::FixExt2             => unimplemented!(),
