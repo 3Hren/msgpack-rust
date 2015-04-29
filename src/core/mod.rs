@@ -147,14 +147,14 @@ impl ToPrimitive for Marker {
             Marker::Map16               => 0xde,
             Marker::Map32               => 0xdf,
 
-            Marker::FixExt1             => unimplemented!(),
-            Marker::FixExt2             => unimplemented!(),
-            Marker::FixExt4             => unimplemented!(),
-            Marker::FixExt8             => unimplemented!(),
-            Marker::FixExt16            => unimplemented!(),
-            Marker::Ext8                => unimplemented!(),
-            Marker::Ext16               => unimplemented!(),
-            Marker::Ext32               => unimplemented!(),
+            Marker::FixExt1             => 0xd4,
+            Marker::FixExt2             => 0xd5,
+            Marker::FixExt4             => 0xd6,
+            Marker::FixExt8             => 0xd7,
+            Marker::FixExt16            => 0xd8,
+            Marker::Ext8                => 0xc7,
+            Marker::Ext16               => 0xc8,
+            Marker::Ext32               => 0xc9,
 
             Marker::Reserved            => 0xc1,
         };

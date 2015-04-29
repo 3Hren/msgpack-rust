@@ -313,3 +313,54 @@ pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
         write_data_u32(wr, len).map(|_| Marker::Map32)
     }
 }
+
+/// typeid < 0 is reserved for future extension including 2-byte type information.
+pub fn write_ext_meta<W>(wr: &mut W, len: u32, typeid: i8) -> Result<Marker, Error>
+    where W: Write
+{
+    match len {
+        1 => {
+            try!(write_marker(wr, Marker::FixExt1));
+            try!(write_data_i8(wr, typeid));
+            Ok(Marker::FixExt1)
+        }
+        2 => {
+            try!(write_marker(wr, Marker::FixExt2));
+            try!(write_data_i8(wr, typeid));
+            Ok(Marker::FixExt2)
+        }
+        4 => {
+            try!(write_marker(wr, Marker::FixExt4));
+            try!(write_data_i8(wr, typeid));
+            Ok(Marker::FixExt4)
+        }
+        8 => {
+            try!(write_marker(wr, Marker::FixExt8));
+            try!(write_data_i8(wr, typeid));
+            Ok(Marker::FixExt8)
+        }
+        16 => {
+            try!(write_marker(wr, Marker::FixExt16));
+            try!(write_data_i8(wr, typeid));
+            Ok(Marker::FixExt16)
+        }
+        len if len < 256 => {
+            try!(write_marker(wr, Marker::Ext8));
+            try!(write_data_u8(wr, len as u8));
+            try!(write_data_i8(wr, typeid));
+            Ok(Marker::Ext8)
+        }
+        len if len < 65536 => {
+            try!(write_marker(wr, Marker::Ext16));
+            try!(write_data_u16(wr, len as u16));
+            try!(write_data_i8(wr, typeid));
+            Ok(Marker::Ext16)
+        }
+        len => {
+            try!(write_marker(wr, Marker::Ext32));
+            try!(write_data_u32(wr, len));
+            try!(write_data_i8(wr, typeid));
+            Ok(Marker::Ext32)
+        }
+    }
+}
