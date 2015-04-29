@@ -1,5 +1,4 @@
 use std::io::Cursor;
-use std::str::Utf8Error;
 
 use msgpack::core::*;
 use msgpack::core::decode::*;
@@ -374,8 +373,13 @@ fn from_str_strfix_invalid_utf8() {
 
     let mut out: &mut [u8] = &mut [0u8; 16];
 
-    assert_eq!(DecodeStringError::InvalidUtf8(&[0xc3, 0x28], Utf8Error::InvalidByte(0x0)),
-        read_str(&mut cur, &mut out).err().unwrap());
+    match read_str(&mut cur, &mut out) {
+        Err(DecodeStringError::InvalidUtf8(raw, _)) => {
+            assert_eq!(&[0xc3, 0x28], raw);
+        }
+        other => panic!("unexpected result: {:?}", other)
+    }
+
     assert_eq!(3, cur.position());
 }
 

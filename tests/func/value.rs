@@ -1,5 +1,4 @@
 use std::io::Cursor;
-use std::str::Utf8Error;
 
 use msgpack::core::{Value, Integer, ReadError};
 use msgpack::core::decode::value::*;
@@ -72,8 +71,13 @@ fn from_str8_invalid_utf8() {
     let buf: &[u8] = &[0xd9, 0x02, 0xc3, 0x28];
     let mut cur = Cursor::new(buf);
 
-    assert_eq!(Error::InvalidUtf8(buf[2..].to_vec(), Utf8Error::InvalidByte(0x0)),
-        read_value(&mut cur).err().unwrap());
+    match read_value(&mut cur) {
+        Err(Error::InvalidUtf8(raw, _)) => {
+            assert_eq!(buf[2..].to_vec(), raw);
+        }
+        other => panic!("unexpected result: {:?}", other)
+    }
+
     assert_eq!(4, cur.position());
 }
 

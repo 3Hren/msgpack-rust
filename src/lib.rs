@@ -1,10 +1,9 @@
 #![crate_name = "msgpack"]
 
-#![unstable = "this library is still in rapid development"]
+//#![feature(collections)]
+//#![cfg_attr(test, feature(test))]
 
-#![feature(core)]
-#![feature(collections)]
-#![cfg_attr(test, feature(test))]
+/// Unstable: this library is still in rapid development
 
 extern crate byteorder;
 extern crate rustc_serialize as serialize;
@@ -26,8 +25,8 @@ pub use core::decode::serialize::{
 /// Temporary. Move to error.rs module.
 pub use core::{Error, ReadError};
 
-#[cfg(test)]
-mod bench;
+//#[cfg(test)]
+//mod bench;
 
 // Stage 1. Low-level decoding functions.
 // Stage 2. Value decoding functions.

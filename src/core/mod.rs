@@ -1,7 +1,6 @@
 use std::convert;
 use std::io;
 use std::result;
-use std::num::{FromPrimitive, ToPrimitive};
 use std::str::Utf8Error;
 
 use byteorder;
@@ -51,64 +50,53 @@ pub enum Marker {
     Reserved,
 }
 
-// TODO: Consider using own trait without Option packing/unpacking.
-impl FromPrimitive for Marker {
-    fn from_i64(n: i64) -> Option<Marker> {
-        FromPrimitive::from_u64(n as u64)
-    }
-
-    fn from_u64(n: u64) -> Option<Marker> {
+impl Marker {
+    pub fn from_u8(n: u8) -> Marker {
         match n {
-            val @ 0x00 ... 0x7f => Some(Marker::PositiveFixnum(val as u8)),
-            val @ 0xe0 ... 0xff => Some(Marker::NegativeFixnum(val as i8)),
-            val @ 0x80 ... 0x8f => Some(Marker::FixedMap((val as u8) & FIXMAP_SIZE)),
-            val @ 0x90 ... 0x9f => Some(Marker::FixedArray((val as u8) & FIXARRAY_SIZE)),
-            val @ 0xa0 ... 0xbf => Some(Marker::FixedString((val as u8) & FIXSTR_SIZE)),
-            0xc0 => Some(Marker::Null),
-            0xc1 => None, // Marked in MessagePack spec as never used.
-            0xc2 => Some(Marker::False),
-            0xc3 => Some(Marker::True),
-            0xc4 => Some(Marker::Bin8),
-            0xc5 => Some(Marker::Bin16),
-            0xc6 => Some(Marker::Bin32),
-            0xc7 => Some(Marker::Ext8),
-            0xc8 => Some(Marker::Ext16),
-            0xc9 => Some(Marker::Ext32),
-            0xca => Some(Marker::F32),
-            0xcb => Some(Marker::F64),
-            0xcc => Some(Marker::U8),
-            0xcd => Some(Marker::U16),
-            0xce => Some(Marker::U32),
-            0xcf => Some(Marker::U64),
-            0xd0 => Some(Marker::I8),
-            0xd1 => Some(Marker::I16),
-            0xd2 => Some(Marker::I32),
-            0xd3 => Some(Marker::I64),
-            0xd4 => Some(Marker::FixExt1),
-            0xd5 => Some(Marker::FixExt2),
-            0xd6 => Some(Marker::FixExt4),
-            0xd7 => Some(Marker::FixExt8),
-            0xd8 => Some(Marker::FixExt16),
-            0xd9 => Some(Marker::Str8),
-            0xda => Some(Marker::Str16),
-            0xdb => Some(Marker::Str32),
-            0xdc => Some(Marker::Array16),
-            0xdd => Some(Marker::Array32),
-            0xde => Some(Marker::Map16),
-            0xdf => Some(Marker::Map32),
-            _ => None,
+            val @ 0x00 ... 0x7f => Marker::PositiveFixnum(val as u8),
+            val @ 0xe0 ... 0xff => Marker::NegativeFixnum(val as i8),
+            val @ 0x80 ... 0x8f => Marker::FixedMap((val as u8) & FIXMAP_SIZE),
+            val @ 0x90 ... 0x9f => Marker::FixedArray((val as u8) & FIXARRAY_SIZE),
+            val @ 0xa0 ... 0xbf => Marker::FixedString((val as u8) & FIXSTR_SIZE),
+            0xc0 => Marker::Null,
+            /// Marked in MessagePack spec as never used.
+            0xc1 => Marker::Reserved,
+            0xc2 => Marker::False,
+            0xc3 => Marker::True,
+            0xc4 => Marker::Bin8,
+            0xc5 => Marker::Bin16,
+            0xc6 => Marker::Bin32,
+            0xc7 => Marker::Ext8,
+            0xc8 => Marker::Ext16,
+            0xc9 => Marker::Ext32,
+            0xca => Marker::F32,
+            0xcb => Marker::F64,
+            0xcc => Marker::U8,
+            0xcd => Marker::U16,
+            0xce => Marker::U32,
+            0xcf => Marker::U64,
+            0xd0 => Marker::I8,
+            0xd1 => Marker::I16,
+            0xd2 => Marker::I32,
+            0xd3 => Marker::I64,
+            0xd4 => Marker::FixExt1,
+            0xd5 => Marker::FixExt2,
+            0xd6 => Marker::FixExt4,
+            0xd7 => Marker::FixExt8,
+            0xd8 => Marker::FixExt16,
+            0xd9 => Marker::Str8,
+            0xda => Marker::Str16,
+            0xdb => Marker::Str32,
+            0xdc => Marker::Array16,
+            0xdd => Marker::Array32,
+            0xde => Marker::Map16,
+            0xdf => Marker::Map32,
+            _ => Marker::Reserved,
         }
     }
-}
 
-// TODO: Consider using own trait without Option packing/unpacking.
-impl ToPrimitive for Marker {
-    fn to_i64(&self) -> Option<i64> {
-        Some(ToPrimitive::to_u64(self).unwrap() as i64)
-    }
-
-    fn to_u64(&self) -> Option<u64> {
-        let byte = match *self {
+    pub fn to_u8(&self) -> u8 {
+        match *self {
             Marker::PositiveFixnum(val) => val,
             Marker::NegativeFixnum(val) => val as u8,
 
@@ -157,9 +145,7 @@ impl ToPrimitive for Marker {
             Marker::Ext32               => 0xc9,
 
             Marker::Reserved            => 0xc1,
-        };
-
-        Some(byte as u64)
+        }
     }
 }
 
@@ -167,14 +153,15 @@ impl ToPrimitive for Marker {
 ///
 /// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
 /// case: an unexpected EOF.
-#[unstable(reason = "remove Debug trait; maybe rename IO variant to Io")]
+
+/// Unstable: remove Debug trait; maybe rename IO variant to Io
 #[derive(Debug)]
 pub enum ReadError {
     UnexpectedEOF,
     IO(io::Error),
 }
 
-#[unstable(reason = "this is a hack, because io::Error has PartialEq once; will be removed")]
+/// Unstable: this is a hack, because io::Error has PartialEq once; will be removed
 impl PartialEq for ReadError {
     fn eq(&self, other: &ReadError) -> bool {
         match (self, other) {
@@ -213,7 +200,7 @@ impl convert::From<byteorder::Error> for ReadError {
     }
 }
 
-#[unstable(reason = "remove Debug trait; incomplete")]
+/// Unstable: remove Debug trait; incomplete
 #[derive(Debug, PartialEq)]
 pub enum Error {
     /// Marker type error.
@@ -224,7 +211,7 @@ pub enum Error {
     InvalidDataRead(ReadError),
 }
 
-#[unstable(reason = "Core? Shit name!")]
+/// Unstable: Core? Shit name!
 #[derive(Debug, PartialEq)]
 pub enum DecodeStringError<'a> {
     Core(Error),

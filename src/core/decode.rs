@@ -1,7 +1,6 @@
 use std::convert::From;
 use std::io;
 use std::io::{Cursor, Read};
-use std::num::FromPrimitive;
 use std::result;
 use std::str::from_utf8;
 
@@ -14,9 +13,9 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker>
 {
     match rd.read_u8() {
         Ok(val) => {
-            match FromPrimitive::from_u8(val) {
-                Some(marker) => Ok(marker),
-                None         => Err(Error::TypeMismatch(Marker::Reserved)),
+            match Marker::from_u8(val) {
+                Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
+                marker           => Ok(marker),
             }
         }
         Err(err) => Err(Error::InvalidMarkerRead(From::from(err))),
@@ -24,7 +23,6 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker>
 }
 
 /// Tries to decode a nil value from the reader.
-#[stable(since = "0.1.0")]
 pub fn read_nil<R>(rd: &mut R) -> Result<()>
     where R: Read
 {
@@ -35,7 +33,6 @@ pub fn read_nil<R>(rd: &mut R) -> Result<()>
 }
 
 /// Tries to decode a bool value from the reader.
-#[stable(since = "0.1.0")]
 pub fn read_bool<R>(rd: &mut R) -> Result<bool>
     where R: Read
 {
@@ -47,7 +44,6 @@ pub fn read_bool<R>(rd: &mut R) -> Result<bool>
 }
 
 /// Tries to decode an exactly positive fixnum from the reader.
-#[stable(since = "0.1.0")]
 pub fn read_pfix<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
@@ -58,7 +54,6 @@ pub fn read_pfix<R>(rd: &mut R) -> Result<u8>
 }
 
 /// Tries to decode an exactly negative fixnum from the reader.
-#[stable(since = "0.1.0")]
 pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
@@ -69,7 +64,6 @@ pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
 }
 
 /// Tries to read strictly i8 value from the reader.
-#[stable(since = "0.1.0")]
 pub fn read_i8<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
@@ -80,7 +74,6 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8>
 }
 
 /// Tries to read strictly i16 value from the reader.
-#[stable(since = "0.1.0")]
 pub fn read_i16<R>(rd: &mut R) -> Result<i16>
     where R: Read
 {
@@ -91,7 +84,6 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16>
 }
 
 /// Tries to read strictly i32 value from the reader.
-#[stable(since = "0.1.0")]
 pub fn read_i32<R>(rd: &mut R) -> Result<i32>
     where R: Read
 {
@@ -102,7 +94,6 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32>
 }
 
 /// Tries to read strictly i64 value from the reader.
-#[stable(since = "0.1.0")]
 pub fn read_i64<R>(rd: &mut R) -> Result<i64>
     where R: Read
 {
@@ -113,7 +104,6 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64>
 }
 
 /// Tries to read exactly 2 bytes from the reader and decode them as u8.
-#[stable(since = "0.1.0")]
 pub fn read_u8<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
@@ -124,7 +114,8 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8>
 }
 
 /// Tries to read exactly 3 bytes from the reader and decode them as u16.
-#[unstable(reason = "more docs")]
+///
+/// Unstable: more docs
 pub fn read_u16<R>(rd: &mut R) -> Result<u16>
     where R: Read
 {
@@ -135,7 +126,8 @@ pub fn read_u16<R>(rd: &mut R) -> Result<u16>
 }
 
 /// Tries to read exactly 5 bytes from the reader and decode them as u32.
-#[unstable(reason = "more docs")]
+///
+/// Unstable: more docs
 pub fn read_u32<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
@@ -146,7 +138,8 @@ pub fn read_u32<R>(rd: &mut R) -> Result<u32>
 }
 
 /// Tries to read exactly 5 bytes from the reader and decode them as u64
-#[unstable(reason = "more docs")]
+///
+/// Unstable: more docs
 pub fn read_u64<R>(rd: &mut R) -> Result<u64>
     where R: Read
 {
@@ -187,7 +180,7 @@ make_read_data_fn!(i64, read_data_i64, read_i64);
 make_read_data_fn!(f32, read_data_f32, read_f32);
 make_read_data_fn!(f64, read_data_f64, read_f64);
 
-#[unstable(reason = "not sure about name; docs; untested")]
+/// Unstable: not sure about name; docs; untested
 pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
@@ -198,7 +191,7 @@ pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8>
     }
 }
 
-#[unstable(reason = "not sure about name; docs; untested")]
+/// Unstable: not sure about name; docs; untested
 pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16>
     where R: Read
 {
@@ -210,7 +203,7 @@ pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16>
     }
 }
 
-#[unstable(reason = "not sure about name; docs; untested")]
+/// Unstable: not sure about name; docs; untested
 pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
@@ -227,7 +220,8 @@ pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32>
 /// them as a big-endian u64.
 ///
 /// The function tries to decode only unsigned integer values that are always non-negative.
-#[unstable(reason = "not sure about name")]
+
+/// Unstable: not sure about name
 pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64>
     where R: Read
 {
@@ -241,7 +235,7 @@ pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64>
     }
 }
 
-#[unstable(reason = "not sure about name; docs; untested")]
+/// Unstable: not sure about name; docs; untested
 pub fn read_i8_loosely<R>(rd: &mut R) -> Result<i8>
     where R: Read
 {
@@ -252,7 +246,7 @@ pub fn read_i8_loosely<R>(rd: &mut R) -> Result<i8>
     }
 }
 
-#[unstable(reason = "not sure about name; docs; untested")]
+/// Unstable: not sure about name; docs; untested
 pub fn read_i16_loosely<R>(rd: &mut R) -> Result<i16>
     where R: Read
 {
@@ -264,7 +258,7 @@ pub fn read_i16_loosely<R>(rd: &mut R) -> Result<i16>
     }
 }
 
-#[unstable(reason = "not sure about name; docs; untested")]
+/// Unstable: not sure about name; docs; untested
 pub fn read_i32_loosely<R>(rd: &mut R) -> Result<i32>
     where R: Read
 {
@@ -281,7 +275,8 @@ pub fn read_i32_loosely<R>(rd: &mut R) -> Result<i32>
 /// them as a big-endian i64.
 ///
 /// The function tries to decode only signed integer values that can potentially be negative.
-#[unstable(reason = "not sure about name")]
+///
+/// Unstable: not sure about name
 pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64>
     where R: Read
 {
@@ -296,7 +291,8 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64>
 }
 
 /// Yes, it is slower, because of ADT, but more convenient.
-#[unstable(reason = "move to high-level module; complete; test")]
+///
+/// Unstable: move to high-level module; complete; test
 pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
     where R: Read
 {
@@ -351,7 +347,8 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
 ///
 /// assert_eq!("le message", read_str(&mut &buf[..], &mut &mut out[..]).unwrap());
 /// ```
-#[unstable(reason = "less `as`")]
+///
+/// Unstable: less `as`
 pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> result::Result<&'r str, DecodeStringError<'r>>
     where R: Read
 {
@@ -395,7 +392,8 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8])
 }
 
 /// Tries to read a string data from the reader and make a borrowed slice from it.
-#[unstable(reason = "it is better to return &str; may panic on len mismatch")]
+///
+/// Unstable: it is better to return &str; may panic on len mismatch
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8]> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
@@ -428,7 +426,7 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
     }
 }
 
-#[unstable = "documentation required"]
+/// Unstable: documentation required
 pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
@@ -440,7 +438,7 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
     }
 }
 
-#[unstable = "documentation"]
+/// Unstable: documentation
 pub fn read_f32<R>(rd: &mut R) -> Result<f32>
     where R: Read
 {
@@ -450,7 +448,7 @@ pub fn read_f32<R>(rd: &mut R) -> Result<f32>
     }
 }
 
-#[unstable = "docs"]
+/// Unstable: docs
 pub fn read_f64<R>(rd: &mut R) -> Result<f64>
     where R: Read
 {
@@ -471,7 +469,7 @@ pub fn read_bin_len<R>(rd: &mut R) -> Result<u32>
     }
 }
 
-#[unstable(reason = "docs; not sure about naming")]
+/// Unstable: docs; not sure about naming
 pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8]> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_bin_len(&mut cur)) as usize;
@@ -485,7 +483,7 @@ pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8]> {
     }
 }
 
-#[unstable = "docs"]
+/// Unstable: docs
 pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8)>
     where R: Read
 {
@@ -499,7 +497,7 @@ pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8)>
     }
 }
 
-#[unstable = "docs"]
+/// Unstable: docs
 pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, u16)>
     where R: Read
 {
@@ -513,7 +511,7 @@ pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, u16)>
     }
 }
 
-#[unstable = "docs; contains unsafe code"]
+/// Unstable: docs; contains unsafe code
 pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4])>
     where R: Read
 {
@@ -534,7 +532,7 @@ pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4])>
     }
 }
 
-#[unstable = "docs, error cases, type mismatch, unsufficient bytes, extra bytes"]
+/// Unstable: docs, error cases, type mismatch, unsufficient bytes, extra bytes
 pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8])>
     where R: Read
 {
@@ -552,7 +550,7 @@ pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8])>
     }
 }
 
-#[unstable = "docs, error cases, type mismatch, unsufficient bytes, extra bytes"]
+/// Unstable: docs, error cases, type mismatch, unsufficient bytes, extra bytes
 pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16])>
     where R: Read
 {
@@ -576,7 +574,7 @@ pub struct ExtMeta {
     pub size: u32,
 }
 
-#[unstable = "docs, errors"]
+/// Unstable: docs, errors
 pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta>
     where R: Read
 {
@@ -638,7 +636,7 @@ impl<'a> convert::From<DecodeStringError<'a>> for Error {
 
 pub type Result<T> = result::Result<T, Error>;
 
-#[unstable(reason = "docs; examples; incomplete")]
+/// Unstable: docs; examples; incomplete
 pub fn read_value<R>(rd: &mut R) -> Result<Value>
     where R: Read
 {
@@ -651,8 +649,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value>
         Marker::Str8 => {
             let len = try!(read_data_u8(rd)) as u64;
 
-            let mut buf = Vec::with_capacity(len as usize);
-            buf.resize(len as usize, 0);
+            let mut buf: Vec<u8> = (0..len).map(|_| 0u8).collect();
 
             Ok(Value::String(try!(read_str_data(rd, len as u32, &mut buf[..])).to_string()))
         }
@@ -678,7 +675,6 @@ pub mod serialize {
 
 use std::convert::From;
 use std::io::Read;
-use std::num;
 use std::result;
 
 use serialize;
@@ -704,7 +700,7 @@ use super::{
     read_map_size,
 };
 
-#[unstable(reason = "docs; incomplete")]
+/// Unstable: docs; incomplete
 #[derive(Debug, PartialEq)]
 pub enum Error {
     /// The actual value type isn't equal with the expected one.
@@ -726,7 +722,7 @@ impl From<core::Error> for Error {
     }
 }
 
-#[unstable(reason = "docs; incomplete")]
+/// Unstable: docs; incomplete
 impl<'a> From<core::DecodeStringError<'a>> for Error {
     fn from(err: core::DecodeStringError) -> Error {
         match err {
@@ -753,7 +749,7 @@ impl<R: Read> Decoder<R> {
 }
 
 #[allow(unused)]
-#[unstable(reason = "docs; examples; incomplete")]
+/// Unstable: docs; examples; incomplete
 impl<R: Read> serialize::Decoder for Decoder<R> {
     type Error = Error;
 
@@ -781,11 +777,10 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         Ok(try!(read_u64_loosely(&mut self.rd)))
     }
 
+    /// TODO: Doesn't look safe.
     fn read_usize(&mut self) -> Result<usize> {
-        match num::from_u64(try!(self.read_u64())) {
-            Some(val) => Ok(val),
-            None      => Err(Error::TypeMismatch(Marker::U64)),
-        }
+        let v = try!(self.read_u64());
+        Ok(v as usize)
     }
 
     fn read_i8(&mut self) -> Result<i8> {
@@ -804,11 +799,9 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         Ok(try!(read_i64_loosely(&mut self.rd)))
     }
 
+    /// TODO: Doesn't look safe.
     fn read_isize(&mut self) -> Result<isize> {
-        match num::from_i64(try!(self.read_i64())) {
-            Some(val) => Ok(val),
-            None      => Err(Error::TypeMismatch(Marker::I64)),
-        }
+        Ok(try!(self.read_i64()) as isize)
     }
 
     fn read_f32(&mut self) -> Result<f32> {
@@ -824,8 +817,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_str(&mut self) -> Result<String> {
         let len = try!(read_str_len(&mut self.rd));
 
-        let mut buf = Vec::with_capacity(len as usize);
-        buf.resize(len as usize, 0);
+        let mut buf: Vec<u8> = (0..len).map(|_| 0u8).collect();
 
         Ok(try!(read_str_data(&mut self.rd, len, &mut buf[..])).to_string())
     }

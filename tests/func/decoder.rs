@@ -153,7 +153,7 @@ mod unspecified {
 
         let mut decoder = Decoder::new(cur);
 
-        assert_eq!(255us, Decodable::decode(&mut decoder).ok().unwrap());
+        assert_eq!(255usize, Decodable::decode(&mut decoder).ok().unwrap());
     }
 
     #[test]
@@ -203,7 +203,7 @@ mod unspecified {
 
         let mut decoder = Decoder::new(cur);
 
-        assert_eq!(127is, Decodable::decode(&mut decoder).unwrap());
+        assert_eq!(127isize, Decodable::decode(&mut decoder).unwrap());
     }
 
     #[test]

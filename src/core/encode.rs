@@ -1,7 +1,6 @@
 use std::convert;
 use std::io;
 use std::io::Write;
-use std::num::ToPrimitive;
 use std::result::Result;
 
 use byteorder;
@@ -38,12 +37,10 @@ pub enum Error {
     InvalidDataWrite(WriteError),
 }
 
-#[unstable(reason = "unwrap")]
 fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     where W: Write
 {
-    // TODO: Should never panics, but looks creepy. Use own trait instead.
-    let byte = marker.to_u8().unwrap();
+    let byte = marker.to_u8();
 
     match wr.write_u8(byte) {
         Ok(())   => Ok(()),
@@ -51,12 +48,10 @@ fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     }
 }
 
-#[unstable(reason = "unwrap")]
 fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     where W: Write
 {
-    // TODO: Should never panics, but looks creepy. Use own trait instead.
-    let byte = marker.to_u8().unwrap();
+    let byte = marker.to_u8();
 
     match wr.write_u8(byte) {
         Ok(())   => Ok(()),
@@ -64,7 +59,7 @@ fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     }
 }
 
-#[unstable(reason = "docs; stabilize Result variant")]
+/// Unstable: docs; stabilize Result variant
 pub fn write_nil<W>(wr: &mut W) -> Result<(), Error>
     where W: Write
 {
