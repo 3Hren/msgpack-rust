@@ -22,6 +22,10 @@ pub use core::decode::serialize::{
     Decoder,
 };
 
+pub use core::encode::serialize::{
+    Encoder,
+};
+
 /// Temporary. Move to error.rs module.
 pub use core::{Error, ReadError};
 

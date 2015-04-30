@@ -359,3 +359,221 @@ pub fn write_ext_meta<W>(wr: &mut W, len: u32, typeid: i8) -> Result<Marker, Err
         }
     }
 }
+
+pub mod serialize {
+
+use serialize;
+
+use std::io::Write;
+
+use super::{
+    write_nil,
+};
+
+pub enum Error {
+    Unexpected,
+}
+
+impl From<super::Error> for Error {
+    fn from(err: super::Error) -> Error {
+        match err {
+            _ => Error::Unexpected,
+        }
+    }
+}
+
+pub struct Encoder<'a> {
+    wr: &'a mut Write,
+}
+
+impl<'a> Encoder<'a> {
+    pub fn new(wr: &'a mut Write) -> Encoder<'a> {
+        Encoder {
+            wr: wr,
+        }
+    }
+}
+
+#[allow(unused)]
+impl<'a> serialize::Encoder for Encoder<'a> {
+    type Error = Error;
+
+    fn emit_nil(&mut self) -> Result<(), Error> {
+        try!(write_nil(&mut self.wr));
+        Ok(())
+    }
+
+    fn emit_bool(&mut self, v: bool) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_u8(&mut self, v: u8) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_u16(&mut self, v: u16) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_u32(&mut self, v: u32) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_u64(&mut self, v: u64) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_usize(&mut self, v: usize) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_i8(&mut self, v: i8) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_i16(&mut self, v: i16) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_i32(&mut self, v: i32) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_i64(&mut self, v: i64) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_isize(&mut self, v: isize) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_f32(&mut self, v: f32) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_f64(&mut self, v: f64) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_char(&mut self, v: char) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_str(&mut self, v: &str) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_enum<F>(&mut self, name: &str, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_enum_variant<F>(&mut self, v_name: &str, v_id: usize, len: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_enum_variant_arg<F>(&mut self, a_idx: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_enum_struct_variant<F>(&mut self, v_name: &str, v_id: usize, len: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_enum_struct_variant_field<F>(&mut self, f_name: &str, f_idx: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_struct<F>(&mut self, name: &str, len: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_struct_field<F>(&mut self, f_name: &str, f_idx: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_tuple<F>(&mut self, len: usize, f: F) -> Result<(), Error> where F: FnOnce(&mut Self)
+        -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_tuple_arg<F>(&mut self, idx: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_tuple_struct<F>(&mut self, name: &str, len: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_tuple_struct_arg<F>(&mut self, f_idx: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_option<F>(&mut self, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_option_none(&mut self) -> Result<(), Error> {
+        unimplemented!()
+    }
+
+    fn emit_option_some<F>(&mut self, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_seq<F>(&mut self, len: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_seq_elt<F>(&mut self, idx: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_map<F>(&mut self, len: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_map_elt_key<F>(&mut self, idx: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+
+    fn emit_map_elt_val<F>(&mut self, idx: usize, f: F) -> Result<(), Error>
+        where F: FnOnce(&mut Self) -> Result<(), Error>
+    {
+        unimplemented!()
+    }
+}
+
+}

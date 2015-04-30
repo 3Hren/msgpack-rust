@@ -1,3 +1,4 @@
+// Low-level interface.
 mod null;
 mod bool;
 mod int;
@@ -7,3 +8,6 @@ mod bin;
 mod array;
 mod map;
 mod ext;
+
+// High-level serialize interface.
+mod encoder;
