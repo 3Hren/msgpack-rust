@@ -194,7 +194,7 @@ pub fn write_uint<W>(wr: &mut W, val: u64) -> Result<Marker, Error>
     if val < 128 {
         let marker = Marker::PositiveFixnum(val as u8);
 
-        write_fixval(wr, marker).map(|_| marker)
+        write_fixval(wr, marker).and(Ok(marker))
     } else if val < 256 {
         write_u8(wr, val as u8).map(|_| Marker::U8)
     } else if val < 65536 {
