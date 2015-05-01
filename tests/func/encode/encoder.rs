@@ -1,13 +1,33 @@
+use std::io::Cursor;
+
 use rustc_serialize::Encodable;
 
 use msgpack::Encoder;
 
 #[test]
-fn encode_null() {
+fn pass_null() {
     let mut buf = [0x00];
 
     let val = ();
     val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
 
     assert_eq!([0xc0], buf);
+}
+
+#[test]
+fn pass_bool() {
+    let mut buf = [0x00, 0x00];
+
+    {
+        let mut cur = Cursor::new(&mut buf[..]);
+
+        let mut encoder = Encoder::new(&mut cur);
+
+        let val = true;
+        val.encode(&mut encoder).ok().unwrap();
+        let val = false;
+        val.encode(&mut encoder).ok().unwrap();
+    }
+
+    assert_eq!([0xc3, 0xc2], buf);
 }
