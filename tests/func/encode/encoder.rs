@@ -31,3 +31,13 @@ fn pass_bool() {
 
     assert_eq!([0xc3, 0xc2], buf);
 }
+
+#[test]
+fn pass_u8() {
+    let mut buf = [0x00, 0x00];
+
+    let val = 255u8;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xcc, 0xff], buf);
+}

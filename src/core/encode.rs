@@ -369,6 +369,7 @@ use std::io::Write;
 use super::{
     write_nil,
     write_bool,
+    write_uint,
 };
 
 pub enum Error {
@@ -407,8 +408,10 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         write_bool(&mut self.wr, val).map_err(|err| From::from(err))
     }
 
-    fn emit_u8(&mut self, v: u8) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_u8(&mut self, val: u8) -> Result<(), Error> {
+        try!(write_uint(&mut self.wr, val as u64));
+
+        Ok(())
     }
 
     fn emit_u16(&mut self, v: u16) -> Result<(), Error> {
