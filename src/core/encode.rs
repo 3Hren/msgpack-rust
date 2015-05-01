@@ -414,8 +414,10 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         Ok(())
     }
 
-    fn emit_u16(&mut self, v: u16) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_u16(&mut self, val: u16) -> Result<(), Error> {
+        try!(write_uint(&mut self.wr, val as u64));
+
+        Ok(())
     }
 
     fn emit_u32(&mut self, v: u32) -> Result<(), Error> {

@@ -41,3 +41,13 @@ fn pass_u8() {
 
     assert_eq!([0xcc, 0xff], buf);
 }
+
+#[test]
+fn pass_u16() {
+    let mut buf = [0x00, 0x00, 0x00];
+
+    let val = 65535u16;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xcd, 0xff, 0xff], buf);
+}
