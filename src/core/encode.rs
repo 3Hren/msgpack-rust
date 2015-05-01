@@ -409,21 +409,15 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     }
 
     fn emit_u8(&mut self, val: u8) -> Result<(), Error> {
-        try!(write_uint(&mut self.wr, val as u64));
-
-        Ok(())
+        self.emit_u64(val as u64)
     }
 
     fn emit_u16(&mut self, val: u16) -> Result<(), Error> {
-        try!(write_uint(&mut self.wr, val as u64));
-
-        Ok(())
+        self.emit_u64(val as u64)
     }
 
     fn emit_u32(&mut self, val: u32) -> Result<(), Error> {
-        try!(write_uint(&mut self.wr, val as u64));
-
-        Ok(())
+        self.emit_u64(val as u64)
     }
 
     fn emit_u64(&mut self, val: u64) -> Result<(), Error> {
