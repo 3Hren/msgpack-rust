@@ -427,7 +427,9 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     }
 
     fn emit_u64(&mut self, val: u64) -> Result<(), Error> {
-        unimplemented!()
+        try!(write_uint(&mut self.wr, val));
+
+        Ok(())
     }
 
     fn emit_usize(&mut self, v: usize) -> Result<(), Error> {
