@@ -399,8 +399,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     type Error = Error;
 
     fn emit_nil(&mut self) -> Result<(), Error> {
-        try!(write_nil(&mut self.wr));
-        Ok(())
+        write_nil(&mut self.wr).map_err(|err| From::from(err))
     }
 
     fn emit_bool(&mut self, v: bool) -> Result<(), Error> {
