@@ -426,8 +426,8 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         Ok(())
     }
 
-    fn emit_usize(&mut self, v: usize) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_usize(&mut self, val: usize) -> Result<(), Error> {
+        self.emit_u64(val as u64)
     }
 
     fn emit_i8(&mut self, v: i8) -> Result<(), Error> {

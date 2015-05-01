@@ -33,6 +33,16 @@ fn pass_bool() {
 }
 
 #[test]
+fn pass_usize() {
+    let mut buf = [0x00, 0x00];
+
+    let val = 255usize;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xcc, 0xff], buf);
+}
+
+#[test]
 fn pass_u8() {
     let mut buf = [0x00, 0x00];
 
