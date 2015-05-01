@@ -51,3 +51,13 @@ fn pass_u16() {
 
     assert_eq!([0xcd, 0xff, 0xff], buf);
 }
+
+#[test]
+fn pass_u32() {
+    let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00];
+
+    let val = 4294967295u32;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xce, 0xff, 0xff, 0xff, 0xff], buf);
+}
