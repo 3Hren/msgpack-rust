@@ -370,6 +370,7 @@ use super::{
     write_nil,
     write_bool,
     write_uint,
+    write_sint,
 };
 
 pub enum Error {
@@ -442,8 +443,10 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         unimplemented!()
     }
 
-    fn emit_i64(&mut self, v: i64) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_i64(&mut self, val: i64) -> Result<(), Error> {
+        try!(write_sint(&mut self.wr, val));
+
+        Ok(())
     }
 
     fn emit_isize(&mut self, v: isize) -> Result<(), Error> {
