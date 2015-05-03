@@ -559,17 +559,17 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     fn emit_option<F>(&mut self, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        f(self)
     }
 
     fn emit_option_none(&mut self) -> Result<(), Error> {
-        unimplemented!()
+        self.emit_nil()
     }
 
     fn emit_option_some<F>(&mut self, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        f(self)
     }
 
     fn emit_seq<F>(&mut self, len: usize, f: F) -> Result<(), Error>

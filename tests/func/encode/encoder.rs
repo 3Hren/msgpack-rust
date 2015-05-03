@@ -195,3 +195,23 @@ fn pass_tuple() {
 
     assert_eq!([0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94], buf);
 }
+
+#[test]
+fn pass_option_some() {
+    let mut buf = [0x00];
+
+    let val = Some(100u32);
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0x64], buf);
+}
+
+#[test]
+fn pass_option_none() {
+    let mut buf = [0x00];
+
+    let val: Option<u32> = None;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xc0], buf);
+}
