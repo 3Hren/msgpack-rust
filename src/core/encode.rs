@@ -522,8 +522,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     fn emit_struct<F>(&mut self, _name: &str, len: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        try!(write_array_len(&mut self.wr, len as u32));
-        f(self)
+        self.emit_tuple(len, f)
     }
 
     fn emit_struct_field<F>(&mut self, _name: &str, idx_: usize, f: F) -> Result<(), Error>
