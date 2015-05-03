@@ -473,8 +473,11 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         write_f64(&mut self.wr, val).map_err(|err| From::from(err))
     }
 
-    fn emit_char(&mut self, v: char) -> Result<(), Error> {
-        unimplemented!()
+    // TODO: The implementation involves heap allocation and is unstable.
+    fn emit_char(&mut self, val: char) -> Result<(), Error> {
+        let mut buf = String::new();
+        buf.push(val);
+        self.emit_str(&buf)
     }
 
     fn emit_str(&mut self, val: &str) -> Result<(), Error> {

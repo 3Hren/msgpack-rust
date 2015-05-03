@@ -153,6 +153,17 @@ fn pass_f64() {
 }
 
 #[test]
+fn pass_char() {
+    let mut buf = [0x00, 0x00];
+
+    let val = '!';
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xa1, 0x21], buf);
+}
+
+
+#[test]
 fn pass_string() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
