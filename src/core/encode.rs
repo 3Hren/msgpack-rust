@@ -572,16 +572,18 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         f(self)
     }
 
+    // TODO: Check len, overflow is possible.
     fn emit_seq<F>(&mut self, len: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        try!(write_array_len(&mut self.wr, len as u32));
+        f(self)
     }
 
-    fn emit_seq_elt<F>(&mut self, idx: usize, f: F) -> Result<(), Error>
+    fn emit_seq_elt<F>(&mut self, idx_: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        f(self)
     }
 
     fn emit_map<F>(&mut self, len: usize, f: F) -> Result<(), Error>
