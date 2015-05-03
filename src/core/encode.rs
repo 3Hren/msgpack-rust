@@ -544,16 +544,16 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         f(self)
     }
 
-    fn emit_tuple_struct<F>(&mut self, name: &str, len: usize, f: F) -> Result<(), Error>
+    fn emit_tuple_struct<F>(&mut self, name_: &str, len: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        self.emit_tuple(len, f)
     }
 
-    fn emit_tuple_struct_arg<F>(&mut self, f_idx: usize, f: F) -> Result<(), Error>
+    fn emit_tuple_struct_arg<F>(&mut self, idx_: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        f(self)
     }
 
     fn emit_option<F>(&mut self, f: F) -> Result<(), Error>
