@@ -535,13 +535,14 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     fn emit_tuple<F>(&mut self, len: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        try!(write_array_len(&mut self.wr, len as u32));
+        f(self)
     }
 
-    fn emit_tuple_arg<F>(&mut self, idx: usize, f: F) -> Result<(), Error>
+    fn emit_tuple_arg<F>(&mut self, idx_: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        f(self)
     }
 
     fn emit_tuple_struct<F>(&mut self, name: &str, len: usize, f: F) -> Result<(), Error>
