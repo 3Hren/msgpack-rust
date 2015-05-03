@@ -225,3 +225,24 @@ fn pass_seq() {
 
     assert_eq!([0x92, 0xa2, 0x6c, 0x65, 0xa4, 0x73, 0x68, 0x69, 0x74], buf);
 }
+
+#[test]
+fn pass_map() {
+    use std::collections::HashMap;
+
+    let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+
+    let mut val = HashMap::new();
+    val.insert(0u8, "le");
+    val.insert(1u8, "shit");
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    let out = [
+        0x82, // 2 (size)
+        0x00, // 0
+        0xa2, 0x6c, 0x65, // "le"
+        0x01, // 1
+        0xa4, 0x73, 0x68, 0x69, 0x74, // "shit"
+    ];
+    assert_eq!(out, buf);
+}
