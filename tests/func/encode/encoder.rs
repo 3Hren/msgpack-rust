@@ -228,11 +228,11 @@ fn pass_seq() {
 
 #[test]
 fn pass_map() {
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    let mut val = HashMap::new();
+    let mut val = BTreeMap::new();
     val.insert(0u8, "le");
     val.insert(1u8, "shit");
     val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();

@@ -411,7 +411,6 @@ impl<'a> Encoder<'a> {
     }
 }
 
-#[allow(unused)]
 impl<'a> serialize::Encoder for Encoder<'a> {
     type Error = Error;
 
@@ -490,7 +489,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         Ok(())
     }
 
-    fn emit_enum<F>(&mut self, name: &str, f: F) -> Result<(), Error>
+    fn emit_enum<F>(&mut self, _name: &str, _f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         unimplemented!()
