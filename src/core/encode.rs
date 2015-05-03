@@ -371,6 +371,8 @@ use super::{
     write_bool,
     write_uint,
     write_sint,
+    write_f32,
+    write_f64,
 };
 
 pub enum Error {
@@ -453,12 +455,12 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         self.emit_i64(val as i64)
     }
 
-    fn emit_f32(&mut self, v: f32) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_f32(&mut self, val: f32) -> Result<(), Error> {
+        write_f32(&mut self.wr, val).map_err(|err| From::from(err))
     }
 
-    fn emit_f64(&mut self, v: f64) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_f64(&mut self, val: f64) -> Result<(), Error> {
+        write_f64(&mut self.wr, val).map_err(|err| From::from(err))
     }
 
     fn emit_char(&mut self, v: char) -> Result<(), Error> {
