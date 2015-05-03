@@ -83,6 +83,16 @@ fn pass_u64() {
 }
 
 #[test]
+fn pass_isize() {
+    let mut buf = [0x00, 0x00];
+
+    let val = -128isize;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xd0, 0x80], buf);
+}
+
+#[test]
 fn pass_i8() {
     let mut buf = [0x00, 0x00];
 
@@ -90,6 +100,26 @@ fn pass_i8() {
     val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
 
     assert_eq!([0xd0, 0x80], buf);
+}
+
+#[test]
+fn pass_i16() {
+    let mut buf = [0x00, 0x00, 0x00];
+
+    let val = -32768i16;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xd1, 0x80, 0x00], buf);
+}
+
+#[test]
+fn pass_i32() {
+    let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00];
+
+    let val = -2147483648i32;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xd2, 0x80, 0x00, 0x00, 0x00], buf);
 }
 
 #[test]

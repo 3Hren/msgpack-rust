@@ -435,12 +435,12 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         self.emit_i64(val as i64)
     }
 
-    fn emit_i16(&mut self, v: i16) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_i16(&mut self, val: i16) -> Result<(), Error> {
+        self.emit_i64(val as i64)
     }
 
-    fn emit_i32(&mut self, v: i32) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_i32(&mut self, val: i32) -> Result<(), Error> {
+        self.emit_i64(val as i64)
     }
 
     fn emit_i64(&mut self, val: i64) -> Result<(), Error> {
@@ -449,8 +449,8 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         Ok(())
     }
 
-    fn emit_isize(&mut self, v: isize) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_isize(&mut self, val: isize) -> Result<(), Error> {
+        self.emit_i64(val as i64)
     }
 
     fn emit_f32(&mut self, v: f32) -> Result<(), Error> {
