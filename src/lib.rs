@@ -38,3 +38,6 @@ pub use core::{Error, ReadError};
 // Stage 4. Low-level encoding functions.
 // Stage 5. Value encoding functions.
 // Stage 6. Serialization.
+
+// NOTE: Write about strict integer typing. Sized integers always encoded as sized even if they are
+// fit in unsized, i.e 100 -> i32 -> posfix.
