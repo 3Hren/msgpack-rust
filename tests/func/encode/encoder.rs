@@ -83,6 +83,16 @@ fn pass_u64() {
 }
 
 #[test]
+fn pass_i8() {
+    let mut buf = [0x00, 0x00];
+
+    let val = -128i8;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    assert_eq!([0xd0, 0x80], buf);
+}
+
+#[test]
 fn pass_i64() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 

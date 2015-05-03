@@ -431,8 +431,8 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         self.emit_u64(val as u64)
     }
 
-    fn emit_i8(&mut self, v: i8) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_i8(&mut self, val: i8) -> Result<(), Error> {
+        self.emit_i64(val as i64)
     }
 
     fn emit_i16(&mut self, v: i16) -> Result<(), Error> {
