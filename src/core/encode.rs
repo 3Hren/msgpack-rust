@@ -364,6 +364,7 @@ pub mod serialize {
 
 use serialize;
 
+use std::io;
 use std::io::Write;
 
 use super::{
@@ -373,16 +374,25 @@ use super::{
     write_sint,
     write_f32,
     write_f64,
+    write_str_len,
 };
 
 pub enum Error {
-    Unexpected,
+    Unimplemented,
 }
 
 impl From<super::Error> for Error {
     fn from(err: super::Error) -> Error {
         match err {
-            _ => Error::Unexpected,
+            _ => Error::Unimplemented,
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        match err {
+            _ => Error::Unimplemented,
         }
     }
 }
@@ -467,8 +477,12 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         unimplemented!()
     }
 
-    fn emit_str(&mut self, v: &str) -> Result<(), Error> {
-        unimplemented!()
+    fn emit_str(&mut self, val: &str) -> Result<(), Error> {
+        try!(write_str_len(&mut self.wr, val.len() as u32));
+        // TODO: Implement this functionality in the low-level module.
+        try!(self.wr.write_all(val.as_bytes()));
+
+        Ok(())
     }
 
     fn emit_enum<F>(&mut self, name: &str, f: F) -> Result<(), Error>
