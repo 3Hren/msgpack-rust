@@ -59,7 +59,18 @@ fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     }
 }
 
-/// Unstable: docs; stabilize Result variant
+/// Attempts to write a nil marker into the given write.
+///
+/// # Errors
+///
+/// This function will return InvalidFixedValueWrite on any I/O error occurred while writing the
+/// marker.
+///
+/// # Unstable
+///
+/// This function is **unstable**; the reasons are:
+///
+/// - stabilize Result variant
 pub fn write_nil<W>(wr: &mut W) -> Result<(), Error>
     where W: Write
 {
