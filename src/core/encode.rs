@@ -495,25 +495,25 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         unimplemented!()
     }
 
-    fn emit_enum_variant<F>(&mut self, v_name: &str, v_id: usize, len: usize, f: F) -> Result<(), Error>
+    fn emit_enum_variant<F>(&mut self, _name: &str, _id: usize, _len: usize, _f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         unimplemented!()
     }
 
-    fn emit_enum_variant_arg<F>(&mut self, a_idx: usize, f: F) -> Result<(), Error>
+    fn emit_enum_variant_arg<F>(&mut self, _idx: usize, _f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         unimplemented!()
     }
 
-    fn emit_enum_struct_variant<F>(&mut self, v_name: &str, v_id: usize, len: usize, f: F) -> Result<(), Error>
+    fn emit_enum_struct_variant<F>(&mut self, _name: &str, _id: usize, _len: usize, _f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         unimplemented!()
     }
 
-    fn emit_enum_struct_variant_field<F>(&mut self, f_name: &str, f_idx: usize, f: F) -> Result<(), Error>
+    fn emit_enum_struct_variant_field<F>(&mut self, _name: &str, _idx: usize, _f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         unimplemented!()
@@ -525,7 +525,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         self.emit_tuple(len, f)
     }
 
-    fn emit_struct_field<F>(&mut self, _name: &str, idx_: usize, f: F) -> Result<(), Error>
+    fn emit_struct_field<F>(&mut self, _name: &str, _idx: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         f(self)
@@ -538,19 +538,19 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         f(self)
     }
 
-    fn emit_tuple_arg<F>(&mut self, idx_: usize, f: F) -> Result<(), Error>
+    fn emit_tuple_arg<F>(&mut self, _idx: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         f(self)
     }
 
-    fn emit_tuple_struct<F>(&mut self, name_: &str, len: usize, f: F) -> Result<(), Error>
+    fn emit_tuple_struct<F>(&mut self, _name: &str, len: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         self.emit_tuple(len, f)
     }
 
-    fn emit_tuple_struct_arg<F>(&mut self, idx_: usize, f: F) -> Result<(), Error>
+    fn emit_tuple_struct_arg<F>(&mut self, _idx: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         f(self)
@@ -580,7 +580,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         f(self)
     }
 
-    fn emit_seq_elt<F>(&mut self, idx_: usize, f: F) -> Result<(), Error>
+    fn emit_seq_elt<F>(&mut self, _idx: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         f(self)
@@ -593,13 +593,13 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         f(self)
     }
 
-    fn emit_map_elt_key<F>(&mut self, idx_: usize, f: F) -> Result<(), Error>
+    fn emit_map_elt_key<F>(&mut self, _idx: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         f(self)
     }
 
-    fn emit_map_elt_val<F>(&mut self, idx_: usize, f: F) -> Result<(), Error>
+    fn emit_map_elt_val<F>(&mut self, _idx: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
         f(self)
