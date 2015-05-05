@@ -10,16 +10,15 @@ use super::{
     Marker,
 };
 
+/// Represents an error that can occur when attempting to write MessagePack'ed value into the write.
 #[derive(Debug)]
-pub enum WriteError {
-    Io(io::Error),
-}
+pub struct WriteError(io::Error);
 
 impl convert::From<byteorder::Error> for WriteError {
     fn from(err: byteorder::Error) -> WriteError {
         match err {
             byteorder::Error::UnexpectedEOF => unimplemented!(),
-            byteorder::Error::Io(err) => WriteError::Io(err),
+            byteorder::Error::Io(err) => WriteError(err),
         }
     }
 }
