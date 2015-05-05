@@ -75,11 +75,11 @@ fn write_fixval_<W>(wr: &mut W, marker: Marker) -> Result<(), FixedValueWriteErr
 
 /// Attempts to write a nil value into the given write.
 ///
-/// MessagePack represents nil value as a single `0xc0` byte.
+/// According to the MessagePack specification, a nil value is represented as a single `0xc0` byte.
 ///
 /// # Errors
 ///
-/// This function will return FixedValueWriteError on any I/O error occurred while writing the
+/// This function will return FixedValueWriteError on any I/O error occurred while writing the nil
 /// marker.
 pub fn write_nil<W>(wr: &mut W) -> Result<(), FixedValueWriteError>
     where W: Write
@@ -87,18 +87,21 @@ pub fn write_nil<W>(wr: &mut W) -> Result<(), FixedValueWriteError>
     write_fixval_(wr, Marker::Null)
 }
 
+/// Encodes and attempts to write a bool value into the given write.
 ///
-/// # Unstable
+/// According to the MessagePack specification, an encoded boolean value is represented as a single
+/// byte.
 ///
-/// This function is **unstable**; the reasons are:
+/// # Errors
 ///
-/// - stabilize Error enum.
-pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), Error>
+/// This function will return FixedValueWriteError on any I/O error occurred while writing the
+/// boolean marker.
+pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), FixedValueWriteError>
     where W: Write
 {
     match val {
-        true  => write_fixval(wr, Marker::True),
-        false => write_fixval(wr, Marker::False)
+        true  => write_fixval_(wr, Marker::True),
+        false => write_fixval_(wr, Marker::False)
     }
 }
 
