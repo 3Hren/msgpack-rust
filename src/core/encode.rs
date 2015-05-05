@@ -1,4 +1,4 @@
-use std::convert;
+use std::convert::From;
 use std::io;
 use std::io::Write;
 use std::result::Result;
@@ -14,7 +14,7 @@ use super::{
 #[derive(Debug)]
 pub struct WriteError(io::Error);
 
-impl convert::From<byteorder::Error> for WriteError {
+impl From<byteorder::Error> for WriteError {
     fn from(err: byteorder::Error) -> WriteError {
         match err {
             byteorder::Error::UnexpectedEOF => unimplemented!(),
