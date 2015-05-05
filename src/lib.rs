@@ -47,3 +47,5 @@ pub use core::{Error, ReadError};
 
 // NOTE: Write about strict integer typing. Sized integers always encoded as sized even if they are
 // fit in unsized, i.e 100 -> i32 -> posfix.
+
+// Write about error style.
