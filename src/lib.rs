@@ -18,6 +18,10 @@ pub use core::{
 
 pub use core::encode;
 
+pub use core::encode::{
+    FixedValueWriteError
+};
+
 pub use core::decode::serialize::{
     Decoder,
 };

@@ -407,14 +407,21 @@ use super::{
     write_map_len,
 };
 
+use super::{
+    WriteError,
+};
+
+#[derive(Debug)]
 pub enum Error {
+    /// Failed to write MessagePack'ed single-byte value into the write.
+    InvalidFixedValueWrite(WriteError),
     Unimplemented,
 }
 
 impl From<super::FixedValueWriteError> for Error {
     fn from(err: super::FixedValueWriteError) -> Error {
         match err {
-            _ => Error::Unimplemented,
+            super::FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err)
         }
     }
 }
