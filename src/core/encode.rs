@@ -59,24 +59,41 @@ fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     }
 }
 
-/// Attempts to write a nil marker into the given write.
+/// Represents an error that can happen while writing MessagePack single-byte value.
+#[derive(Debug)]
+pub struct FixedValueWriteError(WriteError);
+
+fn write_fixval_<W>(wr: &mut W, marker: Marker) -> Result<(), FixedValueWriteError>
+    where W: Write
+{
+    let byte = marker.to_u8();
+
+    match wr.write_u8(byte) {
+        Ok(())   => Ok(()),
+        Err(err) => Err(FixedValueWriteError(From::from(err)))
+    }
+}
+
+/// Attempts to write a nil value into the given write.
+///
+/// MessagePack represents nil value as a single `0xc0` byte.
 ///
 /// # Errors
 ///
-/// This function will return InvalidFixedValueWrite on any I/O error occurred while writing the
+/// This function will return FixedValueWriteError on any I/O error occurred while writing the
 /// marker.
+pub fn write_nil<W>(wr: &mut W) -> Result<(), FixedValueWriteError>
+    where W: Write
+{
+    write_fixval_(wr, Marker::Null)
+}
+
 ///
 /// # Unstable
 ///
 /// This function is **unstable**; the reasons are:
 ///
-/// - stabilize Result variant
-pub fn write_nil<W>(wr: &mut W) -> Result<(), Error>
-    where W: Write
-{
-    write_fixval(wr, Marker::Null)
-}
-
+/// - stabilize Error enum.
 pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), Error>
     where W: Write
 {
@@ -392,6 +409,14 @@ use super::{
 
 pub enum Error {
     Unimplemented,
+}
+
+impl From<super::FixedValueWriteError> for Error {
+    fn from(err: super::FixedValueWriteError) -> Error {
+        match err {
+            _ => Error::Unimplemented,
+        }
+    }
 }
 
 impl From<super::Error> for Error {
