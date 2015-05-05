@@ -53,11 +53,11 @@ pub enum Marker {
 impl Marker {
     pub fn from_u8(n: u8) -> Marker {
         match n {
-            val @ 0x00 ... 0x7f => Marker::PositiveFixnum(val as u8),
-            val @ 0xe0 ... 0xff => Marker::NegativeFixnum(val as i8),
-            val @ 0x80 ... 0x8f => Marker::FixedMap((val as u8) & FIXMAP_SIZE),
-            val @ 0x90 ... 0x9f => Marker::FixedArray((val as u8) & FIXARRAY_SIZE),
-            val @ 0xa0 ... 0xbf => Marker::FixedString((val as u8) & FIXSTR_SIZE),
+            0x00 ... 0x7f => Marker::PositiveFixnum(n),
+            0xe0 ... 0xff => Marker::NegativeFixnum(n as i8),
+            0x80 ... 0x8f => Marker::FixedMap(n & FIXMAP_SIZE),
+            0x90 ... 0x9f => Marker::FixedArray(n & FIXARRAY_SIZE),
+            0xa0 ... 0xbf => Marker::FixedString(n & FIXSTR_SIZE),
             0xc0 => Marker::Null,
             /// Marked in MessagePack spec as never used.
             0xc1 => Marker::Reserved,
