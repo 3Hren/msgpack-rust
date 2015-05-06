@@ -15,19 +15,17 @@ fn fail_pack_pfix_too_small_buffer() {
     let mut buf = [];
 
     match write_pfix(&mut &mut buf[..], 127) {
-        Err(Error::InvalidFixedValueWrite(..)) => (),
+        Err(FixedValueWriteError(..)) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }
 
 #[test]
+#[should_panic(expected = "assertion failed")]
 fn fail_pack_pfix_too_large() {
     let mut buf = [0x00];
 
-    match write_pfix(&mut &mut buf[..], 128) {
-        Err(Error::TypeMismatch) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    write_pfix(&mut &mut buf[..], 128).ok().unwrap();
 }
 
 #[test]

@@ -106,14 +106,13 @@ pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), FixedValueWriteError>
 }
 
 // With strictly type checking.
-pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), Error>
+// TODO: Docs.
+pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), FixedValueWriteError>
     where W: Write
 {
-    if val < 128 {
-        write_fixval(wr, Marker::PositiveFixnum(val))
-    } else {
-        Err(Error::TypeMismatch)
-    }
+    assert!(val < 128);
+
+    write_fixval_(wr, Marker::PositiveFixnum(val))
 }
 
 pub fn write_nfix<W>(wr: &mut W, val: i8) -> Result<(), Error>
