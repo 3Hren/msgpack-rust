@@ -29,10 +29,7 @@ pub struct MarkerWriteError(WriteError);
 
 impl From<byteorder::Error> for MarkerWriteError {
     fn from(err: byteorder::Error) -> MarkerWriteError {
-        match err {
-            byteorder::Error::UnexpectedEOF => unimplemented!(),
-            byteorder::Error::Io(err) => MarkerWriteError(WriteError(err)),
-        }
+        MarkerWriteError(From::from(err))
     }
 }
 
