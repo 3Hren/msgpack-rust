@@ -597,10 +597,10 @@ pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
         Ok(marker)
     } else if len < 65536 {
         try!(write_marker(wr, Marker::Map16));
-        write_data_u16(wr, len as u16).map(|_| Marker::Map16)
+        write_data_u16(wr, len as u16).and(Ok(Marker::Map16))
     } else {
         try!(write_marker(wr, Marker::Map32));
-        write_data_u32(wr, len).map(|_| Marker::Map32)
+        write_data_u32(wr, len).and(Ok(Marker::Map32))
     }
 }
 
