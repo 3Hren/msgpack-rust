@@ -185,12 +185,12 @@ macro_rules! make_write_data_fn {
     (deduce, $writer:ident, $encoder:ident, 1, $val:ident)
         => ($writer.$encoder::<byteorder::BigEndian>($val););
     (gen, $t:ty, $d:tt, $name:ident, $encoder:ident) => {
-        fn $name<W>(wr: &mut W, val: $t) -> Result<(), Error>
+        fn $name<W>(wr: &mut W, val: $t) -> Result<(), ValueWriteError>
             where W: Write
         {
             match make_write_data_fn!(deduce, wr, $encoder, $d, val) {
                 Ok(data) => Ok(data),
-                Err(err) => Err(Error::InvalidDataWrite(From::from(err))),
+                Err(err) => Err(ValueWriteError::InvalidDataWrite(From::from(err))),
             }
         }
     };
@@ -202,40 +202,13 @@ macro_rules! make_write_data_fn {
 make_write_data_fn!(u8,  write_data_u8,  write_u8);
 make_write_data_fn!(u16, write_data_u16, write_u16);
 make_write_data_fn!(u32, write_data_u32, write_u32);
+make_write_data_fn!(u64, write_data_u64, write_u64);
 make_write_data_fn!(i8,  write_data_i8,  write_i8);
+make_write_data_fn!(i16, write_data_i16, write_i16);
+make_write_data_fn!(i32, write_data_i32, write_i32);
+make_write_data_fn!(i64, write_data_i64, write_i64);
 make_write_data_fn!(f32, write_data_f32, write_f32);
 make_write_data_fn!(f64, write_data_f64, write_f64);
-
-macro_rules! make_write_data_fn_ {
-    (deduce, $writer:ident, $encoder:ident, 0, $val:ident)
-        => ($writer.$encoder($val););
-    (deduce, $writer:ident, $encoder:ident, 1, $val:ident)
-        => ($writer.$encoder::<byteorder::BigEndian>($val););
-    (gen, $t:ty, $d:tt, $name:ident, $encoder:ident) => {
-        fn $name<W>(wr: &mut W, val: $t) -> Result<(), ValueWriteError>
-            where W: Write
-        {
-            match make_write_data_fn!(deduce, wr, $encoder, $d, val) {
-                Ok(data) => Ok(data),
-                Err(err) => Err(ValueWriteError::InvalidDataWrite(From::from(err))),
-            }
-        }
-    };
-    (u8,    $name:ident, $encoder:ident) => (make_write_data_fn_!(gen, u8, 0, $name, $encoder););
-    (i8,    $name:ident, $encoder:ident) => (make_write_data_fn_!(gen, i8, 0, $name, $encoder););
-    ($t:ty, $name:ident, $encoder:ident) => (make_write_data_fn_!(gen, $t, 1, $name, $encoder););
-}
-
-make_write_data_fn_!(u8,  write_data_u8_,  write_u8);
-make_write_data_fn_!(u16, write_data_u16_, write_u16);
-make_write_data_fn_!(u32, write_data_u32_, write_u32);
-make_write_data_fn_!(u64, write_data_u64_, write_u64);
-make_write_data_fn_!(i8,  write_data_i8_,  write_i8);
-make_write_data_fn_!(i16, write_data_i16_, write_i16);
-make_write_data_fn_!(i32, write_data_i32_, write_i32);
-make_write_data_fn_!(i64, write_data_i64_, write_i64);
-//make_write_data_fn!(f32, write_data_f32, write_f32);
-//make_write_data_fn!(f64, write_data_f64, write_f64);
 
 /// Encodes and attempts to write an `u8` value as a 2-byte sequence into the given write.
 ///
@@ -269,7 +242,7 @@ pub fn write_u8<W>(wr: &mut W, val: u8) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::U8));
-    write_data_u8_(wr, val)
+    write_data_u8(wr, val)
 }
 
 /// Encodes and attempts to write an `u16` value strictly as a 3-byte sequence into the given write.
@@ -290,7 +263,7 @@ pub fn write_u16<W>(wr: &mut W, val: u16) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::U16));
-    write_data_u16_(wr, val)
+    write_data_u16(wr, val)
 }
 
 /// Encodes and attempts to write an `u32` value strictly as a 5-byte sequence into the given write.
@@ -311,7 +284,7 @@ pub fn write_u32<W>(wr: &mut W, val: u32) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::U32));
-    write_data_u32_(wr, val)
+    write_data_u32(wr, val)
 }
 
 /// Encodes and attempts to write an `u64` value strictly as a 9-byte sequence into the given write.
@@ -332,35 +305,35 @@ pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::U64));
-    write_data_u64_(wr, val)
+    write_data_u64(wr, val)
 }
 
 pub fn write_i8<W>(wr: &mut W, val: i8) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::I8));
-    write_data_i8_(wr, val)
+    write_data_i8(wr, val)
 }
 
 pub fn write_i16<W>(wr: &mut W, val: i16) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::I16));
-    write_data_i16_(wr, val)
+    write_data_i16(wr, val)
 }
 
 pub fn write_i32<W>(wr: &mut W, val: i32) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::I32));
-    write_data_i32_(wr, val)
+    write_data_i32(wr, val)
 }
 
 pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::I64));
-    write_data_i64_(wr, val)
+    write_data_i64(wr, val)
 }
 
 /// [Write Me].
@@ -411,14 +384,14 @@ pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
     }
 }
 
-pub fn write_f32<W>(wr: &mut W, val: f32) -> Result<(), Error>
+pub fn write_f32<W>(wr: &mut W, val: f32) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::F32));
     write_data_f32(wr, val)
 }
 
-pub fn write_f64<W>(wr: &mut W, val: f64) -> Result<(), Error>
+pub fn write_f64<W>(wr: &mut W, val: f64) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::F64));
@@ -429,12 +402,13 @@ pub fn write_f64<W>(wr: &mut W, val: f64) -> Result<(), Error>
 ///
 /// This function is useful when you want to get full control for writing the data itself, for
 /// example, when using non-blocking socket.
-pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
+pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if len < 32 {
         let marker = Marker::FixedString(len as u8);
-        write_fixval(wr, marker).map(|_| marker)
+        try!(write_fixval(wr, marker));
+        Ok(marker)
     } else if len < 256 {
         try!(write_marker(wr, Marker::Str8));
         write_data_u8(wr, len as u8).map(|_| Marker::Str8)
@@ -447,7 +421,7 @@ pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
     }
 }
 
-pub fn write_bin_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
+pub fn write_bin_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if len < 256 {
@@ -462,12 +436,13 @@ pub fn write_bin_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
     }
 }
 
-pub fn write_array_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
+pub fn write_array_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if len < 16 {
         let marker = Marker::FixedArray(len as u8);
-        write_fixval(wr, marker).map(|_| marker)
+        try!(write_fixval(wr, marker));
+        Ok(marker)
     } else if len < 65536 {
         try!(write_marker(wr, Marker::Array16));
         write_data_u16(wr, len as u16).map(|_| Marker::Array16)
@@ -477,12 +452,13 @@ pub fn write_array_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
     }
 }
 
-pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
+pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if len < 16 {
         let marker = Marker::FixedMap(len as u8);
-        write_fixval(wr, marker).map(|_| marker)
+        try!(write_fixval(wr, marker));
+        Ok(marker)
     } else if len < 65536 {
         try!(write_marker(wr, Marker::Map16));
         write_data_u16(wr, len as u16).map(|_| Marker::Map16)
@@ -493,7 +469,7 @@ pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, Error>
 }
 
 /// typeid < 0 is reserved for future extension including 2-byte type information.
-pub fn write_ext_meta<W>(wr: &mut W, len: u32, typeid: i8) -> Result<Marker, Error>
+pub fn write_ext_meta<W>(wr: &mut W, len: u32, typeid: i8) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     match len {
