@@ -605,7 +605,18 @@ pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     }
 }
 
-/// typeid < 0 is reserved for future extension including 2-byte type information.
+/// Encodes and attempts to write the most efficient ext metadata implementation to the given
+/// write, returning the marker used.
+///
+/// # Errors
+///
+/// This function will return `ValueWriteError` on any I/O error occurred while writing either the
+/// marker or the data.
+///
+/// # Panics
+///
+/// Panics if `typeid` is negative, because it is reserved for future MessagePack extension
+/// including 2-byte type information.
 pub fn write_ext_meta<W>(wr: &mut W, len: u32, typeid: i8) -> Result<Marker, ValueWriteError>
     where W: Write
 {
