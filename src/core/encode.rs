@@ -477,7 +477,7 @@ fn write_int<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
 
 /// Encodes and attempts to write an `f32` value as a 5-byte sequence into the given write.
 ///
-/// The first byte becomes the f32 marker and the others will represent the data itself.
+/// The first byte becomes the `f32` marker and the others will represent the data itself.
 ///
 /// # Errors
 ///
@@ -492,7 +492,7 @@ pub fn write_f32<W>(wr: &mut W, val: f32) -> Result<(), ValueWriteError>
 
 /// Encodes and attempts to write an `f64` value as a 9-byte sequence into the given write.
 ///
-/// The first byte becomes the f64 marker and the others will represent the data itself.
+/// The first byte becomes the `f64` marker and the others will represent the data itself.
 ///
 /// # Errors
 ///
