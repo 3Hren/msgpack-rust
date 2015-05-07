@@ -58,7 +58,7 @@ fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
     }
 }
 
-/// Represents an error that can happen while writing MessagePack single-byte value.
+/// Represents an error that can occur when attempting to write MessagePack'ed single-byte value.
 #[derive(Debug)]
 pub struct FixedValueWriteError(WriteError);
 
