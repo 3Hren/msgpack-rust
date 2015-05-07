@@ -505,10 +505,16 @@ pub fn write_f64<W>(wr: &mut W, val: f64) -> Result<(), ValueWriteError>
     write_data_f64(wr, val)
 }
 
-/// Writes the most efficient string length implementation to the given buffer.
+/// Encodes and attempts to write the most efficient string length implementation to the given
+/// write.
 ///
 /// This function is useful when you want to get full control for writing the data itself, for
 /// example, when using non-blocking socket.
+///
+/// # Errors
+///
+/// This function will return `ValueWriteError` on any I/O error occurred while writing either the
+/// marker or the data.
 pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
@@ -528,6 +534,16 @@ pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     }
 }
 
+/// Encodes and attempts to write the most efficient binary array length implementation to the given
+/// write.
+///
+/// This function is useful when you want to get full control for writing the data itself, for
+/// example, when using non-blocking socket.
+///
+/// # Errors
+///
+/// This function will return `ValueWriteError` on any I/O error occurred while writing either the
+/// marker or the data.
 pub fn write_bin_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
