@@ -298,8 +298,7 @@ pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), ValueWriteError>
 
 /// Encodes and attempts to write an `i8` value as a 2-byte sequence into the given write.
 ///
-/// The first byte becomes the signed integer marker and the second one will represent the data
-/// itself.
+/// The first byte becomes the marker and the second one will represent the data itself.
 ///
 /// Note, that this function will encode the given value in 2-byte sequence no matter what, even if
 /// the value can be represented using single byte as a fixnum. Also note, that the first byte will
@@ -335,8 +334,7 @@ pub fn write_i8<W>(wr: &mut W, val: i8) -> Result<(), ValueWriteError>
 
 /// Encodes and attempts to write an `i16` value as a 3-byte sequence into the given write.
 ///
-/// The first byte becomes the signed integer marker and the second one will represent the data
-/// itself.
+/// The first byte becomes the marker and the others will represent the data itself.
 ///
 /// Note, that this function will encode the given value in 3-byte sequence no matter what, even if
 /// the value can be represented using single byte as a fixnum. Also note, that the first byte will
@@ -358,8 +356,7 @@ pub fn write_i16<W>(wr: &mut W, val: i16) -> Result<(), ValueWriteError>
 
 /// Encodes and attempts to write an `i32` value as a 5-byte sequence into the given write.
 ///
-/// The first byte becomes the signed integer marker and the second one will represent the data
-/// itself.
+/// The first byte becomes the marker and the others will represent the data itself.
 ///
 /// Note, that this function will encode the given value in 5-byte sequence no matter what, even if
 /// the value can be represented using single byte as a fixnum. Also note, that the first byte will
@@ -381,8 +378,7 @@ pub fn write_i32<W>(wr: &mut W, val: i32) -> Result<(), ValueWriteError>
 
 /// Encodes and attempts to write an `i64` value as a 9-byte sequence into the given write.
 ///
-/// The first byte becomes the signed integer marker and the second one will represent the data
-/// itself.
+/// The first byte becomes the marker and the others will represent the data itself.
 ///
 /// Note, that this function will encode the given value in 9-byte sequence no matter what, even if
 /// the value can be represented using single byte as a fixnum. Also note, that the first byte will
