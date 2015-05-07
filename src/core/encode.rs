@@ -203,9 +203,6 @@ make_write_data_fn!(u8,  write_data_u8,  write_u8);
 make_write_data_fn!(u16, write_data_u16, write_u16);
 make_write_data_fn!(u32, write_data_u32, write_u32);
 make_write_data_fn!(i8,  write_data_i8,  write_i8);
-make_write_data_fn!(i16, write_data_i16, write_i16);
-make_write_data_fn!(i32, write_data_i32, write_i32);
-make_write_data_fn!(i64, write_data_i64, write_i64);
 make_write_data_fn!(f32, write_data_f32, write_f32);
 make_write_data_fn!(f64, write_data_f64, write_f64);
 
@@ -233,10 +230,10 @@ make_write_data_fn_!(u8,  write_data_u8_,  write_u8);
 make_write_data_fn_!(u16, write_data_u16_, write_u16);
 make_write_data_fn_!(u32, write_data_u32_, write_u32);
 make_write_data_fn_!(u64, write_data_u64_, write_u64);
-//make_write_data_fn!(i8,  write_data_i8,  write_i8);
-//make_write_data_fn!(i16, write_data_i16, write_i16);
-//make_write_data_fn!(i32, write_data_i32, write_i32);
-//make_write_data_fn!(i64, write_data_i64, write_i64);
+make_write_data_fn_!(i8,  write_data_i8_,  write_i8);
+make_write_data_fn_!(i16, write_data_i16_, write_i16);
+make_write_data_fn_!(i32, write_data_i32_, write_i32);
+make_write_data_fn_!(i64, write_data_i64_, write_i64);
 //make_write_data_fn!(f32, write_data_f32, write_f32);
 //make_write_data_fn!(f64, write_data_f64, write_f64);
 
@@ -247,7 +244,7 @@ make_write_data_fn_!(u64, write_data_u64_, write_u64);
 /// Note, that this function will encode the given value in 2-byte sequence no matter what, even if
 /// the value can be represented using single byte as a positive fixnum.
 ///
-/// If you need to fit the given buffer efficiently use `write_sint` instead, which automatically
+/// If you need to fit the given buffer efficiently use `write_uint` instead, which automatically
 /// selects the appropriate integer representation.
 ///
 /// # Errors
@@ -275,13 +272,20 @@ pub fn write_u8<W>(wr: &mut W, val: u8) -> Result<(), ValueWriteError>
     write_data_u8_(wr, val)
 }
 
-/// Encodes and attempts to write an `u16` value into the given write.
+/// Encodes and attempts to write an `u16` value strictly as a 3-byte sequence into the given write.
+///
+/// The first byte becomes the marker and the others will represent the data itself.
+///
+/// Note, that this function will encode the given value in 3-byte sequence no matter what, even if
+/// the value can be represented using single byte as a positive fixnum.
+///
+/// If you need to fit the given buffer efficiently use `write_uint` instead, which automatically
+/// selects the appropriate integer representation.
 ///
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
-// TODO: Incomplete: examples, more docs.
 pub fn write_u16<W>(wr: &mut W, val: u16) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -289,13 +293,20 @@ pub fn write_u16<W>(wr: &mut W, val: u16) -> Result<(), ValueWriteError>
     write_data_u16_(wr, val)
 }
 
-/// Encodes and attempts to write an `u32` value into the given write.
+/// Encodes and attempts to write an `u32` value strictly as a 5-byte sequence into the given write.
+///
+/// The first byte becomes the marker and the others will represent the data itself.
+///
+/// Note, that this function will encode the given value in 5-byte sequence no matter what, even if
+/// the value can be represented using single byte as a positive fixnum.
+///
+/// If you need to fit the given buffer efficiently use `write_uint` instead, which automatically
+/// selects the appropriate integer representation.
 ///
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
-// TODO: Incomplete: examples, more docs.
 pub fn write_u32<W>(wr: &mut W, val: u32) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -303,13 +314,20 @@ pub fn write_u32<W>(wr: &mut W, val: u32) -> Result<(), ValueWriteError>
     write_data_u32_(wr, val)
 }
 
-/// Encodes and attempts to write an `u64` value into the given write.
+/// Encodes and attempts to write an `u64` value strictly as a 9-byte sequence into the given write.
+///
+/// The first byte becomes the marker and the others will represent the data itself.
+///
+/// Note, that this function will encode the given value in 9-byte sequence no matter what, even if
+/// the value can be represented using single byte as a positive fixnum.
+///
+/// If you need to fit the given buffer efficiently use `write_uint` instead, which automatically
+/// selects the appropriate integer representation.
 ///
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
-// TODO: Incomplete: examples, more docs.
 pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -317,32 +335,32 @@ pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), ValueWriteError>
     write_data_u64_(wr, val)
 }
 
-pub fn write_i8<W>(wr: &mut W, val: i8) -> Result<(), Error>
+pub fn write_i8<W>(wr: &mut W, val: i8) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::I8));
-    write_data_i8(wr, val)
+    write_data_i8_(wr, val)
 }
 
-pub fn write_i16<W>(wr: &mut W, val: i16) -> Result<(), Error>
+pub fn write_i16<W>(wr: &mut W, val: i16) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::I16));
-    write_data_i16(wr, val)
+    write_data_i16_(wr, val)
 }
 
-pub fn write_i32<W>(wr: &mut W, val: i32) -> Result<(), Error>
+pub fn write_i32<W>(wr: &mut W, val: i32) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::I32));
-    write_data_i32(wr, val)
+    write_data_i32_(wr, val)
 }
 
-pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), Error>
+pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_marker(wr, Marker::I64));
-    write_data_i64(wr, val)
+    write_data_i64_(wr, val)
 }
 
 /// [Write Me].
@@ -359,13 +377,13 @@ pub fn write_uint<W>(wr: &mut W, val: u64) -> Result<Marker, ValueWriteError>
 
         Ok(marker)
     } else if val < 256 {
-        write_u8(wr, val as u8).map(|_| Marker::U8)
+        write_u8(wr, val as u8).and(Ok(Marker::U8))
     } else if val < 65536 {
-        write_u16(wr, val as u16).map(|_| Marker::U16)
+        write_u16(wr, val as u16).and(Ok(Marker::U16))
     } else if val < 4294967296 {
-        write_u32(wr, val as u32).map(|_| Marker::U32)
+        write_u32(wr, val as u32).and(Ok(Marker::U32))
     } else {
-        write_u64(wr, val).map(|_| Marker::U64)
+        write_u64(wr, val).and(Ok(Marker::U64))
     }
 }
 
@@ -373,13 +391,15 @@ pub fn write_uint<W>(wr: &mut W, val: u64) -> Result<Marker, ValueWriteError>
 ///
 /// According to the MessagePack specification, the serializer SHOULD use the format which
 /// represents the data in the smallest number of bytes.
-pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, Error>
+pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if -32 <= val && val <= 0 {
         let marker = Marker::NegativeFixnum(val as i8);
 
-        write_fixval(wr, marker).map(|_| marker)
+        try!(write_fixval(wr, marker));
+
+        Ok(marker)
     } else if -128 <= val && val < 128 {
         write_i8(wr, val as i8).map(|_| Marker::I8)
     } else if -32768 <= val && val < 32768 {
