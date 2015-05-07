@@ -23,6 +23,19 @@ impl From<byteorder::Error> for WriteError {
     }
 }
 
+/// Represents an error that can occur when attempting to write marker into the write.
+#[derive(Debug)]
+pub struct MarkerWriteError(WriteError);
+
+impl From<byteorder::Error> for MarkerWriteError {
+    fn from(err: byteorder::Error) -> MarkerWriteError {
+        match err {
+            byteorder::Error::UnexpectedEOF => unimplemented!(),
+            byteorder::Error::Io(err) => MarkerWriteError(WriteError(err)),
+        }
+    }
+}
+
 /// Represents an error that can occur when attempting to write MessagePack'ed single-byte value.
 #[derive(Debug)]
 pub struct FixedValueWriteError(WriteError);
@@ -47,6 +60,22 @@ impl From<Error> for ValueWriteError {
     }
 }
 
+impl From<FixedValueWriteError> for ValueWriteError {
+    fn from(err: FixedValueWriteError) -> ValueWriteError {
+        match err {
+            FixedValueWriteError(err) => ValueWriteError::InvalidMarkerWrite(err),
+        }
+    }
+}
+
+impl From<MarkerWriteError> for ValueWriteError {
+    fn from(err: MarkerWriteError) -> ValueWriteError {
+        match err {
+            MarkerWriteError(err) => ValueWriteError::InvalidMarkerWrite(err),
+        }
+    }
+}
+
 // TODO: Split Error for each function, permitting each function to return variant with impossible values.
 #[derive(Debug)]
 pub enum Error {
@@ -58,37 +87,20 @@ pub enum Error {
     InvalidDataWrite(WriteError),
 }
 
-fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
+/// Helper function, that attempts to write the given marker into the write and transforms any IO
+/// error to the special kind of error.
+fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<(), MarkerWriteError>
     where W: Write
 {
-    let byte = marker.to_u8();
-
-    match wr.write_u8(byte) {
-        Ok(())   => Ok(()),
-        Err(err) => Err(Error::InvalidMarkerWrite(From::from(err)))
-    }
+    wr.write_u8(marker.to_u8()).map_err(|err| From::from(err))
 }
 
-fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
+/// Helper function, that attempts to write the given fixed value (represented as marker) into the
+/// write and transforms any IO error to the special kind of error.
+fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), FixedValueWriteError>
     where W: Write
 {
-    let byte = marker.to_u8();
-
-    match wr.write_u8(byte) {
-        Ok(())   => Ok(()),
-        Err(err) => Err(Error::InvalidFixedValueWrite(From::from(err)))
-    }
-}
-
-fn write_fixval_<W>(wr: &mut W, marker: Marker) -> Result<(), FixedValueWriteError>
-    where W: Write
-{
-    let byte = marker.to_u8();
-
-    match wr.write_u8(byte) {
-        Ok(())   => Ok(()),
-        Err(err) => Err(FixedValueWriteError(From::from(err)))
-    }
+    wr.write_u8(marker.to_u8()).map_err(|err| FixedValueWriteError(From::from(err)))
 }
 
 /// Encodes and attempts to write a nil value into the given write.
@@ -102,7 +114,7 @@ fn write_fixval_<W>(wr: &mut W, marker: Marker) -> Result<(), FixedValueWriteErr
 pub fn write_nil<W>(wr: &mut W) -> Result<(), FixedValueWriteError>
     where W: Write
 {
-    write_fixval_(wr, Marker::Null)
+    write_fixval(wr, Marker::Null)
 }
 
 /// Encodes and attempts to write a bool value into the given write.
@@ -118,8 +130,8 @@ pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), FixedValueWriteError>
     where W: Write
 {
     match val {
-        true  => write_fixval_(wr, Marker::True),
-        false => write_fixval_(wr, Marker::False)
+        true  => write_fixval(wr, Marker::True),
+        false => write_fixval(wr, Marker::False)
     }
 }
 
@@ -148,7 +160,7 @@ pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), FixedValueWriteError>
 {
     assert!(val < 128);
 
-    write_fixval_(wr, Marker::PositiveFixnum(val))
+    write_fixval(wr, Marker::PositiveFixnum(val))
 }
 
 /// Encodes and attempts to write a negative small integer value as a negative fixnum into the
@@ -176,7 +188,7 @@ pub fn write_nfix<W>(wr: &mut W, val: i8) -> Result<(), FixedValueWriteError>
 {
     assert!(-32 <= val && val < 0);
 
-    write_fixval_(wr, Marker::NegativeFixnum(val))
+    write_fixval(wr, Marker::NegativeFixnum(val))
 }
 
 macro_rules! make_write_data_fn {
