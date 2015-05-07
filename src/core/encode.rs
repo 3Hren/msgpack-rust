@@ -585,6 +585,8 @@ pub fn write_array_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteErro
 /// Encodes and attempts to write the most efficient map length implementation to the given write,
 /// returning the marker used.
 ///
+/// # Errors
+///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
 pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
