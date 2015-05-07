@@ -47,18 +47,18 @@ pub enum ValueWriteError {
     InvalidDataWrite(WriteError),
 }
 
-impl From<FixedValueWriteError> for ValueWriteError {
-    fn from(err: FixedValueWriteError) -> ValueWriteError {
-        match err {
-            FixedValueWriteError(err) => ValueWriteError::InvalidMarkerWrite(err),
-        }
-    }
-}
-
 impl From<MarkerWriteError> for ValueWriteError {
     fn from(err: MarkerWriteError) -> ValueWriteError {
         match err {
             MarkerWriteError(err) => ValueWriteError::InvalidMarkerWrite(err),
+        }
+    }
+}
+
+impl From<FixedValueWriteError> for ValueWriteError {
+    fn from(err: FixedValueWriteError) -> ValueWriteError {
+        match err {
+            FixedValueWriteError(err) => ValueWriteError::InvalidMarkerWrite(err),
         }
     }
 }
