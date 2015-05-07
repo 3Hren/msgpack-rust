@@ -40,12 +40,18 @@ pub use core::{Error, ReadError};
 //#[cfg(test)]
 //mod bench;
 
-// Stage 1. Low-level decoding functions.
-// Stage 2. Value decoding functions.
-// Stage 3. Deserialization.
-// Stage 4. Low-level encoding functions.
-// Stage 5. Value encoding functions.
-// Stage 6. Serialization.
+// RC
+// + 1. Core.
+// 2. Low-level encode.
+// 3. Serialization.
+// 4. Low-level decode.
+// 5. Deserialization.
+// 6. Value.
+// 7. ValueRef.
+// 8. Module.
+// 9. Serialize/Deserialize enums.
+// 10. Unimplemented.
+// 11. TODO's.
 
 // NOTE: Write about strict integer typing. Sized integers always encoded as sized even if they are
 // fit in unsized, i.e 100 -> i32 -> posfix.
