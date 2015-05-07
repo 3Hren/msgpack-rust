@@ -23,11 +23,13 @@ impl From<byteorder::Error> for WriteError {
     }
 }
 
+/// Represents an error that can occur when attempting to write MessagePack'ed single-byte value.
+#[derive(Debug)]
+pub struct FixedValueWriteError(WriteError);
+
 // TODO: Split Error for each function, permitting each function to return variant with impossible values.
 #[derive(Debug)]
 pub enum Error {
-    /// Unable to write the value with the given type
-    TypeMismatch,
     /// IO error while writing marker.
     InvalidMarkerWrite(WriteError),
     /// IO error while writing single-byte data.
@@ -57,10 +59,6 @@ fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), Error>
         Err(err) => Err(Error::InvalidFixedValueWrite(From::from(err)))
     }
 }
-
-/// Represents an error that can occur when attempting to write MessagePack'ed single-byte value.
-#[derive(Debug)]
-pub struct FixedValueWriteError(WriteError);
 
 fn write_fixval_<W>(wr: &mut W, marker: Marker) -> Result<(), FixedValueWriteError>
     where W: Write
