@@ -50,16 +50,6 @@ pub enum ValueWriteError {
     InvalidDataWrite(WriteError),
 }
 
-impl From<Error> for ValueWriteError {
-    fn from(err: Error) -> ValueWriteError {
-        match err {
-            Error::InvalidMarkerWrite(err) => ValueWriteError::InvalidMarkerWrite(err),
-            Error::InvalidDataWrite(err)   => ValueWriteError::InvalidDataWrite(err),
-            _ => unreachable!(),
-        }
-    }
-}
-
 impl From<FixedValueWriteError> for ValueWriteError {
     fn from(err: FixedValueWriteError) -> ValueWriteError {
         match err {
@@ -76,27 +66,16 @@ impl From<MarkerWriteError> for ValueWriteError {
     }
 }
 
-// TODO: Split Error for each function, permitting each function to return variant with impossible values.
-#[derive(Debug)]
-pub enum Error {
-    /// IO error while writing marker.
-    InvalidMarkerWrite(WriteError),
-    /// IO error while writing single-byte data.
-    InvalidFixedValueWrite(WriteError),
-    /// IO error while writing data.
-    InvalidDataWrite(WriteError),
-}
-
-/// Helper function, that attempts to write the given marker into the write and transforms any IO
-/// error to the special kind of error.
+/// Attempts to write the given marker into the write and transforms any IO error to the special
+/// kind of error.
 fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<(), MarkerWriteError>
     where W: Write
 {
     wr.write_u8(marker.to_u8()).map_err(|err| From::from(err))
 }
 
-/// Helper function, that attempts to write the given fixed value (represented as marker) into the
-/// write and transforms any IO error to the special kind of error.
+/// Attempts to write the given fixed value (represented as marker) into the write and transforms
+/// any IO error to the special kind of error.
 fn write_fixval<W>(wr: &mut W, marker: Marker) -> Result<(), FixedValueWriteError>
     where W: Write
 {
@@ -565,14 +544,6 @@ impl From<super::FixedValueWriteError> for Error {
     fn from(err: super::FixedValueWriteError) -> Error {
         match err {
             super::FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err)
-        }
-    }
-}
-
-impl From<super::Error> for Error {
-    fn from(err: super::Error) -> Error {
-        match err {
-            _ => Error::Unimplemented,
         }
     }
 }
