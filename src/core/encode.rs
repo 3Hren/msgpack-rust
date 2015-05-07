@@ -408,7 +408,8 @@ pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), ValueWriteError>
 /// This function obeys the MessagePack specification, which requires that the serializer SHOULD use
 /// the format which represents the data in the smallest number of bytes.
 ///
-/// The first byte becomes the marker and the others (if present) will represent the data itself.
+/// The first byte becomes the marker and the others (if present, up to 9) will represent the data
+/// itself.
 ///
 /// # Errors
 ///
@@ -434,10 +435,23 @@ pub fn write_uint<W>(wr: &mut W, val: u64) -> Result<Marker, ValueWriteError>
     }
 }
 
-/// [Write Me].
+/// Encodes and attempts to write an `i64` value into the given write using the most efficient
+/// representation, returning the marker used.
 ///
-/// According to the MessagePack specification, the serializer SHOULD use the format which
-/// represents the data in the smallest number of bytes.
+/// This function obeys the MessagePack specification, which requires that the serializer SHOULD use
+/// the format which represents the data in the smallest number of bytes, with the exception of
+/// sized/unsized types.
+///
+/// Note, that the function will **always** use signed integer representation even if the value can
+/// be more efficiently represented using unsigned integer encoding.
+///
+/// The first byte becomes the marker and the others (if present, up to 9) will represent the data
+/// itself.
+///
+/// # Errors
+///
+/// This function will return `ValueWriteError` on any I/O error occurred while writing either the
+/// marker or the data.
 pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
     where W: Write
 {
