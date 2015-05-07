@@ -105,7 +105,8 @@ pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), FixedValueWriteError>
     }
 }
 
-/// Encodes and attempts to write an unsigned small integer value as a fixint into the given write.
+/// Encodes and attempts to write an unsigned small integer value as a positive fixint into the
+/// given write.
 ///
 /// According to the MessagePack specification, a positive fixed integer value is represented using
 /// a single byte in `[0x00; 0x7f]` range inclusively, prepended with a special marker mask.
@@ -132,14 +133,32 @@ pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), FixedValueWriteError>
     write_fixval_(wr, Marker::PositiveFixnum(val))
 }
 
-pub fn write_nfix<W>(wr: &mut W, val: i8) -> Result<(), Error>
+/// Encodes and attempts to write a negative small integer value as a negative fixnum into the
+/// given write.
+///
+/// According to the MessagePack specification, a negative fixed integer value is represented using
+/// a single byte in `[0xe0; 0xff]` range inclusively, prepended with a special marker mask.
+///
+/// The function is **strict** with the input arguments - it is the user's responsibility to check
+/// if the value fits in the described range, otherwise it will panic.
+///
+/// If you are not sure if the value fits in the given range use `write_sint` instead, which
+/// automatically selects the appropriate integer representation.
+///
+/// # Errors
+///
+/// This function will return `FixedValueWriteError` on any I/O error occurred while writing the
+/// positive integer marker.
+///
+/// # Panics
+///
+/// Panics if `val` does not fit in `[-32; 0)` range.
+pub fn write_nfix<W>(wr: &mut W, val: i8) -> Result<(), FixedValueWriteError>
     where W: Write
 {
-    if -32 <= val && val < 0 {
-        write_fixval(wr, Marker::NegativeFixnum(val))
-    } else {
-        Err(Error::TypeMismatch)
-    }
+    assert!(-32 <= val && val < 0);
+
+    write_fixval_(wr, Marker::NegativeFixnum(val))
 }
 
 macro_rules! make_write_data_fn {

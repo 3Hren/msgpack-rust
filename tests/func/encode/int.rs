@@ -74,6 +74,22 @@ fn pass_pack_nfix() {
 }
 
 #[test]
+#[should_panic(expected = "assertion failed")]
+fn fail_pack_nfix_too_large() {
+    let mut buf = [0x00];
+
+    write_nfix(&mut &mut buf[..], 0).ok().unwrap();
+}
+
+#[test]
+#[should_panic(expected = "assertion failed")]
+fn fail_pack_nfix_too_small() {
+    let mut buf = [0x00];
+
+    write_nfix(&mut &mut buf[..], -33).ok().unwrap();
+}
+
+#[test]
 fn pass_pack_i8() {
     let mut buf = [0x00, 0x00];
 
