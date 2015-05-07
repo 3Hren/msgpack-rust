@@ -462,14 +462,21 @@ pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
 
         Ok(marker)
     } else if -128 <= val && val < 128 {
-        write_i8(wr, val as i8).map(|_| Marker::I8)
+        write_i8(wr, val as i8).and(Ok(Marker::I8))
     } else if -32768 <= val && val < 32768 {
-        write_i16(wr, val as i16).map(|_| Marker::I16)
+        write_i16(wr, val as i16).and(Ok(Marker::I16))
     } else if -2147483648 <= val && val <= 2147483647 {
-        write_i32(wr, val as i32).map(|_| Marker::I32)
+        write_i32(wr, val as i32).and(Ok(Marker::I32))
     } else {
-        write_i64(wr, val).map(|_| Marker::I64)
+        write_i64(wr, val).and(Ok(Marker::I64))
     }
+}
+
+#[allow(dead_code, unused_variables)]
+fn write_int<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
+    where W: Write
+{
+    unimplemented!()
 }
 
 pub fn write_f32<W>(wr: &mut W, val: f32) -> Result<(), ValueWriteError>
