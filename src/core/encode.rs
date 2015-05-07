@@ -296,6 +296,36 @@ pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), ValueWriteError>
     write_data_u64(wr, val)
 }
 
+/// Encodes and attempts to write an `i8` value as a 2-byte sequence into the given write.
+///
+/// The first byte becomes the signed integer marker and the second one will represent the data
+/// itself.
+///
+/// Note, that this function will encode the given value in 2-byte sequence no matter what, even if
+/// the value can be represented using single byte as a fixnum. Also note, that the first byte will
+/// always be the signed integer marker (`0xd0`).
+///
+/// If you need to fit the given buffer efficiently use `write_sint` instead, which automatically
+/// selects the appropriate integer representation.
+///
+/// # Errors
+///
+/// This function will return `ValueWriteError` on any I/O error occurred while writing either the
+/// marker or the data.
+///
+/// # Examples
+/// ```
+/// use msgpack::write_i8;
+///
+/// let mut buf = [0x00, 0x00];
+///
+/// write_i8(&mut &mut buf[..], 42).ok().unwrap();
+/// assert_eq!([0xd0, 0x2a], buf);
+///
+/// // Note, that -18 can be represented simply as `[0xee]`, but the function emits 2-byte sequence.
+/// write_i8(&mut &mut buf[..], -18).ok().unwrap();
+/// assert_eq!([0xd0, 0xee], buf);
+/// ```
 pub fn write_i8<W>(wr: &mut W, val: i8) -> Result<(), ValueWriteError>
     where W: Write
 {

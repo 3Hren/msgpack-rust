@@ -21,6 +21,7 @@ pub use core::encode;
 pub use core::encode::{
     FixedValueWriteError,
     write_u8,
+    write_i8,
 };
 
 pub use core::decode;
