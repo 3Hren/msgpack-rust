@@ -105,8 +105,25 @@ pub fn write_bool<W>(wr: &mut W, val: bool) -> Result<(), FixedValueWriteError>
     }
 }
 
-// With strictly type checking.
-// TODO: Docs.
+/// Encodes and attempts to write an unsigned small integer value as a fixint into the given write.
+///
+/// According to the MessagePack specification, a positive fixed integer value is represented using
+/// a single byte in `[0x00; 0x7f]` range inclusively, prepended with a special marker mask.
+///
+/// The function is **strict** with the input arguments - it is the user's responsibility to check
+/// if the value fits in the described range, otherwise it will panic.
+///
+/// If you are not sure if the value fits in the given range use `write_uint` instead, which
+/// automatically selects the appropriate integer representation.
+///
+/// # Errors
+///
+/// This function will return `FixedValueWriteError` on any I/O error occurred while writing the
+/// positive integer marker.
+///
+/// # Panics
+///
+/// Panics if `val` is greater than 127.
 pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), FixedValueWriteError>
     where W: Write
 {
