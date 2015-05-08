@@ -534,6 +534,14 @@ pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     }
 }
 
+// TODO: Docs, range check, example, visibility.
+fn write_str<W>(wr: &mut W, data: &str) -> Result<(), ValueWriteError>
+    where W: Write
+{
+    try!(write_str_len(wr, data.len() as u32));
+    wr.write_all(data.as_bytes()).map_err(|err| ValueWriteError::InvalidDataWrite(WriteError(err)))
+}
+
 /// Encodes and attempts to write the most efficient binary array length implementation to the given
 /// write, returning the marker used.
 ///
@@ -679,7 +687,7 @@ use super::{
     write_sint,
     write_f32,
     write_f64,
-    write_str_len,
+    write_str,
     write_array_len,
     write_map_len,
 };
@@ -802,11 +810,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     }
 
     fn emit_str(&mut self, val: &str) -> Result<(), Error> {
-        try!(write_str_len(&mut self.wr, val.len() as u32));
-        // TODO: Implement this functionality in the low-level module.
-        try!(self.wr.write_all(val.as_bytes()));
-
-        Ok(())
+        write_str(&mut self.wr, val).map_err(|err| From::from(err))
     }
 
     fn emit_enum<F>(&mut self, _name: &str, _f: F) -> Result<(), Error>
