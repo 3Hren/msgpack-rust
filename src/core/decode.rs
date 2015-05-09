@@ -334,7 +334,7 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
 /// Returns `Err` in the following cases:
 ///
 ///  - if any IO error (including unexpected EOF) occurs, while reading an `rd`.
-///  - if the `out` buffer size is too small to keep all copyed data.
+///  - if the `out` buffer size is too small to keep all the data copyed.
 ///  - if the data is not utf-8, with a description as to why the provided data is not utf-8 and
 ///    with a size of bytes actually copyed to be able to get them from `out`.
 ///
