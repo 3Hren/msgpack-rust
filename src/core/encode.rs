@@ -694,6 +694,7 @@ use super::{
 
 use super::{
     WriteError,
+    FixedValueWriteError,
 };
 
 #[derive(Debug)]
@@ -703,10 +704,10 @@ pub enum Error {
     Unimplemented,
 }
 
-impl From<super::FixedValueWriteError> for Error {
-    fn from(err: super::FixedValueWriteError) -> Error {
+impl From<FixedValueWriteError> for Error {
+    fn from(err: FixedValueWriteError) -> Error {
         match err {
-            super::FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err)
+            FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err)
         }
     }
 }
