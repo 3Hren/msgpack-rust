@@ -719,11 +719,13 @@ impl From<super::ValueWriteError> for Error {
     }
 }
 
+/// Represents MessagePack serialization implementation.
 pub struct Encoder<'a> {
     wr: &'a mut Write,
 }
 
 impl<'a> Encoder<'a> {
+    /// Creates a new MessagePack encoder whose output will be written to the writer specified.
     pub fn new(wr: &'a mut Write) -> Encoder<'a> {
         Encoder {
             wr: wr,
