@@ -677,7 +677,6 @@ pub mod serialize {
 
 use serialize;
 
-use std::io;
 use std::io::Write;
 
 use super::{
@@ -714,14 +713,6 @@ impl From<FixedValueWriteError> for Error {
 
 impl From<super::ValueWriteError> for Error {
     fn from(err: super::ValueWriteError) -> Error {
-        match err {
-            _ => Error::Unimplemented,
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
         match err {
             _ => Error::Unimplemented,
         }
