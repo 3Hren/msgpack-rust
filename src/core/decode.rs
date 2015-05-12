@@ -382,6 +382,115 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64, ValueReadError>
     }
 }
 
+/// Attempts to read up to 2 bytes from the given reader and to decode them as `u8` value.
+///
+/// Unlike the `read_u8`, this function weakens type restrictions, allowing you to safely decode
+/// packed values even if you aren't sure about the actual type.
+///
+/// Note, that trying to decode signed integers will result in `TypeMismatch` error even if the
+/// value fits in `u8`.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val),
+        Marker::U8 => Ok(try!(read_data_u8(rd))),
+        marker     => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read up to 3 bytes from the given reader and to decode them as `u16` value.
+///
+/// Unlike the `read_u16`, this function weakens type restrictions, allowing you to safely decode
+/// packed values even if you aren't sure about the actual type.
+///
+/// Note, that trying to decode signed integers will result in `TypeMismatch` error even if the
+/// value fits in `u16`.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val as u16),
+        Marker::U8  => Ok(try!(read_data_u8(rd)) as u16),
+        Marker::U16 => Ok(try!(read_data_u16(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read up to 5 bytes from the given reader and to decode them as `u32` value.
+///
+/// Unlike the `read_u32`, this function weakens type restrictions, allowing you to safely decode
+/// packed values even if you aren't sure about the actual type.
+///
+/// Note, that trying to decode signed integers will result in `TypeMismatch` error even if the
+/// value fits in `u32`.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val as u32),
+        Marker::U8  => Ok(try!(read_data_u8(rd))  as u32),
+        Marker::U16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::U32 => Ok(try!(read_data_u32(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read up to 9 bytes from the given reader and to decode them as `u64` value.
+///
+/// This function will try to read up to 9 bytes from the reader (1 for marker and up to 8 for data)
+/// and interpret them as a big-endian u64.
+///
+/// Unlike the `read_u64`, this function weakens type restrictions, allowing you to safely decode
+/// packed values even if you aren't sure about the actual type.
+///
+/// Note, that trying to decode signed integers will result in `TypeMismatch` error even if the
+/// value fits in `u64`.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val as u64),
+        Marker::U8  => Ok(try!(read_data_u8(rd))  as u64),
+        Marker::U16 => Ok(try!(read_data_u16(rd)) as u64),
+        Marker::U32 => Ok(try!(read_data_u32(rd)) as u64),
+        Marker::U64 => Ok(try!(read_data_u64(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
 } // mod new
 
 use std::convert::From;
@@ -510,7 +619,6 @@ make_read_data_fn!(i64, read_data_i64, read_i64);
 make_read_data_fn!(f32, read_data_f32, read_f32);
 make_read_data_fn!(f64, read_data_f64, read_f64);
 
-/// Unstable: not sure about name; docs; untested
 pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8>
     where R: Read
 {
