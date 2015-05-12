@@ -92,13 +92,13 @@ pub fn read_nil<R>(rd: &mut R) -> result::Result<(), FixedValueReadError>
 }
 
 /// Tries to decode a bool value from the reader.
-pub fn read_bool<R>(rd: &mut R) -> Result<bool>
+pub fn read_bool<R>(rd: &mut R) -> result::Result<bool, FixedValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
+    match try!(read_marker_(rd)) {
         Marker::True  => Ok(true),
         Marker::False => Ok(false),
-        marker        => Err(Error::TypeMismatch(marker))
+        marker        => Err(FixedValueReadError::TypeMismatch(marker))
     }
 }
 
