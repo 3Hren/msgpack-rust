@@ -32,24 +32,6 @@ fn from_bin32_max_read_len() {
 }
 
 #[test]
-fn from_bool_false() {
-    let buf: &[u8] = &[0xc2];
-    let mut cur = Cursor::new(buf);
-
-    assert_eq!(false, read_bool(&mut cur).unwrap());
-    assert_eq!(1, cur.position());
-}
-
-#[test]
-fn from_bool_true() {
-    let buf: &[u8] = &[0xc3];
-    let mut cur = Cursor::new(buf);
-
-    assert_eq!(true, read_bool(&mut cur).unwrap());
-    assert_eq!(1, cur.position());
-}
-
-#[test]
 fn from_positive_fixnum() {
     let buf: &[u8] = &[0x00, 0x7f, 0x20];
     let mut cur = Cursor::new(buf);

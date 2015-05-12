@@ -26,6 +26,10 @@ pub use core::encode::{
 
 pub use core::decode;
 
+pub use core::decode::{
+    FixedValueReadError,
+};
+
 pub use core::decode::serialize::{
     Decoder,
 };
