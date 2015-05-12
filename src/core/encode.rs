@@ -6,9 +6,7 @@ use std::result::Result;
 use byteorder;
 use byteorder::WriteBytesExt;
 
-use super::{
-    Marker,
-};
+use super::Marker;
 
 /// Represents an error that can occur when attempting to write MessagePack'ed value into the write.
 #[derive(Debug)]
