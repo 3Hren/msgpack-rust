@@ -214,6 +214,16 @@ macro_rules! make_read_data_fn {
 make_read_data_fn!(u8,  read_data_u8,  read_u8);
 
 /// Attempts to read exactly 2 bytes from the given reader and to decode them as u8 value.
+///
+/// The first byte should be the marker and the second one should represent the data itself.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
 pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
     where R: Read
 {
