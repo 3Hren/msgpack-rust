@@ -9,6 +9,27 @@ use byteorder::ReadBytesExt;
 
 use super::super::Marker;
 
+/// Represents an error that can occur when attempting to read bytes from the reader.
+///
+/// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
+/// case: an unexpected EOF.
+#[derive(Debug)]
+pub enum ReadError {
+    /// Unexpected end of file reached while reading bytes.
+    UnexpectedEOF,
+    /// I/O error occurred while reading bytes.
+    Io(io::Error),
+}
+
+impl From<byteorder::Error> for ReadError {
+    fn from(err: byteorder::Error) -> ReadError {
+        match err {
+            byteorder::Error::UnexpectedEOF => ReadError::UnexpectedEOF,
+            byteorder::Error::Io(err) => ReadError::Io(err),
+        }
+    }
+}
+
 /// Represents an error that can occur when attempting to read a MessagePack marker from the reader.
 ///
 /// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
@@ -26,6 +47,15 @@ impl From<byteorder::Error> for MarkerReadError {
         match err {
             byteorder::Error::UnexpectedEOF => MarkerReadError::UnexpectedEOF,
             byteorder::Error::Io(err) => MarkerReadError::Io(err),
+        }
+    }
+}
+
+impl From<MarkerReadError> for ReadError {
+    fn from(err: MarkerReadError) -> ReadError {
+        match err {
+            MarkerReadError::UnexpectedEOF => ReadError::UnexpectedEOF,
+            MarkerReadError::Io(err) => ReadError::Io(err),
         }
     }
 }
@@ -48,6 +78,24 @@ impl From<MarkerReadError> for FixedValueReadError {
             MarkerReadError::UnexpectedEOF => FixedValueReadError::UnexpectedEOF,
             MarkerReadError::Io(err) => FixedValueReadError::Io(err),
         }
+    }
+}
+
+/// Represents an error that can occur when attempting to read a MessagePack'ed complex value from
+/// the reader.
+#[derive(Debug)]
+pub enum ValueReadError {
+    /// Failed to read the marker.
+    InvalidMarkerRead(ReadError),
+    /// Failed to read the data.
+    InvalidDataRead(ReadError),
+    /// The type decoded isn't match with the expected one.
+    TypeMismatch(Marker),
+}
+
+impl From<MarkerReadError> for ValueReadError {
+    fn from(err: MarkerReadError) -> ValueReadError {
+        ValueReadError::InvalidMarkerRead(From::from(err))
     }
 }
 
@@ -140,6 +188,38 @@ pub fn read_nfix<R>(rd: &mut R) -> Result<i8, FixedValueReadError>
     match try!(read_marker(rd)) {
         Marker::NegativeFixnum(val) => Ok(val),
         marker => Err(FixedValueReadError::TypeMismatch(marker)),
+    }
+}
+
+macro_rules! make_read_data_fn {
+    (deduce, $reader:ident, $decoder:ident, 0)
+        => ($reader.$decoder(););
+    (deduce, $reader:ident, $decoder:ident, 1)
+        => ($reader.$decoder::<byteorder::BigEndian>(););
+    (gen, $t:ty, $d:tt, $name:ident, $decoder:ident) => {
+        fn $name<R>(rd: &mut R) -> Result<$t, ValueReadError>
+            where R: Read
+        {
+            match make_read_data_fn!(deduce, rd, $decoder, $d) {
+                Ok(data) => Ok(data),
+                Err(err) => Err(ValueReadError::InvalidDataRead(From::from(err))),
+            }
+        }
+    };
+    (u8,    $name:ident, $decoder:ident) => (make_read_data_fn!(gen, u8, 0, $name, $decoder););
+    (i8,    $name:ident, $decoder:ident) => (make_read_data_fn!(gen, i8, 0, $name, $decoder););
+    ($t:ty, $name:ident, $decoder:ident) => (make_read_data_fn!(gen, $t, 1, $name, $decoder););
+}
+
+make_read_data_fn!(u8,  read_data_u8,  read_u8);
+
+/// Attempts to read exactly 2 bytes from the given reader and to decode them as u8 value.
+pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::U8 => Ok(try!(read_data_u8(rd))),
+        marker     => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
 

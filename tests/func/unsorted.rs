@@ -285,44 +285,6 @@ fn from_i8_unexpected_eof() {
 }
 
 #[test]
-fn from_u8_min() {
-    let buf: &[u8] = &[0xcc, 0x00];
-    let mut cur = Cursor::new(buf);
-
-    assert_eq!(0, read_u8(&mut cur).unwrap());
-    assert_eq!(2, cur.position());
-}
-
-#[test]
-fn from_u8_max() {
-    let buf: &[u8] = &[0xcc, 0xff];
-    let mut cur = Cursor::new(buf);
-
-    assert_eq!(255, read_u8(&mut cur).unwrap());
-    assert_eq!(2, cur.position());
-}
-
-#[test]
-fn from_u8_type_mismatch() {
-    let buf: &[u8] = &[0xc0, 0x80];
-    let mut cur = Cursor::new(buf);
-
-    assert_eq!(Error::TypeMismatch(Marker::Null),
-        read_u8(&mut cur).err().unwrap());
-    assert_eq!(1, cur.position());
-}
-
-#[test]
-fn from_u8_unexpected_eof() {
-    let buf: &[u8] = &[0xcc];
-    let mut cur = Cursor::new(buf);
-
-    assert_eq!(Error::InvalidDataRead(ReadError::UnexpectedEOF),
-        read_u8(&mut cur).err().unwrap());
-    assert_eq!(1, cur.position());
-}
-
-#[test]
 fn from_u16_min() {
     let buf: &[u8] = &[0xcd, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
