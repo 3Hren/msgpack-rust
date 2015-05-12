@@ -216,9 +216,9 @@ make_read_data_fn!(u16, read_data_u16, read_u16);
 make_read_data_fn!(u32, read_data_u32, read_u32);
 make_read_data_fn!(u64, read_data_u64, read_u64);
 make_read_data_fn!(i8,  read_data_i8,  read_i8);
-//make_read_data_fn!(i16, read_data_i16, read_i16);
-//make_read_data_fn!(i32, read_data_i32, read_i32);
-//make_read_data_fn!(i64, read_data_i64, read_i64);
+make_read_data_fn!(i16, read_data_i16, read_i16);
+make_read_data_fn!(i32, read_data_i32, read_i32);
+make_read_data_fn!(i64, read_data_i64, read_i64);
 //make_read_data_fn!(f32, read_data_f32, read_f32);
 //make_read_data_fn!(f64, read_data_f64, read_f64);
 
@@ -319,6 +319,66 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8, ValueReadError>
     match try!(read_marker(rd)) {
         Marker::I8 => Ok(try!(read_data_i8(rd))),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read exactly 3 bytes from the given reader and to decode them as `i16` value.
+///
+/// The first byte should be the marker and the others should represent the data itself.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_i16<R>(rd: &mut R) -> Result<i16, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::I16 => Ok(try!(read_data_i16(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read exactly 5 bytes from the given reader and to decode them as `i32` value.
+///
+/// The first byte should be the marker and the others should represent the data itself.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_i32<R>(rd: &mut R) -> Result<i32, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::I32 => Ok(try!(read_data_i32(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read exactly 9 bytes from the given reader and to decode them as `i64` value.
+///
+/// The first byte should be the marker and the others should represent the data itself.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_i64<R>(rd: &mut R) -> Result<i64, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::I64 => Ok(try!(read_data_i64(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
 
@@ -425,36 +485,6 @@ pub fn read_bool_deprecated<R>(rd: &mut R) -> result::Result<bool, FixedValueRea
         Marker::True  => Ok(true),
         Marker::False => Ok(false),
         marker        => Err(FixedValueReadError::TypeMismatch(marker))
-    }
-}
-
-/// Tries to read strictly i16 value from the reader.
-pub fn read_i16<R>(rd: &mut R) -> Result<i16>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::I16 => Ok(try!(read_data_i16(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Tries to read strictly i32 value from the reader.
-pub fn read_i32<R>(rd: &mut R) -> Result<i32>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::I32 => Ok(try!(read_data_i32(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Tries to read strictly i64 value from the reader.
-pub fn read_i64<R>(rd: &mut R) -> Result<i64>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::I64 => Ok(try!(read_data_i64(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
     }
 }
 
