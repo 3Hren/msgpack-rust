@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use msgpack::decode::*;
+use msgpack::decode::new::*;
 
 #[test]
 fn from_bool_false() {

@@ -61,20 +61,85 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker, MarkerReadError>
     }
 }
 
-/// Attempts to read and decode a nil value from the given reader.
+/// Attempts to read a single byte from the given reader and to decode it as a nil value.
 ///
 /// According to the MessagePack specification, a nil value is represented as a single `0xc0` byte.
 ///
 /// # Errors
 ///
-/// This function will return `FixedValueReadError` on any I/O error while reading the nil marker
-/// or if the marker decoded points to the type other than nil.
+/// This function will return `FixedValueReadError` on any I/O error while reading the nil marker.
+///
+/// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
 pub fn read_nil<R>(rd: &mut R) -> Result<(), FixedValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::Null => Ok(()),
         marker       => Err(FixedValueReadError::TypeMismatch(marker))
+    }
+}
+
+/// Attempts to read a single byte from the given reader and to decode it as a boolean value.
+///
+/// According to the MessagePack specification, an encoded boolean value is represented as a single
+/// byte.
+///
+/// # Errors
+///
+/// This function will return `FixedValueReadError` on any I/O error while reading the bool marker.
+///
+/// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_bool<R>(rd: &mut R) -> Result<bool, FixedValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::True  => Ok(true),
+        Marker::False => Ok(false),
+        marker        => Err(FixedValueReadError::TypeMismatch(marker))
+    }
+}
+
+/// Attempts to read a single byte from the given reader and to decode it as a positive fixnum
+/// value.
+///
+/// According to the MessagePack specification, a positive fixed integer value is represented using
+/// a single byte in `[0x00; 0x7f]` range inclusively, prepended with a special marker mask.
+///
+/// # Errors
+///
+/// This function will return `FixedValueReadError` on any I/O error while reading the marker.
+///
+/// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_pfix<R>(rd: &mut R) -> Result<u8, FixedValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::PositiveFixnum(val) => Ok(val),
+        marker => Err(FixedValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read a single byte from the given reader and to decode it as a negative fixnum
+/// value.
+///
+/// According to the MessagePack specification, a negative fixed integer value is represented using
+/// a single byte in `[0xe0; 0xff]` range inclusively, prepended with a special marker mask.
+///
+/// # Errors
+///
+/// This function will return `FixedValueReadError` on any I/O error while reading the marker.
+///
+/// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_nfix<R>(rd: &mut R) -> Result<i8, FixedValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::NegativeFixnum(val) => Ok(val),
+        marker => Err(FixedValueReadError::TypeMismatch(marker)),
     }
 }
 
@@ -164,7 +229,7 @@ fn read_marker_<R>(rd: &mut R) -> result::Result<Marker, MarkerReadError>
 ///
 /// This function will return `FixedValueReadError` on any I/O error while reading the nil marker
 /// or if the marker decoded is not the nil marker.
-pub fn read_nil<R>(rd: &mut R) -> result::Result<(), FixedValueReadError>
+pub fn read_nil_deprecated<R>(rd: &mut R) -> result::Result<(), FixedValueReadError>
     where R: Read
 {
     match try!(read_marker_(rd)) {
@@ -174,7 +239,7 @@ pub fn read_nil<R>(rd: &mut R) -> result::Result<(), FixedValueReadError>
 }
 
 /// Tries to decode a bool value from the reader.
-pub fn read_bool<R>(rd: &mut R) -> result::Result<bool, FixedValueReadError>
+pub fn read_bool_deprecated<R>(rd: &mut R) -> result::Result<bool, FixedValueReadError>
     where R: Read
 {
     match try!(read_marker_(rd)) {
@@ -185,7 +250,7 @@ pub fn read_bool<R>(rd: &mut R) -> result::Result<bool, FixedValueReadError>
 }
 
 /// Tries to decode an exactly positive fixnum from the reader.
-pub fn read_pfix<R>(rd: &mut R) -> result::Result<u8, FixedValueReadError>
+pub fn read_pfix_deprecated<R>(rd: &mut R) -> result::Result<u8, FixedValueReadError>
     where R: Read
 {
     match try!(read_marker_(rd)) {
@@ -195,7 +260,7 @@ pub fn read_pfix<R>(rd: &mut R) -> result::Result<u8, FixedValueReadError>
 }
 
 /// Tries to decode an exactly negative fixnum from the reader.
-pub fn read_nfix<R>(rd: &mut R) -> result::Result<i8, FixedValueReadError>
+pub fn read_nfix_deprecated<R>(rd: &mut R) -> result::Result<i8, FixedValueReadError>
     where R: Read
 {
     match try!(read_marker_(rd)) {
@@ -823,8 +888,8 @@ use serialize;
 use super::super::super::core;
 use super::super::{Marker, ReadError};
 use super::{
-    read_nil,
-    read_bool,
+    read_nil_deprecated,
+    read_bool_deprecated,
     read_u8_loosely,
     read_u16_loosely,
     read_u32_loosely,
@@ -908,11 +973,11 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     type Error = Error;
 
     fn read_nil(&mut self) -> Result<()> {
-        Ok(try!(read_nil(&mut self.rd)))
+        Ok(try!(read_nil_deprecated(&mut self.rd)))
     }
 
     fn read_bool(&mut self) -> Result<bool> {
-        Ok(try!(read_bool(&mut self.rd)))
+        Ok(try!(read_bool_deprecated(&mut self.rd)))
     }
 
     fn read_u8(&mut self) -> Result<u8> {
