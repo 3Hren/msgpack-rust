@@ -460,14 +460,6 @@ fn read_marker_<R>(rd: &mut R) -> result::Result<Marker, MarkerReadError>
     }
 }
 
-/// Attempts to read and decode a nil value from the given reader.
-///
-/// According to the MessagePack specification, a nil value is represented as a single `0xc0` byte.
-///
-/// # Errors
-///
-/// This function will return `FixedValueReadError` on any I/O error while reading the nil marker
-/// or if the marker decoded is not the nil marker.
 pub fn read_nil_deprecated<R>(rd: &mut R) -> result::Result<(), FixedValueReadError>
     where R: Read
 {
@@ -477,7 +469,6 @@ pub fn read_nil_deprecated<R>(rd: &mut R) -> result::Result<(), FixedValueReadEr
     }
 }
 
-/// Tries to decode a bool value from the reader.
 pub fn read_bool_deprecated<R>(rd: &mut R) -> result::Result<bool, FixedValueReadError>
     where R: Read
 {
