@@ -108,7 +108,7 @@ pub fn read_pfix<R>(rd: &mut R) -> result::Result<u8, FixedValueReadError>
 {
     match try!(read_marker_(rd)) {
         Marker::PositiveFixnum(val) => Ok(val),
-        marker                      => Err(FixedValueReadError::TypeMismatch(marker)),
+        marker => Err(FixedValueReadError::TypeMismatch(marker)),
     }
 }
 
@@ -118,7 +118,7 @@ pub fn read_nfix<R>(rd: &mut R) -> result::Result<i8, FixedValueReadError>
 {
     match try!(read_marker_(rd)) {
         Marker::NegativeFixnum(val) => Ok(val),
-        marker                      => Err(FixedValueReadError::TypeMismatch(marker)),
+        marker => Err(FixedValueReadError::TypeMismatch(marker)),
     }
 }
 
