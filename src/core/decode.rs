@@ -428,28 +428,6 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64>
     }
 }
 
-/// Tries to read exactly 2 bytes from the reader and decode them as u8.
-pub fn read_u8<R>(rd: &mut R) -> Result<u8>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::U8 => Ok(try!(read_data_u8(rd))),
-        marker     => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Tries to read exactly 3 bytes from the reader and decode them as u16.
-///
-/// Unstable: more docs
-pub fn read_u16<R>(rd: &mut R) -> Result<u16>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::U16 => Ok(try!(read_data_u16(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
 /// Tries to read exactly 5 bytes from the reader and decode them as u32.
 ///
 /// Unstable: more docs
