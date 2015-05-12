@@ -108,6 +108,48 @@ fn from_u32_max() {
     assert_eq!(5, cur.position());
 }
 
+#[test]
+fn from_i8_min() {
+    let buf = [0xd0, 0x80];
+    let mut cur = Cursor::new(&buf[..]);
+
+    assert_eq!(-128, read_i8(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i8_max() {
+    let buf = [0xd0, 0x7f];
+    let mut cur = Cursor::new(&buf[..]);
+
+    assert_eq!(127, read_i8(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i8_type_mismatch() {
+    let buf = [0xc0, 0x80];
+    let mut cur = Cursor::new(&buf[..]);
+
+    match read_i8(&mut cur) {
+        Err(ValueReadError::TypeMismatch(Marker::Null)) => (),
+        other => panic!("unexpected result: {:?}", other)
+    }
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_i8_unexpected_eof() {
+    let buf = [0xd0];
+    let mut cur = Cursor::new(&buf[..]);
+
+    match read_i8(&mut cur) {
+        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)) => (),
+        other => panic!("unexpected result: {:?}", other)
+    }
+    assert_eq!(1, cur.position());
+}
+
 //#[test]
 //fn from_unsigned_fixnum_read_u64_loosely() {
 //    let buf = [0x00, 0x7f, 0x20];
