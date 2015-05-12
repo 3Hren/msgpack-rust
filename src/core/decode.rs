@@ -103,22 +103,22 @@ pub fn read_bool<R>(rd: &mut R) -> result::Result<bool, FixedValueReadError>
 }
 
 /// Tries to decode an exactly positive fixnum from the reader.
-pub fn read_pfix<R>(rd: &mut R) -> Result<u8>
+pub fn read_pfix<R>(rd: &mut R) -> result::Result<u8, FixedValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
+    match try!(read_marker_(rd)) {
         Marker::PositiveFixnum(val) => Ok(val),
-        marker                      => Err(Error::TypeMismatch(marker)),
+        marker                      => Err(FixedValueReadError::TypeMismatch(marker)),
     }
 }
 
 /// Tries to decode an exactly negative fixnum from the reader.
-pub fn read_nfix<R>(rd: &mut R) -> Result<i8>
+pub fn read_nfix<R>(rd: &mut R) -> result::Result<i8, FixedValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
+    match try!(read_marker_(rd)) {
         Marker::NegativeFixnum(val) => Ok(val),
-        marker                      => Err(Error::TypeMismatch(marker)),
+        marker                      => Err(FixedValueReadError::TypeMismatch(marker)),
     }
 }
 

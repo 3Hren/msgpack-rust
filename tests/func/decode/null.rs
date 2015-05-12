@@ -1,7 +1,6 @@
 use std::io::Cursor;
 
 use msgpack::decode::*;
-//use msgpack::decode::FixedValueReadError;
 
 #[test]
 fn pass_read_nil() {
