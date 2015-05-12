@@ -154,7 +154,7 @@ impl Marker {
 /// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
 /// case: an unexpected EOF.
 
-/// Unstable: remove Debug trait; maybe rename IO variant to Io
+/// Unstable: maybe rename IO variant to Io
 #[derive(Debug)]
 pub enum ReadError {
     UnexpectedEOF,

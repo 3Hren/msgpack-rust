@@ -4,7 +4,8 @@ use std::io::{Cursor, Read};
 use std::result;
 use std::str::from_utf8;
 
-use byteorder::{self, ReadBytesExt};
+use byteorder;
+use byteorder::ReadBytesExt;
 
 use super::{Marker, Error, ReadError, Result, Integer, DecodeStringError};
 
@@ -22,13 +23,71 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker>
     }
 }
 
-/// Tries to decode a nil value from the reader.
-pub fn read_nil<R>(rd: &mut R) -> Result<()>
+#[derive(Debug)]
+pub enum ReadError_ {
+    UnexpectedEOF,
+    Io(io::Error),
+}
+
+// TODO: Temporary.
+impl From<ReadError_> for ReadError {
+    fn from(err: ReadError_) -> ReadError {
+        match err {
+            ReadError_::UnexpectedEOF => ReadError::UnexpectedEOF,
+            ReadError_::Io(err) => ReadError::IO(err),
+        }
+    }
+}
+
+impl From<byteorder::Error> for ReadError_ {
+    fn from(err: byteorder::Error) -> ReadError_ {
+        match err {
+            byteorder::Error::UnexpectedEOF => ReadError_::UnexpectedEOF,
+            byteorder::Error::Io(err) => ReadError_::Io(err),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct MarkerReadError(ReadError_);
+
+#[derive(Debug)]
+pub enum FixedValueReadError {
+    InvalidMarkerRead(ReadError_),
+    TypeMismatch(Marker),
+}
+
+impl From<MarkerReadError> for FixedValueReadError {
+    fn from(err: MarkerReadError) -> FixedValueReadError {
+        match err {
+            MarkerReadError(err) => FixedValueReadError::InvalidMarkerRead(err)
+        }
+    }
+}
+
+fn read_marker_<R>(rd: &mut R) -> result::Result<Marker, MarkerReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
+    match rd.read_u8() {
+        Ok(val)  => Ok(Marker::from_u8(val)),
+        Err(err) => Err(MarkerReadError(From::from(err))),
+    }
+}
+
+/// Attempts to read and decode a nil value from the given reader.
+///
+/// According to the MessagePack specification, a nil value is represented as a single `0xc0` byte.
+///
+/// # Errors
+///
+/// This function will return `FixedValueReadError` on any I/O error while reading the nil marker
+/// or if the marker decoded is not the nil marker.
+pub fn read_nil<R>(rd: &mut R) -> result::Result<(), FixedValueReadError>
+    where R: Read
+{
+    match try!(read_marker_(rd)) {
         Marker::Null => Ok(()),
-        marker       => Err(Error::TypeMismatch(marker))
+        marker       => Err(FixedValueReadError::TypeMismatch(marker))
     }
 }
 
@@ -700,6 +759,10 @@ use super::{
     read_map_size,
 };
 
+use super::{
+    FixedValueReadError,
+};
+
 /// Unstable: docs; incomplete
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -718,6 +781,15 @@ impl From<core::Error> for Error {
             core::Error::TypeMismatch(marker)   => Error::TypeMismatch(marker),
             core::Error::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             core::Error::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+        }
+    }
+}
+
+impl From<FixedValueReadError> for Error {
+    fn from(err: FixedValueReadError) -> Error {
+        match err {
+            FixedValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(From::from(err)),
+            FixedValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
         }
     }
 }
