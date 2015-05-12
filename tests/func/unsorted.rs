@@ -285,15 +285,6 @@ fn from_i8_unexpected_eof() {
 }
 
 #[test]
-fn from_u32_max() {
-    let buf: &[u8] = &[0xce, 0xff, 0xff, 0xff, 0xff];
-    let mut cur = Cursor::new(buf);
-
-    assert_eq!(4294967295, read_u32(&mut cur).unwrap());
-    assert_eq!(5, cur.position());
-}
-
-#[test]
 fn from_i16_min() {
     let buf: &[u8] = &[0xd1, 0x80, 0x00];
     let mut cur = Cursor::new(buf);

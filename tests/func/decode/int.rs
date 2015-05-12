@@ -99,6 +99,15 @@ fn from_u16_min() {
     assert_eq!(3, cur.position());
 }
 
+#[test]
+fn from_u32_max() {
+    let buf = [0xce, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(&buf[..]);
+
+    assert_eq!(4294967295, read_u32(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
 //#[test]
 //fn from_unsigned_fixnum_read_u64_loosely() {
 //    let buf = [0x00, 0x7f, 0x20];
