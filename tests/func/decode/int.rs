@@ -90,6 +90,15 @@ fn from_u8_unexpected_eof() {
     assert_eq!(1, cur.position());
 }
 
+#[test]
+fn from_u16_min() {
+    let buf = [0xcd, 0x00, 0x00];
+    let mut cur = Cursor::new(&buf[..]);
+
+    assert_eq!(0, read_u16(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
 //#[test]
 //fn from_unsigned_fixnum_read_u64_loosely() {
 //    let buf = [0x00, 0x7f, 0x20];

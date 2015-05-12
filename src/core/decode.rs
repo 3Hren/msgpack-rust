@@ -212,6 +212,15 @@ macro_rules! make_read_data_fn {
 }
 
 make_read_data_fn!(u8,  read_data_u8,  read_u8);
+make_read_data_fn!(u16, read_data_u16, read_u16);
+//make_read_data_fn!(u32, read_data_u32, read_u32);
+//make_read_data_fn!(u64, read_data_u64, read_u64);
+//make_read_data_fn!(i8,  read_data_i8,  read_i8);
+//make_read_data_fn!(i16, read_data_i16, read_i16);
+//make_read_data_fn!(i32, read_data_i32, read_i32);
+//make_read_data_fn!(i64, read_data_i64, read_i64);
+//make_read_data_fn!(f32, read_data_f32, read_f32);
+//make_read_data_fn!(f64, read_data_f64, read_f64);
 
 /// Attempts to read exactly 2 bytes from the given reader and to decode them as u8 value.
 ///
@@ -230,6 +239,26 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
     match try!(read_marker(rd)) {
         Marker::U8 => Ok(try!(read_data_u8(rd))),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read exactly 3 bytes from the given reader and to decode them as u16 value.
+///
+/// The first byte should be the marker and the others should represent the data itself.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_u16<R>(rd: &mut R) -> Result<u16, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::U16 => Ok(try!(read_data_u16(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
 
