@@ -3,7 +3,7 @@
 //#![feature(collections)]
 //#![cfg_attr(test, feature(test))]
 
-/// Unstable: this library is still in rapid development
+/// Unstable: this library is still in rapid development and everything may change until 1.0 comes.
 
 extern crate byteorder;
 extern crate rustc_serialize as serialize;
