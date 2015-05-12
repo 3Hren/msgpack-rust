@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use msgpack::decode::*;
+use msgpack::decode::new::*;
 
 #[test]
 fn pass_read_nil() {
@@ -29,7 +29,7 @@ fn fail_read_nil_invalid_marker_read() {
     let mut cur = Cursor::new(&buf[..]);
 
     match read_nil(&mut cur) {
-        Err(FixedValueReadError::InvalidMarkerRead(..)) => (),
+        Err(FixedValueReadError::UnexpectedEOF) => (),
         other => panic!("unexpected result: {:?}", other)
     }
     assert_eq!(0, cur.position());

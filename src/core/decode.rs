@@ -1,3 +1,85 @@
+pub mod new {
+
+use std::io;
+use std::io::Read;
+use std::result::Result;
+
+use byteorder;
+use byteorder::ReadBytesExt;
+
+use super::super::Marker;
+
+/// Represents an error that can occur when attempting to read a MessagePack marker from the reader.
+///
+/// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
+/// case: an unexpected EOF.
+#[derive(Debug)]
+pub enum MarkerReadError {
+    /// Unexpected end of file reached while reading the marker.
+    UnexpectedEOF,
+    /// I/O error occurred while reading the marker.
+    Io(io::Error),
+}
+
+impl From<byteorder::Error> for MarkerReadError {
+    fn from(err: byteorder::Error) -> MarkerReadError {
+        match err {
+            byteorder::Error::UnexpectedEOF => MarkerReadError::UnexpectedEOF,
+            byteorder::Error::Io(err) => MarkerReadError::Io(err),
+        }
+    }
+}
+
+/// Represents an error that can occur when attempting to read a MessagePack'ed single-byte value
+/// from the reader.
+#[derive(Debug)]
+pub enum FixedValueReadError {
+    /// Unexpected end of file reached while reading the value.
+    UnexpectedEOF,
+    /// I/O error occurred while reading the value.
+    Io(io::Error),
+    /// The type decoded isn't match with the expected one.
+    TypeMismatch(Marker),
+}
+
+impl From<MarkerReadError> for FixedValueReadError {
+    fn from(err: MarkerReadError) -> FixedValueReadError {
+        match err {
+            MarkerReadError::UnexpectedEOF => FixedValueReadError::UnexpectedEOF,
+            MarkerReadError::Io(err) => FixedValueReadError::Io(err),
+        }
+    }
+}
+
+/// Attempts to read a single byte from the given reader and decodes it as a MessagePack marker.
+fn read_marker<R>(rd: &mut R) -> Result<Marker, MarkerReadError>
+    where R: Read
+{
+    match rd.read_u8() {
+        Ok(val)  => Ok(Marker::from_u8(val)),
+        Err(err) => Err(From::from(err)),
+    }
+}
+
+/// Attempts to read and decode a nil value from the given reader.
+///
+/// According to the MessagePack specification, a nil value is represented as a single `0xc0` byte.
+///
+/// # Errors
+///
+/// This function will return `FixedValueReadError` on any I/O error while reading the nil marker
+/// or if the marker decoded points to the type other than nil.
+pub fn read_nil<R>(rd: &mut R) -> Result<(), FixedValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::Null => Ok(()),
+        marker       => Err(FixedValueReadError::TypeMismatch(marker))
+    }
+}
+
+} // mod new
+
 use std::convert::From;
 use std::io;
 use std::io::{Cursor, Read};
