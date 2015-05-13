@@ -1,5 +1,6 @@
 use std::io::Cursor;
 
+use msgpack::Marker;
 use msgpack::decode::new::*;
 
 #[test]
