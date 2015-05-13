@@ -34,7 +34,7 @@ extern crate msgpack;
 
 - **Clear error handling**
 
-  RMP's error system guarantees that you never receive error enum with unreachable variant.
+  RMP's error system guarantees that you never receive an error enum with unreachable variant.
 
 - **Robust and tested**
 
