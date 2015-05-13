@@ -213,7 +213,7 @@ make_write_data_fn!(f64, write_data_f64, write_f64);
 ///
 /// # Examples
 /// ```
-/// use msgpack::write_u8;
+/// use msgpack::encode::write_u8;
 ///
 /// let mut buf = [0x00, 0x00];
 ///
@@ -312,7 +312,7 @@ pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), ValueWriteError>
 ///
 /// # Examples
 /// ```
-/// use msgpack::write_i8;
+/// use msgpack::encode::write_i8;
 ///
 /// let mut buf = [0x00, 0x00];
 ///

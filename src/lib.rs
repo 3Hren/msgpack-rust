@@ -9,12 +9,6 @@ pub const MSGPACK_VERSION : u32 = 5;
 
 pub use init::Marker;
 
-pub use encode::{
-    FixedValueWriteError,
-    write_u8,
-    write_i8,
-};
-
 pub use decode::serialize::{
     Decoder,
 };
