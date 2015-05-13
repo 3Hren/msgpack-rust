@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
-use msgpack::core::{Value, Integer, ReadError};
-use msgpack::core::decode::value::*;
+use msgpack::{Value, Integer, ReadError};
+use msgpack::decode::value::*;
 
 #[test]
 fn from_null_decode_value() {

@@ -23,7 +23,7 @@ mod null {
 
         use msgpack::Decoder;
         use msgpack::Marker;
-        use msgpack::core::decode::serialize::Error;
+        use msgpack::decode::serialize::Error;
 
         type Result<T> = result::Result<T, Error>;
 
@@ -69,7 +69,7 @@ mod bool {
 
         use msgpack::Decoder;
         use msgpack::Marker;
-        use msgpack::core::decode::serialize::Error;
+        use msgpack::decode::serialize::Error;
 
         type Result<T> = result::Result<T, Error>;
 
@@ -97,7 +97,7 @@ mod unspecified {
 
     use msgpack::Decoder;
     use msgpack::Marker;
-    use msgpack::core::decode::serialize::Error;
+    use msgpack::decode::serialize::Error;
 
     type Result<T> = result::Result<T, Error>;
 

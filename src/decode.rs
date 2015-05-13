@@ -6,7 +6,7 @@ use std::str::{from_utf8, Utf8Error};
 use byteorder;
 use byteorder::ReadBytesExt;
 
-use super::super::Marker;
+use super::Marker;
 
 /// Represents an error that can occur when attempting to read bytes from the reader.
 ///
@@ -975,14 +975,14 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
 
 //#[derive(Debug, PartialEq)]
 //pub enum Error {
-//    Core(core::Error),
+//    Core(Error),
 //    InvalidDataCopy(Vec<u8>, ReadError),
 //    /// The decoded data is not valid UTF-8, provides the original data and the corresponding error.
 //    InvalidUtf8(Vec<u8>, Utf8Error),
 //}
 
-//impl convert::From<core::Error> for Error {
-//    fn from(err: core::Error) -> Error {
+//impl convert::From<Error> for Error {
+//    fn from(err: Error) -> Error {
 //        Error::Core(err)
 //    }
 //}
@@ -1104,8 +1104,8 @@ impl<'a> From<DecodeStringError<'a>> for Error {
     fn from(err: DecodeStringError) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            DecodeStringError::InvalidDataRead(err) => unimplemented!(),
-            DecodeStringError::TypeMismatch(marker) => unimplemented!(),
+            DecodeStringError::InvalidDataRead(..) => unimplemented!(),
+            DecodeStringError::TypeMismatch(..) => unimplemented!(),
             DecodeStringError::BufferSizeTooSmall(..) => unimplemented!(),
             DecodeStringError::InvalidDataCopy(..) => unimplemented!(),
             DecodeStringError::InvalidUtf8(..) => unimplemented!(),

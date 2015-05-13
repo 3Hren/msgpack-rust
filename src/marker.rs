@@ -1,10 +1,3 @@
-use std::convert;
-use std::io;
-use std::result;
-use std::str::Utf8Error;
-
-use byteorder;
-
 const FIXSTR_SIZE   : u8 = 0x1f;
 const FIXARRAY_SIZE : u8 = 0x0f;
 const FIXMAP_SIZE   : u8 = 0x0f;
@@ -148,9 +141,6 @@ impl Marker {
         }
     }
 }
-
-pub mod encode;
-pub mod decode;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Integer {

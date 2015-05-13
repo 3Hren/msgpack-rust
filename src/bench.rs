@@ -1,6 +1,6 @@
 extern crate test;
 
-use super::core::decode::*;
+use super::decode::*;
 use self::test::Bencher;
 
 #[bench]
