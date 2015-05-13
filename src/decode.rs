@@ -941,25 +941,6 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
     Ok(meta)
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///// Yes, it is slower, because of ADT, but more convenient.
-/////
-///// Unstable: move to high-level module; complete; test
-//pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
-//    where R: Read
-//{
-//    match try!(read_marker(rd)) {
-//        Marker::NegativeFixnum(val) => Ok(Integer::I64(val as i64)),
-//        Marker::I8  => Ok(Integer::I64(try!(read_data_i8(rd))  as i64)),
-//        Marker::I16 => Ok(Integer::I64(try!(read_data_i16(rd)) as i64)),
-//        Marker::I32 => Ok(Integer::I64(try!(read_data_i32(rd)) as i64)),
-//        Marker::I64 => Ok(Integer::I64(try!(read_data_i64(rd)))),
-//        Marker::U64 => Ok(Integer::U64(try!(read_data_u64(rd)))),
-//        marker      => Err(Error::TypeMismatch(marker)),
-//    }
-//}
-
 /// TODO: Markdown.
 /// Contains: owned value decoding, owned error; owned result.
 //pub mod value {
@@ -1033,7 +1014,6 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
 //}
 
 //} // mod value
-
 
 pub mod serialize {
 
