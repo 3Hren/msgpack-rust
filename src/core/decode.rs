@@ -830,6 +830,119 @@ pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8], ValueReadError> {
     }
 }
 
+// TODO: Docs.
+pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8), ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixExt1 => {
+            let id   = try!(read_data_i8(rd));
+            let data = try!(read_data_u8(rd));
+            Ok((id, data))
+        }
+        marker => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
+// TODO: Docs.
+pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, u16), ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixExt2 => {
+            let id   = try!(read_data_i8(rd));
+            let data = try!(read_data_u16(rd));
+            Ok((id, data))
+        }
+        marker => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
+// TODO: Docs; contains unsafe code
+pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError>
+    where R: Read
+{
+    use std::mem;
+
+    match try!(read_marker(rd)) {
+        Marker::FixExt4 => {
+            let id = try!(read_data_i8(rd));
+            match rd.read_u32::<byteorder::LittleEndian>() {
+                Ok(data) => {
+                    let out : [u8; 4] = unsafe { mem::transmute(data) };
+                    Ok((id, out))
+                }
+                Err(err) => Err(ValueReadError::InvalidDataRead(From::from(err))),
+            }
+        }
+        _ => unimplemented!()
+    }
+}
+
+// TODO: Docs, error cases, type mismatch, unsufficient bytes, extra bytes
+pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixExt8 => {
+            let id = try!(read_data_i8(rd));
+            let mut out = [0u8; 8];
+
+            match io::copy(&mut rd.take(8), &mut &mut out[..]) {
+                Ok(8) => Ok((id, out)),
+                _ => unimplemented!()
+            }
+        }
+        _ => unimplemented!()
+    }
+}
+
+// TODO: Docs, error cases, type mismatch, unsufficient bytes, extra bytes
+pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixExt16 => {
+            let id = try!(read_data_i8(rd));
+            let mut out = [0u8; 16];
+
+            match io::copy(&mut rd.take(16), &mut &mut out[..]) {
+                Ok(16) => Ok((id, out)),
+                _ => unimplemented!()
+            }
+        }
+        _ => unimplemented!()
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ExtMeta {
+    pub typeid: i8,
+    pub size: u32,
+}
+
+/// Unstable: docs, errors
+pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
+    where R: Read
+{
+    let size = match try!(read_marker(rd)) {
+        Marker::FixExt1  => 1,
+        Marker::FixExt2  => 2,
+        Marker::FixExt4  => 4,
+        Marker::FixExt8  => 8,
+        Marker::FixExt16 => 16,
+        Marker::Ext8     => try!(read_data_u8(rd))  as u32,
+        Marker::Ext16    => try!(read_data_u16(rd)) as u32,
+        Marker::Ext32    => try!(read_data_u32(rd)),
+        _ => unimplemented!()
+    };
+
+    let typeid = try!(read_data_i8(rd));
+    let meta = ExtMeta { typeid: typeid, size: size };
+
+    Ok(meta)
+}
+
 } // mod new
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1175,119 +1288,6 @@ pub fn read_f64<R>(rd: &mut R) -> Result<f64>
         Marker::F64 => Ok(try!(read_data_f64(rd))),
         marker      => Err(Error::TypeMismatch(marker))
     }
-}
-
-/// Unstable: docs
-pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8)>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::FixExt1 => {
-            let id   = try!(read_data_i8(rd));
-            let data = try!(read_data_u8(rd));
-            Ok((id, data))
-        }
-        marker => Err(Error::TypeMismatch(marker))
-    }
-}
-
-/// Unstable: docs
-pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, u16)>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::FixExt2 => {
-            let id   = try!(read_data_i8(rd));
-            let data = try!(read_data_u16(rd));
-            Ok((id, data))
-        }
-        marker => Err(Error::TypeMismatch(marker))
-    }
-}
-
-/// Unstable: docs; contains unsafe code
-pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4])>
-    where R: Read
-{
-    use std::mem;
-
-    match try!(read_marker(rd)) {
-        Marker::FixExt4 => {
-            let id = try!(read_data_i8(rd));
-            match rd.read_u32::<byteorder::LittleEndian>() {
-                Ok(data) => {
-                    let out : [u8; 4] = unsafe { mem::transmute(data) };
-                    Ok((id, out))
-                }
-                Err(err) => Err(Error::InvalidDataRead(From::from(err))),
-            }
-        }
-        _ => unimplemented!()
-    }
-}
-
-/// Unstable: docs, error cases, type mismatch, unsufficient bytes, extra bytes
-pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8])>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::FixExt8 => {
-            let id = try!(read_data_i8(rd));
-            let mut out = [0u8; 8];
-
-            match io::copy(&mut rd.take(8), &mut &mut out[..]) {
-                Ok(8) => Ok((id, out)),
-                _ => unimplemented!()
-            }
-        }
-        _ => unimplemented!()
-    }
-}
-
-/// Unstable: docs, error cases, type mismatch, unsufficient bytes, extra bytes
-pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16])>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::FixExt16 => {
-            let id = try!(read_data_i8(rd));
-            let mut out = [0u8; 16];
-
-            match io::copy(&mut rd.take(16), &mut &mut out[..]) {
-                Ok(16) => Ok((id, out)),
-                _ => unimplemented!()
-            }
-        }
-        _ => unimplemented!()
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ExtMeta {
-    pub typeid: i8,
-    pub size: u32,
-}
-
-/// Unstable: docs, errors
-pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta>
-    where R: Read
-{
-    let size = match try!(read_marker(rd)) {
-        Marker::FixExt1  => 1,
-        Marker::FixExt2  => 2,
-        Marker::FixExt4  => 4,
-        Marker::FixExt8  => 8,
-        Marker::FixExt16 => 16,
-        Marker::Ext8     => try!(read_data_u8(rd))  as u32,
-        Marker::Ext16    => try!(read_data_u16(rd)) as u32,
-        Marker::Ext32    => try!(read_data_u32(rd)),
-        _ => unimplemented!()
-    };
-
-    let typeid = try!(read_data_i8(rd));
-    let meta = ExtMeta { typeid: typeid, size: size };
-
-    Ok(meta)
 }
 
 /// TODO: Markdown.
