@@ -7,7 +7,7 @@ extern crate rustc_serialize as serialize;
 
 pub const MSGPACK_VERSION : u32 = 5;
 
-pub use marker::Marker;
+pub use init::Marker;
 
 pub use encode::{
     FixedValueWriteError,
@@ -23,7 +23,7 @@ pub use encode::serialize::{
     Encoder,
 };
 
-pub mod marker;
+mod init;
 pub mod encode;
 pub mod decode;
 pub mod value;
