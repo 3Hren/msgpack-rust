@@ -1,8 +1,3 @@
-extern crate test;
-
-use super::decode::*;
-use self::test::Bencher;
-
 #[bench]
 fn from_i64_read_i64_loosely(b: &mut Bencher) {
     let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];

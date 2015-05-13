@@ -1,7 +1,5 @@
 #![crate_name = "msgpack"]
 
-//#![cfg_attr(test, feature(test))]
-
 /// Unstable: this library is still in rapid development and everything may change until 1.0 comes.
 
 extern crate byteorder;
@@ -28,9 +26,11 @@ pub use encode::serialize::{
 pub mod marker;
 pub mod encode;
 pub mod decode;
+pub mod value;
 
-//#[cfg(test)]
-//mod bench;
+// Suppressed due to instability.
+// #[cfg(test)]
+// mod bench;
 
 // NOTE: Write about strict integer typing. Sized integers always encoded as sized even if they are
 // fit in unsized, i.e 100 -> i32 -> posfix.

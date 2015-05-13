@@ -1,7 +1,7 @@
 use std::io;
 use std::io::{Read, Cursor};
 use std::result::Result;
-use std::str::{from_utf8, Utf8Error};
+use std::str::{Utf8Error, from_utf8};
 
 use byteorder;
 use byteorder::ReadBytesExt;
