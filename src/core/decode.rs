@@ -1,8 +1,9 @@
 pub mod new {
 
 use std::io;
-use std::io::Read;
+use std::io::{Read, Cursor};
 use std::result::Result;
+use std::str::{from_utf8, Utf8Error};
 
 use byteorder;
 use byteorder::ReadBytesExt;
@@ -19,6 +20,12 @@ pub enum ReadError {
     UnexpectedEOF,
     /// I/O error occurred while reading bytes.
     Io(io::Error),
+}
+
+impl From<io::Error> for ReadError {
+    fn from(err: io::Error) -> ReadError {
+        ReadError::Io(err)
+    }
 }
 
 impl From<byteorder::Error> for ReadError {
@@ -96,6 +103,27 @@ pub enum ValueReadError {
 impl From<MarkerReadError> for ValueReadError {
     fn from(err: MarkerReadError) -> ValueReadError {
         ValueReadError::InvalidMarkerRead(From::from(err))
+    }
+}
+
+#[derive(Debug)]
+pub enum DecodeStringError<'a> {
+    InvalidMarkerRead(ReadError),
+    InvalidDataRead(ReadError),
+    TypeMismatch(Marker),
+    /// The given buffer is not large enough to accumulate the specified amount of bytes.
+    BufferSizeTooSmall(u32),
+    InvalidDataCopy(&'a [u8], ReadError),
+    InvalidUtf8(&'a [u8], Utf8Error),
+}
+
+impl<'a> From<ValueReadError> for DecodeStringError<'a> {
+    fn from(err: ValueReadError) -> DecodeStringError<'a> {
+        match err {
+            ValueReadError::InvalidMarkerRead(err) => DecodeStringError::InvalidMarkerRead(err),
+            ValueReadError::InvalidDataRead(err) => DecodeStringError::InvalidDataRead(err),
+            ValueReadError::TypeMismatch(marker) => DecodeStringError::TypeMismatch(marker),
+        }
     }
 }
 
@@ -600,6 +628,98 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64, ValueReadError>
     }
 }
 
+/// Attempts to read up to 9 bytes from the given reader and to decode them as a string `u32` size
+/// value.
+///
+/// According to the MessagePack specification, the string format family stores an byte array in 1,
+/// 2, 3, or 5 bytes of extra bytes in addition to the size of the byte array.
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixedString(size) => Ok(size as u32),
+        Marker::Str8  => Ok(try!(read_data_u8(rd))  as u32),
+        Marker::Str16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Str32 => Ok(try!(read_data_u32(rd))),
+        marker        => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
+/// Attempts to read a string data from the given reader and copy it to the buffer provided.
+///
+/// On success returns a borrowed string type, allowing to view the copyed bytes as properly utf-8
+/// string.
+/// According to the spec, the string's data must to be encoded using utf-8.
+///
+/// # Errors
+///
+/// Returns `Err` in the following cases:
+///
+///  - if any IO error (including unexpected EOF) occurs, while reading an `rd`.
+///  - if the `out` buffer size is not large enough to keep all the data copyed.
+///  - if the data is not utf-8, with a description as to why the provided data is not utf-8 and
+///    with a size of bytes actually copyed to be able to get them from `out`.
+///
+/// # Examples
+/// ```
+/// use msgpack::decode::new::read_str;
+///
+/// let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+/// let mut out = [0u8; 16];
+///
+/// assert_eq!("le message", read_str(&mut &buf[..], &mut &mut out[..]).unwrap());
+/// ```
+///
+/// # Unstable
+///
+/// This function is **unstable**, because it needs review.
+pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str, DecodeStringError<'r>>
+    where R: Read
+{
+    let len = try!(read_str_len(rd));
+    let ulen = len as usize;
+
+    if buf.len() < ulen {
+        return Err(DecodeStringError::BufferSizeTooSmall(len))
+    }
+
+    read_str_data(rd, len, &mut buf[0..ulen])
+}
+
+fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r str, DecodeStringError<'r>>
+    where R: Read
+{
+    debug_assert_eq!(len as usize, buf.len());
+
+    // We need cursor here, because in the common case we cannot guarantee, that copying will be
+    // performed in a single step.
+    let mut cur = Cursor::new(buf);
+
+    // Trying to copy exact `len` bytes.
+    match io::copy(&mut rd.take(len as u64), &mut cur) {
+        Ok(size) if size == len as u64 => {
+            // Release buffer owning from cursor.
+            let buf = cur.into_inner();
+
+            match from_utf8(buf) {
+                Ok(decoded) => Ok(decoded),
+                Err(err)    => Err(DecodeStringError::InvalidUtf8(buf, err)),
+            }
+        }
+        Ok(size) => {
+            let buf = cur.into_inner();
+            Err(DecodeStringError::InvalidDataCopy(&buf[..size as usize], ReadError::UnexpectedEOF))
+        }
+        Err(err) => Err(DecodeStringError::InvalidDataRead(From::from(err))),
+    }
+}
+
 } // mod new
 
 use std::convert::From;
@@ -868,45 +988,6 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
         Marker::Str32 => Ok(try!(read_data_u32(rd))),
         marker        => Err(Error::TypeMismatch(marker))
     }
-}
-
-/// Tries to read a string data from the reader and copy it to the buffer provided.
-///
-/// On success returns a borrowed string type, allowing to view the copyed bytes as properly utf-8
-/// string.
-/// According to the spec, the string's data must to be encoded using utf-8.
-///
-/// # Failure
-///
-/// Returns `Err` in the following cases:
-///
-///  - if any IO error (including unexpected EOF) occurs, while reading an `rd`.
-///  - if the `out` buffer size is too small to keep all the data copyed.
-///  - if the data is not utf-8, with a description as to why the provided data is not utf-8 and
-///    with a size of bytes actually copyed to be able to get them from `out`.
-///
-/// # Examples
-/// ```
-/// use msgpack::core::decode::read_str;
-///
-/// let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
-/// let mut out = [0u8; 16];
-///
-/// assert_eq!("le message", read_str(&mut &buf[..], &mut &mut out[..]).unwrap());
-/// ```
-///
-/// Unstable: less `as`
-pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> result::Result<&'r str, DecodeStringError<'r>>
-    where R: Read
-{
-    let len = try!(read_str_len(rd));
-    let ulen = len as usize;
-
-    if buf.len() < ulen {
-        return Err(DecodeStringError::BufferSizeTooSmall(len))
-    }
-
-    read_str_data(rd, len, &mut buf[0..ulen])
 }
 
 fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8])
