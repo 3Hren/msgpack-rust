@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
 use msgpack::Marker;
-use msgpack::decode::new::*;
+use msgpack::decode::*;
 
 #[test]
 fn from_empty_array_read_size() {

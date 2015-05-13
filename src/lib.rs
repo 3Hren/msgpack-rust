@@ -26,10 +26,6 @@ pub use core::encode::{
 
 pub use core::decode;
 
-pub use core::decode::{
-    FixedValueReadError,
-};
-
 pub use core::decode::serialize::{
     Decoder,
 };
@@ -37,9 +33,6 @@ pub use core::decode::serialize::{
 pub use core::encode::serialize::{
     Encoder,
 };
-
-/// Temporary. Move to error.rs module.
-pub use core::{Error, ReadError};
 
 //#[cfg(test)]
 //mod bench;

@@ -1,5 +1,3 @@
-pub mod new {
-
 use std::io;
 use std::io::{Read, Cursor};
 use std::result::Result;
@@ -708,7 +706,7 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
 ///
 /// # Examples
 /// ```
-/// use msgpack::decode::new::read_str;
+/// use msgpack::decode::read_str;
 ///
 /// let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
 /// let mut out = [0u8; 16];
@@ -943,426 +941,98 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
     Ok(meta)
 }
 
-} // mod new
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-use std::convert::From;
-use std::io;
-use std::io::{Cursor, Read};
-use std::result;
-use std::str::from_utf8;
-
-use byteorder;
-use byteorder::ReadBytesExt;
-
-use super::{Marker, Error, ReadError, Result, Integer, DecodeStringError};
-
-fn read_marker<R>(rd: &mut R) -> Result<Marker>
-    where R: Read
-{
-    match rd.read_u8() {
-        Ok(val) => {
-            match Marker::from_u8(val) {
-                Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
-                marker           => Ok(marker),
-            }
-        }
-        Err(err) => Err(Error::InvalidMarkerRead(From::from(err))),
-    }
-}
-
-#[derive(Debug)]
-pub enum ReadError_ {
-    UnexpectedEOF,
-    Io(io::Error),
-}
-
-// TODO: Temporary.
-impl From<ReadError_> for ReadError {
-    fn from(err: ReadError_) -> ReadError {
-        match err {
-            ReadError_::UnexpectedEOF => ReadError::UnexpectedEOF,
-            ReadError_::Io(err) => ReadError::IO(err),
-        }
-    }
-}
-
-impl From<byteorder::Error> for ReadError_ {
-    fn from(err: byteorder::Error) -> ReadError_ {
-        match err {
-            byteorder::Error::UnexpectedEOF => ReadError_::UnexpectedEOF,
-            byteorder::Error::Io(err) => ReadError_::Io(err),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct MarkerReadError(ReadError_);
-
-#[derive(Debug)]
-pub enum FixedValueReadError {
-    InvalidMarkerRead(ReadError_),
-    TypeMismatch(Marker),
-}
-
-impl From<MarkerReadError> for FixedValueReadError {
-    fn from(err: MarkerReadError) -> FixedValueReadError {
-        match err {
-            MarkerReadError(err) => FixedValueReadError::InvalidMarkerRead(err)
-        }
-    }
-}
-
-fn read_marker_<R>(rd: &mut R) -> result::Result<Marker, MarkerReadError>
-    where R: Read
-{
-    match rd.read_u8() {
-        Ok(val)  => Ok(Marker::from_u8(val)),
-        Err(err) => Err(MarkerReadError(From::from(err))),
-    }
-}
-
-pub fn read_nil_deprecated<R>(rd: &mut R) -> result::Result<(), FixedValueReadError>
-    where R: Read
-{
-    match try!(read_marker_(rd)) {
-        Marker::Null => Ok(()),
-        marker       => Err(FixedValueReadError::TypeMismatch(marker))
-    }
-}
-
-pub fn read_bool_deprecated<R>(rd: &mut R) -> result::Result<bool, FixedValueReadError>
-    where R: Read
-{
-    match try!(read_marker_(rd)) {
-        Marker::True  => Ok(true),
-        Marker::False => Ok(false),
-        marker        => Err(FixedValueReadError::TypeMismatch(marker))
-    }
-}
-
-macro_rules! make_read_data_fn {
-    (deduce, $reader:ident, $decoder:ident, 0)
-        => ($reader.$decoder(););
-    (deduce, $reader:ident, $decoder:ident, 1)
-        => ($reader.$decoder::<byteorder::BigEndian>(););
-    (gen, $t:ty, $d:tt, $name:ident, $decoder:ident) => {
-        fn $name<R>(rd: &mut R) -> Result<$t>
-            where R: Read
-        {
-            match make_read_data_fn!(deduce, rd, $decoder, $d) {
-                Ok(data) => Ok(data),
-                Err(err) => Err(Error::InvalidDataRead(From::from(err))),
-            }
-        }
-    };
-    (u8,    $name:ident, $decoder:ident) => (make_read_data_fn!(gen, u8, 0, $name, $decoder););
-    (i8,    $name:ident, $decoder:ident) => (make_read_data_fn!(gen, i8, 0, $name, $decoder););
-    ($t:ty, $name:ident, $decoder:ident) => (make_read_data_fn!(gen, $t, 1, $name, $decoder););
-}
-
-make_read_data_fn!(u8,  read_data_u8,  read_u8);
-make_read_data_fn!(u16, read_data_u16, read_u16);
-make_read_data_fn!(u32, read_data_u32, read_u32);
-make_read_data_fn!(u64, read_data_u64, read_u64);
-make_read_data_fn!(i8,  read_data_i8,  read_i8);
-make_read_data_fn!(i16, read_data_i16, read_i16);
-make_read_data_fn!(i32, read_data_i32, read_i32);
-make_read_data_fn!(i64, read_data_i64, read_i64);
-make_read_data_fn!(f32, read_data_f32, read_f32);
-make_read_data_fn!(f64, read_data_f64, read_f64);
-
-pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val as u8),
-        Marker::U8  => Ok(try!(read_data_u8(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Unstable: not sure about name; docs; untested
-pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val as u16),
-        Marker::U8  => Ok(try!(read_data_u8(rd)) as u16),
-        Marker::U16 => Ok(try!(read_data_u16(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Unstable: not sure about name; docs; untested
-pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val as u32),
-        Marker::U8  => Ok(try!(read_data_u8(rd))  as u32),
-        Marker::U16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::U32 => Ok(try!(read_data_u32(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
-/// them as a big-endian u64.
-///
-/// The function tries to decode only unsigned integer values that are always non-negative.
-
-/// Unstable: not sure about name
-pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val as u64),
-        Marker::U8  => Ok(try!(read_data_u8(rd))  as u64),
-        Marker::U16 => Ok(try!(read_data_u16(rd)) as u64),
-        Marker::U32 => Ok(try!(read_data_u32(rd)) as u64),
-        Marker::U64 => Ok(try!(read_data_u64(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Unstable: not sure about name; docs; untested
-pub fn read_i8_loosely<R>(rd: &mut R) -> Result<i8>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val),
-        Marker::I8  => Ok(try!(read_data_i8(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Unstable: not sure about name; docs; untested
-pub fn read_i16_loosely<R>(rd: &mut R) -> Result<i16>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val as i16),
-        Marker::I8  => Ok(try!(read_data_i8(rd)) as i16),
-        Marker::I16 => Ok(try!(read_data_i16(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Unstable: not sure about name; docs; untested
-pub fn read_i32_loosely<R>(rd: &mut R) -> Result<i32>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val as i32),
-        Marker::I8  => Ok(try!(read_data_i8(rd))  as i32),
-        Marker::I16 => Ok(try!(read_data_i16(rd)) as i32),
-        Marker::I32 => Ok(try!(read_data_i32(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Tries to read up to 9 bytes from the reader (1 for marker and up to 8 for data) and interpret
-/// them as a big-endian i64.
-///
-/// The function tries to decode only signed integer values that can potentially be negative.
-///
-/// Unstable: not sure about name
-pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val as i64),
-        Marker::I8  => Ok(try!(read_data_i8(rd))  as i64),
-        Marker::I16 => Ok(try!(read_data_i16(rd)) as i64),
-        Marker::I32 => Ok(try!(read_data_i32(rd)) as i64),
-        Marker::I64 => Ok(try!(read_data_i64(rd))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-/// Yes, it is slower, because of ADT, but more convenient.
-///
-/// Unstable: move to high-level module; complete; test
-pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(Integer::I64(val as i64)),
-        Marker::I8  => Ok(Integer::I64(try!(read_data_i8(rd))  as i64)),
-        Marker::I16 => Ok(Integer::I64(try!(read_data_i16(rd)) as i64)),
-        Marker::I32 => Ok(Integer::I64(try!(read_data_i32(rd)) as i64)),
-        Marker::I64 => Ok(Integer::I64(try!(read_data_i64(rd)))),
-        Marker::U64 => Ok(Integer::U64(try!(read_data_u64(rd)))),
-        marker      => Err(Error::TypeMismatch(marker)),
-    }
-}
-
-pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::FixedString(size) => Ok(size as u32),
-        Marker::Str8  => Ok(try!(read_data_u8(rd))  as u32),
-        Marker::Str16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Str32 => Ok(try!(read_data_u32(rd))),
-        marker        => Err(Error::TypeMismatch(marker))
-    }
-}
-
-fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8])
-    -> result::Result<&'r str, DecodeStringError<'r>>
-    where R: Read
-{
-    debug_assert_eq!(len as usize, buf.len());
-
-    // We need cursor here, because in the common case we cannot guarantee, that copying will be
-    // performed in a single step.
-    let mut cur = Cursor::new(buf);
-
-    // Trying to copy exact `len` bytes.
-    match io::copy(&mut rd.take(len as u64), &mut cur) {
-        Ok(size) if size == len as u64 => {
-            // Release buffer owning from cursor.
-            let buf = cur.into_inner();
-
-            match from_utf8(buf) {
-                Ok(decoded) => Ok(decoded),
-                Err(err)    => Err(DecodeStringError::InvalidUtf8(buf, err)),
-            }
-        }
-        Ok(size) => {
-            let buf = cur.into_inner();
-            Err(DecodeStringError::InvalidDataCopy(&buf[..size as usize], ReadError::UnexpectedEOF))
-        }
-        Err(err) => Err(DecodeStringError::Core(Error::InvalidDataRead(From::from(err)))),
-    }
-}
-
-pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::FixedArray(size) => Ok(size as u32),
-        Marker::Array16 => {
-            match rd.read_u16::<byteorder::BigEndian>() {
-                Ok(size) => Ok(size as u32),
-                Err(err) => Err(Error::InvalidDataRead(From::from(err))),
-            }
-        }
-        Marker::Array32 => {
-            match rd.read_u32::<byteorder::BigEndian>() {
-                Ok(size) => Ok(size),
-                Err(err) => Err(Error::InvalidDataRead(From::from(err))),
-            }
-        }
-        marker => Err(Error::TypeMismatch(marker))
-    }
-}
-
-pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::FixedMap(size) => Ok(size as u32),
-        Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Map32 => Ok(try!(read_data_u32(rd))),
-        marker => Err(Error::TypeMismatch(marker))
-    }
-}
-
-pub fn read_f32<R>(rd: &mut R) -> Result<f32>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::F32 => Ok(try!(read_data_f32(rd))),
-        marker      => Err(Error::TypeMismatch(marker))
-    }
-}
-
-pub fn read_f64<R>(rd: &mut R) -> Result<f64>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::F64 => Ok(try!(read_data_f64(rd))),
-        marker      => Err(Error::TypeMismatch(marker))
-    }
-}
+///// Yes, it is slower, because of ADT, but more convenient.
+/////
+///// Unstable: move to high-level module; complete; test
+//pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
+//    where R: Read
+//{
+//    match try!(read_marker(rd)) {
+//        Marker::NegativeFixnum(val) => Ok(Integer::I64(val as i64)),
+//        Marker::I8  => Ok(Integer::I64(try!(read_data_i8(rd))  as i64)),
+//        Marker::I16 => Ok(Integer::I64(try!(read_data_i16(rd)) as i64)),
+//        Marker::I32 => Ok(Integer::I64(try!(read_data_i32(rd)) as i64)),
+//        Marker::I64 => Ok(Integer::I64(try!(read_data_i64(rd)))),
+//        Marker::U64 => Ok(Integer::U64(try!(read_data_u64(rd)))),
+//        marker      => Err(Error::TypeMismatch(marker)),
+//    }
+//}
 
 /// TODO: Markdown.
 /// Contains: owned value decoding, owned error; owned result.
-pub mod value {
+//pub mod value {
 
-use std::convert;
-use std::io::Read;
-use std::result;
-use std::str::Utf8Error;
+//use std::convert;
+//use std::io::Read;
+//use std::result;
+//use std::str::Utf8Error;
 
-use super::{read_marker, read_data_u8, read_data_i32, read_str_data};
-use super::super::{Marker, Value, Integer, ReadError, DecodeStringError};
-use super::super::super::core;
+//use super::{read_marker, read_data_u8, read_data_i32, read_str_data};
+//use super::super::{Marker, Value, Integer, ReadError, DecodeStringError};
+//use super::super::super::core;
 
-#[derive(Debug, PartialEq)]
-pub enum Error {
-    Core(core::Error),
-    InvalidDataCopy(Vec<u8>, ReadError),
-    /// The decoded data is not valid UTF-8, provides the original data and the corresponding error.
-    InvalidUtf8(Vec<u8>, Utf8Error),
-}
+//#[derive(Debug, PartialEq)]
+//pub enum Error {
+//    Core(core::Error),
+//    InvalidDataCopy(Vec<u8>, ReadError),
+//    /// The decoded data is not valid UTF-8, provides the original data and the corresponding error.
+//    InvalidUtf8(Vec<u8>, Utf8Error),
+//}
 
-impl convert::From<core::Error> for Error {
-    fn from(err: core::Error) -> Error {
-        Error::Core(err)
-    }
-}
+//impl convert::From<core::Error> for Error {
+//    fn from(err: core::Error) -> Error {
+//        Error::Core(err)
+//    }
+//}
 
-impl<'a> convert::From<DecodeStringError<'a>> for Error {
-    fn from(err: DecodeStringError) -> Error {
-        match err {
-            DecodeStringError::Core(err) => Error::Core(err),
-            DecodeStringError::BufferSizeTooSmall(..) => unimplemented!(),
-            DecodeStringError::InvalidDataCopy(buf, err) => Error::InvalidDataCopy(buf.to_vec(), err),
-            DecodeStringError::InvalidUtf8(buf, err) => Error::InvalidUtf8(buf.to_vec(), err),
-        }
-    }
-}
+//impl<'a> convert::From<DecodeStringError<'a>> for Error {
+//    fn from(err: DecodeStringError) -> Error {
+//        match err {
+//            DecodeStringError::Core(err) => Error::Core(err),
+//            DecodeStringError::BufferSizeTooSmall(..) => unimplemented!(),
+//            DecodeStringError::InvalidDataCopy(buf, err) => Error::InvalidDataCopy(buf.to_vec(), err),
+//            DecodeStringError::InvalidUtf8(buf, err) => Error::InvalidUtf8(buf.to_vec(), err),
+//        }
+//    }
+//}
 
-pub type Result<T> = result::Result<T, Error>;
+//pub type Result<T> = result::Result<T, Error>;
 
-/// Unstable: docs; examples; incomplete
-pub fn read_value<R>(rd: &mut R) -> Result<Value>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::Null => Ok(Value::Null),
-        Marker::PositiveFixnum(v) => Ok(Value::Integer(Integer::U64(v as u64))),
-        Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
-        // TODO: Other integers.
-        // TODO: Floats.
-        Marker::Str8 => {
-            let len = try!(read_data_u8(rd)) as u64;
+///// Unstable: docs; examples; incomplete
+//pub fn read_value<R>(rd: &mut R) -> Result<Value>
+//    where R: Read
+//{
+//    match try!(read_marker(rd)) {
+//        Marker::Null => Ok(Value::Null),
+//        Marker::PositiveFixnum(v) => Ok(Value::Integer(Integer::U64(v as u64))),
+//        Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
+//        // TODO: Other integers.
+//        // TODO: Floats.
+//        Marker::Str8 => {
+//            let len = try!(read_data_u8(rd)) as u64;
 
-            let mut buf: Vec<u8> = (0..len).map(|_| 0u8).collect();
+//            let mut buf: Vec<u8> = (0..len).map(|_| 0u8).collect();
 
-            Ok(Value::String(try!(read_str_data(rd, len as u32, &mut buf[..])).to_string()))
-        }
-        // TODO: Other strings.
-        Marker::FixedArray(len) => {
-            let mut vec = Vec::with_capacity(len as usize);
+//            Ok(Value::String(try!(read_str_data(rd, len as u32, &mut buf[..])).to_string()))
+//        }
+//        // TODO: Other strings.
+//        Marker::FixedArray(len) => {
+//            let mut vec = Vec::with_capacity(len as usize);
 
-            for _ in 0..len {
-                vec.push(try!(read_value(rd)));
-            }
+//            for _ in 0..len {
+//                vec.push(try!(read_value(rd)));
+//            }
 
-            Ok(Value::Array(vec))
-        }
-        // TODO: Map/Bin/Ext.
-        _ => unimplemented!()
-    }
-}
+//            Ok(Value::Array(vec))
+//        }
+//        // TODO: Map/Bin/Ext.
+//        _ => unimplemented!()
+//    }
+//}
 
-} // mod value
+//} // mod value
 
 
 pub mod serialize {
@@ -1373,11 +1043,14 @@ use std::result;
 
 use serialize;
 
-use super::super::super::core;
-use super::super::{Marker, ReadError};
+use super::super::Marker;
 use super::{
-    read_nil_deprecated,
-    read_bool_deprecated,
+    ReadError,
+    FixedValueReadError,
+    ValueReadError,
+    DecodeStringError,
+    read_nil,
+    read_bool,
     read_u8_loosely,
     read_u16_loosely,
     read_u32_loosely,
@@ -1394,15 +1067,11 @@ use super::{
     read_map_size,
 };
 
-use super::{
-    FixedValueReadError,
-};
-
 /// Unstable: docs; incomplete
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum Error {
     /// The actual value type isn't equal with the expected one.
-    TypeMismatch(core::Marker),
+    TypeMismatch(Marker),
     InvalidMarkerRead(ReadError),
     InvalidDataRead(ReadError),
     LengthMismatch(u32),
@@ -1410,33 +1079,36 @@ pub enum Error {
     Uncategorized(String),
 }
 
-impl From<core::Error> for Error {
-    fn from(err: core::Error) -> Error {
-        match err {
-            core::Error::TypeMismatch(marker)   => Error::TypeMismatch(marker),
-            core::Error::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            core::Error::InvalidDataRead(err)   => Error::InvalidDataRead(err),
-        }
-    }
-}
-
 impl From<FixedValueReadError> for Error {
     fn from(err: FixedValueReadError) -> Error {
         match err {
-            FixedValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(From::from(err)),
+            FixedValueReadError::UnexpectedEOF => Error::InvalidMarkerRead(ReadError::UnexpectedEOF),
+            FixedValueReadError::Io(err) => Error::InvalidMarkerRead(ReadError::Io(err)),
             FixedValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
         }
     }
 }
 
-/// Unstable: docs; incomplete
-impl<'a> From<core::DecodeStringError<'a>> for Error {
-    fn from(err: core::DecodeStringError) -> Error {
+impl From<ValueReadError> for Error {
+    fn from(err: ValueReadError) -> Error {
         match err {
-            core::DecodeStringError::Core(err) => From::from(err),
-            core::DecodeStringError::BufferSizeTooSmall(..)    => unimplemented!(),
-            core::DecodeStringError::InvalidDataCopy(..) => unimplemented!(),
-            core::DecodeStringError::InvalidUtf8(..)     => unimplemented!(),
+            ValueReadError::TypeMismatch(marker)   => Error::TypeMismatch(marker),
+            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
+            ValueReadError::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+        }
+    }
+}
+
+/// Unstable: docs; incomplete
+impl<'a> From<DecodeStringError<'a>> for Error {
+    fn from(err: DecodeStringError) -> Error {
+        match err {
+            DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
+            DecodeStringError::InvalidDataRead(err) => unimplemented!(),
+            DecodeStringError::TypeMismatch(marker) => unimplemented!(),
+            DecodeStringError::BufferSizeTooSmall(..) => unimplemented!(),
+            DecodeStringError::InvalidDataCopy(..) => unimplemented!(),
+            DecodeStringError::InvalidUtf8(..) => unimplemented!(),
         }
     }
 }
@@ -1461,11 +1133,11 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     type Error = Error;
 
     fn read_nil(&mut self) -> Result<()> {
-        Ok(try!(read_nil_deprecated(&mut self.rd)))
+        Ok(try!(read_nil(&mut self.rd)))
     }
 
     fn read_bool(&mut self) -> Result<bool> {
-        Ok(try!(read_bool_deprecated(&mut self.rd)))
+        Ok(try!(read_bool(&mut self.rd)))
     }
 
     fn read_u8(&mut self) -> Result<u8> {

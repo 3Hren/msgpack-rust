@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use msgpack::decode::new::*;
+use msgpack::decode::*;
 
 #[test]
 fn pass_read_nil() {

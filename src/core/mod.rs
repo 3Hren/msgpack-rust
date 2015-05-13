@@ -149,85 +149,8 @@ impl Marker {
     }
 }
 
-/// An error type for reading bytes from the reader.
-///
-/// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
-/// case: an unexpected EOF.
-
-/// Unstable: maybe rename IO variant to Io
-#[derive(Debug)]
-pub enum ReadError {
-    UnexpectedEOF,
-    IO(io::Error),
-}
-
-/// Unstable: this is a hack, because io::Error has PartialEq once; will be removed
-impl PartialEq for ReadError {
-    fn eq(&self, other: &ReadError) -> bool {
-        match (self, other) {
-            (&ReadError::UnexpectedEOF, &ReadError::UnexpectedEOF) => true,
-            (&ReadError::IO(ref lhs),   &ReadError::IO(ref rhs)) => {
-                lhs.kind() == rhs.kind()
-            }
-            _ => false
-        }
-    }
-
-    fn ne(&self, other: &ReadError) -> bool {
-        return !self.eq(other);
-    }
-}
-
-impl convert::From<io::Error> for ReadError {
-    fn from(err: io::Error) -> ReadError { ReadError::IO(err) }
-}
-
-impl convert::From<ReadError> for io::Error {
-    fn from(err: ReadError) -> io::Error {
-        match err {
-            ReadError::IO(err) => err,
-            ReadError::UnexpectedEOF => io::Error::new(io::ErrorKind::Other, "unexpected EOF")
-        }
-    }
-}
-
-impl convert::From<byteorder::Error> for ReadError {
-    fn from(err: byteorder::Error) -> ReadError {
-        match err {
-            byteorder::Error::UnexpectedEOF => ReadError::UnexpectedEOF,
-            byteorder::Error::Io(err) => ReadError::IO(err),
-        }
-    }
-}
-
-/// Unstable: remove Debug trait; incomplete
-#[derive(Debug, PartialEq)]
-pub enum Error {
-    /// Marker type error.
-    TypeMismatch(Marker),
-    /// IO error while reading marker.
-    InvalidMarkerRead(ReadError),
-    /// IO error while reading data.
-    InvalidDataRead(ReadError),
-}
-
-/// Unstable: Core? Shit name!
-#[derive(Debug, PartialEq)]
-pub enum DecodeStringError<'a> {
-    Core(Error),
-    /// The given buffer is too small to accumulate specified amount of bytes.
-    BufferSizeTooSmall(u32),
-    InvalidDataCopy(&'a [u8], ReadError),
-    InvalidUtf8(&'a [u8], Utf8Error),
-}
-
-impl<'a> convert::From<Error> for DecodeStringError<'a> {
-    fn from(err: Error) -> DecodeStringError<'a> {
-        DecodeStringError::Core(err)
-    }
-}
-
-pub type Result<T> = result::Result<T, Error>;
+pub mod encode;
+pub mod decode;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Integer {
@@ -244,6 +167,3 @@ pub enum Value {
     String(String),
     Array(Vec<Value>),
 }
-
-pub mod decode;
-pub mod encode;

@@ -35,7 +35,10 @@ mod null {
             let mut decoder = Decoder::new(cur);
 
             let res: Result<()> = Decodable::decode(&mut decoder);
-            assert_eq!(Error::TypeMismatch(Marker::Reserved), res.err().unwrap());
+            match res.err() {
+                Some(Error::TypeMismatch(Marker::Reserved)) => (),
+                other => panic!("unexpected result: {:?}", other)
+            }
         }
     } // mod fail
 } // mod null
@@ -78,7 +81,10 @@ mod bool {
             let mut decoder = Decoder::new(cur);
 
             let res: Result<bool> = Decodable::decode(&mut decoder);
-            assert_eq!(Error::TypeMismatch(Marker::PositiveFixnum(0)), res.err().unwrap());
+            match res.err() {
+                Some(Error::TypeMismatch(Marker::PositiveFixnum(0))) => (),
+                other => panic!("unexpected result: {:?}", other)
+            }
         }
     }
 }
@@ -123,7 +129,10 @@ mod unspecified {
         let mut decoder = Decoder::new(cur);
 
         let res: Result<u32> = Decodable::decode(&mut decoder);
-        assert_eq!(Error::TypeMismatch(Marker::U64), res.err().unwrap());
+        match res.err() {
+            Some(Error::TypeMismatch(Marker::U64)) => (),
+            other => panic!("unexpected result: {:?}", other)
+        }
     }
 
     #[test]
@@ -256,7 +265,10 @@ mod unspecified {
         let mut decoder = Decoder::new(cur);
         let actual: Result<(u32,)> = Decodable::decode(&mut decoder);
 
-        assert_eq!(Error::LengthMismatch(2), actual.err().unwrap());
+        match actual.err() {
+            Some(Error::LengthMismatch(2)) => (),
+            other => panic!("unexpected result: {:?}", other)
+        }
     }
 
     #[test]
@@ -324,7 +336,10 @@ mod unspecified {
 
         let mut decoder = Decoder::new(cur);
         let actual: Result<Option<u8>> = Decodable::decode(&mut decoder);
-        assert_eq!(Error::TypeMismatch(Marker::Reserved), actual.err().unwrap());
+        match actual.err() {
+            Some(Error::TypeMismatch(Marker::Reserved)) => (),
+            other => panic!("unexpected result: {:?}", other)
+        }
     }
 
     #[test]

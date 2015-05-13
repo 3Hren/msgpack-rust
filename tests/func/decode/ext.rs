@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use msgpack::decode::new::*;
+use msgpack::decode::*;
 
 #[test]
 fn from_fixext1_read_fixext1() {

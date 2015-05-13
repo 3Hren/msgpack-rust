@@ -7,3 +7,7 @@ mod string;
 mod bin;
 mod array;
 mod map;
+mod ext;
+
+// High-level serialize interface.
+mod decoder;
