@@ -247,8 +247,8 @@ make_read_data_fn!(i8,  read_data_i8,  read_i8);
 make_read_data_fn!(i16, read_data_i16, read_i16);
 make_read_data_fn!(i32, read_data_i32, read_i32);
 make_read_data_fn!(i64, read_data_i64, read_i64);
-//make_read_data_fn!(f32, read_data_f32, read_f32);
-//make_read_data_fn!(f64, read_data_f64, read_f64);
+make_read_data_fn!(f32, read_data_f32, read_f32);
+make_read_data_fn!(f64, read_data_f64, read_f64);
 
 /// Attempts to read exactly 2 bytes from the given reader and to decode them as `u8` value.
 ///
@@ -628,6 +628,46 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64, ValueReadError>
     }
 }
 
+/// Attempts to read exactly 5 bytes from the given reader and to decode them as `f32` value.
+///
+/// The first byte should be the marker and the others should represent the data itself.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_f32<R>(rd: &mut R) -> Result<f32, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::F32 => Ok(try!(read_data_f32(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
+/// Attempts to read exactly 9 bytes from the given reader and to decode them as `f64` value.
+///
+/// The first byte should be the marker and the others should represent the data itself.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+pub fn read_f64<R>(rd: &mut R) -> Result<f64, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::F64 => Ok(try!(read_data_f64(rd))),
+        marker      => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
 /// Attempts to read up to 9 bytes from the given reader and to decode them as a string `u32` size
 /// value.
 ///
@@ -761,6 +801,32 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
         Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
         Marker::Map32 => Ok(try!(read_data_u32(rd))),
         marker => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
+// TODO: Docs.
+pub fn read_bin_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::Bin8  => Ok(try!(read_data_u8(rd)) as u32),
+        Marker::Bin16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Bin32 => Ok(try!(read_data_u32(rd))),
+        marker        => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
+// TODO: Docs; not sure about naming.
+pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8], ValueReadError> {
+    let mut cur = io::Cursor::new(rd);
+    let len = try!(read_bin_len(&mut cur)) as usize;
+
+    let pos = cur.position() as usize;
+
+    if rd.len() < pos + len {
+        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF))
+    } else {
+        Ok(&rd[pos .. pos + len])
     }
 }
 
@@ -1020,10 +1086,6 @@ pub fn read_integer<R>(rd: &mut R) -> Result<Integer>
     }
 }
 
-/// Tries to read a string's size from the reader.
-///
-/// String format family stores an byte array in 1, 2, 3, or 5 bytes of extra bytes in addition to
-/// the size of the byte array.
 pub fn read_str_len<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
@@ -1065,10 +1127,6 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8])
     }
 }
 
-/// Tries to read up to 5 bytes from the reader and interpret them as a big-endian u32 array size.
-///
-/// Array format family stores a sequence of elements in 1, 3, or 5 bytes of extra bytes in
-/// addition to the elements.
 pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
@@ -1090,7 +1148,6 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32>
     }
 }
 
-/// Unstable: documentation required
 pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
     where R: Read
 {
@@ -1102,7 +1159,6 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32>
     }
 }
 
-/// Unstable: documentation
 pub fn read_f32<R>(rd: &mut R) -> Result<f32>
     where R: Read
 {
@@ -1112,38 +1168,12 @@ pub fn read_f32<R>(rd: &mut R) -> Result<f32>
     }
 }
 
-/// Unstable: docs
 pub fn read_f64<R>(rd: &mut R) -> Result<f64>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::F64 => Ok(try!(read_data_f64(rd))),
         marker      => Err(Error::TypeMismatch(marker))
-    }
-}
-
-pub fn read_bin_len<R>(rd: &mut R) -> Result<u32>
-    where R: Read
-{
-    match try!(read_marker(rd)) {
-        Marker::Bin8  => Ok(try!(read_data_u8(rd)) as u32),
-        Marker::Bin16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Bin32 => Ok(try!(read_data_u32(rd))),
-        marker        => Err(Error::TypeMismatch(marker))
-    }
-}
-
-/// Unstable: docs; not sure about naming
-pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8]> {
-    let mut cur = io::Cursor::new(rd);
-    let len = try!(read_bin_len(&mut cur)) as usize;
-
-    let pos = cur.position() as usize;
-
-    if rd.len() < pos + len {
-        Err(Error::InvalidDataRead(ReadError::UnexpectedEOF))
-    } else {
-        Ok(&rd[pos .. pos + len])
     }
 }
 
