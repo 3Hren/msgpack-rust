@@ -720,6 +720,16 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r st
     }
 }
 
+/// Attempts to read and decode a string value from the reader, returning a borrowed slice from it.
+///
+/// Unstable: it is better to return &str; may panic on len mismatch; extend documentation.
+pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
+    let mut cur = io::Cursor::new(rd);
+    let len = try!(read_str_len(&mut cur));
+    let start = cur.position() as usize;
+    Ok(&rd[start .. start + len as usize])
+}
+
 } // mod new
 
 use std::convert::From;
@@ -1017,16 +1027,6 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8])
         }
         Err(err) => Err(DecodeStringError::Core(Error::InvalidDataRead(From::from(err)))),
     }
-}
-
-/// Tries to read a string data from the reader and make a borrowed slice from it.
-///
-/// Unstable: it is better to return &str; may panic on len mismatch
-pub fn read_str_ref(rd: &[u8]) -> Result<&[u8]> {
-    let mut cur = io::Cursor::new(rd);
-    let len = try!(read_str_len(&mut cur));
-    let start = cur.position() as usize;
-    Ok(&rd[start .. start + len as usize])
 }
 
 /// Tries to read up to 5 bytes from the reader and interpret them as a big-endian u32 array size.

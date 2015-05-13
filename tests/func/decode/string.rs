@@ -221,3 +221,13 @@ fn from_str_strfix_buffer_too_small() {
     }
     assert_eq!(1, cur.position());
 }
+
+#[test]
+fn from_str_strfix_ref() {
+    let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+
+    let out = read_str_ref(&buf[..]).unwrap();
+
+    assert_eq!(10, out.len());
+    assert!(buf[1..11] == out[0..10])
+}
