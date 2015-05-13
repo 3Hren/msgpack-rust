@@ -722,7 +722,7 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r st
 
 /// Attempts to read and decode a string value from the reader, returning a borrowed slice from it.
 ///
-/// Unstable: it is better to return &str; may panic on len mismatch; extend documentation.
+// TODO: it is better to return &str; may panic on len mismatch; extend documentation.
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
@@ -730,7 +730,43 @@ pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
     Ok(&rd[start .. start + len as usize])
 }
 
+/// Attempts to read up to 5 bytes from the given reader and to decode them as a big-endian u32
+/// array size.
+///
+/// Array format family stores a sequence of elements in 1, 3, or 5 bytes of extra bytes in addition
+/// to the elements.
+// TODO: Docs.
+pub fn read_array_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixedArray(size) => Ok(size as u32),
+        Marker::Array16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Array32 => Ok(try!(read_data_u32(rd))),
+        marker => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
+/// Attempts to read up to 5 bytes from the given reader and to decode them as a big-endian u32
+/// map size.
+///
+/// Map format family stores a sequence of elements in 1, 3, or 5 bytes of extra bytes in addition
+/// to the elements.
+// TODO: Docs.
+pub fn read_map_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixedMap(size) => Ok(size as u32),
+        Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Map32 => Ok(try!(read_data_u32(rd))),
+        marker => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
 } // mod new
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use std::convert::From;
 use std::io;
