@@ -941,52 +941,40 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
     Ok(meta)
 }
 
-/// TODO: Markdown.
 /// Contains: owned value decoding, owned error; owned result.
-//pub mod value {
+// TODO: docs.
+pub mod value {
 
-//use std::convert;
-//use std::io::Read;
-//use std::result;
-//use std::str::Utf8Error;
+use std::convert::From;
+use std::io::Read;
+use std::result::Result;
 
-//use super::{read_marker, read_data_u8, read_data_i32, read_str_data};
-//use super::super::{Marker, Value, Integer, ReadError, DecodeStringError};
-//use super::super::super::core;
+use super::super::Marker;
+use super::super::value::Value;
+use super::{
+    ReadError,
+    MarkerReadError,
+    read_marker,
+};
 
-//#[derive(Debug, PartialEq)]
-//pub enum Error {
-//    Core(Error),
-//    InvalidDataCopy(Vec<u8>, ReadError),
-//    /// The decoded data is not valid UTF-8, provides the original data and the corresponding error.
-//    InvalidUtf8(Vec<u8>, Utf8Error),
-//}
+#[derive(Debug)]
+pub enum Error<'r> {
+    InvalidMarkerRead(ReadError),
+    InvalidArrayRead(&'r Error<'r>),
+}
 
-//impl convert::From<Error> for Error {
-//    fn from(err: Error) -> Error {
-//        Error::Core(err)
-//    }
-//}
+impl<'r> From<MarkerReadError> for Error<'r> {
+    fn from(err: MarkerReadError) -> Error<'r> {
+        Error::InvalidMarkerRead(From::from(err))
+    }
+}
 
-//impl<'a> convert::From<DecodeStringError<'a>> for Error {
-//    fn from(err: DecodeStringError) -> Error {
-//        match err {
-//            DecodeStringError::Core(err) => Error::Core(err),
-//            DecodeStringError::BufferSizeTooSmall(..) => unimplemented!(),
-//            DecodeStringError::InvalidDataCopy(buf, err) => Error::InvalidDataCopy(buf.to_vec(), err),
-//            DecodeStringError::InvalidUtf8(buf, err) => Error::InvalidUtf8(buf.to_vec(), err),
-//        }
-//    }
-//}
-
-//pub type Result<T> = result::Result<T, Error>;
-
-///// Unstable: docs; examples; incomplete
-//pub fn read_value<R>(rd: &mut R) -> Result<Value>
-//    where R: Read
-//{
-//    match try!(read_marker(rd)) {
-//        Marker::Null => Ok(Value::Null),
+// TODO: docs; examples; incomplete.
+pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::Null => Ok(Value::Nil),
 //        Marker::PositiveFixnum(v) => Ok(Value::Integer(Integer::U64(v as u64))),
 //        Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
 //        // TODO: Other integers.
@@ -1009,11 +997,11 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
 //            Ok(Value::Array(vec))
 //        }
 //        // TODO: Map/Bin/Ext.
-//        _ => unimplemented!()
-//    }
-//}
+        _ => unimplemented!()
+    }
+}
 
-//} // mod value
+} // mod value
 
 pub mod serialize {
 
