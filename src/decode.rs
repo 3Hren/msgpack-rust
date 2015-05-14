@@ -950,16 +950,19 @@ use std::io::Read;
 use std::result::Result;
 
 use super::super::Marker;
-use super::super::value::Value;
+use super::super::value::{Integer, Value};
 use super::{
     ReadError,
     MarkerReadError,
+    ValueReadError,
     read_marker,
+    read_data_u8,
 };
 
 #[derive(Debug)]
 pub enum Error<'r> {
     InvalidMarkerRead(ReadError),
+    InvalidDataRead(ReadError),
     InvalidArrayRead(&'r Error<'r>),
 }
 
@@ -969,13 +972,31 @@ impl<'r> From<MarkerReadError> for Error<'r> {
     }
 }
 
+impl<'r> From<ValueReadError> for Error<'r> {
+    fn from(err: ValueReadError) -> Error<'r> {
+        match err {
+            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
+            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+            ValueReadError::TypeMismatch(..) => unimplemented!()
+        }
+    }
+}
+
 // TODO: docs; examples; incomplete.
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::Null => Ok(Value::Nil),
-//        Marker::PositiveFixnum(v) => Ok(Value::Integer(Integer::U64(v as u64))),
+    let val = match try!(read_marker(rd)) {
+        Marker::Null  => Value::Nil,
+        Marker::True  => Value::Boolean(true),
+        Marker::False => Value::Boolean(false),
+        Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
+        Marker::U8 => {
+            Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64))
+        }
+//        Marker::U16
+//        Marker::U32
+//        Marker::U64
 //        Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
 //        // TODO: Other integers.
 //        // TODO: Floats.
@@ -998,7 +1019,9 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
 //        }
 //        // TODO: Map/Bin/Ext.
         _ => unimplemented!()
-    }
+    };
+
+    Ok(val)
 }
 
 } // mod value
