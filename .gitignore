@@ -1,7 +1,7 @@
 *.pro
-msgpack-rust.config
-msgpack-rust.creator
-msgpack-rust.creator.user
-msgpack-rust.files
-msgpack-rust.includes
+rmp.config
+rmp.creator
+rmp.creator.user
+rmp.files
+rmp.includes
 target
