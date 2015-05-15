@@ -91,3 +91,10 @@ fn main() {
     assert_eq!([0x92, 0x2a, 0xaa, 0x74, 0x68, 0x65, 0x20, 0x41, 0x6e, 0x73, 0x77, 0x65, 0x72], buf);
 }
 ```
+
+## Limitations and plans
+
+- Owning `Value` variant and its encoding/decoding functions.
+- Non-owning `ValueRef` variant, which can be created from `[u8]`, `Cursor<[u8]>` etc. and
+  borrows data from it, which makes it absolute zero-copy.
+- Enum serialization/deserialization.
