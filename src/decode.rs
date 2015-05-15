@@ -1198,24 +1198,24 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         Ok(try!(read_str_data(&mut self.rd, len, &mut buf[..])).to_string())
     }
 
-    fn read_enum<T, F>(&mut self, name: &str, f: F) -> Result<T>
+    fn read_enum<T, F>(&mut self, _name: &str, _f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
-    fn read_enum_variant<T, F>(&mut self, names: &[&str], f: F) -> Result<T>
+    fn read_enum_variant<T, F>(&mut self, _names: &[&str], _f: F) -> Result<T>
         where F: FnMut(&mut Self, usize) -> Result<T> { unimplemented!() }
-    fn read_enum_variant_arg<T, F>(&mut self, a_idx: usize, f: F) -> Result<T>
+    fn read_enum_variant_arg<T, F>(&mut self, _idx: usize, _f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
-    fn read_enum_struct_variant<T, F>(&mut self, names: &[&str], f: F) -> Result<T>
+    fn read_enum_struct_variant<T, F>(&mut self, _names: &[&str], _f: F) -> Result<T>
         where F: FnMut(&mut Self, usize) -> Result<T> { unimplemented!() }
-    fn read_enum_struct_variant_field<T, F>(&mut self, f_name: &str, f_idx: usize, f: F) -> Result<T>
+    fn read_enum_struct_variant_field<T, F>(&mut self, _name: &str, _idx: usize, _f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
 
-    fn read_struct<T, F>(&mut self, name_: &str, len: usize, f: F) -> Result<T>
+    fn read_struct<T, F>(&mut self, _name: &str, len: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
         self.read_tuple(len, f)
     }
 
-    fn read_struct_field<T, F>(&mut self, name_: &str, idx_: usize, f: F) -> Result<T>
+    fn read_struct_field<T, F>(&mut self, _name: &str, _idx: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
         f(self)
@@ -1234,15 +1234,15 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     }
 
     // In case of MessagePack don't care about argument indexing.
-    fn read_tuple_arg<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
+    fn read_tuple_arg<T, F>(&mut self, _idx: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
         f(self)
     }
 
-    fn read_tuple_struct<T, F>(&mut self, s_name: &str, len: usize, f: F) -> Result<T>
+    fn read_tuple_struct<T, F>(&mut self, _name: &str, _len: usize, _f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
-    fn read_tuple_struct_arg<T, F>(&mut self, a_idx: usize, f: F) -> Result<T>
+    fn read_tuple_struct_arg<T, F>(&mut self, _idx: usize, _f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
 
     /// We treat Value::Null as None.
@@ -1265,7 +1265,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         f(self, len)
     }
 
-    fn read_seq_elt<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
+    fn read_seq_elt<T, F>(&mut self, _idx: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
         f(self)
@@ -1279,13 +1279,13 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         f(self, len)
     }
 
-    fn read_map_elt_key<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
+    fn read_map_elt_key<T, F>(&mut self, _idx: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
         f(self)
     }
 
-    fn read_map_elt_val<T, F>(&mut self, idx_: usize, f: F) -> Result<T>
+    fn read_map_elt_val<T, F>(&mut self, _idx: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
         f(self)
