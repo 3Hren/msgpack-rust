@@ -18,7 +18,7 @@
 //! Then, add this to your crate root:
 //!
 //! ```rust
-//! extern crate msgpack;
+//! extern crate rmp as msgpack;
 //! ```
 //!
 //! ## Features
@@ -44,7 +44,7 @@
 //! Let's try to encode a tuple of int and string.
 //!
 //! ```rust
-//! extern crate msgpack;
+//! extern crate rmp as msgpack;
 //! extern crate rustc_serialize;
 //!
 //! use rustc_serialize::Encodable;
@@ -67,7 +67,7 @@
 //! shown in the following example:
 //!
 //! ```rust
-//! extern crate msgpack;
+//! extern crate rmp as msgpack;
 //! extern crate rustc_serialize;
 //!
 //! use rustc_serialize::Encodable;
@@ -96,8 +96,6 @@
 //! - Non-owning `ValueRef` variant, which can be created from `[u8]`, `Cursor<[u8]>` etc. and
 //!   borrows data from it, which makes it absolute zero-copy.
 //! - Enum serialization/deserialization.
-
-#![crate_name = "msgpack"]
 
 extern crate byteorder;
 extern crate rustc_serialize as serialize;

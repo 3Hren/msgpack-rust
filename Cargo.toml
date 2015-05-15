@@ -1,8 +1,12 @@
 [package]
 
-name = "msgpack"
+name = "rmp"
 version = "0.1.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
+
+description = "Pure Rust MessagePack serialization implementation"
+
+license = "MIT"
 
 [dependencies]
 byteorder = "*"

@@ -20,7 +20,7 @@ rmp = "0.1.0"
 Then, add this to your crate root:
 
 ```rust
-extern crate msgpack;
+extern crate rmp as msgpack;
 ```
 
 ## Features
@@ -46,7 +46,7 @@ extern crate msgpack;
 Let's try to encode a tuple of int and string.
 
 ```rust
-extern crate msgpack;
+extern crate rmp as msgpack;
 extern crate rustc_serialize;
 
 use rustc_serialize::Encodable;
@@ -69,7 +69,7 @@ reflection. To enable this feature, derive RustcEncodable and RustcDecodable att
 shown in the following example:
 
 ```rust
-extern crate msgpack;
+extern crate rmp as msgpack;
 extern crate rustc_serialize;
 
 use rustc_serialize::Encodable;

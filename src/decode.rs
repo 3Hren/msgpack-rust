@@ -706,7 +706,7 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
 ///
 /// # Examples
 /// ```
-/// use msgpack::decode::read_str;
+/// use rmp::decode::read_str;
 ///
 /// let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
 /// let mut out = [0u8; 16];
