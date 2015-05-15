@@ -873,12 +873,12 @@ pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError>
                 Err(err) => Err(ValueReadError::InvalidDataRead(From::from(err))),
             }
         }
-        _ => unimplemented!()
+        marker => Err(ValueReadError::TypeMismatch(marker))
     }
 }
 
 // TODO: Docs, error cases, type mismatch, unsufficient bytes, extra bytes
-pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
+fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
@@ -891,12 +891,12 @@ pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
                 _ => unimplemented!()
             }
         }
-        _ => unimplemented!()
+        marker => Err(ValueReadError::TypeMismatch(marker))
     }
 }
 
 // TODO: Docs, error cases, type mismatch, unsufficient bytes, extra bytes
-pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
+fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
@@ -909,7 +909,7 @@ pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
                 _ => unimplemented!()
             }
         }
-        _ => unimplemented!()
+        marker => Err(ValueReadError::TypeMismatch(marker))
     }
 }
 
@@ -932,7 +932,7 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
         Marker::Ext8     => try!(read_data_u8(rd))  as u32,
         Marker::Ext16    => try!(read_data_u16(rd)) as u32,
         Marker::Ext32    => try!(read_data_u32(rd)),
-        _ => unimplemented!()
+        marker           => return Err(ValueReadError::TypeMismatch(marker))
     };
 
     let typeid = try!(read_data_i8(rd));
@@ -943,57 +943,57 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
 
 /// Contains: owned value decoding, owned error; owned result.
 // TODO: docs.
-pub mod value {
+mod value {
 
-use std::convert::From;
-use std::io::Read;
-use std::result::Result;
+//use std::convert::From;
+//use std::io::Read;
+//use std::result::Result;
 
-use super::super::Marker;
-use super::super::value::{Integer, Value};
-use super::{
-    ReadError,
-    MarkerReadError,
-    ValueReadError,
-    read_marker,
-    read_data_u8,
-};
+//use super::super::Marker;
+//use super::super::value::{Integer, Value};
+//use super::{
+//    ReadError,
+//    MarkerReadError,
+//    ValueReadError,
+//    read_marker,
+//    read_data_u8,
+//};
 
-#[derive(Debug)]
-pub enum Error<'r> {
-    InvalidMarkerRead(ReadError),
-    InvalidDataRead(ReadError),
-    InvalidArrayRead(&'r Error<'r>),
-}
+//#[derive(Debug)]
+//pub enum Error<'r> {
+//    InvalidMarkerRead(ReadError),
+//    InvalidDataRead(ReadError),
+//    InvalidArrayRead(&'r Error<'r>),
+//}
 
-impl<'r> From<MarkerReadError> for Error<'r> {
-    fn from(err: MarkerReadError) -> Error<'r> {
-        Error::InvalidMarkerRead(From::from(err))
-    }
-}
+//impl<'r> From<MarkerReadError> for Error<'r> {
+//    fn from(err: MarkerReadError) -> Error<'r> {
+//        Error::InvalidMarkerRead(From::from(err))
+//    }
+//}
 
-impl<'r> From<ValueReadError> for Error<'r> {
-    fn from(err: ValueReadError) -> Error<'r> {
-        match err {
-            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
-            ValueReadError::TypeMismatch(..) => unimplemented!()
-        }
-    }
-}
+//impl<'r> From<ValueReadError> for Error<'r> {
+//    fn from(err: ValueReadError) -> Error<'r> {
+//        match err {
+//            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
+//            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+//            ValueReadError::TypeMismatch(..) => unimplemented!()
+//        }
+//    }
+//}
 
-// TODO: docs; examples; incomplete.
-pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
-    where R: Read
-{
-    let val = match try!(read_marker(rd)) {
-        Marker::Null  => Value::Nil,
-        Marker::True  => Value::Boolean(true),
-        Marker::False => Value::Boolean(false),
-        Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
-        Marker::U8 => {
-            Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64))
-        }
+//// TODO: docs; examples; incomplete.
+//pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
+//    where R: Read
+//{
+//    let val = match try!(read_marker(rd)) {
+//        Marker::Null  => Value::Nil,
+//        Marker::True  => Value::Boolean(true),
+//        Marker::False => Value::Boolean(false),
+//        Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
+//        Marker::U8 => {
+//            Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64))
+//        }
 //        Marker::U16
 //        Marker::U32
 //        Marker::U64
@@ -1018,11 +1018,11 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
 //            Ok(Value::Array(vec))
 //        }
 //        // TODO: Map/Bin/Ext.
-        _ => unimplemented!()
-    };
+//        _ => unimplemented!()
+//    };
 
-    Ok(val)
-}
+//    Ok(val)
+//}
 
 } // mod value
 
@@ -1095,11 +1095,11 @@ impl<'a> From<DecodeStringError<'a>> for Error {
     fn from(err: DecodeStringError) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            DecodeStringError::InvalidDataRead(..) => unimplemented!(),
-            DecodeStringError::TypeMismatch(..) => unimplemented!(),
-            DecodeStringError::BufferSizeTooSmall(..) => unimplemented!(),
-            DecodeStringError::InvalidDataCopy(..) => unimplemented!(),
-            DecodeStringError::InvalidUtf8(..) => unimplemented!(),
+            DecodeStringError::InvalidDataRead(..) => Error::Uncategorized("InvalidDataRead".to_string()),
+            DecodeStringError::TypeMismatch(..) => Error::Uncategorized("TypeMismatch".to_string()),
+            DecodeStringError::BufferSizeTooSmall(..) => Error::Uncategorized("BufferSizeTooSmall".to_string()),
+            DecodeStringError::InvalidDataCopy(..) => Error::Uncategorized("InvalidDataCopy".to_string()),
+            DecodeStringError::InvalidUtf8(..) => Error::Uncategorized("InvalidUtf8".to_string()),
         }
     }
 }
@@ -1118,7 +1118,6 @@ impl<R: Read> Decoder<R> {
     }
 }
 
-#[allow(unused)]
 /// Unstable: docs; examples; incomplete
 impl<R: Read> serialize::Decoder for Decoder<R> {
     type Error = Error;
@@ -1182,7 +1181,14 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         Ok(try!(read_f64(&mut self.rd)))
     }
 
-    fn read_char(&mut self) -> Result<char> { unimplemented!() }
+    fn read_char(&mut self) -> Result<char> {
+        let mut res = try!(self.read_str());
+        if res.len() == 1 {
+            Ok(res.pop().unwrap())
+        } else {
+            Err(self.error("length mismatch"))
+        }
+    }
 
     fn read_str(&mut self) -> Result<String> {
         let len = try!(read_str_len(&mut self.rd));

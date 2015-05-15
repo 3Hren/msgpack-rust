@@ -15,7 +15,9 @@ pub struct WriteError(io::Error);
 impl From<byteorder::Error> for WriteError {
     fn from(err: byteorder::Error) -> WriteError {
         match err {
-            byteorder::Error::UnexpectedEOF => unimplemented!(),
+            byteorder::Error::UnexpectedEOF => {
+                WriteError(io::Error::new(io::ErrorKind::Other, "unexpected EOF"))
+            },
             byteorder::Error::Io(err) => WriteError(err),
         }
     }
