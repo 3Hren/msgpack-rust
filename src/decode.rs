@@ -878,6 +878,7 @@ pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError>
 }
 
 // TODO: Docs, error cases, type mismatch, unsufficient bytes, extra bytes
+#[allow(dead_code)]
 fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
     where R: Read
 {
@@ -896,6 +897,7 @@ fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
 }
 
 // TODO: Docs, error cases, type mismatch, unsufficient bytes, extra bytes
+#[allow(dead_code)]
 fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
     where R: Read
 {
