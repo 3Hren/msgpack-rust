@@ -66,7 +66,7 @@
 //! reflection. To enable this feature, derive RustcEncodable and RustcDecodable attributes as
 //! shown in the following example:
 //!
-//! ```
+//! ```rust
 //! extern crate msgpack;
 //! extern crate rustc_serialize;
 //!
