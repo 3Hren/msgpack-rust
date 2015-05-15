@@ -112,7 +112,7 @@ pub use encode::serialize::{
     Encoder,
 };
 
-pub mod init;
+mod init;
 pub mod encode;
 pub mod decode;
 
