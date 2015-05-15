@@ -4,7 +4,7 @@ RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
 
 [![Build Status](https://travis-ci.org/3Hren/msgpack-rust.svg?branch=master)](https://travis-ci.org/3Hren/msgpack-rust)
 
-- [API documentation]()
+- [API documentation](http://3hren.github.io/msgpack-rust/rmp/index.html)
 
 - [Crates.io](http://crates.io/crates/rmp)
 
