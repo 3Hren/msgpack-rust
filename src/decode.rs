@@ -672,6 +672,8 @@ pub fn read_f64<R>(rd: &mut R) -> Result<f64, ValueReadError>
 /// According to the MessagePack specification, the string format family stores an byte array in 1,
 /// 2, 3, or 5 bytes of extra bytes in addition to the size of the byte array.
 ///
+/// # Errors
+///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
 /// the data.
 ///
@@ -896,23 +898,49 @@ fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
     }
 }
 
-// TODO: Docs, error cases, type mismatch, unsufficient bytes, extra bytes
-#[allow(dead_code)]
-fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
+/// Attempts to read exactly 18 bytes from the given reader and interpret them as a fixext16 type
+/// with data attached.
+///
+/// According to the MessagePack specification, a fixext16 stores an integer and a byte array whose
+/// length is 16 bytes. Its marker byte is `0xd8`.
+///
+/// Note, that this function copies a byte array from the reader to the output buffer, which is
+/// unlikely if you want zero-copy functionality.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::FixExt16 => {
             let id = try!(read_data_i8(rd));
-            let mut out = [0u8; 16];
+            let mut buf = [0; 16];
 
-            match io::copy(&mut rd.take(16), &mut &mut out[..]) {
-                Ok(16) => Ok((id, out)),
-                _ => unimplemented!()
+            match read_full(rd, &mut buf) {
+                Ok(())   => Ok((id, buf)),
+                Err(err) => Err(ValueReadError::InvalidDataRead(err)),
             }
         }
         marker => Err(ValueReadError::TypeMismatch(marker))
     }
+}
+
+fn read_full<R: Read>(rd: &mut R, buf: &mut [u8]) -> Result<(), ReadError> {
+    let mut nread = 0usize;
+
+    while nread < buf.len() {
+        match rd.read(&mut buf[nread..]) {
+            Ok(0) => return Err(ReadError::UnexpectedEOF),
+            Ok(n) => nread += n,
+            Err(ref err) if err.kind() == io::ErrorKind::Interrupted => {},
+            Err(err) => return Err(From::from(err))
+        }
+    }
+
+    Ok(())
 }
 
 #[derive(Debug, PartialEq)]
