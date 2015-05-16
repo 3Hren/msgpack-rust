@@ -844,15 +844,26 @@ pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8), ValueReadError>
     }
 }
 
-// TODO: Docs.
-pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, u16), ValueReadError>
+/// Attempts to read exactly 4 bytes from the given reader and interpret them as a fixext2 type
+/// with data attached.
+///
+/// According to the MessagePack specification, a fixext2 stores an integer and a byte array whose
+/// length is 2 bytes. Its marker byte is `0xd5`.
+///
+/// Note, that this function copies a byte array from the reader to the output buffer, which is
+/// unlikely if you want zero-copy functionality.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, [u8; 2]), ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::FixExt2 => {
-            let id   = try!(read_data_i8(rd));
-            let data = try!(read_data_u16(rd));
-            Ok((id, data))
+            let mut buf = [0; 2];
+            read_fixext_data(rd, &mut buf).map(|ty| (ty, buf))
         }
         marker => Err(ValueReadError::TypeMismatch(marker))
     }

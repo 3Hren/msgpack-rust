@@ -13,17 +13,17 @@ fn from_fixext1_read_fixext1() {
 
 #[test]
 fn from_fixext2_read_fixext2() {
-    let buf: &[u8] = &[0xd5, 0x01, 0x00, 0x02];
-    let mut cur = Cursor::new(buf);
+    let buf = [0xd5, 0x01, 0x00, 0x02];
+    let mut cur = Cursor::new(&buf[..]);
 
-    assert_eq!((1, 2), read_fixext2(&mut cur).unwrap());
+    assert_eq!((1, [0x00, 0x02]), read_fixext2(&mut cur).unwrap());
     assert_eq!(4, cur.position());
 }
 
 #[test]
 fn from_fixext4_read_fixext4() {
-    let buf: &[u8] = &[0xd6, 0x01, 0x00, 0x00, 0x00, 0x02];
-    let mut cur = Cursor::new(buf);
+    let buf = [0xd6, 0x01, 0x00, 0x00, 0x00, 0x02];
+    let mut cur = Cursor::new(&buf[..]);
 
     assert_eq!((1, [0x00, 0x00, 0x00, 0x02]), read_fixext4(&mut cur).unwrap());
     assert_eq!(6, cur.position());
