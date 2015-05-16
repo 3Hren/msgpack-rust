@@ -897,13 +897,8 @@ pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::FixExt8 => {
-            let id = try!(read_data_i8(rd));
             let mut buf = [0; 8];
-
-            match read_full(rd, &mut buf) {
-                Ok(())   => Ok((id, buf)),
-                Err(err) => Err(ValueReadError::InvalidDataRead(err)),
-            }
+            read_fixext_data(rd, &mut buf).map(|ty| (ty, buf))
         }
         marker => Err(ValueReadError::TypeMismatch(marker))
     }
@@ -927,15 +922,21 @@ pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::FixExt16 => {
-            let id = try!(read_data_i8(rd));
             let mut buf = [0; 16];
-
-            match read_full(rd, &mut buf) {
-                Ok(())   => Ok((id, buf)),
-                Err(err) => Err(ValueReadError::InvalidDataRead(err)),
-            }
+            read_fixext_data(rd, &mut buf).map(|ty| (ty, buf))
         }
         marker => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
+fn read_fixext_data<R>(rd: &mut R, buf: &mut [u8]) -> Result<i8, ValueReadError>
+    where R: Read
+{
+    let id = try!(read_data_i8(rd));
+
+    match read_full(rd, buf) {
+        Ok(())   => Ok(id),
+        Err(err) => Err(ValueReadError::InvalidDataRead(err)),
     }
 }
 
