@@ -858,22 +858,26 @@ pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, u16), ValueReadError>
     }
 }
 
-// TODO: Docs; contains unsafe code
+/// Attempts to read exactly 6 bytes from the given reader and interpret them as a fixext4 type
+/// with data attached.
+///
+/// According to the MessagePack specification, a fixext4 stores an integer and a byte array whose
+/// length is 4 bytes. Its marker byte is `0xd6`.
+///
+/// Note, that this function copies a byte array from the reader to the output buffer, which is
+/// unlikely if you want zero-copy functionality.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
 pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError>
     where R: Read
 {
-    use std::mem;
-
     match try!(read_marker(rd)) {
         Marker::FixExt4 => {
-            let id = try!(read_data_i8(rd));
-            match rd.read_u32::<byteorder::LittleEndian>() {
-                Ok(data) => {
-                    let out : [u8; 4] = unsafe { mem::transmute(data) };
-                    Ok((id, out))
-                }
-                Err(err) => Err(ValueReadError::InvalidDataRead(From::from(err))),
-            }
+            let mut buf = [0; 4];
+            read_fixext_data(rd, &mut buf).map(|ty| (ty, buf))
         }
         marker => Err(ValueReadError::TypeMismatch(marker))
     }
