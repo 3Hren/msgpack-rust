@@ -847,9 +847,9 @@ pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8), ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::FixExt1 => {
-            let id   = try!(read_data_i8(rd));
+            let ty   = try!(read_data_i8(rd));
             let data = try!(read_data_u8(rd));
-            Ok((id, data))
+            Ok((ty, data))
         }
         marker => Err(ValueReadError::TypeMismatch(marker))
     }
