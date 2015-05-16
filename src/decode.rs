@@ -830,7 +830,18 @@ pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8], ValueReadError> {
     }
 }
 
-// TODO: Docs.
+/// Attempts to read exactly 3 bytes from the given reader and interpret them as a fixext1 type
+/// with data attached.
+///
+/// According to the MessagePack specification, a fixext1 stores an integer and a byte array whose
+/// length is 1 byte. Its marker byte is `0xd4`.
+///
+/// Note, that this function copies a byte array from the reader to the output `u8` variable.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
 pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8), ValueReadError>
     where R: Read
 {
