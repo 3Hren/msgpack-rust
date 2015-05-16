@@ -29,16 +29,15 @@ fn from_fixext4_read_fixext4() {
     assert_eq!(6, cur.position());
 }
 
-// TODO: Uncomment.
-//#[test]
-//fn from_fixext8_read_fixext8() {
-//    let buf: &[u8] = &[0xd7, 0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
-//    let mut cur = Cursor::new(buf);
+#[test]
+fn from_fixext8_read_fixext8() {
+    let buf = [0xd7, 0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+    let mut cur = Cursor::new(&buf[..]);
 
-//    assert_eq!((1, [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]),
-//               read_fixext8(&mut cur).unwrap());
-//    assert_eq!(10, cur.position());
-//}
+    assert_eq!((1, [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]),
+               read_fixext8(&mut cur).unwrap());
+    assert_eq!(10, cur.position());
+}
 
 #[test]
 fn from_fixext16_read_fixext16() {

@@ -879,19 +879,30 @@ pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError>
     }
 }
 
-// TODO: Docs, error cases, type mismatch, unsufficient bytes, extra bytes
-#[allow(dead_code)]
-fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
+/// Attempts to read exactly 10 bytes from the given reader and interpret them as a fixext8 type
+/// with data attached.
+///
+/// According to the MessagePack specification, a fixext8 stores an integer and a byte array whose
+/// length is 8 bytes. Its marker byte is `0xd7`.
+///
+/// Note, that this function copies a byte array from the reader to the output buffer, which is
+/// unlikely if you want zero-copy functionality.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading either the marker or
+/// the data.
+pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::FixExt8 => {
             let id = try!(read_data_i8(rd));
-            let mut out = [0u8; 8];
+            let mut buf = [0; 8];
 
-            match io::copy(&mut rd.take(8), &mut &mut out[..]) {
-                Ok(8) => Ok((id, out)),
-                _ => unimplemented!()
+            match read_full(rd, &mut buf) {
+                Ok(())   => Ok((id, buf)),
+                Err(err) => Err(ValueReadError::InvalidDataRead(err)),
             }
         }
         marker => Err(ValueReadError::TypeMismatch(marker))
