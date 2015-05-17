@@ -1075,7 +1075,6 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::I16 => Value::Integer(Integer::I64(try!(read_data_i16(rd)) as i64)),
         Marker::I32 => Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64)),
         Marker::I64 => Value::Integer(Integer::I64(try!(read_data_i64(rd)))),
-//        // TODO: Other integers.
 //        // TODO: Floats.
 //        Marker::Str8 => {
 //            let len = try!(read_data_u8(rd)) as u64;
