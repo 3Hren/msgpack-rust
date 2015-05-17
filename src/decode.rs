@@ -1025,6 +1025,13 @@ use super::{
     ValueReadError,
     read_marker,
     read_data_u8,
+    read_data_u16,
+    read_data_u32,
+    read_data_u64,
+    read_data_i8,
+    read_data_i16,
+    read_data_i32,
+    read_data_i64,
 };
 
 #[derive(Debug)]
@@ -1059,13 +1066,15 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::True  => Value::Boolean(true),
         Marker::False => Value::Boolean(false),
         Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
-        Marker::U8 => {
-            Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64))
-        }
-//        Marker::U16
-//        Marker::U32
-//        Marker::U64
-//        Marker::I32  => Ok(Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64))),
+        Marker::NegativeFixnum(val) => Value::Integer(Integer::I64(val as i64)),
+        Marker::U8  => Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64)),
+        Marker::U16 => Value::Integer(Integer::U64(try!(read_data_u16(rd)) as u64)),
+        Marker::U32 => Value::Integer(Integer::U64(try!(read_data_u32(rd)) as u64)),
+        Marker::U64 => Value::Integer(Integer::U64(try!(read_data_u64(rd)))),
+        Marker::I8  => Value::Integer(Integer::I64(try!(read_data_i8(rd)) as i64)),
+        Marker::I16 => Value::Integer(Integer::I64(try!(read_data_i16(rd)) as i64)),
+        Marker::I32 => Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64)),
+        Marker::I64 => Value::Integer(Integer::I64(try!(read_data_i64(rd)))),
 //        // TODO: Other integers.
 //        // TODO: Floats.
 //        Marker::Str8 => {
