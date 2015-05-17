@@ -117,7 +117,7 @@ pub mod encode;
 pub mod decode;
 
 // TODO: Not ready yet.
-// pub mod value;
+mod value;
 
 // Suppressed due to instability.
 // #[cfg(test)]

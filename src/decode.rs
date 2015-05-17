@@ -1014,54 +1014,54 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
 mod value {
 
 //use std::convert::From;
-//use std::io::Read;
-//use std::result::Result;
+use std::io::Read;
+use std::result::Result;
 
-//use super::super::Marker;
-//use super::super::value::{Integer, Value};
-//use super::{
-//    ReadError,
-//    MarkerReadError,
-//    ValueReadError,
-//    read_marker,
-//    read_data_u8,
-//};
+use super::super::Marker;
+pub use super::super::value::{Integer, Value};
+use super::{
+    ReadError,
+    MarkerReadError,
+    ValueReadError,
+    read_marker,
+    read_data_u8,
+};
 
-//#[derive(Debug)]
-//pub enum Error<'r> {
-//    InvalidMarkerRead(ReadError),
-//    InvalidDataRead(ReadError),
-//    InvalidArrayRead(&'r Error<'r>),
-//}
+#[derive(Debug)]
+pub enum Error<'r> {
+    InvalidMarkerRead(ReadError),
+    InvalidDataRead(ReadError),
+    InvalidArrayRead(&'r Error<'r>),
+}
 
-//impl<'r> From<MarkerReadError> for Error<'r> {
-//    fn from(err: MarkerReadError) -> Error<'r> {
-//        Error::InvalidMarkerRead(From::from(err))
-//    }
-//}
+impl<'r> From<MarkerReadError> for Error<'r> {
+    fn from(err: MarkerReadError) -> Error<'r> {
+        Error::InvalidMarkerRead(From::from(err))
+    }
+}
 
-//impl<'r> From<ValueReadError> for Error<'r> {
-//    fn from(err: ValueReadError) -> Error<'r> {
-//        match err {
-//            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-//            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
-//            ValueReadError::TypeMismatch(..) => unimplemented!()
-//        }
-//    }
-//}
+impl<'r> From<ValueReadError> for Error<'r> {
+    fn from(err: ValueReadError) -> Error<'r> {
+        match err {
+            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
+            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+            ValueReadError::TypeMismatch(..) => unimplemented!()
+        }
+    }
+}
 
-//// TODO: docs; examples; incomplete.
-//pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
-//    where R: Read
-//{
-//    let val = match try!(read_marker(rd)) {
-//        Marker::Null  => Value::Nil,
-//        Marker::True  => Value::Boolean(true),
-//        Marker::False => Value::Boolean(false),
-//        Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
-//        Marker::U8 => {
-//            Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64))
-//        }
+// TODO: docs; examples; incomplete.
+pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
+    where R: Read
+{
+    let val = match try!(read_marker(rd)) {
+        Marker::Null  => Value::Nil,
+        Marker::True  => Value::Boolean(true),
+        Marker::False => Value::Boolean(false),
+        Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
+        Marker::U8 => {
+            Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64))
+        }
 //        Marker::U16
 //        Marker::U32
 //        Marker::U64
@@ -1086,11 +1086,47 @@ mod value {
 //            Ok(Value::Array(vec))
 //        }
 //        // TODO: Map/Bin/Ext.
-//        _ => unimplemented!()
-//    };
+         _ => unimplemented!()
+    };
 
-//    Ok(val)
-//}
+    Ok(val)
+}
+
+#[cfg(test)]
+mod tests {
+
+use std::io::Cursor;
+
+use super::*;
+
+#[test]
+fn from_null_decode_value() {
+    let buf = [0xc0, 0x00];
+    let mut cur = Cursor::new(&buf[..]);
+
+    assert_eq!(Value::Nil, read_value(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_pfix_decode_value() {
+    let buf: &[u8] = &[0x1f];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Value::Integer(Integer::U64(31)), read_value(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_i32_decode_value() {
+    let buf: &[u8] = &[0xd2, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(Value::Integer(Integer::I64(-1)), read_value(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+} // mod tests
 
 } // mod value
 
