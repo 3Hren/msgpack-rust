@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Writing ext decoders.
 
+## 0.1.1 - 2015-05-18
+### Changed
+- Added documentation and repository site in Cargo.toml.
+- Added keywords to ease searching using crates.io.
+
 ## 0.1.0 - 2015-05-15
 ### Added
 - Initial commit.
