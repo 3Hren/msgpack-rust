@@ -12,7 +12,7 @@
 //!
 //! ```toml
 //! [dependencies.msgpack]
-//! rmp = "0.1.0"
+//! rmp = "0.1.1"
 //! ```
 //!
 //! Then, add this to your crate root:
