@@ -1016,6 +1016,7 @@ mod value {
 //use std::convert::From;
 use std::io::Read;
 use std::result::Result;
+use std::str::Utf8Error;
 
 use super::super::Marker;
 pub use super::super::value::{
@@ -1028,6 +1029,7 @@ use super::{
     ReadError,
     MarkerReadError,
     ValueReadError,
+    DecodeStringError,
     read_marker,
     read_data_u8,
     read_data_u16,
@@ -1039,12 +1041,19 @@ use super::{
     read_data_i64,
     read_data_f32,
     read_data_f64,
+    read_str_data,
 };
 
 #[derive(Debug)]
 pub enum Error<'r> {
     InvalidMarkerRead(ReadError),
     InvalidDataRead(ReadError),
+    TypeMismatch(Marker),
+
+    BufferSizeTooSmall(u32),
+    InvalidDataCopy(Vec<u8>, ReadError),
+    InvalidUtf8(Vec<u8>, Utf8Error),
+
     InvalidArrayRead(&'r Error<'r>),
 }
 
@@ -1059,7 +1068,20 @@ impl<'r> From<ValueReadError> for Error<'r> {
         match err {
             ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
-            ValueReadError::TypeMismatch(..) => unimplemented!()
+            ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
+        }
+    }
+}
+
+impl<'a, 'r> From<DecodeStringError<'a>> for Error<'r> {
+    fn from(err: DecodeStringError<'a>) -> Error<'r> {
+        match err {
+            DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
+            DecodeStringError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+            DecodeStringError::TypeMismatch(marker) => Error::TypeMismatch(marker),
+            DecodeStringError::BufferSizeTooSmall(len) => Error::BufferSizeTooSmall(len),
+            DecodeStringError::InvalidDataCopy(buf, err) => Error::InvalidDataCopy(buf.to_vec(), err),
+            DecodeStringError::InvalidUtf8(buf, err) => Error::InvalidUtf8(buf.to_vec(), err),
         }
     }
 }
@@ -1084,14 +1106,40 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::I64 => Value::Integer(Integer::I64(try!(read_data_i64(rd)))),
         Marker::F32 => Value::Float(Float::F32(try!(read_data_f32(rd)))),
         Marker::F64 => Value::Float(Float::F64(try!(read_data_f64(rd)))),
-//        Marker::Str8 => {
-//            let len = try!(read_data_u8(rd)) as u64;
+        Marker::FixedString(len) => {
+            let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
+            let mut buf = &mut vec[..];
+            let data = try!(read_str_data(rd, len as u32, buf));
 
-//            let mut buf: Vec<u8> = (0..len).map(|_| 0u8).collect();
+            Value::String(data.to_string())
+        }
+        Marker::Str8 => {
+            let len = try!(read_data_u8(rd)) as u32;
 
-//            Ok(Value::String(try!(read_str_data(rd, len as u32, &mut buf[..])).to_string()))
-//        }
-//        // TODO: Other strings.
+            let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
+            let mut buf = &mut vec[..];
+            let data = try!(read_str_data(rd, len, buf));
+
+            Value::String(data.to_string())
+        }
+        Marker::Str16 => {
+            let len = try!(read_data_u16(rd)) as u32;
+
+            let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
+            let mut buf = &mut vec[..];
+            let data = try!(read_str_data(rd, len, buf));
+
+            Value::String(data.to_string())
+        }
+        Marker::Str32 => {
+            let len = try!(read_data_u32(rd));
+
+            let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
+            let mut buf = &mut vec[..];
+            let data = try!(read_str_data(rd, len, buf));
+
+            Value::String(data.to_string())
+        }
 //        Marker::FixedArray(len) => {
 //            let mut vec = Vec::with_capacity(len as usize);
 
@@ -1151,6 +1199,15 @@ fn from_f64_decode_value() {
 
     assert_eq!(Value::Float(Float::F64(f64::NEG_INFINITY)), read_value(&mut cur).unwrap());
     assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_strfix_decode_value() {
+    let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let mut cur = Cursor::new(&buf[..]);
+
+    assert_eq!(Value::String("le message".to_string()), read_value(&mut cur).unwrap());
+    assert_eq!(11, cur.position());
 }
 
 } // mod tests
