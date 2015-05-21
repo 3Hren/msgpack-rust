@@ -1086,6 +1086,16 @@ impl<'a, 'r> From<DecodeStringError<'a>> for Error<'r> {
     }
 }
 
+fn read_str<R>(rd: &mut R, len: u32) -> Result<String, Error>
+    where R: Read
+{
+    let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
+    let mut buf = &mut vec[..];
+    let data = try!(read_str_data(rd, len, buf));
+
+    Ok(data.to_string())
+}
+
 // TODO: docs; examples; incomplete.
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
@@ -1107,38 +1117,24 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::F32 => Value::Float(Float::F32(try!(read_data_f32(rd)))),
         Marker::F64 => Value::Float(Float::F64(try!(read_data_f64(rd)))),
         Marker::FixedString(len) => {
-            let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
-            let mut buf = &mut vec[..];
-            let data = try!(read_str_data(rd, len as u32, buf));
-
-            Value::String(data.to_string())
+            let len = len as u32;
+            let res = try!(read_str(rd, len));
+            Value::String(res)
         }
         Marker::Str8 => {
             let len = try!(read_data_u8(rd)) as u32;
-
-            let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
-            let mut buf = &mut vec[..];
-            let data = try!(read_str_data(rd, len, buf));
-
-            Value::String(data.to_string())
+            let res = try!(read_str(rd, len));
+            Value::String(res)
         }
         Marker::Str16 => {
             let len = try!(read_data_u16(rd)) as u32;
-
-            let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
-            let mut buf = &mut vec[..];
-            let data = try!(read_str_data(rd, len, buf));
-
-            Value::String(data.to_string())
+            let res = try!(read_str(rd, len));
+            Value::String(res)
         }
         Marker::Str32 => {
             let len = try!(read_data_u32(rd));
-
-            let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
-            let mut buf = &mut vec[..];
-            let data = try!(read_str_data(rd, len, buf));
-
-            Value::String(data.to_string())
+            let res = try!(read_str(rd, len));
+            Value::String(res)
         }
 //        Marker::FixedArray(len) => {
 //            let mut vec = Vec::with_capacity(len as usize);
