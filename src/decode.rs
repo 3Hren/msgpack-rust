@@ -1018,7 +1018,12 @@ use std::io::Read;
 use std::result::Result;
 
 use super::super::Marker;
-pub use super::super::value::{Integer, Value};
+pub use super::super::value::{
+    Integer,
+    Float,
+    Value,
+};
+
 use super::{
     ReadError,
     MarkerReadError,
@@ -1032,6 +1037,8 @@ use super::{
     read_data_i16,
     read_data_i32,
     read_data_i64,
+    read_data_f32,
+    read_data_f64,
 };
 
 #[derive(Debug)]
@@ -1075,7 +1082,8 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::I16 => Value::Integer(Integer::I64(try!(read_data_i16(rd)) as i64)),
         Marker::I32 => Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64)),
         Marker::I64 => Value::Integer(Integer::I64(try!(read_data_i64(rd)))),
-//        // TODO: Floats.
+        Marker::F32 => Value::Float(Float::F32(try!(read_data_f32(rd)))),
+        Marker::F64 => Value::Float(Float::F64(try!(read_data_f64(rd)))),
 //        Marker::Str8 => {
 //            let len = try!(read_data_u8(rd)) as u64;
 
@@ -1132,6 +1140,17 @@ fn from_i32_decode_value() {
 
     assert_eq!(Value::Integer(Integer::I64(-1)), read_value(&mut cur).unwrap());
     assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_f64_decode_value() {
+    use std::f64;
+
+    let buf = [0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(&buf[..]);
+
+    assert_eq!(Value::Float(Float::F64(f64::NEG_INFINITY)), read_value(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
 }
 
 } // mod tests
