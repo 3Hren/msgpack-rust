@@ -1045,7 +1045,7 @@ use super::{
 };
 
 #[derive(Debug)]
-pub enum Error<'r> {
+pub enum Error {
     InvalidMarkerRead(ReadError),
     InvalidDataRead(ReadError),
     TypeMismatch(Marker),
@@ -1054,17 +1054,17 @@ pub enum Error<'r> {
     InvalidDataCopy(Vec<u8>, ReadError),
     InvalidUtf8(Vec<u8>, Utf8Error),
 
-    InvalidArrayRead(&'r Error<'r>),
+    InvalidArrayRead(Box<Error>),
 }
 
-impl<'r> From<MarkerReadError> for Error<'r> {
-    fn from(err: MarkerReadError) -> Error<'r> {
+impl From<MarkerReadError> for Error {
+    fn from(err: MarkerReadError) -> Error {
         Error::InvalidMarkerRead(From::from(err))
     }
 }
 
-impl<'r> From<ValueReadError> for Error<'r> {
-    fn from(err: ValueReadError) -> Error<'r> {
+impl From<ValueReadError> for Error {
+    fn from(err: ValueReadError) -> Error {
         match err {
             ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
@@ -1073,8 +1073,8 @@ impl<'r> From<ValueReadError> for Error<'r> {
     }
 }
 
-impl<'a, 'r> From<DecodeStringError<'a>> for Error<'r> {
-    fn from(err: DecodeStringError<'a>) -> Error<'r> {
+impl<'a> From<DecodeStringError<'a>> for Error {
+    fn from(err: DecodeStringError<'a>) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             DecodeStringError::InvalidDataRead(err) => Error::InvalidDataRead(err),
@@ -1094,6 +1094,21 @@ fn read_str<R>(rd: &mut R, len: u32) -> Result<String, Error>
     let data = try!(read_str_data(rd, len, buf));
 
     Ok(data.to_string())
+}
+
+fn read_array<R>(rd: &mut R, len: usize) -> Result<Vec<Value>, Error>
+    where R: Read
+{
+    let mut vec = Vec::with_capacity(len);
+
+    for _ in 0..len {
+        match read_value(rd) {
+            Ok(val)  => vec.push(val),
+            Err(err) => return Err(Error::InvalidArrayRead(Box::new(err))),
+        }
+    }
+
+    Ok(vec)
 }
 
 // TODO: docs; examples; incomplete.
@@ -1136,15 +1151,21 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             let res = try!(read_str(rd, len));
             Value::String(res)
         }
-//        Marker::FixedArray(len) => {
-//            let mut vec = Vec::with_capacity(len as usize);
-
-//            for _ in 0..len {
-//                vec.push(try!(read_value(rd)));
-//            }
-
-//            Ok(Value::Array(vec))
-//        }
+        Marker::FixedArray(len) => {
+            let len = len as usize;
+            let vec = try!(read_array(rd, len));
+            Value::Array(vec)
+        }
+        Marker::Array16 => {
+            let len = try!(read_data_u16(rd)) as usize;
+            let vec = try!(read_array(rd, len));
+            Value::Array(vec)
+        }
+        Marker::Array32 => {
+            let len = try!(read_data_u32(rd)) as usize;
+            let vec = try!(read_array(rd, len));
+            Value::Array(vec)
+        }
 //        // TODO: Map/Bin/Ext.
          _ => unimplemented!()
     };
@@ -1204,6 +1225,44 @@ fn from_strfix_decode_value() {
 
     assert_eq!(Value::String("le message".to_string()), read_value(&mut cur).unwrap());
     assert_eq!(11, cur.position());
+}
+
+#[test]
+fn from_fixarray_decode_value() {
+    let buf = [
+        0x93,
+        0x00, 0x2a, 0xf7
+    ];
+    let mut cur = Cursor::new(&buf[..]);
+
+    let expected = Value::Array(vec![
+        Value::Integer(Integer::U64(0)),
+        Value::Integer(Integer::U64(42)),
+        Value::Integer(Integer::I64(-9)),
+    ]);
+
+    assert_eq!(expected, read_value(&mut cur).unwrap());
+    assert_eq!(4, cur.position());
+}
+
+#[test]
+fn from_fixarray_incomplete_decode_value() {
+    let buf = [
+        0x93,
+        0x00, 0x2a
+    ];
+    let mut cur = Cursor::new(&buf[..]);
+
+    match read_value(&mut cur) {
+        Err(Error::InvalidArrayRead(err)) => {
+            match *err {
+                Error::InvalidMarkerRead(..) => (),
+                other => panic!("unexpected result: {:?}", other)
+            }
+        }
+        other => panic!("unexpected result: {:?}", other)
+    }
+    assert_eq!(3, cur.position());
 }
 
 } // mod tests
