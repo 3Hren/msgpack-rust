@@ -14,7 +14,7 @@ RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
 To use `rmp`, first add this to your `Cargo.toml`:
 
 ```toml
-[dependencies.msgpack]
+[dependencies.rmp]
 rmp = "0.1.1"
 ```
 
