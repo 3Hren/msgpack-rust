@@ -1042,6 +1042,7 @@ use super::{
     read_data_f32,
     read_data_f64,
     read_str_data,
+    read_full,
 };
 
 #[derive(Debug)]
@@ -1135,6 +1136,17 @@ fn read_map<R>(rd: &mut R, len: usize) -> Result<Vec<(Value, Value)>, Error>
     Ok(vec)
 }
 
+fn read_bin_data<R>(rd: &mut R, len: usize) -> Result<Vec<u8>, Error>
+    where R: Read
+{
+    let mut vec = Vec::with_capacity(len);
+
+    match read_full(rd, &mut vec[..]) {
+        Ok(()) => Ok(vec),
+        Err(err) => Err(Error::InvalidDataRead(err)),
+    }
+}
+
 // TODO: docs; examples; incomplete.
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
@@ -1205,7 +1217,22 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             let map = try!(read_map(rd, len));
             Value::Map(map)
         }
-        // TODO: Bin/Ext.
+        Marker::Bin8 => {
+            let len = try!(read_data_u8(rd)) as usize;
+            let vec = try!(read_bin_data(rd, len));
+            Value::Binary(vec)
+        }
+        Marker::Bin16 => {
+            let len = try!(read_data_u16(rd)) as usize;
+            let vec = try!(read_bin_data(rd, len));
+            Value::Binary(vec)
+        }
+        Marker::Bin32 => {
+            let len = try!(read_data_u32(rd)) as usize;
+            let vec = try!(read_bin_data(rd, len));
+            Value::Binary(vec)
+        }
+        // TODO: Ext.
          _ => unimplemented!()
     };
 
