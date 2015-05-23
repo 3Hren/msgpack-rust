@@ -1111,6 +1111,28 @@ fn read_array<R>(rd: &mut R, len: usize) -> Result<Vec<Value>, Error>
     Ok(vec)
 }
 
+fn read_map<R>(rd: &mut R, len: usize) -> Result<Vec<(Value, Value)>, Error>
+    where R: Read
+{
+    let mut vec = Vec::with_capacity(len);
+
+    for _ in 0..len {
+        let key = match read_value(rd) {
+            Ok(val)  => val,
+            Err(..) => unimplemented!()
+        };
+
+        let value = match read_value(rd) {
+            Ok(val)  => val,
+            Err(..) => unimplemented!()
+        };
+
+        vec.push((key, value));
+    }
+
+    Ok(vec)
+}
+
 // TODO: docs; examples; incomplete.
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
@@ -1166,7 +1188,14 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             let vec = try!(read_array(rd, len));
             Value::Array(vec)
         }
-//        // TODO: Map/Bin/Ext.
+        Marker::FixedMap(len) => {
+            let len = len as usize;
+            let map = try!(read_map(rd, len));
+            Value::Map(map)
+        }
+//        Map16,
+//        Map32,
+        // TODO: Bin/Ext.
          _ => unimplemented!()
     };
 
@@ -1263,6 +1292,26 @@ fn from_fixarray_incomplete_decode_value() {
         other => panic!("unexpected result: {:?}", other)
     }
     assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_fixmap_decode_value() {
+    let buf = [
+        0x82, // size: 2
+        0x2a, // 42
+        0xce, 0x0, 0x1, 0x88, 0x94, // 100500
+        0xa3, 0x6b, 0x65, 0x79, // 'key'
+        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // 'value'
+    ];
+    let mut cur = Cursor::new(&buf[..]);
+
+    let expected = Value::Map(vec![
+        (Value::Integer(Integer::U64(42)), Value::Integer(Integer::U64(100500))),
+        (Value::String("key".to_string()),  Value::String("value".to_string())),
+    ]);
+
+    assert_eq!(expected, read_value(&mut cur).unwrap());
+    assert_eq!(17, cur.position());
 }
 
 } // mod tests
