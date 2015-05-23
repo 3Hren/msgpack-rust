@@ -1193,8 +1193,16 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             let map = try!(read_map(rd, len));
             Value::Map(map)
         }
-//        Map16,
-//        Map32,
+        Marker::Map16 => {
+            let len = try!(read_data_u16(rd)) as usize;
+            let map = try!(read_map(rd, len));
+            Value::Map(map)
+        }
+        Marker::Map32 => {
+            let len = try!(read_data_u32(rd)) as usize;
+            let map = try!(read_map(rd, len));
+            Value::Map(map)
+        }
         // TODO: Bin/Ext.
          _ => unimplemented!()
     };
