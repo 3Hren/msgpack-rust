@@ -92,7 +92,7 @@
 //!
 //! ## Limitations and plans
 //!
-//! - Owning `Value` variant and its encoding/decoding functions.
+//! - Owning `Value` variant and its encoding function.
 //! - Non-owning `ValueRef` variant, which can be created from `[u8]`, `Cursor<[u8]>` etc. and
 //!   borrows data from it, which makes it absolute zero-copy.
 //! - Enum serialization/deserialization.
