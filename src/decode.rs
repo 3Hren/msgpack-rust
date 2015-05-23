@@ -1055,6 +1055,8 @@ pub enum Error {
     InvalidUtf8(Vec<u8>, Utf8Error),
 
     InvalidArrayRead(Box<Error>),
+    InvalidMapKeyRead(Box<Error>),
+    InvalidMapValueRead(Box<Error>),
 }
 
 impl From<MarkerReadError> for Error {
@@ -1119,12 +1121,12 @@ fn read_map<R>(rd: &mut R, len: usize) -> Result<Vec<(Value, Value)>, Error>
     for _ in 0..len {
         let key = match read_value(rd) {
             Ok(val)  => val,
-            Err(..) => unimplemented!()
+            Err(err) => return Err(Error::InvalidMapKeyRead(Box::new(err))),
         };
 
         let value = match read_value(rd) {
             Ok(val)  => val,
-            Err(..) => unimplemented!()
+            Err(err) => return Err(Error::InvalidMapValueRead(Box::new(err))),
         };
 
         vec.push((key, value));
