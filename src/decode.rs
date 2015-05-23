@@ -1139,12 +1139,20 @@ fn read_map<R>(rd: &mut R, len: usize) -> Result<Vec<(Value, Value)>, Error>
 fn read_bin_data<R>(rd: &mut R, len: usize) -> Result<Vec<u8>, Error>
     where R: Read
 {
-    let mut vec = Vec::with_capacity(len);
+    let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
 
     match read_full(rd, &mut vec[..]) {
         Ok(()) => Ok(vec),
         Err(err) => Err(Error::InvalidDataRead(err)),
     }
+}
+
+fn read_ext_body<R>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), Error>
+    where R: Read
+{
+    let ty = try!(read_data_i8(rd));
+    let vec = try!(read_bin_data(rd, len));
+    Ok((ty, vec))
 }
 
 // TODO: docs; examples; incomplete.
@@ -1232,8 +1240,47 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             let vec = try!(read_bin_data(rd, len));
             Value::Binary(vec)
         }
-        // TODO: Ext.
-         _ => unimplemented!()
+        Marker::FixExt1 => {
+            let len = 1 as usize;
+            let (ty, vec) = try!(read_ext_body(rd, len));
+            Value::Ext(ty, vec)
+        }
+        Marker::FixExt2 => {
+            let len = 2 as usize;
+            let (ty, vec) = try!(read_ext_body(rd, len));
+            Value::Ext(ty, vec)
+        }
+        Marker::FixExt4 => {
+            let len = 4 as usize;
+            let (ty, vec) = try!(read_ext_body(rd, len));
+            Value::Ext(ty, vec)
+        }
+        Marker::FixExt8 => {
+            let len = 8 as usize;
+            let (ty, vec) = try!(read_ext_body(rd, len));
+            Value::Ext(ty, vec)
+        }
+        Marker::FixExt16 => {
+            let len = 16 as usize;
+            let (ty, vec) = try!(read_ext_body(rd, len));
+            Value::Ext(ty, vec)
+        }
+        Marker::Ext8 => {
+            let len = try!(read_data_u8(rd)) as usize;
+            let (ty, vec) = try!(read_ext_body(rd, len));
+            Value::Ext(ty, vec)
+        }
+        Marker::Ext16 => {
+            let len = try!(read_data_u16(rd)) as usize;
+            let (ty, vec) = try!(read_ext_body(rd, len));
+            Value::Ext(ty, vec)
+        }
+        Marker::Ext32 => {
+            let len = try!(read_data_u32(rd)) as usize;
+            let (ty, vec) = try!(read_ext_body(rd, len));
+            Value::Ext(ty, vec)
+        }
+        Marker::Reserved => return Err(Error::TypeMismatch(Marker::Reserved)),
     };
 
     Ok(val)
@@ -1349,6 +1396,15 @@ fn from_fixmap_decode_value() {
 
     assert_eq!(expected, read_value(&mut cur).unwrap());
     assert_eq!(17, cur.position());
+}
+
+#[test]
+fn from_fixext1_decode_value() {
+    let buf = [0xd4, 0x01, 0x02];
+    let mut cur = Cursor::new(&buf[..]);
+
+    assert_eq!(Value::Ext(1, vec![2]), read_value(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
 }
 
 } // mod tests
