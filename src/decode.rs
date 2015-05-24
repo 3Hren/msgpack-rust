@@ -1013,7 +1013,6 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
 // TODO: docs.
 mod value {
 
-//use std::convert::From;
 use std::io::Read;
 use std::result::Result;
 use std::str::Utf8Error;
