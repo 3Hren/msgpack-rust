@@ -1011,7 +1011,7 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
 
 /// Contains: owned value decoding, owned error; owned result.
 // TODO: docs.
-mod value {
+pub mod value {
 
 use std::io::Read;
 use std::result::Result;
