@@ -1304,8 +1304,8 @@ fn from_null_decode_value() {
 
 #[test]
 fn from_pfix_decode_value() {
-    let buf: &[u8] = &[0x1f];
-    let mut cur = Cursor::new(buf);
+    let buf = [0x1f];
+    let mut cur = Cursor::new(&buf[..]);
 
     assert_eq!(Value::Integer(Integer::U64(31)), read_value(&mut cur).unwrap());
     assert_eq!(1, cur.position());
@@ -1313,8 +1313,8 @@ fn from_pfix_decode_value() {
 
 #[test]
 fn from_i32_decode_value() {
-    let buf: &[u8] = &[0xd2, 0xff, 0xff, 0xff, 0xff];
-    let mut cur = Cursor::new(buf);
+    let buf = [0xd2, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(&buf[..]);
 
     assert_eq!(Value::Integer(Integer::I64(-1)), read_value(&mut cur).unwrap());
     assert_eq!(5, cur.position());
