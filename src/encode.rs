@@ -68,7 +68,7 @@ impl From<FixedValueWriteError> for ValueWriteError {
 fn write_marker<W>(wr: &mut W, marker: Marker) -> Result<(), MarkerWriteError>
     where W: Write
 {
-    wr.write_u8(marker.to_u8()).map_err(|err| From::from(err))
+    wr.write_u8(marker.to_u8()).map_err(From::from)
 }
 
 /// Attempts to write the given fixed value (represented as marker) into the write and transforms
@@ -792,11 +792,11 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     type Error = Error;
 
     fn emit_nil(&mut self) -> Result<(), Error> {
-        write_nil(&mut self.wr).map_err(|err| From::from(err)) // TODO: Use less verbose version.
+        write_nil(&mut self.wr).map_err(From::from)
     }
 
     fn emit_bool(&mut self, val: bool) -> Result<(), Error> {
-        write_bool(&mut self.wr, val).map_err(|err| From::from(err))
+        write_bool(&mut self.wr, val).map_err(From::from)
     }
 
     fn emit_u8(&mut self, val: u8) -> Result<(), Error> {
@@ -844,11 +844,11 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     }
 
     fn emit_f32(&mut self, val: f32) -> Result<(), Error> {
-        write_f32(&mut self.wr, val).map_err(|err| From::from(err))
+        write_f32(&mut self.wr, val).map_err(From::from)
     }
 
     fn emit_f64(&mut self, val: f64) -> Result<(), Error> {
-        write_f64(&mut self.wr, val).map_err(|err| From::from(err))
+        write_f64(&mut self.wr, val).map_err(From::from)
     }
 
     // TODO: The implementation involves heap allocation and is unstable.
@@ -859,7 +859,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     }
 
     fn emit_str(&mut self, val: &str) -> Result<(), Error> {
-        write_str(&mut self.wr, val).map_err(|err| From::from(err))
+        write_str(&mut self.wr, val).map_err(From::from)
     }
 
     fn emit_enum<F>(&mut self, _name: &str, _f: F) -> Result<(), Error>
