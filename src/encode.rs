@@ -673,6 +673,61 @@ pub fn write_ext_meta<W>(wr: &mut W, len: u32, typeid: i8) -> Result<Marker, Val
     Ok(marker)
 }
 
+mod value {
+
+use std::convert::From;
+use std::io::Write;
+use std::result::Result;
+
+pub use super::super::value::Value;
+
+use super::*;
+
+#[derive(Debug)]
+pub enum Error {
+    // TODO: Will be replaced with more concrete values.
+    UnstableCommonError(String),
+}
+
+impl From<FixedValueWriteError> for Error {
+    fn from(err: FixedValueWriteError) -> Error {
+        match err {
+            FixedValueWriteError(..) => Error::UnstableCommonError("fixed value error".to_string())
+        }
+    }
+}
+
+pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
+    where W: Write
+{
+    match val {
+        &Value::Nil => try!(write_nil(wr)),
+        _ => unimplemented!()
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+
+use super::*;
+
+#[test]
+fn pack_nil() {
+    let mut buf = [0x00];
+
+    let val = Value::Nil;
+
+    write_value(&mut &mut buf[..], &val).unwrap();
+
+    assert_eq!([0xc0], buf);
+}
+
+}
+
+}
+
 pub mod serialize {
 
 use serialize;
@@ -737,7 +792,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     type Error = Error;
 
     fn emit_nil(&mut self) -> Result<(), Error> {
-        write_nil(&mut self.wr).map_err(|err| From::from(err))
+        write_nil(&mut self.wr).map_err(|err| From::from(err)) // TODO: Use less verbose version.
     }
 
     fn emit_bool(&mut self, val: bool) -> Result<(), Error> {
