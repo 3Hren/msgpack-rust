@@ -567,6 +567,14 @@ pub fn write_bin_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     }
 }
 
+// TODO: Docs, range check, example, visibility.
+fn write_bin<W>(wr: &mut W, data: &[u8]) -> Result<(), ValueWriteError>
+    where W: Write
+{
+    try!(write_bin_len(wr, data.len() as u32));
+    wr.write_all(data).map_err(|err| ValueWriteError::InvalidDataWrite(WriteError(err)))
+}
+
 /// Encodes and attempts to write the most efficient array length implementation to the given write,
 /// returning the marker used.
 ///
@@ -679,9 +687,15 @@ use std::convert::From;
 use std::io::Write;
 use std::result::Result;
 
-pub use super::super::value::Value;
+pub use super::super::value::{
+    Integer,
+    Float,
+    Value,
+};
 
 use super::*;
+// TODO: Make pub sometimes.
+use super::{write_str, write_bin};
 
 #[derive(Debug)]
 pub enum Error {
@@ -697,12 +711,49 @@ impl From<FixedValueWriteError> for Error {
     }
 }
 
+impl From<ValueWriteError> for Error {
+    fn from(_: ValueWriteError) -> Error {
+        Error::UnstableCommonError("value error".to_string())
+    }
+}
+
 pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
     where W: Write
 {
     match val {
         &Value::Nil => try!(write_nil(wr)),
-        _ => unimplemented!()
+        &Value::Boolean(val) => try!(write_bool(wr, val)),
+        &Value::Integer(Integer::U64(val)) => {
+            try!(write_uint(wr, val));
+        }
+        &Value::Integer(Integer::I64(val)) => {
+            try!(write_sint(wr, val));
+        }
+        &Value::Float(Float::F32(val)) => try!(write_f32(wr, val)),
+        &Value::Float(Float::F64(val)) => try!(write_f64(wr, val)),
+        &Value::String(ref val) => {
+            try!(write_str(wr, &val));
+        }
+        &Value::Binary(ref val) => {
+            try!(write_bin(wr, &val));
+        }
+        &Value::Array(ref val) => {
+            try!(write_array_len(wr, val.len() as u32));
+            for item in val {
+                try!(write_value(wr, item));
+            }
+        }
+        &Value::Map(ref val) => {
+            try!(write_map_len(wr, val.len() as u32));
+            for &(ref key, ref val) in val {
+                try!(write_value(wr, key));
+                try!(write_value(wr, val));
+            }
+        }
+        &Value::Ext(ty, ref data) => {
+            try!(write_ext_meta(wr, data.len() as u32, ty));
+            try!(wr.write_all(data).map_err(|err| ValueWriteError::InvalidDataWrite(WriteError(err))));
+        }
     }
 
     Ok(())
