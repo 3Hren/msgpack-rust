@@ -15,7 +15,7 @@ To use `rmp`, first add this to your `Cargo.toml`:
 
 ```toml
 [dependencies.rmp]
-rmp = "0.1.1"
+rmp = "0.2.0"
 ```
 
 Then, add this to your crate root:
@@ -95,7 +95,6 @@ fn main() {
 
 ## Limitations and plans
 
-- Owning `Value` variant and its encoding function.
 - Non-owning `ValueRef` variant, which can be created from `[u8]`, `Cursor<[u8]>` etc. and
   borrows data from it, which makes it absolute zero-copy.
 - Enum serialization/deserialization.
