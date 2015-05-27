@@ -3,11 +3,15 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
-### Added
-- Value variant decoding function.
-
 ### Changed
-- Writing ext decoders.
+- Nothing yet.
+
+## 0.2.0 - 2015-05-27
+### Added
+- Introducing a Value algebraic data type, which represents an owning MessagePack object. It can be
+  found in rmp::value module.
+- The Value ADT encoding and decoding functions.
+- Low-level ext type decoders.
 
 ## 0.1.1 - 2015-05-18
 ### Changed
