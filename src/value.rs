@@ -36,7 +36,7 @@ pub enum Value {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ValueRef<'a> {
+enum ValueRef<'a> {
     /// Nil represents nil.
     Nil,
     /// Boolean represents true or false.
