@@ -681,7 +681,7 @@ pub fn write_ext_meta<W>(wr: &mut W, len: u32, typeid: i8) -> Result<Marker, Val
     Ok(marker)
 }
 
-mod value {
+pub mod value {
 
 use std::convert::From;
 use std::io::Write;
