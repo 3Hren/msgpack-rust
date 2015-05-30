@@ -177,6 +177,7 @@ fn from_str_strfix_exact_buffer() {
 #[test]
 fn from_str_strfix_insufficient_bytes() {
     // The buffer contains "le messag", which length is 9, but the total size endoded is 10.
+    // TODO: The result should be: InvalidDataCopy (EOF)
     let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67];
     let mut cur = Cursor::new(buf);
 
