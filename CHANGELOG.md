@@ -4,12 +4,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 ### Changed
-- Nothing yet.
+- Exported `read_value` function to the `rmp::decode` module.
+- Exported `Value` struct to the root crate namespace.
 
 ## 0.2.0 - 2015-05-27
 ### Added
-- Introducing a Value algebraic data type, which represents an owning MessagePack object. It can be
-  found in rmp::value module.
+- Introducing a `Value` algebraic data type, which represents an owning MessagePack object. It can
+  be found in `rmp::value` module.
 - The Value ADT encoding and decoding functions.
 - Low-level ext type decoders.
 
