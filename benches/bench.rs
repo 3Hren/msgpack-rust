@@ -5,11 +5,10 @@ extern crate rmp as msgpack;
 
 use test::Bencher;
 
-use msgpack::read_value;
-
 use msgpack::decode::{
     read_i64_loosely,
     read_str,
+    read_value,
 };
 
 #[bench]

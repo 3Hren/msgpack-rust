@@ -1683,3 +1683,5 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
 }
 
 }
+
+pub use self::value::read_value;
