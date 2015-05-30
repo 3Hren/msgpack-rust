@@ -118,6 +118,8 @@ pub mod decode;
 // TODO: Not ready yet.
 mod value;
 
+pub use value::Value;
+
 // Suppressed due to instability.
 // #[cfg(test)]
 // mod bench;
