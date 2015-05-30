@@ -3,10 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+- Nothing yet.
+
+## 0.2.1 - 2015-05-30
 ### Changed
+- Increased string decoding performance by ~30 times.
 - Exported `read_value` function to the `rmp::decode` module.
 - Exported `Value` struct to the root crate namespace.
-- Increased string decoding performance by ~30 times.
 
 ## 0.2.0 - 2015-05-27
 ### Added
