@@ -107,4 +107,4 @@ will be the following rules:
  - Any API/ABI breaking changes will be notified in the changelog explicitly and results in minor
    version bumping.
  - API extending features results in minor version bumping.
- - Non-breaking bug fixes results in patch version bumping.
+ - Non-breaking bug fixes and performance improving results in patch version bumping.
