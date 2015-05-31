@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Nothing yet.
 
 ## 0.2.1 - 2015-05-30
+### Added
+ - Benchmarking module.
+
 ### Changed
 - Increased string decoding performance by ~30 times.
 - Exported `read_value` function to the `rmp::decode` module.
