@@ -748,22 +748,6 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r st
         Ok(n) => Err(DecodeStringError::InvalidDataCopy(&buf[..n], ReadError::UnexpectedEOF)),
         Err(err) => Err(DecodeStringError::InvalidDataRead(ReadError::Io(From::from(err)))),
     }
-//    match io::copy(&mut rd.take(len as u64), &mut cur) {
-//        Ok(size) if size == len as u64 => {
-//            // Release buffer owning from cursor.
-//            let buf = cur.into_inner();
-
-//            match from_utf8(buf) {
-//                Ok(decoded) => Ok(decoded),
-//                Err(err)    => Err(DecodeStringError::InvalidUtf8(buf, err)),
-//            }
-//        }
-//        Ok(size) => {
-//            let buf = cur.into_inner();
-//            Err(DecodeStringError::InvalidDataCopy(&buf[..size as usize], ReadError::UnexpectedEOF))
-//        }
-//        Err(err) => Err(DecodeStringError::InvalidDataRead(From::from(err))),
-//    }
 }
 
 /// Attempts to read and decode a string value from the reader, returning a borrowed slice from it.
