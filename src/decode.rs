@@ -739,14 +739,14 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r st
 
     // Trying to copy exact `len` bytes.
     match read_full(rd, buf) {
-        Ok(()) => {
+        Ok(n) if n == buf.len() => {
             match from_utf8(buf) {
                 Ok(decoded) => Ok(decoded),
                 Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
             }
         }
-        Err((size, ReadError::UnexpectedEOF)) => Err(DecodeStringError::InvalidDataCopy(&buf[..size], ReadError::UnexpectedEOF)),
-        Err((_, err)) => Err(DecodeStringError::InvalidDataRead(From::from(err))),
+        Ok(n) => Err(DecodeStringError::InvalidDataCopy(&buf[..n], ReadError::UnexpectedEOF)),
+        Err(err) => Err(DecodeStringError::InvalidDataRead(ReadError::Io(From::from(err)))),
     }
 //    match io::copy(&mut rd.take(len as u64), &mut cur) {
 //        Ok(size) if size == len as u64 => {
@@ -967,24 +967,38 @@ fn read_fixext_data<R>(rd: &mut R, buf: &mut [u8]) -> Result<i8, ValueReadError>
     let id = try!(read_data_i8(rd));
 
     match read_full(rd, buf) {
-        Ok(())   => Ok(id),
-        Err((_, err)) => Err(ValueReadError::InvalidDataRead(err)),
+        Ok(n) if n == buf.len() => Ok(id),
+        Ok(..)   => Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)),
+        Err(err) => Err(ValueReadError::InvalidDataRead(ReadError::Io(err))),
     }
 }
 
-fn read_full<R: Read>(rd: &mut R, buf: &mut [u8]) -> Result<(), (usize, ReadError)> {
+/// Copies the contents of a reader into a buffer until fully filled.
+///
+/// This function will continuously read data from `rd` and then write it into `buf` in a streaming
+/// fashion until `rd` returns EOF.
+///
+/// On success the total number of bytes that were copied from `rd` to `buf` is returned. Note, that
+/// reaching EOF is not treated as error.
+///
+/// # Errors
+///
+/// This function will return an error immediately if any call to `read` returns an error. All
+/// instances of `ErrorKind::Interrupted` are handled by this function and the underlying operation
+/// is retried.
+fn read_full<R: Read>(rd: &mut R, buf: &mut [u8]) -> Result<usize, io::Error> {
     let mut nread = 0usize;
 
     while nread < buf.len() {
         match rd.read(&mut buf[nread..]) {
-            Ok(0) => return Err((nread, ReadError::UnexpectedEOF)),
+            Ok(0) => return Ok(nread),
             Ok(n) => nread += n,
-            Err(ref err) if err.kind() == io::ErrorKind::Interrupted => {},
-            Err(err) => return Err((nread, From::from(err)))
+            Err(ref err) if err.kind() == io::ErrorKind::Interrupted => continue,
+            Err(err) => return Err(err)
         }
     }
 
-    Ok(())
+    Ok(nread)
 }
 
 #[derive(Debug, PartialEq)]
@@ -1145,8 +1159,9 @@ fn read_bin_data<R>(rd: &mut R, len: usize) -> Result<Vec<u8>, Error>
     let mut vec: Vec<u8> = (0..len).map(|_| 0u8).collect();
 
     match read_full(rd, &mut vec[..]) {
-        Ok(()) => Ok(vec),
-        Err((_, err)) => Err(Error::InvalidDataRead(err)),
+        Ok(n) if n == vec.len() => Ok(vec),
+        Ok(..)   => Err(Error::InvalidDataRead(ReadError::UnexpectedEOF)),
+        Err(err) => Err(Error::InvalidDataRead(ReadError::Io(err))),
     }
 }
 
