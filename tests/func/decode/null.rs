@@ -3,7 +3,7 @@ use std::io::Cursor;
 use msgpack::decode::*;
 
 #[test]
-fn pass_read_nil() {
+fn pass() {
     let buf = [0xc0];
     let mut cur = Cursor::new(&buf[..]);
 
@@ -12,7 +12,7 @@ fn pass_read_nil() {
 }
 
 #[test]
-fn fail_read_nil_invalid_marker() {
+fn fail_invalid_marker() {
     let buf = [0xc1];
     let mut cur = Cursor::new(&buf[..]);
 
@@ -24,7 +24,7 @@ fn fail_read_nil_invalid_marker() {
 }
 
 #[test]
-fn fail_read_nil_invalid_marker_read() {
+fn fail_unexpected_eof() {
     let buf = [];
     let mut cur = Cursor::new(&buf[..]);
 
