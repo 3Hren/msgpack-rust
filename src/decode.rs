@@ -987,6 +987,7 @@ fn read_fixext_data<R>(rd: &mut R, buf: &mut [u8]) -> Result<i8, ValueReadError>
 /// instances of `ErrorKind::Interrupted` are handled by this function and the underlying operation
 /// is retried.
 fn read_full<R: Read>(rd: &mut R, buf: &mut [u8]) -> Result<usize, io::Error> {
+    // TODO: Maybe move this helper function into an independent module
     let mut nread = 0usize;
 
     while nread < buf.len() {
