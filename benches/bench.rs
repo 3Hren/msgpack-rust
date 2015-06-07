@@ -5,11 +5,7 @@ extern crate rmp as msgpack;
 
 use test::Bencher;
 
-use msgpack::decode::{
-    read_i64_loosely,
-    read_str,
-    read_value,
-};
+use msgpack::decode::*;
 
 #[bench]
 fn from_string_read_str(b: &mut Bencher) {
@@ -86,22 +82,22 @@ fn from_i64_read_i64_loosely(b: &mut Bencher) {
 //    });
 //}
 
-//#[bench]
-//fn from_i8_read_i8(b: &mut Bencher) {
-//    let buf = [0xd0, 0xff];
+#[bench]
+fn from_i8_read_i8(b: &mut Bencher) {
+    let buf = [0xd0, 0xff];
 
-//    b.iter(|| {
-//        let res = read_i8(&mut &buf[..]).unwrap();
-//        test::black_box(res);
-//    });
-//}
+    b.iter(|| {
+        let res = read_i8(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
+}
 
-//#[bench]
-//fn from_u8_read_u64_loosely(b: &mut Bencher) {
-//    let buf = [0xcc, 0xff];
+#[bench]
+fn from_u8_read_u64_loosely(b: &mut Bencher) {
+    let buf = [0xcc, 0xff];
 
-//    b.iter(|| {
-//        let res = read_u64_loosely(&mut &buf[..]).unwrap();
-//        test::black_box(res);
-//    });
-//}
+    b.iter(|| {
+        let res = read_u64_loosely(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
+}
