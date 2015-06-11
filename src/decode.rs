@@ -1166,6 +1166,7 @@ fn read_ext_body<R>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), Error>
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
 {
+    // TODO: Looks creepy.
     let val = match try!(read_marker(rd)) {
         Marker::Null  => Value::Nil,
         Marker::True  => Value::Boolean(true),
