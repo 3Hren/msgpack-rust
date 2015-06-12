@@ -248,6 +248,68 @@ make_read_data_fn!(i64, read_data_i64, read_i64);
 make_read_data_fn!(f32, read_data_f32, read_f32);
 make_read_data_fn!(f64, read_data_f64, read_f64);
 
+trait BigEndianRead {
+    fn read<R: Read>(rd: &mut R) -> Result<Self, byteorder::Error>;
+}
+
+impl BigEndianRead for u8 {
+    fn read<R: Read>(rd: &mut R) -> Result<u8, byteorder::Error> {
+        rd.read_u8()
+    }
+}
+
+impl BigEndianRead for u16 {
+    fn read<R: Read>(rd: &mut R) -> Result<u16, byteorder::Error> {
+        rd.read_u16::<byteorder::BigEndian>()
+    }
+}
+
+impl BigEndianRead for u32 {
+    fn read<R: Read>(rd: &mut R) -> Result<u32, byteorder::Error> {
+        rd.read_u32::<byteorder::BigEndian>()
+    }
+}
+
+impl BigEndianRead for u64 {
+    fn read<R: Read>(rd: &mut R) -> Result<u64, byteorder::Error> {
+        rd.read_u64::<byteorder::BigEndian>()
+    }
+}
+
+impl BigEndianRead for i8 {
+    fn read<R: Read>(rd: &mut R) -> Result<i8, byteorder::Error> {
+        rd.read_i8()
+    }
+}
+
+impl BigEndianRead for i16 {
+    fn read<R: Read>(rd: &mut R) -> Result<i16, byteorder::Error> {
+        rd.read_i16::<byteorder::BigEndian>()
+    }
+}
+
+impl BigEndianRead for i32 {
+    fn read<R: Read>(rd: &mut R) -> Result<i32, byteorder::Error> {
+        rd.read_i32::<byteorder::BigEndian>()
+    }
+}
+
+impl BigEndianRead for i64 {
+    fn read<R: Read>(rd: &mut R) -> Result<i64, byteorder::Error> {
+        rd.read_i64::<byteorder::BigEndian>()
+    }
+}
+
+fn read_numeric_data<R, D>(rd: &mut R) -> Result<D, ValueReadError>
+    where R: Read,
+          D: BigEndianRead
+{
+    match D::read(rd) {
+        Ok(data) => Ok(data),
+        Err(err) => Err(ValueReadError::InvalidDataRead(From::from(err))),
+    }
+}
+
 /// Attempts to read exactly 2 bytes from the given reader and to decode them as `u8` value.
 ///
 /// The first byte should be the marker and the second one should represent the data itself.
@@ -263,7 +325,7 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U8 => Ok(try!(read_data_u8(rd))),
+        Marker::U8 => Ok(try!(read_numeric_data::<R, u8>(rd))),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -283,7 +345,7 @@ pub fn read_u16<R>(rd: &mut R) -> Result<u16, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U16 => Ok(try!(read_data_u16(rd))),
+        Marker::U16 => Ok(try!(read_numeric_data::<R, u16>(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
