@@ -325,7 +325,7 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U8 => Ok(try!(read_numeric_data::<R, u8>(rd))),
+        Marker::U8 => Ok(try!(read_numeric_data(rd))),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -345,7 +345,7 @@ pub fn read_u16<R>(rd: &mut R) -> Result<u16, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U16 => Ok(try!(read_numeric_data::<R, u16>(rd))),
+        Marker::U16 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
