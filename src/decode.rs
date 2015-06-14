@@ -217,34 +217,6 @@ pub fn read_nfix<R>(rd: &mut R) -> Result<i8, FixedValueReadError>
     }
 }
 
-macro_rules! make_read_data_fn {
-    (deduce, $reader:ident, $decoder:ident, 0)
-        => ($reader.$decoder(););
-    (deduce, $reader:ident, $decoder:ident, 1)
-        => ($reader.$decoder::<byteorder::BigEndian>(););
-    (gen, $t:ty, $d:tt, $name:ident, $decoder:ident) => {
-        fn $name<R>(rd: &mut R) -> Result<$t, ValueReadError>
-            where R: Read
-        {
-            match make_read_data_fn!(deduce, rd, $decoder, $d) {
-                Ok(data) => Ok(data),
-                Err(err) => Err(ValueReadError::InvalidDataRead(From::from(err))),
-            }
-        }
-    };
-    (u8,    $name:ident, $decoder:ident) => (make_read_data_fn!(gen, u8, 0, $name, $decoder););
-    (i8,    $name:ident, $decoder:ident) => (make_read_data_fn!(gen, i8, 0, $name, $decoder););
-    ($t:ty, $name:ident, $decoder:ident) => (make_read_data_fn!(gen, $t, 1, $name, $decoder););
-}
-
-make_read_data_fn!(u64, read_data_u64, read_u64);
-make_read_data_fn!(i8,  read_data_i8,  read_i8);
-make_read_data_fn!(i16, read_data_i16, read_i16);
-make_read_data_fn!(i32, read_data_i32, read_i32);
-make_read_data_fn!(i64, read_data_i64, read_i64);
-make_read_data_fn!(f32, read_data_f32, read_f32);
-make_read_data_fn!(f64, read_data_f64, read_f64);
-
 trait BigEndianRead {
     fn read<R: Read>(rd: &mut R) -> Result<Self, byteorder::Error>;
 }
@@ -294,6 +266,18 @@ impl BigEndianRead for i32 {
 impl BigEndianRead for i64 {
     fn read<R: Read>(rd: &mut R) -> Result<i64, byteorder::Error> {
         rd.read_i64::<byteorder::BigEndian>()
+    }
+}
+
+impl BigEndianRead for f32 {
+    fn read<R: Read>(rd: &mut R) -> Result<f32, byteorder::Error> {
+        rd.read_f32::<byteorder::BigEndian>()
+    }
+}
+
+impl BigEndianRead for f64 {
+    fn read<R: Read>(rd: &mut R) -> Result<f64, byteorder::Error> {
+        rd.read_f64::<byteorder::BigEndian>()
     }
 }
 
@@ -700,7 +684,7 @@ pub fn read_f32<R>(rd: &mut R) -> Result<f32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::F32 => Ok(try!(read_data_f32(rd))),
+        Marker::F32 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker))
     }
 }
@@ -720,7 +704,7 @@ pub fn read_f64<R>(rd: &mut R) -> Result<f64, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::F64 => Ok(try!(read_data_f64(rd))),
+        Marker::F64 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker))
     }
 }
@@ -896,7 +880,7 @@ pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8), ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::FixExt1 => {
-            let ty   = try!(read_data_i8(rd));
+            let ty   = try!(read_numeric_data(rd));
             let data = try!(read_numeric_data(rd));
             Ok((ty, data))
         }
@@ -1007,7 +991,7 @@ pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
 fn read_fixext_data<R>(rd: &mut R, buf: &mut [u8]) -> Result<i8, ValueReadError>
     where R: Read
 {
-    let id = try!(read_data_i8(rd));
+    let id = try!(read_numeric_data(rd));
 
     match read_full(rd, buf) {
         Ok(n) if n == buf.len() => Ok(id),
@@ -1067,7 +1051,7 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
         marker           => return Err(ValueReadError::TypeMismatch(marker))
     };
 
-    let typeid = try!(read_data_i8(rd));
+    let typeid = try!(read_numeric_data(rd));
     let meta = ExtMeta { typeid: typeid, size: size };
 
     Ok(meta)
@@ -1093,13 +1077,6 @@ use super::{
     DecodeStringError,
     read_marker,
     read_numeric_data,
-    read_data_u64,
-    read_data_i8,
-    read_data_i16,
-    read_data_i32,
-    read_data_i64,
-    read_data_f32,
-    read_data_f64,
     read_str_data,
     read_full,
 };
@@ -1210,7 +1187,7 @@ fn read_bin_data<R>(rd: &mut R, len: usize) -> Result<Vec<u8>, Error>
 fn read_ext_body<R>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), Error>
     where R: Read
 {
-    let ty = try!(read_data_i8(rd));
+    let ty = try!(read_numeric_data(rd));
     let vec = try!(read_bin_data(rd, len));
     Ok((ty, vec))
 }
@@ -1230,16 +1207,16 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::False => Value::Boolean(false),
         Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
         Marker::NegativeFixnum(val) => Value::Integer(Integer::I64(val as i64)),
-        Marker::U8  => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u8>(rd)) as u64)),
+        Marker::U8  => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u8>(rd))  as u64)),
         Marker::U16 => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u16>(rd)) as u64)),
         Marker::U32 => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u32>(rd)) as u64)),
-        Marker::U64 => Value::Integer(Integer::U64(try!(read_data_u64(rd)))),
-        Marker::I8  => Value::Integer(Integer::I64(try!(read_data_i8(rd)) as i64)),
-        Marker::I16 => Value::Integer(Integer::I64(try!(read_data_i16(rd)) as i64)),
-        Marker::I32 => Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64)),
-        Marker::I64 => Value::Integer(Integer::I64(try!(read_data_i64(rd)))),
-        Marker::F32 => Value::Float(Float::F32(try!(read_data_f32(rd)))),
-        Marker::F64 => Value::Float(Float::F64(try!(read_data_f64(rd)))),
+        Marker::U64 => Value::Integer(Integer::U64(try!(read_numeric_data(rd)))),
+        Marker::I8  => Value::Integer(Integer::I64(try!(read_numeric_data::<R, i8>(rd))  as i64)),
+        Marker::I16 => Value::Integer(Integer::I64(try!(read_numeric_data::<R, i16>(rd)) as i64)),
+        Marker::I32 => Value::Integer(Integer::I64(try!(read_numeric_data::<R, i32>(rd)) as i64)),
+        Marker::I64 => Value::Integer(Integer::I64(try!(read_numeric_data(rd)))),
+        Marker::F32 => Value::Float(Float::F32(try!(read_numeric_data(rd)))),
+        Marker::F64 => Value::Float(Float::F64(try!(read_numeric_data(rd)))),
         Marker::FixedString(len) => {
             let len = len as u32;
             let res = try!(read_str(rd, len));
