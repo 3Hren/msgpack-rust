@@ -237,8 +237,6 @@ macro_rules! make_read_data_fn {
     ($t:ty, $name:ident, $decoder:ident) => (make_read_data_fn!(gen, $t, 1, $name, $decoder););
 }
 
-make_read_data_fn!(u16, read_data_u16, read_u16);
-make_read_data_fn!(u32, read_data_u32, read_u32);
 make_read_data_fn!(u64, read_data_u64, read_u64);
 make_read_data_fn!(i8,  read_data_i8,  read_i8);
 make_read_data_fn!(i16, read_data_i16, read_i16);
@@ -746,8 +744,8 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     match try!(read_marker(rd)) {
         Marker::FixedString(size) => Ok(size as u32),
         Marker::Str8  => Ok(try!(read_numeric_data::<R, u8>(rd))  as u32),
-        Marker::Str16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Str32 => Ok(try!(read_data_u32(rd))),
+        Marker::Str16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
+        Marker::Str32 => Ok(try!(read_numeric_data(rd))),
         marker        => Err(ValueReadError::TypeMismatch(marker))
     }
 }
@@ -832,8 +830,8 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::FixedArray(size) => Ok(size as u32),
-        Marker::Array16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Array32 => Ok(try!(read_data_u32(rd))),
+        Marker::Array16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
+        Marker::Array32 => Ok(try!(read_numeric_data(rd))),
         marker => Err(ValueReadError::TypeMismatch(marker))
     }
 }
@@ -849,8 +847,8 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::FixedMap(size) => Ok(size as u32),
-        Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Map32 => Ok(try!(read_data_u32(rd))),
+        Marker::Map16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
+        Marker::Map32 => Ok(try!(read_numeric_data(rd))),
         marker => Err(ValueReadError::TypeMismatch(marker))
     }
 }
@@ -861,8 +859,8 @@ pub fn read_bin_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::Bin8  => Ok(try!(read_numeric_data::<R, u8>(rd)) as u32),
-        Marker::Bin16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Bin32 => Ok(try!(read_data_u32(rd))),
+        Marker::Bin16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
+        Marker::Bin32 => Ok(try!(read_numeric_data(rd))),
         marker        => Err(ValueReadError::TypeMismatch(marker))
     }
 }
@@ -1064,8 +1062,8 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
         Marker::FixExt8  => 8,
         Marker::FixExt16 => 16,
         Marker::Ext8     => try!(read_numeric_data::<R, u8>(rd))  as u32,
-        Marker::Ext16    => try!(read_data_u16(rd)) as u32,
-        Marker::Ext32    => try!(read_data_u32(rd)),
+        Marker::Ext16    => try!(read_numeric_data::<R, u16>(rd)) as u32,
+        Marker::Ext32    => try!(read_numeric_data(rd)),
         marker           => return Err(ValueReadError::TypeMismatch(marker))
     };
 
@@ -1095,8 +1093,6 @@ use super::{
     DecodeStringError,
     read_marker,
     read_numeric_data,
-    read_data_u16,
-    read_data_u32,
     read_data_u64,
     read_data_i8,
     read_data_i16,
@@ -1235,8 +1231,8 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
         Marker::NegativeFixnum(val) => Value::Integer(Integer::I64(val as i64)),
         Marker::U8  => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u8>(rd)) as u64)),
-        Marker::U16 => Value::Integer(Integer::U64(try!(read_data_u16(rd)) as u64)),
-        Marker::U32 => Value::Integer(Integer::U64(try!(read_data_u32(rd)) as u64)),
+        Marker::U16 => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u16>(rd)) as u64)),
+        Marker::U32 => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u32>(rd)) as u64)),
         Marker::U64 => Value::Integer(Integer::U64(try!(read_data_u64(rd)))),
         Marker::I8  => Value::Integer(Integer::I64(try!(read_data_i8(rd)) as i64)),
         Marker::I16 => Value::Integer(Integer::I64(try!(read_data_i16(rd)) as i64)),
@@ -1255,12 +1251,12 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             Value::String(res)
         }
         Marker::Str16 => {
-            let len = try!(read_data_u16(rd)) as u32;
+            let len = try!(read_numeric_data::<R, u16>(rd)) as u32;
             let res = try!(read_str(rd, len));
             Value::String(res)
         }
         Marker::Str32 => {
-            let len = try!(read_data_u32(rd));
+            let len = try!(read_numeric_data(rd));
             let res = try!(read_str(rd, len));
             Value::String(res)
         }
@@ -1270,12 +1266,12 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             Value::Array(vec)
         }
         Marker::Array16 => {
-            let len = try!(read_data_u16(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u16>(rd)) as usize;
             let vec = try!(read_array(rd, len));
             Value::Array(vec)
         }
         Marker::Array32 => {
-            let len = try!(read_data_u32(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u32>(rd)) as usize;
             let vec = try!(read_array(rd, len));
             Value::Array(vec)
         }
@@ -1285,12 +1281,12 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             Value::Map(map)
         }
         Marker::Map16 => {
-            let len = try!(read_data_u16(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u16>(rd)) as usize;
             let map = try!(read_map(rd, len));
             Value::Map(map)
         }
         Marker::Map32 => {
-            let len = try!(read_data_u32(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u32>(rd)) as usize;
             let map = try!(read_map(rd, len));
             Value::Map(map)
         }
@@ -1300,12 +1296,12 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             Value::Binary(vec)
         }
         Marker::Bin16 => {
-            let len = try!(read_data_u16(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u16>(rd)) as usize;
             let vec = try!(read_bin_data(rd, len));
             Value::Binary(vec)
         }
         Marker::Bin32 => {
-            let len = try!(read_data_u32(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u32>(rd)) as usize;
             let vec = try!(read_bin_data(rd, len));
             Value::Binary(vec)
         }
@@ -1340,12 +1336,12 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             Value::Ext(ty, vec)
         }
         Marker::Ext16 => {
-            let len = try!(read_data_u16(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u16>(rd)) as usize;
             let (ty, vec) = try!(read_ext_body(rd, len));
             Value::Ext(ty, vec)
         }
         Marker::Ext32 => {
-            let len = try!(read_data_u32(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u32>(rd)) as usize;
             let (ty, vec) = try!(read_ext_body(rd, len));
             Value::Ext(ty, vec)
         }
