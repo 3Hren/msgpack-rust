@@ -237,7 +237,6 @@ macro_rules! make_read_data_fn {
     ($t:ty, $name:ident, $decoder:ident) => (make_read_data_fn!(gen, $t, 1, $name, $decoder););
 }
 
-make_read_data_fn!(u8,  read_data_u8,  read_u8);
 make_read_data_fn!(u16, read_data_u16, read_u16);
 make_read_data_fn!(u32, read_data_u32, read_u32);
 make_read_data_fn!(u64, read_data_u64, read_u64);
@@ -365,7 +364,7 @@ pub fn read_u32<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U32 => Ok(try!(read_data_u32(rd))),
+        Marker::U32 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -385,7 +384,7 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U64 => Ok(try!(read_data_u64(rd))),
+        Marker::U64 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -405,7 +404,7 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I8 => Ok(try!(read_data_i8(rd))),
+        Marker::I8 => Ok(try!(read_numeric_data(rd))),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -425,7 +424,7 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I16 => Ok(try!(read_data_i16(rd))),
+        Marker::I16 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -445,7 +444,7 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I32 => Ok(try!(read_data_i32(rd))),
+        Marker::I32 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -465,7 +464,7 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I64 => Ok(try!(read_data_i64(rd))),
+        Marker::I64 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -490,7 +489,7 @@ pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::PositiveFixnum(val) => Ok(val),
-        Marker::U8 => Ok(try!(read_data_u8(rd))),
+        Marker::U8 => Ok(try!(read_numeric_data(rd))),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -515,8 +514,8 @@ pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::PositiveFixnum(val) => Ok(val as u16),
-        Marker::U8  => Ok(try!(read_data_u8(rd)) as u16),
-        Marker::U16 => Ok(try!(read_data_u16(rd))),
+        Marker::U8  => Ok(try!(read_numeric_data::<R, u8>(rd)) as u16),
+        Marker::U16 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -541,9 +540,9 @@ pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::PositiveFixnum(val) => Ok(val as u32),
-        Marker::U8  => Ok(try!(read_data_u8(rd))  as u32),
-        Marker::U16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::U32 => Ok(try!(read_data_u32(rd))),
+        Marker::U8  => Ok(try!(read_numeric_data::<R, u8>(rd))  as u32),
+        Marker::U16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
+        Marker::U32 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -571,10 +570,10 @@ pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::PositiveFixnum(val) => Ok(val as u64),
-        Marker::U8  => Ok(try!(read_data_u8(rd))  as u64),
-        Marker::U16 => Ok(try!(read_data_u16(rd)) as u64),
-        Marker::U32 => Ok(try!(read_data_u32(rd)) as u64),
-        Marker::U64 => Ok(try!(read_data_u64(rd))),
+        Marker::U8  => Ok(try!(read_numeric_data::<R, u8>(rd))  as u64),
+        Marker::U16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u64),
+        Marker::U32 => Ok(try!(read_numeric_data::<R, u32>(rd)) as u64),
+        Marker::U64 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -599,7 +598,7 @@ pub fn read_i8_loosely<R>(rd: &mut R) -> Result<i8, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::NegativeFixnum(val) => Ok(val),
-        Marker::I8  => Ok(try!(read_data_i8(rd))),
+        Marker::I8  => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -624,8 +623,8 @@ pub fn read_i16_loosely<R>(rd: &mut R) -> Result<i16, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::NegativeFixnum(val) => Ok(val as i16),
-        Marker::I8  => Ok(try!(read_data_i8(rd)) as i16),
-        Marker::I16 => Ok(try!(read_data_i16(rd))),
+        Marker::I8  => Ok(try!(read_numeric_data::<R, i8>(rd)) as i16),
+        Marker::I16 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -650,9 +649,9 @@ pub fn read_i32_loosely<R>(rd: &mut R) -> Result<i32, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::NegativeFixnum(val) => Ok(val as i32),
-        Marker::I8  => Ok(try!(read_data_i8(rd))  as i32),
-        Marker::I16 => Ok(try!(read_data_i16(rd)) as i32),
-        Marker::I32 => Ok(try!(read_data_i32(rd))),
+        Marker::I8  => Ok(try!(read_numeric_data::<R, i8>(rd))  as i32),
+        Marker::I16 => Ok(try!(read_numeric_data::<R, i16>(rd)) as i32),
+        Marker::I32 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -680,10 +679,10 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::NegativeFixnum(val) => Ok(val as i64),
-        Marker::I8  => Ok(try!(read_data_i8(rd))  as i64),
-        Marker::I16 => Ok(try!(read_data_i16(rd)) as i64),
-        Marker::I32 => Ok(try!(read_data_i32(rd)) as i64),
-        Marker::I64 => Ok(try!(read_data_i64(rd))),
+        Marker::I8  => Ok(try!(read_numeric_data::<R, i8>(rd))  as i64),
+        Marker::I16 => Ok(try!(read_numeric_data::<R, i16>(rd)) as i64),
+        Marker::I32 => Ok(try!(read_numeric_data::<R, i32>(rd)) as i64),
+        Marker::I64 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -746,7 +745,7 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
 {
     match try!(read_marker(rd)) {
         Marker::FixedString(size) => Ok(size as u32),
-        Marker::Str8  => Ok(try!(read_data_u8(rd))  as u32),
+        Marker::Str8  => Ok(try!(read_numeric_data::<R, u8>(rd))  as u32),
         Marker::Str16 => Ok(try!(read_data_u16(rd)) as u32),
         Marker::Str32 => Ok(try!(read_data_u32(rd))),
         marker        => Err(ValueReadError::TypeMismatch(marker))
@@ -861,7 +860,7 @@ pub fn read_bin_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::Bin8  => Ok(try!(read_data_u8(rd)) as u32),
+        Marker::Bin8  => Ok(try!(read_numeric_data::<R, u8>(rd)) as u32),
         Marker::Bin16 => Ok(try!(read_data_u16(rd)) as u32),
         Marker::Bin32 => Ok(try!(read_data_u32(rd))),
         marker        => Err(ValueReadError::TypeMismatch(marker))
@@ -900,7 +899,7 @@ pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8), ValueReadError>
     match try!(read_marker(rd)) {
         Marker::FixExt1 => {
             let ty   = try!(read_data_i8(rd));
-            let data = try!(read_data_u8(rd));
+            let data = try!(read_numeric_data(rd));
             Ok((ty, data))
         }
         marker => Err(ValueReadError::TypeMismatch(marker))
@@ -1064,7 +1063,7 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
         Marker::FixExt4  => 4,
         Marker::FixExt8  => 8,
         Marker::FixExt16 => 16,
-        Marker::Ext8     => try!(read_data_u8(rd))  as u32,
+        Marker::Ext8     => try!(read_numeric_data::<R, u8>(rd))  as u32,
         Marker::Ext16    => try!(read_data_u16(rd)) as u32,
         Marker::Ext32    => try!(read_data_u32(rd)),
         marker           => return Err(ValueReadError::TypeMismatch(marker))
@@ -1095,7 +1094,7 @@ use super::{
     ValueReadError,
     DecodeStringError,
     read_marker,
-    read_data_u8,
+    read_numeric_data,
     read_data_u16,
     read_data_u32,
     read_data_u64,
@@ -1235,7 +1234,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::False => Value::Boolean(false),
         Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
         Marker::NegativeFixnum(val) => Value::Integer(Integer::I64(val as i64)),
-        Marker::U8  => Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64)),
+        Marker::U8  => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u8>(rd)) as u64)),
         Marker::U16 => Value::Integer(Integer::U64(try!(read_data_u16(rd)) as u64)),
         Marker::U32 => Value::Integer(Integer::U64(try!(read_data_u32(rd)) as u64)),
         Marker::U64 => Value::Integer(Integer::U64(try!(read_data_u64(rd)))),
@@ -1251,7 +1250,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             Value::String(res)
         }
         Marker::Str8 => {
-            let len = try!(read_data_u8(rd)) as u32;
+            let len = try!(read_numeric_data::<R, u8>(rd)) as u32;
             let res = try!(read_str(rd, len));
             Value::String(res)
         }
@@ -1296,7 +1295,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             Value::Map(map)
         }
         Marker::Bin8 => {
-            let len = try!(read_data_u8(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u8>(rd)) as usize;
             let vec = try!(read_bin_data(rd, len));
             Value::Binary(vec)
         }
@@ -1336,7 +1335,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             Value::Ext(ty, vec)
         }
         Marker::Ext8 => {
-            let len = try!(read_data_u8(rd)) as usize;
+            let len = try!(read_numeric_data::<R, u8>(rd)) as usize;
             let (ty, vec) = try!(read_ext_body(rd, len));
             Value::Ext(ty, vec)
         }
