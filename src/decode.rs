@@ -306,7 +306,7 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U8 => Ok(try!(read_numeric_data(rd))),
+        Marker::U8 => read_numeric_data(rd).map_err(From::from),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -326,7 +326,7 @@ pub fn read_u16<R>(rd: &mut R) -> Result<u16, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U16 => Ok(try!(read_numeric_data(rd))),
+        Marker::U16 => read_numeric_data(rd).map_err(From::from),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -346,7 +346,7 @@ pub fn read_u32<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U32 => Ok(try!(read_numeric_data(rd))),
+        Marker::U32 => read_numeric_data(rd).map_err(From::from),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -366,7 +366,7 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::U64 => Ok(try!(read_numeric_data(rd))),
+        Marker::U64 => read_numeric_data(rd).map_err(From::from),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -386,7 +386,7 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I8 => Ok(try!(read_numeric_data(rd))),
+        Marker::I8 => read_numeric_data(rd).map_err(From::from),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -406,7 +406,7 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I16 => Ok(try!(read_numeric_data(rd))),
+        Marker::I16 => read_numeric_data(rd).map_err(From::from),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -426,7 +426,7 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I32 => Ok(try!(read_numeric_data(rd))),
+        Marker::I32 => read_numeric_data(rd).map_err(From::from),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -446,7 +446,7 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::I64 => Ok(try!(read_numeric_data(rd))),
+        Marker::I64 => read_numeric_data(rd).map_err(From::from),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
