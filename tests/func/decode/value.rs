@@ -100,7 +100,7 @@ fn from_fixmap_decode_value() {
 
     let expected = Value::Map(vec![
         (Value::Integer(Integer::U64(42)), Value::Integer(Integer::U64(100500))),
-        (Value::String("key".to_string()),  Value::String("value".to_string())),
+        (Value::String("key".to_string()), Value::String("value".to_string())),
     ]);
 
     assert_eq!(expected, read_value(&mut cur).unwrap());
