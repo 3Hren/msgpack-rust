@@ -1517,8 +1517,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
             // TODO: Check overflow.
             f(self, id)
         } else {
-            // TODO: Type mismatch.
-            unimplemented!();
+            Err(self.error("sequence length mismatch"))
         }
     }
 

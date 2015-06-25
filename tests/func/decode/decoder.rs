@@ -390,4 +390,24 @@ mod unspecified {
 
         assert_eq!(Custom::Second(42), actual);
     }
+
+    #[test]
+    fn fail_enum_sequence_mismatch() {
+        let buf = [0x93, 0x1, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
+        let cur = Cursor::new(&buf[..]);
+
+        #[derive(Debug, PartialEq, RustcDecodable)]
+        enum Custom {
+            First,
+            Second(u32),
+        }
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Result<Custom> = Decodable::decode(&mut decoder);
+
+        match actual.err() {
+            Some(Error::Uncategorized(..)) => (),
+            other => panic!("unexpected result: {:?}", other)
+        }
+    }
 }
