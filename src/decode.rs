@@ -1502,12 +1502,32 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         Ok(try!(read_str_data(&mut self.rd, len, &mut buf[..])).to_string())
     }
 
-    fn read_enum<T, F>(&mut self, _name: &str, _f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
-    fn read_enum_variant<T, F>(&mut self, _names: &[&str], _f: F) -> Result<T>
-        where F: FnMut(&mut Self, usize) -> Result<T> { unimplemented!() }
-    fn read_enum_variant_arg<T, F>(&mut self, _idx: usize, _f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
+    fn read_enum<T, F>(&mut self, _name: &str, f: F) -> Result<T>
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        f(self)
+    }
+
+    fn read_enum_variant<T, F>(&mut self, _names: &[&str], mut f: F) -> Result<T>
+        where F: FnMut(&mut Self, usize) -> Result<T>
+    {
+        let len = try!(read_array_size(&mut self.rd));
+        if len == 2 {
+            let id = try!(self.read_usize());
+            // TODO: Check overflow.
+            f(self, id)
+        } else {
+            // TODO: Type mismatch.
+            unimplemented!();
+        }
+    }
+
+    fn read_enum_variant_arg<T, F>(&mut self, _idx: usize, f: F) -> Result<T>
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        f(self)
+    }
+
     fn read_enum_struct_variant<T, F>(&mut self, _names: &[&str], _f: F) -> Result<T>
         where F: FnMut(&mut Self, usize) -> Result<T> { unimplemented!() }
     fn read_enum_struct_variant_field<T, F>(&mut self, _name: &str, _idx: usize, _f: F) -> Result<T>
