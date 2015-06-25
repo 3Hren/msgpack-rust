@@ -919,6 +919,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         f(self)
     }
 
+    // TODO: Check carefully what that id/idx actually mean.
     fn emit_enum_variant<F>(&mut self, _name: &str, id: usize, _len: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
