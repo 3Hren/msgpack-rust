@@ -429,4 +429,21 @@ mod unspecified {
             other => panic!("unexpected result: {:?}", other)
         }
     }
+
+    #[test]
+    fn pass_struct_enum() {
+        let buf = [0x92, 0x01, 0x2a];
+        let cur = Cursor::new(&buf[..]);
+
+        #[derive(Debug, PartialEq, RustcDecodable)]
+        enum Custom {
+            First,
+            Second { id: u32 },
+        }
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Custom = Decodable::decode(&mut decoder).unwrap();
+
+        assert_eq!(Custom::Second { id: 42 }, actual);
+    }
 }

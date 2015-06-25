@@ -1530,10 +1530,17 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         f(self)
     }
 
-    fn read_enum_struct_variant<T, F>(&mut self, _names: &[&str], _f: F) -> Result<T>
-        where F: FnMut(&mut Self, usize) -> Result<T> { unimplemented!() }
-    fn read_enum_struct_variant_field<T, F>(&mut self, _name: &str, _idx: usize, _f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
+    fn read_enum_struct_variant<T, F>(&mut self, names: &[&str], f: F) -> Result<T>
+        where F: FnMut(&mut Self, usize) -> Result<T>
+    {
+        self.read_enum_variant(names, f)
+    }
+
+    fn read_enum_struct_variant_field<T, F>(&mut self, _name: &str, _idx: usize, f: F) -> Result<T>
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        f(self)
+    }
 
     fn read_struct<T, F>(&mut self, _name: &str, len: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
