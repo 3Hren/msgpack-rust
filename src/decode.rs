@@ -291,6 +291,17 @@ fn read_numeric_data<R, D>(rd: &mut R) -> Result<D, ValueReadError>
     }
 }
 
+#[inline]
+fn read_numeric<R, D>(rd: &mut R, marker: Marker) -> Result<D, ValueReadError>
+    where R: Read,
+          D: BigEndianRead
+{
+    match try!(read_marker(rd)) {
+        actual if actual == marker => read_numeric_data(rd).map_err(From::from),
+        marker => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
 /// Attempts to read exactly 2 bytes from the given reader and to decode them as `u8` value.
 ///
 /// The first byte should be the marker and the second one should represent the data itself.
@@ -305,10 +316,7 @@ fn read_numeric_data<R, D>(rd: &mut R) -> Result<D, ValueReadError>
 pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::U8 => read_numeric_data(rd).map_err(From::from),
-        marker     => Err(ValueReadError::TypeMismatch(marker)),
-    }
+    read_numeric(rd, Marker::U8)
 }
 
 /// Attempts to read exactly 3 bytes from the given reader and to decode them as `u16` value.
