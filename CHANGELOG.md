@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 - Nothing yet.
 
+## 0.3.0 - 2015-06-25
+### Added
+- Enum serialization/deserialization.
+
 ## 0.2.2 - 2015-06-15
 ### Changed
 - Minor integer decoding performance tweaking.
