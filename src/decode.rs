@@ -1508,14 +1508,17 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         f(self)
     }
 
-    fn read_enum_variant<T, F>(&mut self, _names: &[&str], mut f: F) -> Result<T>
+    fn read_enum_variant<T, F>(&mut self, names: &[&str], mut f: F) -> Result<T>
         where F: FnMut(&mut Self, usize) -> Result<T>
     {
         let len = try!(read_array_size(&mut self.rd));
         if len == 2 {
             let id = try!(self.read_usize());
-            // TODO: Check overflow.
-            f(self, id)
+            if id < names.len() {
+                f(self, id)
+            } else {
+                Err(self.error("variant type overflow"))
+            }
         } else {
             Err(self.error("sequence length mismatch"))
         }

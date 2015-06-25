@@ -410,4 +410,23 @@ mod unspecified {
             other => panic!("unexpected result: {:?}", other)
         }
     }
+
+    #[test]
+    fn fail_enum_overflow() {
+        let buf = [0x92, 0x01, 0x2a];
+        let cur = Cursor::new(&buf[..]);
+
+        #[derive(Debug, PartialEq, RustcDecodable)]
+        enum Custom {
+            First(u32),
+        }
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Result<Custom> = Decodable::decode(&mut decoder);
+
+        match actual.err() {
+            Some(Error::Uncategorized(..)) => (),
+            other => panic!("unexpected result: {:?}", other)
+        }
+    }
 }
