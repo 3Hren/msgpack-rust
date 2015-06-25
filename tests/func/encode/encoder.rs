@@ -259,3 +259,21 @@ fn pass_map() {
     ];
     assert_eq!(out, buf);
 }
+
+#[test]
+fn pass_enum() {
+    #[allow(unused)]
+    #[derive(Debug, PartialEq, RustcEncodable)]
+    enum Custom {
+        First,
+        Second(u32),
+    }
+
+    let mut buf = [0x00; 3];
+
+    let val = Custom::Second(42);
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    let out = [0x92, 0x01, 0x2a];
+    assert_eq!(out, buf);
+}

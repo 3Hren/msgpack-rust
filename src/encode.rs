@@ -913,22 +913,24 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         write_str(&mut self.wr, val).map_err(From::from)
     }
 
-    fn emit_enum<F>(&mut self, _name: &str, _f: F) -> Result<(), Error>
+    fn emit_enum<F>(&mut self, _name: &str, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        f(self)
     }
 
-    fn emit_enum_variant<F>(&mut self, _name: &str, _id: usize, _len: usize, _f: F) -> Result<(), Error>
+    fn emit_enum_variant<F>(&mut self, _name: &str, id: usize, _len: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        try!(write_array_len(&mut self.wr, 2));
+        try!(self.emit_usize(id));
+        f(self)
     }
 
-    fn emit_enum_variant_arg<F>(&mut self, _idx: usize, _f: F) -> Result<(), Error>
+    fn emit_enum_variant_arg<F>(&mut self, _idx: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        unimplemented!()
+        f(self)
     }
 
     fn emit_enum_struct_variant<F>(&mut self, _name: &str, _id: usize, _len: usize, _f: F) -> Result<(), Error>
