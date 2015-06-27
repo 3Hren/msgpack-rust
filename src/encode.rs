@@ -913,6 +913,14 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         write_str(&mut self.wr, val).map_err(From::from)
     }
 
+    /// Encodes and tries to write the enum value into the Write.
+    ///
+    /// Note that MessagePack has no specification about how to encode variant types. Thus we are
+    /// free to do whatever we want, so the given chose may be not ideal for you.
+    ///
+    /// Every Rust variant value can be represented as a tuple of index and a value.
+    ///
+    /// This function ignores the variant name and just delegates the control flow to the callback.
     fn emit_enum<F>(&mut self, _name: &str, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
