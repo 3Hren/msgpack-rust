@@ -826,6 +826,13 @@ impl From<super::ValueWriteError> for Error {
 }
 
 /// Represents MessagePack serialization implementation.
+///
+/// # Note
+///
+/// MessagePack has no specification about how to encode variant types. Thus we are free to do
+/// whatever we want, so the given chose may be not ideal for you.
+///
+/// Every Rust variant value can be represented as a tuple of index and a value.
 pub struct Encoder<'a> {
     wr: &'a mut Write,
 }
@@ -913,29 +920,34 @@ impl<'a> serialize::Encoder for Encoder<'a> {
         write_str(&mut self.wr, val).map_err(From::from)
     }
 
-    /// Encodes and tries to write the enum value into the Write.
+    /// Encodes and attempts to write the enum value into the Write.
     ///
-    /// Note that MessagePack has no specification about how to encode variant types. Thus we are
-    /// free to do whatever we want, so the given chose may be not ideal for you.
-    ///
-    /// Every Rust variant value can be represented as a tuple of index and a value.
-    ///
-    /// This function ignores the variant name and just delegates the control flow to the callback.
+    /// Currently we encode variant types as a tuple of id with array of args, like: [id, [args...]]
     fn emit_enum<F>(&mut self, _name: &str, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
+        // Mark that we want to encode a variant type.
+        try!(write_array_len(&mut self.wr, 2));
+
+        // Delegate to the encoder of a concrete value.
         f(self)
     }
 
-    // TODO: Check carefully what that id/idx actually mean.
-    fn emit_enum_variant<F>(&mut self, _name: &str, id: usize, _len: usize, f: F) -> Result<(), Error>
+    /// Encodes and attempts to write a concrete variant value.
+    fn emit_enum_variant<F>(&mut self, _name: &str, id: usize, len: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {
-        try!(write_array_len(&mut self.wr, 2));
+        // Encode a value position...
         try!(self.emit_usize(id));
+
+        // ... and its arguments length.
+        try!(write_array_len(&mut self.wr, len as u32));
+
+        // Delegate to the encoder of a value args.
         f(self)
     }
 
+    /// Encodes and attempts to write a concrete variant value arguments.
     fn emit_enum_variant_arg<F>(&mut self, _idx: usize, f: F) -> Result<(), Error>
         where F: FnOnce(&mut Self) -> Result<(), Error>
     {

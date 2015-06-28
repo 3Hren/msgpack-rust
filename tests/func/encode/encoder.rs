@@ -262,6 +262,26 @@ fn pass_map() {
 
 #[test]
 fn pass_enum() {
+    // We encode enum types as [id, [args...]].
+
+    #[allow(unused)]
+    #[derive(Debug, PartialEq, RustcEncodable)]
+    enum Custom {
+        First,
+        Second,
+    }
+
+    let mut buf = [0x00; 3];
+
+    let val = Custom::Second;
+    val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
+
+    let out = [0x92, 0x01, 0x90];
+    assert_eq!(out, buf);
+}
+
+#[test]
+fn pass_enum_variant_with_arg() {
     #[allow(unused)]
     #[derive(Debug, PartialEq, RustcEncodable)]
     enum Custom {
@@ -269,11 +289,15 @@ fn pass_enum() {
         Second(u32),
     }
 
-    let mut buf = [0x00; 3];
+    let mut buf = [0x00; 4];
 
     let val = Custom::Second(42);
     val.encode(&mut Encoder::new(&mut &mut buf[..])).ok().unwrap();
 
-    let out = [0x92, 0x01, 0x2a];
+    let out = [0x92, 0x01, 0x91, 0x2a];
     assert_eq!(out, buf);
 }
+
+// посмотреть в инете про ADT и Msgpack.
+// сделать.
+// core.

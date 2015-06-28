@@ -376,7 +376,24 @@ mod unspecified {
 
     #[test]
     fn pass_enum() {
-        let buf = [0x92, 0x01, 0x2a];
+        let buf = [0x92, 0x01, 0x90];
+        let cur = Cursor::new(&buf[..]);
+
+        #[derive(Debug, PartialEq, RustcDecodable)]
+        enum Custom {
+            First,
+            Second,
+        }
+
+        let mut decoder = Decoder::new(cur);
+        let actual: Custom = Decodable::decode(&mut decoder).unwrap();
+
+        assert_eq!(Custom::Second, actual);
+    }
+
+    #[test]
+    fn pass_enum_variant_with_arg() {
+        let buf = [0x92, 0x01, 0x91, 0x2a];
         let cur = Cursor::new(&buf[..]);
 
         #[derive(Debug, PartialEq, RustcDecodable)]
@@ -399,7 +416,7 @@ mod unspecified {
         #[derive(Debug, PartialEq, RustcDecodable)]
         enum Custom {
             First,
-            Second(u32),
+            Second,
         }
 
         let mut decoder = Decoder::new(cur);
@@ -418,7 +435,7 @@ mod unspecified {
 
         #[derive(Debug, PartialEq, RustcDecodable)]
         enum Custom {
-            First(u32),
+            First,
         }
 
         let mut decoder = Decoder::new(cur);
@@ -431,8 +448,8 @@ mod unspecified {
     }
 
     #[test]
-    fn pass_struct_enum() {
-        let buf = [0x92, 0x01, 0x2a];
+    fn pass_struct_enum_with_arg() {
+        let buf = [0x92, 0x01, 0x91, 0x2a];
         let cur = Cursor::new(&buf[..]);
 
         #[derive(Debug, PartialEq, RustcDecodable)]

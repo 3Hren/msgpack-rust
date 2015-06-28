@@ -1513,22 +1513,25 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_enum<T, F>(&mut self, _name: &str, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
-        f(self)
+        let len = try!(read_array_size(&mut self.rd));
+        if len == 2 {
+            f(self)
+        } else {
+            Err(self.error("sequence length mismatch"))
+        }
     }
 
     fn read_enum_variant<T, F>(&mut self, names: &[&str], mut f: F) -> Result<T>
         where F: FnMut(&mut Self, usize) -> Result<T>
     {
-        let len = try!(read_array_size(&mut self.rd));
-        if len == 2 {
-            let id = try!(self.read_usize());
-            if id < names.len() {
-                f(self, id)
-            } else {
-                Err(self.error("variant type overflow"))
-            }
+        let id = try!(self.read_usize());
+
+        if id < names.len() {
+            try!(read_array_size(&mut self.rd));
+
+            f(self, id)
         } else {
-            Err(self.error("sequence length mismatch"))
+            Err(self.error("variant type overflow"))
         }
     }
 
