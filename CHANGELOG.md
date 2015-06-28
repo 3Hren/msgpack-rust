@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 - Nothing yet.
 
+## 0.3.1 - 2015-06-28
+### Changed
+- Stabilizing enum serialization/deserialization. Now every enum is serialized as [int, [args...]].
+
 ## 0.3.0 - 2015-06-25
 ### Added
 - Enum serialization/deserialization.
