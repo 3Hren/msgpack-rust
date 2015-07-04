@@ -333,10 +333,7 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
 pub fn read_u16<R>(rd: &mut R) -> Result<u16, ValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::U16 => read_numeric_data(rd).map_err(From::from),
-        marker      => Err(ValueReadError::TypeMismatch(marker)),
-    }
+    read_numeric(rd, Marker::U16)
 }
 
 /// Attempts to read exactly 5 bytes from the given reader and to decode them as `u32` value.
@@ -353,10 +350,7 @@ pub fn read_u16<R>(rd: &mut R) -> Result<u16, ValueReadError>
 pub fn read_u32<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::U32 => read_numeric_data(rd).map_err(From::from),
-        marker      => Err(ValueReadError::TypeMismatch(marker)),
-    }
+    read_numeric(rd, Marker::U32)
 }
 
 /// Attempts to read exactly 9 bytes from the given reader and to decode them as `u64` value.
@@ -373,10 +367,7 @@ pub fn read_u32<R>(rd: &mut R) -> Result<u32, ValueReadError>
 pub fn read_u64<R>(rd: &mut R) -> Result<u64, ValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::U64 => read_numeric_data(rd).map_err(From::from),
-        marker      => Err(ValueReadError::TypeMismatch(marker)),
-    }
+    read_numeric(rd, Marker::U64)
 }
 
 /// Attempts to read exactly 2 bytes from the given reader and to decode them as `i8` value.
@@ -393,10 +384,7 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64, ValueReadError>
 pub fn read_i8<R>(rd: &mut R) -> Result<i8, ValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::I8 => read_numeric_data(rd).map_err(From::from),
-        marker     => Err(ValueReadError::TypeMismatch(marker)),
-    }
+    read_numeric(rd, Marker::I8)
 }
 
 /// Attempts to read exactly 3 bytes from the given reader and to decode them as `i16` value.
@@ -413,10 +401,7 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8, ValueReadError>
 pub fn read_i16<R>(rd: &mut R) -> Result<i16, ValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::I16 => read_numeric_data(rd).map_err(From::from),
-        marker      => Err(ValueReadError::TypeMismatch(marker)),
-    }
+    read_numeric(rd, Marker::I16)
 }
 
 /// Attempts to read exactly 5 bytes from the given reader and to decode them as `i32` value.
@@ -433,10 +418,7 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16, ValueReadError>
 pub fn read_i32<R>(rd: &mut R) -> Result<i32, ValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::I32 => read_numeric_data(rd).map_err(From::from),
-        marker      => Err(ValueReadError::TypeMismatch(marker)),
-    }
+    read_numeric(rd, Marker::I32)
 }
 
 /// Attempts to read exactly 9 bytes from the given reader and to decode them as `i64` value.
@@ -453,10 +435,7 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32, ValueReadError>
 pub fn read_i64<R>(rd: &mut R) -> Result<i64, ValueReadError>
     where R: Read
 {
-    match try!(read_marker(rd)) {
-        Marker::I64 => read_numeric_data(rd).map_err(From::from),
-        marker      => Err(ValueReadError::TypeMismatch(marker)),
-    }
+    read_numeric(rd, Marker::I64)
 }
 
 /// Attempts to read up to 2 bytes from the given reader and to decode them as `u8` value.
