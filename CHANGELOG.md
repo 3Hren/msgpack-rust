@@ -3,7 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
-- Nothing yet.
+- Implemented `std::error::Error` trait for error types.
+
 ## 0.3.2 - 2015-07-05
 ### Changed
 - Encoder now should return proper error types.
