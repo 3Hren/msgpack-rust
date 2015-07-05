@@ -1,4 +1,6 @@
 use std::convert::From;
+use std::error::Error;
+use std::fmt;
 use std::io;
 use std::io::Write;
 use std::result::Result;
@@ -11,6 +13,20 @@ use super::Marker;
 /// Represents an error that can occur when attempting to write MessagePack'ed value into the write.
 #[derive(Debug)]
 pub struct WriteError(io::Error);
+
+impl Error for WriteError {
+    fn description(&self) -> &str { "error while writing MessagePack'ed value" }
+
+    fn cause(&self) -> Option<&Error> {
+        Some(&self.0)
+    }
+}
+
+impl fmt::Display for WriteError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
 
 impl From<byteorder::Error> for WriteError {
     fn from(err: byteorder::Error) -> WriteError {
@@ -27,6 +43,20 @@ impl From<byteorder::Error> for WriteError {
 #[derive(Debug)]
 pub struct MarkerWriteError(WriteError);
 
+impl Error for MarkerWriteError {
+    fn description(&self) -> &str { "error while writing marker" }
+
+    fn cause(&self) -> Option<&Error> {
+        Some(&self.0)
+    }
+}
+
+impl fmt::Display for MarkerWriteError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
 impl From<byteorder::Error> for MarkerWriteError {
     fn from(err: byteorder::Error) -> MarkerWriteError {
         MarkerWriteError(From::from(err))
@@ -37,6 +67,20 @@ impl From<byteorder::Error> for MarkerWriteError {
 #[derive(Debug)]
 pub struct FixedValueWriteError(WriteError);
 
+impl Error for FixedValueWriteError {
+    fn description(&self) -> &str { "error while writing MessagePack'ed single-byte value" }
+
+    fn cause(&self) -> Option<&Error> {
+        Some(&self.0)
+    }
+}
+
+impl fmt::Display for FixedValueWriteError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
 /// Represents an error that can occur when attempring to write MessagePack'ed complex value into
 /// the write.
 #[derive(Debug)]
@@ -45,6 +89,23 @@ pub enum ValueWriteError {
     InvalidMarkerWrite(WriteError),
     /// IO error while writing data.
     InvalidDataWrite(WriteError),
+}
+
+impl Error for ValueWriteError {
+    fn description(&self) -> &str { "error while writing MessagePack'ed complex value" }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            ValueWriteError::InvalidMarkerWrite(ref err) => Some(err),
+            ValueWriteError::InvalidDataWrite(ref err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for ValueWriteError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
 }
 
 impl From<MarkerWriteError> for ValueWriteError {
@@ -684,6 +745,7 @@ pub fn write_ext_meta<W>(wr: &mut W, len: u32, typeid: i8) -> Result<Marker, Val
 pub mod value {
 
 use std::convert::From;
+use std::fmt;
 use std::io::Write;
 use std::result::Result;
 
@@ -702,6 +764,21 @@ pub enum Error {
     // TODO: Will be replaced with more concrete values.
     UnstableCommonError(String),
 }
+
+impl ::std::error::Error for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::UnstableCommonError(ref s) => s
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        ::std::error::Error::description(self).fmt(f)
+    }
+}
+
 
 impl From<FixedValueWriteError> for Error {
     fn from(err: FixedValueWriteError) -> Error {
@@ -783,6 +860,7 @@ pub mod serialize {
 
 use serialize;
 
+use std::fmt;
 use std::io::Write;
 
 use super::{
@@ -809,6 +887,24 @@ pub enum Error {
     InvalidFixedValueWrite(WriteError),
     InvalidValueWrite(ValueWriteError),
 }
+
+impl ::std::error::Error for Error {
+    fn description(&self) -> &str { "an error occurred while writing encoded value" }
+
+    fn cause(&self) -> Option<&::std::error::Error> {
+        match *self {
+            Error::InvalidFixedValueWrite(ref err) => Some(err),
+            Error::InvalidValueWrite(ref err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        ::std::error::Error::description(self).fmt(f)
+    }
+}
+
 
 impl From<FixedValueWriteError> for Error {
     fn from(err: FixedValueWriteError) -> Error {
