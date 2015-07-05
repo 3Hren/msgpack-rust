@@ -800,13 +800,14 @@ use super::{
 use super::{
     WriteError,
     FixedValueWriteError,
+    ValueWriteError,
 };
 
 #[derive(Debug)]
 pub enum Error {
     /// Failed to write MessagePack'ed single-byte value into the write.
     InvalidFixedValueWrite(WriteError),
-    Unimplemented,
+    InvalidValueWrite(ValueWriteError),
 }
 
 impl From<FixedValueWriteError> for Error {
@@ -817,11 +818,9 @@ impl From<FixedValueWriteError> for Error {
     }
 }
 
-impl From<super::ValueWriteError> for Error {
-    fn from(err: super::ValueWriteError) -> Error {
-        match err {
-            _ => Error::Unimplemented,
-        }
+impl From<ValueWriteError> for Error {
+    fn from(err: ValueWriteError) -> Error {
+        Error::InvalidValueWrite(err)
     }
 }
 
