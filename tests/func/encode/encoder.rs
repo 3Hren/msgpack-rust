@@ -298,6 +298,13 @@ fn pass_enum_variant_with_arg() {
     assert_eq!(out, buf);
 }
 
-// посмотреть в инете про ADT и Msgpack.
-// сделать.
-// core.
+#[test]
+fn pass_encodong_struct_into_vec() {
+    let val = (42u8, "the Answer");
+
+    let mut buf: Vec<u8> = Vec::new();
+
+    val.encode(&mut Encoder::new(&mut buf)).unwrap();
+
+    assert_eq!(vec![0x92, 0x2a, 0xaa, 0x74, 0x68, 0x65, 0x20, 0x41, 0x6e, 0x73, 0x77, 0x65, 0x72], buf);
+}
