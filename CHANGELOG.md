@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 - Nothing yet.
+## 0.3.2 - 2015-07-05
+### Changed
+- Encoder now should return proper error types.
 
 ## 0.3.1 - 2015-06-28
 ### Changed
