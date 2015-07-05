@@ -1,3 +1,5 @@
+use std::error::Error;
+use std::fmt;
 use std::io;
 use std::io::Read;
 use std::result::Result;
@@ -18,6 +20,28 @@ pub enum ReadError {
     UnexpectedEOF,
     /// I/O error occurred while reading bytes.
     Io(io::Error),
+}
+
+impl Error for ReadError {
+    fn description(&self) -> &str {
+        match *self {
+            ReadError::UnexpectedEOF => "unexpected end of file while reading MessagePack value",
+            ReadError::Io(ref err) => err.description(),
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            ReadError::UnexpectedEOF => None,
+            ReadError::Io(ref err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for ReadError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
 }
 
 impl From<io::Error> for ReadError {
@@ -46,6 +70,29 @@ pub enum MarkerReadError {
     /// I/O error occurred while reading the marker.
     Io(io::Error),
 }
+
+impl Error for MarkerReadError {
+    fn description(&self) -> &str {
+        match *self {
+            MarkerReadError::UnexpectedEOF => "unexpected end of file while reading MessagePack marker",
+            MarkerReadError::Io(ref err) => err.description(),
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            MarkerReadError::UnexpectedEOF => None,
+            MarkerReadError::Io(ref err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for MarkerReadError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
 
 impl From<byteorder::Error> for MarkerReadError {
     fn from(err: byteorder::Error) -> MarkerReadError {
@@ -77,6 +124,32 @@ pub enum FixedValueReadError {
     TypeMismatch(Marker),
 }
 
+impl Error for FixedValueReadError {
+    fn description(&self) -> &str {
+        use self::FixedValueReadError::*;
+        match *self {
+            UnexpectedEOF => "unexpected end of file while reading MessagePack single-byte value",
+            Io(ref err) => err.description(),
+            TypeMismatch(_) => "the type decoded isn't match with the expected one",
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        use self::FixedValueReadError::*;
+        match *self {
+            UnexpectedEOF => None,
+            Io(ref err) => Some(err),
+            TypeMismatch(_) => None,
+        }
+    }
+}
+
+impl fmt::Display for FixedValueReadError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
 impl From<MarkerReadError> for FixedValueReadError {
     fn from(err: MarkerReadError) -> FixedValueReadError {
         match err {
@@ -98,6 +171,30 @@ pub enum ValueReadError {
     TypeMismatch(Marker),
 }
 
+impl Error for ValueReadError {
+    fn description(&self) -> &str {
+        match *self {
+            ValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
+            ValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
+            ValueReadError::TypeMismatch(..) => "the type decoded isn't match with the expected one",
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            ValueReadError::InvalidMarkerRead(ref err) => Some(err),
+            ValueReadError::InvalidDataRead(ref err) => Some(err),
+            ValueReadError::TypeMismatch(..) => None,
+        }
+    }
+}
+
+impl fmt::Display for ValueReadError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
 impl From<MarkerReadError> for ValueReadError {
     fn from(err: MarkerReadError) -> ValueReadError {
         ValueReadError::InvalidMarkerRead(From::from(err))
@@ -113,6 +210,28 @@ pub enum DecodeStringError<'a> {
     BufferSizeTooSmall(u32),
     InvalidDataCopy(&'a [u8], ReadError),
     InvalidUtf8(&'a [u8], Utf8Error),
+}
+
+impl<'a> Error for DecodeStringError<'a> {
+    fn description(&self) -> &str { "error while decoding string" }
+
+    fn cause(&self) -> Option<&Error> {
+        use self::DecodeStringError::*;
+        match *self {
+            InvalidMarkerRead(ref err) => Some(err),
+            InvalidDataRead(ref err) => Some(err),
+            TypeMismatch(_) => None,
+            BufferSizeTooSmall(_) => None,
+            InvalidDataCopy(_, ref err) => Some(err),
+            InvalidUtf8(_, ref err) => Some(err),
+        }
+    }
+}
+
+impl<'a> fmt::Display for DecodeStringError<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
 }
 
 impl<'a> From<ValueReadError> for DecodeStringError<'a> {
@@ -1046,6 +1165,7 @@ pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
 
 pub mod value {
 
+use std::fmt;
 use std::io::Read;
 use std::result::Result;
 use std::str::Utf8Error;
@@ -1082,6 +1202,34 @@ pub enum Error {
     InvalidMapKeyRead(Box<Error>),
     InvalidMapValueRead(Box<Error>),
 }
+
+impl ::std::error::Error for Error {
+    fn description(&self) -> &str { "error while decoding value" }
+
+    fn cause(&self) -> Option<&::std::error::Error> {
+        use self::Error::*;
+        match *self {
+            InvalidMarkerRead(ref err) => Some(err),
+            InvalidDataRead(ref err) => Some(err),
+            TypeMismatch(_) => None,
+
+            BufferSizeTooSmall(_) => None,
+            InvalidDataCopy(_, ref err) => Some(err),
+            InvalidUtf8(_, ref err) => Some(err),
+
+            InvalidArrayRead(ref err) => Some(&**err),
+            InvalidMapKeyRead(ref err) => Some(&**err),
+            InvalidMapValueRead(ref err) => Some(&**err),
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        ::std::error::Error::description(self).fmt(f)
+    }
+}
+
 
 impl From<MarkerReadError> for Error {
     fn from(err: MarkerReadError) -> Error {
@@ -1320,6 +1468,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
 pub mod serialize {
 
 use std::convert::From;
+use std::fmt;
 use std::io::Read;
 use std::result;
 
@@ -1359,6 +1508,27 @@ pub enum Error {
     LengthMismatch(u32),
     /// Uncategorized error.
     Uncategorized(String),
+}
+
+impl ::std::error::Error for Error {
+    fn description(&self) -> &str { "error while decoding value" }
+
+    fn cause(&self) -> Option<&::std::error::Error> {
+        use self::Error::*;
+        match *self {
+            TypeMismatch(_) => None,
+            InvalidMarkerRead(ref err) => Some(err),
+            InvalidDataRead(ref err) => Some(err),
+            LengthMismatch(_) => None,
+            Uncategorized(_) => None,
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        ::std::error::Error::description(self).fmt(f)
+    }
 }
 
 impl From<FixedValueReadError> for Error {
