@@ -286,7 +286,8 @@ pub fn read_nil<R>(rd: &mut R) -> Result<(), FixedValueReadError>
 ///
 /// # Errors
 ///
-/// This function will return `FixedValueReadError` on any I/O error while reading the bool marker.
+/// This function will return `FixedValueReadError` on any I/O error while reading the bool marker,
+/// except the EINTR, which is handled internally.
 ///
 /// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
@@ -313,7 +314,8 @@ pub fn read_bool<R>(rd: &mut R) -> Result<bool, FixedValueReadError>
 ///
 /// # Errors
 ///
-/// This function will return `FixedValueReadError` on any I/O error while reading the marker.
+/// This function will return `FixedValueReadError` on any I/O error while reading the marker,
+/// except the EINTR, which is handled internally.
 ///
 /// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
@@ -339,7 +341,8 @@ pub fn read_pfix<R>(rd: &mut R) -> Result<u8, FixedValueReadError>
 ///
 /// # Errors
 ///
-/// This function will return `FixedValueReadError` on any I/O error while reading the marker.
+/// This function will return `FixedValueReadError` on any I/O error while reading the marker,
+/// except the EINTR, which is handled internally.
 ///
 /// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
