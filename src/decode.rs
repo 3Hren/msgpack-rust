@@ -249,7 +249,7 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker, MarkerReadError>
     where R: Read
 {
     match rd.read_u8() {
-        Ok(val)  => Ok(Marker::from_u8(val)),
+        Ok(val) => Ok(Marker::from_u8(val)),
         Err(err) => Err(From::from(err)),
     }
 }
@@ -268,14 +268,14 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker, MarkerReadError>
 ///
 /// # Note
 ///
-/// This function is **interruption-safe**. It will silently retry on EINTR received from the `Read`
-/// given.
+/// This function is **interruption-safe**. It will silently retry on every EINTR received until
+/// successful read.
 pub fn read_nil<R>(rd: &mut R) -> Result<(), FixedValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
         Marker::Null => Ok(()),
-        marker       => Err(FixedValueReadError::TypeMismatch(marker))
+        marker => Err(FixedValueReadError::TypeMismatch(marker))
     }
 }
 
@@ -290,13 +290,18 @@ pub fn read_nil<R>(rd: &mut R) -> Result<(), FixedValueReadError>
 ///
 /// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function is **interruption-safe**. It will silently retry on every EINTR received until
+/// successful read.
 pub fn read_bool<R>(rd: &mut R) -> Result<bool, FixedValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::True  => Ok(true),
+        Marker::True => Ok(true),
         Marker::False => Ok(false),
-        marker        => Err(FixedValueReadError::TypeMismatch(marker))
+        marker => Err(FixedValueReadError::TypeMismatch(marker))
     }
 }
 
@@ -312,6 +317,11 @@ pub fn read_bool<R>(rd: &mut R) -> Result<bool, FixedValueReadError>
 ///
 /// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function is **interruption-safe**. It will silently retry on every EINTR received until
+/// successful read.
 pub fn read_pfix<R>(rd: &mut R) -> Result<u8, FixedValueReadError>
     where R: Read
 {
@@ -333,6 +343,11 @@ pub fn read_pfix<R>(rd: &mut R) -> Result<u8, FixedValueReadError>
 ///
 /// It also returns `FixedValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function is **interruption-safe**. It will silently retry on every EINTR received until
+/// successful read.
 pub fn read_nfix<R>(rd: &mut R) -> Result<i8, FixedValueReadError>
     where R: Read
 {
