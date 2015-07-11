@@ -268,7 +268,7 @@ fn read_marker<R>(rd: &mut R) -> Result<Marker, MarkerReadError>
 ///
 /// # Note
 ///
-/// This function is **interruption-safe**. It will silently retry on every EINTR received until
+/// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
 pub fn read_nil<R>(rd: &mut R) -> Result<(), FixedValueReadError>
     where R: Read
@@ -294,7 +294,7 @@ pub fn read_nil<R>(rd: &mut R) -> Result<(), FixedValueReadError>
 ///
 /// # Note
 ///
-/// This function is **interruption-safe**. It will silently retry on every EINTR received until
+/// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
 pub fn read_bool<R>(rd: &mut R) -> Result<bool, FixedValueReadError>
     where R: Read
@@ -322,7 +322,7 @@ pub fn read_bool<R>(rd: &mut R) -> Result<bool, FixedValueReadError>
 ///
 /// # Note
 ///
-/// This function is **interruption-safe**. It will silently retry on every EINTR received until
+/// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
 pub fn read_pfix<R>(rd: &mut R) -> Result<u8, FixedValueReadError>
     where R: Read
@@ -349,7 +349,7 @@ pub fn read_pfix<R>(rd: &mut R) -> Result<u8, FixedValueReadError>
 ///
 /// # Note
 ///
-/// This function is **interruption-safe**. It will silently retry on every EINTR received until
+/// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
 pub fn read_nfix<R>(rd: &mut R) -> Result<i8, FixedValueReadError>
     where R: Read
