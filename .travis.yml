@@ -1,6 +1,24 @@
 language: rust
 
+# Necessary for `travis-cargo coveralls --no-sudo`.
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+
 rust:
   - 1.1.0
   - beta
   - nightly
+
+# Load travis-cargo.
+before_script:
+  - |
+      pip install 'travis-cargo<0.2' --user &&
+      export PATH=$HOME/.local/bin:$PATH
+
+after_success:
+  # Measure code coverage and upload to coveralls.io.
+  - travis-cargo coveralls --no-sudo
