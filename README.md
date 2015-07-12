@@ -4,6 +4,7 @@ RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
 
 [![Build Status](https://travis-ci.org/3Hren/msgpack-rust.svg?branch=master)](https://travis-ci.org/3Hren/msgpack-rust)
 [![](http://meritbadge.herokuapp.com/rmp)](https://crates.io/crates/rmp)
+[![Coverage Status][coveralls-img]][coveralls-url]
 
 - [API documentation](http://3hren.github.io/msgpack-rust/rmp/index.html)
 
@@ -133,3 +134,6 @@ will be the following rules:
    version bumping.
  - API extending features results in minor version bumping.
  - Non-breaking bug fixes and performance improving results in patch version bumping.
+
+[coveralls-img]: https://coveralls.io/repos/3Hren/msgpack-rust/badge.svg?branch=master&service=github
+[coveralls-url]: https://coveralls.io/github/3Hren/msgpack-rust?branch=master
