@@ -228,6 +228,7 @@ pub fn write_nfix<W>(wr: &mut W, val: i8) -> Result<(), FixedValueWriteError>
     write_fixval(wr, Marker::NegativeFixnum(val))
 }
 
+// TODO: Eliminate this or not?
 macro_rules! make_write_data_fn {
     (deduce, $writer:ident, $encoder:ident, 0, $val:ident)
         => ($writer.$encoder($val););
@@ -272,7 +273,7 @@ make_write_data_fn!(f64, write_data_f64, write_f64);
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 ///
 /// # Examples
 /// ```
@@ -307,7 +308,7 @@ pub fn write_u8<W>(wr: &mut W, val: u8) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_u16<W>(wr: &mut W, val: u16) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -328,7 +329,7 @@ pub fn write_u16<W>(wr: &mut W, val: u16) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_u32<W>(wr: &mut W, val: u32) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -349,7 +350,7 @@ pub fn write_u32<W>(wr: &mut W, val: u32) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -371,7 +372,7 @@ pub fn write_u64<W>(wr: &mut W, val: u64) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 ///
 /// # Examples
 /// ```
@@ -407,7 +408,7 @@ pub fn write_i8<W>(wr: &mut W, val: i8) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_i16<W>(wr: &mut W, val: i16) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -429,7 +430,7 @@ pub fn write_i16<W>(wr: &mut W, val: i16) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_i32<W>(wr: &mut W, val: i32) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -451,7 +452,7 @@ pub fn write_i32<W>(wr: &mut W, val: i32) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -471,7 +472,8 @@ pub fn write_i64<W>(wr: &mut W, val: i64) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
+// TODO: Replace with `match`?
 pub fn write_uint<W>(wr: &mut W, val: u64) -> Result<Marker, ValueWriteError>
     where W: Write
 {
@@ -508,7 +510,7 @@ pub fn write_uint<W>(wr: &mut W, val: u64) -> Result<Marker, ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
     where W: Write
 {
@@ -543,7 +545,7 @@ fn write_int<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_f32<W>(wr: &mut W, val: f32) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -558,7 +560,7 @@ pub fn write_f32<W>(wr: &mut W, val: f32) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_f64<W>(wr: &mut W, val: f64) -> Result<(), ValueWriteError>
     where W: Write
 {
@@ -575,7 +577,7 @@ pub fn write_f64<W>(wr: &mut W, val: f64) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
@@ -612,7 +614,7 @@ fn write_str<W>(wr: &mut W, data: &str) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_bin_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
@@ -642,7 +644,7 @@ fn write_bin<W>(wr: &mut W, data: &[u8]) -> Result<(), ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_array_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
@@ -665,7 +667,7 @@ pub fn write_array_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteErro
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
@@ -688,7 +690,7 @@ pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data.
+/// marker or the data, except the EINTR, which is handled internally.
 ///
 /// # Panics
 ///
@@ -794,6 +796,11 @@ impl From<ValueWriteError> for Error {
     }
 }
 
+/// # Note
+///
+/// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
+/// operation is retried.
+// TODO: Docs. Examples.
 pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
     where W: Write
 {
@@ -836,6 +843,7 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
     Ok(())
 }
 
+// TODO: Move tests outside.
 #[cfg(test)]
 mod tests {
 
@@ -928,6 +936,10 @@ impl From<ValueWriteError> for Error {
 /// whatever we want, so the given chose may be not ideal for you.
 ///
 /// Every Rust variant value can be represented as a tuple of index and a value.
+///
+/// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
+/// operation is retried.
+// TODO: Docs. Examples.
 pub struct Encoder<'a> {
     wr: &'a mut Write,
 }
@@ -939,6 +951,8 @@ impl<'a> Encoder<'a> {
             wr: wr,
         }
     }
+
+    // TODO: An ability to borrow the `Write`.
 }
 
 impl<'a> serialize::Encoder for Encoder<'a> {

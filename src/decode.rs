@@ -1,3 +1,17 @@
+//! # Note
+//!
+//! Most of the function defined in this module will silently handle interruption error (EINTR)
+//! received from the given `Read` to be in consistent state with the `Write::write_all` method in
+//! the standard library.
+//!
+//! Any other error would immediately interrupt the parsing process. If your reader can results in
+//! I/O error and simultaneously be a recoverable state (for example, when reading from
+//! non-blocking socket and it returns EWOULDBLOCK) be sure that you buffer the data externally
+//! to avoid data loss (using `BufRead` readers with manual consuming or some other way).
+//
+// TODO: So what, we can either force the user to manage data state externally or to restrict reader
+// type to BufRead for primitive cases (read_[nil, bool, u*, i*, f*]) where required size is known.
+
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -452,7 +466,7 @@ fn read_numeric<R, D>(rd: &mut R, marker: Marker) -> Result<D, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
@@ -469,10 +483,15 @@ pub fn read_u8<R>(rd: &mut R) -> Result<u8, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_u16<R>(rd: &mut R) -> Result<u16, ValueReadError>
     where R: Read
 {
@@ -486,10 +505,15 @@ pub fn read_u16<R>(rd: &mut R) -> Result<u16, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_u32<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
@@ -503,10 +527,15 @@ pub fn read_u32<R>(rd: &mut R) -> Result<u32, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_u64<R>(rd: &mut R) -> Result<u64, ValueReadError>
     where R: Read
 {
@@ -520,10 +549,15 @@ pub fn read_u64<R>(rd: &mut R) -> Result<u64, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_i8<R>(rd: &mut R) -> Result<i8, ValueReadError>
     where R: Read
 {
@@ -537,10 +571,15 @@ pub fn read_i8<R>(rd: &mut R) -> Result<i8, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_i16<R>(rd: &mut R) -> Result<i16, ValueReadError>
     where R: Read
 {
@@ -554,10 +593,15 @@ pub fn read_i16<R>(rd: &mut R) -> Result<i16, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_i32<R>(rd: &mut R) -> Result<i32, ValueReadError>
     where R: Read
 {
@@ -571,10 +615,15 @@ pub fn read_i32<R>(rd: &mut R) -> Result<i32, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_i64<R>(rd: &mut R) -> Result<i64, ValueReadError>
     where R: Read
 {
@@ -592,10 +641,15 @@ pub fn read_i64<R>(rd: &mut R) -> Result<i64, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8, ValueReadError>
     where R: Read
 {
@@ -617,10 +671,15 @@ pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16, ValueReadError>
     where R: Read
 {
@@ -643,10 +702,15 @@ pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
@@ -673,10 +737,15 @@ pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64, ValueReadError>
     where R: Read
 {
@@ -701,10 +770,15 @@ pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_i8_loosely<R>(rd: &mut R) -> Result<i8, ValueReadError>
     where R: Read
 {
@@ -726,10 +800,15 @@ pub fn read_i8_loosely<R>(rd: &mut R) -> Result<i8, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_i16_loosely<R>(rd: &mut R) -> Result<i16, ValueReadError>
     where R: Read
 {
@@ -752,10 +831,15 @@ pub fn read_i16_loosely<R>(rd: &mut R) -> Result<i16, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_i32_loosely<R>(rd: &mut R) -> Result<i32, ValueReadError>
     where R: Read
 {
@@ -782,10 +866,15 @@ pub fn read_i32_loosely<R>(rd: &mut R) -> Result<i32, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64, ValueReadError>
     where R: Read
 {
@@ -806,10 +895,15 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_f32<R>(rd: &mut R) -> Result<f32, ValueReadError>
     where R: Read
 {
@@ -826,10 +920,15 @@ pub fn read_f32<R>(rd: &mut R) -> Result<f32, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_f64<R>(rd: &mut R) -> Result<f64, ValueReadError>
     where R: Read
 {
@@ -848,10 +947,15 @@ pub fn read_f64<R>(rd: &mut R) -> Result<f64, ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
@@ -874,7 +978,8 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
 ///
 /// Returns `Err` in the following cases:
 ///
-///  - if any IO error (including unexpected EOF) occurs, while reading an `rd`.
+///  - if any IO error (including unexpected EOF) occurs, while reading an `rd`, except the EINTR,
+///    which is handled internally.
 ///  - if the `out` buffer size is not large enough to keep all the data copyed.
 ///  - if the data is not utf-8, with a description as to why the provided data is not utf-8 and
 ///    with a size of bytes actually copyed to be able to get them from `out`.
@@ -892,6 +997,12 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
 /// # Unstable
 ///
 /// This function is **unstable**, because it needs review.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
+// TODO: Stabilize. Mark error values for each error case (in docs).
 pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str, DecodeStringError<'r>>
     where R: Read
 {
@@ -926,6 +1037,7 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r st
 /// Attempts to read and decode a string value from the reader, returning a borrowed slice from it.
 ///
 // TODO: it is better to return &str; may panic on len mismatch; extend documentation.
+// TODO: Also it's possible to implement all borrowing functions for all `BufRead` implementors.
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
@@ -938,7 +1050,13 @@ pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
 ///
 /// Array format family stores a sequence of elements in 1, 3, or 5 bytes of extra bytes in addition
 /// to the elements.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 // TODO: Docs.
+// NOTE: EINTR is managed internally.
 pub fn read_array_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
@@ -955,6 +1073,11 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
 ///
 /// Map format family stores a sequence of elements in 1, 3, or 5 bytes of extra bytes in addition
 /// to the elements.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 // TODO: Docs.
 pub fn read_map_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
@@ -967,6 +1090,10 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
     }
 }
 
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 // TODO: Docs.
 pub fn read_bin_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
@@ -979,6 +1106,10 @@ pub fn read_bin_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     }
 }
 
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 // TODO: Docs; not sure about naming.
 pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8], ValueReadError> {
     let mut cur = io::Cursor::new(rd);
@@ -1004,7 +1135,12 @@ pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8], ValueReadError> {
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
 pub fn read_fixext1<R>(rd: &mut R) -> Result<(i8, u8), ValueReadError>
     where R: Read
 {
@@ -1055,7 +1191,7 @@ pub fn read_fixext2<R>(rd: &mut R) -> Result<(i8, [u8; 2]), ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError>
     where R: Read
 {
@@ -1080,7 +1216,7 @@ pub fn read_fixext4<R>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
     where R: Read
 {
@@ -1105,7 +1241,7 @@ pub fn read_fixext8<R>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError>
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data.
+/// the data, except the EINTR, which is handled internally.
 pub fn read_fixext16<R>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError>
     where R: Read
 {
@@ -1166,6 +1302,7 @@ pub struct ExtMeta {
 }
 
 /// Unstable: docs, errors
+// NOTE: EINTR safe.
 pub fn read_ext_meta<R>(rd: &mut R) -> Result<ExtMeta, ValueReadError>
     where R: Read
 {
@@ -1356,6 +1493,8 @@ fn read_ext_body<R>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), Error>
 /// # Errors
 ///
 /// This function will return `Error` on any I/O error while either reading or decoding a `Value`.
+/// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
+/// operation is retried.
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
 {
@@ -1591,16 +1730,24 @@ impl<'a> From<DecodeStringError<'a>> for Error {
 
 pub type Result<T> = result::Result<T, Error>;
 
+/// # Note
+///
+/// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
+/// operation is retried.
+// TODO: Docs. Examples.
 pub struct Decoder<R: Read> {
     rd: R,
 }
 
 impl<R: Read> Decoder<R> {
+    // TODO: Docs.
     pub fn new(rd: R) -> Decoder<R> {
         Decoder {
             rd: rd
         }
     }
+
+    // TODO: Add an ability to borrow underlying reader and to destruct this decoder.
 }
 
 /// Unstable: docs; examples; incomplete
