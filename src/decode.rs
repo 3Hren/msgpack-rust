@@ -24,6 +24,10 @@ use byteorder::ReadBytesExt;
 
 use super::Marker;
 
+#[path = "decode/value_ref.rs"]
+pub mod value_ref;
+pub use self::value_ref::read_value_ref;
+
 /// Represents an error that can occur when attempting to read bytes from the reader.
 ///
 /// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error

@@ -35,8 +35,8 @@ pub enum Value {
     Ext(i8, Vec<u8>),
 }
 
-//#[derive(Clone, Debug, PartialEq)]
-//enum ValueRef<'a> {
+#[derive(Clone, Debug, PartialEq)]
+pub enum ValueRef<'a> {
 //    /// Nil represents nil.
 //    Nil,
 //    /// Boolean represents true or false.
@@ -45,8 +45,8 @@ pub enum Value {
 //    Integer(Integer),
 //    /// Float represents a floating point number.
 //    Float(Float),
-//    /// String extending Raw type represents a UTF-8 string.
-//    String(&'a str),
+   /// String extending Raw type represents a UTF-8 string.
+   String(&'a str),
 //    /// Binary extending Raw type represents a byte array.
 //    Binary(&'a [u8]),
 //    /// Array represents a sequence of objects.
@@ -56,4 +56,4 @@ pub enum Value {
 //    /// Extended implements Extension interface: represents a tuple of type information and a byte
 //    /// array where type information is an integer whose meaning is defined by applications.
 //    Ext(i8, &'a [u8]),
-//}
+}

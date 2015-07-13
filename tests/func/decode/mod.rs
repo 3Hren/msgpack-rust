@@ -12,3 +12,4 @@ mod ext;
 // High-level deserialize interface.
 mod decoder;
 mod value;
+mod value_ref;
