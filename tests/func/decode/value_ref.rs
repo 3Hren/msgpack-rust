@@ -1,5 +1,6 @@
 use msgpack::ValueRef;
 use msgpack::decode::read_value_ref;
+use msgpack::decode::value_ref::Error;
 
 #[test]
 fn from_string() {
@@ -17,4 +18,16 @@ fn from_string() {
 
     assert_eq!(ValueRef::String("B123456789012345678901234567890E"),
         read_value_ref(&mut slice).ok().unwrap());
+}
+
+#[test]
+fn from_empty_buffer_invalid_marker_read() {
+    let buf = [];
+
+    let mut slice = &buf[..];
+
+    match read_value_ref(&mut slice).err().unwrap() {
+        Error::InvalidMarkerRead(..) => (),
+        _ => panic!(),
+    }
 }
