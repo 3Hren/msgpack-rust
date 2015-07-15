@@ -1,5 +1,7 @@
+//! This module is UNSTABLE, the reason is - just added.
+
 use std::convert::From;
-use std::io::BufRead;
+use std::io::{self, BufRead};
 use std::str::from_utf8;
 
 use super::{read_marker, read_numeric_data};
@@ -13,16 +15,14 @@ use super::super::value::ValueRef;
 // TODO: Display trait.
 #[derive(Debug)]
 pub enum Error {
-    InvalidBufferFill(ReadError),
+    InvalidBufferFill(io::Error),
     /// Failed to read the marker value.
     InvalidMarkerRead(ReadError),
+    // insuffifient bytes
+    // invalid string length read (IO)
+    // length overflow
+    // invalid utf8
 }
-
-// invalid marker read (IO)
-// insuffifient bytes
-// invalid string length read (IO)
-// length overflow
-// invalid utf8
 
 impl From<MarkerReadError> for Error {
     fn from(err: MarkerReadError) -> Error {
@@ -34,7 +34,7 @@ impl From<MarkerReadError> for Error {
 pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
     where R: BufRead
 {
-    let mut buf = rd.fill_buf().unwrap(); // TODO: May fail.
+    let mut buf = try!(rd.fill_buf().map_err(|err| Error::InvalidBufferFill(err)));
 
     // Reading the marker involves either 1 byte read or nothing. On success consumes strictly
     // 1 byte from the `buf`, not from the `rd`.

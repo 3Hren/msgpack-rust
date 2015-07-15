@@ -31,3 +31,28 @@ fn from_empty_buffer_invalid_marker_read() {
         _ => panic!(),
     }
 }
+
+#[test]
+fn from_empty_buffer_invalid_buffer_fill_because_eintr() {
+    use std::io::{self, Read, BufRead};
+
+    struct InterruptRead;
+
+    impl Read for InterruptRead {
+        fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
+            Err(io::Error::new(io::ErrorKind::Interrupted, ""))
+        }
+    }
+
+    impl BufRead for InterruptRead {
+        fn fill_buf(&mut self) -> io::Result<&[u8]> { Err(io::Error::new(io::ErrorKind::Interrupted, "")) }
+        fn consume(&mut self, _n: usize) {}
+    }
+
+    let mut rd = InterruptRead;
+
+    match read_value_ref(&mut rd).err().unwrap() {
+        Error::InvalidBufferFill(..) => (),
+        _ => panic!(),
+    }
+}
