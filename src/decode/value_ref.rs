@@ -1,14 +1,16 @@
 //! This module is UNSTABLE, the reason is - just added.
 
 use std::convert::From;
-use std::io::{self, BufRead};
+use std::io::{self, Read, BufRead};
 use std::str::from_utf8;
 
-use super::{read_marker, read_numeric_data};
+use super::{read_marker};
 use super::{
     ReadError,
     MarkerReadError,
 };
+use super::{BigEndianRead};
+
 use super::super::init::Marker;
 use super::super::value::ValueRef;
 
@@ -22,6 +24,8 @@ pub enum Error {
     InvalidBufferFill(io::Error),
     /// Failed to read the marker value.
     InvalidMarkerRead(ReadError),
+    /// Failed to read string/array/map size.
+    InvalidLengthRead(ReadError),
     // insuffifient bytes
     // invalid string length read (IO)
     // length overflow
@@ -32,6 +36,13 @@ impl From<MarkerReadError> for Error {
     fn from(err: MarkerReadError) -> Error {
         Error::InvalidMarkerRead(From::from(err))
     }
+}
+
+fn read_length<R, D>(rd: &mut R) -> Result<D, Error>
+    where R: Read,
+          D: BigEndianRead
+{
+    D::read(rd).map_err(|err| Error::InvalidLengthRead(From::from(err)))
 }
 
 // NOTE: Consumes nothing from the given `BufRead` either on success or fail.
@@ -46,7 +57,8 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
 
     let val = match marker {
         Marker::Str8 => {
-            let len = read_numeric_data::<&[u8], u8>(&mut buf).unwrap(); // TODO: May fail (IO).
+            let len: u8 = try!(read_length(&mut buf));
+
             let len = len as usize; // TODO: May panic.
             // TODO: Check buffer length.
             let res = from_utf8(&buf[..len]).unwrap(); // TODO: May fail (not UTF-8), return &[u8] otherwise.

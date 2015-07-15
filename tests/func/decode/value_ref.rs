@@ -56,3 +56,14 @@ fn from_empty_buffer_invalid_buffer_fill_because_eintr() {
         _ => panic!(),
     }
 }
+
+#[test]
+fn from_string_insufficient_bytes_while_reading_length() {
+    let buf = [0xd9];
+    let mut rd = &buf[..];
+
+    match read_value_ref(&mut rd).err().unwrap() {
+        Error::InvalidLengthRead(..) => (),
+        _ => panic!(),
+    }
+}
