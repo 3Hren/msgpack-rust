@@ -67,3 +67,35 @@ fn from_string_insufficient_bytes_while_reading_length() {
         _ => panic!(),
     }
 }
+
+#[test]
+fn from_string_insufficient_bytes_while_reading_data() {
+    let buf = [
+        0xd9, // Type.
+        0x20, // Size == 32
+        0x42, // B
+        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
+        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
+        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30
+    ];
+
+    let mut rd = &buf[..];
+
+    match read_value_ref(&mut rd).err().unwrap() {
+        Error::InvalidDataRead(..) => (),
+        _ => panic!(),
+    }
+}
+
+#[test]
+fn from_string_invalid_utf8() {
+    // Invalid 2 Octet Sequence.
+    let buf = [0xd9, 0x02, 0xc3, 0x28];
+
+    let mut rd = &buf[..];
+
+    match read_value_ref(&mut rd).err().unwrap() {
+        Error::InvalidUtf8(act, _) => { assert_eq!(&[0xc3, 0x28], act); },
+        _ => panic!(),
+    }
+}
