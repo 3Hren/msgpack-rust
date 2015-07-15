@@ -32,6 +32,10 @@ pub enum Error<'r> {
     InvalidDataRead(ReadError),
 
     // length overflow
+
+    /// Failed to interpret a byte slice as a UTF-8 string.
+    ///
+    /// Contains untouched bytearray with the underlying decoding error.
     InvalidUtf8(&'r [u8], Utf8Error),
 }
 
