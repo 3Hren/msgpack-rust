@@ -15,6 +15,10 @@ use super::super::value::ValueRef;
 // TODO: Display trait.
 #[derive(Debug)]
 pub enum Error {
+    /// Unable to fill the internal reader buffer.
+    ///
+    /// According to the Rust documentation, `fill_buf` function will return an I/O error if the
+    /// underlying reader was read, but returned an error.
     InvalidBufferFill(io::Error),
     /// Failed to read the marker value.
     InvalidMarkerRead(ReadError),
