@@ -52,6 +52,20 @@ fn read_length<R, D>(rd: &mut R) -> Result<D, ReadError>
     D::read(rd).map_err(From::from)
 }
 
+fn read_str(buf: &[u8], len: usize) -> Result<&str, Error> {
+    if len > buf.len() {
+        return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF));
+    }
+
+    // Take a slice.
+    let buf = &buf[..len];
+
+    // Try to decode sliced buffer as UTF-8.
+    let res = try!(from_utf8(buf).map_err(|err| Error::InvalidUtf8(buf, err)));
+
+    Ok(res)
+}
+
 // NOTE: Consumes nothing from the given `BufRead` either on success or fail.
 pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
     where R: BufRead
@@ -67,15 +81,7 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
             // Impossible to panic, since u8 always fits in usize.
             let len = len as usize;
 
-            if len > buf.len() {
-                return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF));
-            }
-
-            // Take a slice.
-            let buf = &buf[..len];
-
-            // Try to decode sliced buffer as UTF-8.
-            let res = try!(from_utf8(buf).map_err(|err| Error::InvalidUtf8(buf, err)));
+            let res = try!(read_str(buf, len));
 
             ValueRef::String(res)
         }
@@ -85,15 +91,7 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
             // Impossible to panic, since u8 always fits in usize.
             let len = len as usize;
 
-            if len > buf.len() {
-                return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF));
-            }
-
-            // Take a slice.
-            let buf = &buf[..len];
-
-            // Try to decode sliced buffer as UTF-8.
-            let res = try!(from_utf8(buf).map_err(|err| Error::InvalidUtf8(buf, err)));
+            let res = try!(read_str(buf, len));
 
             ValueRef::String(res)
         }
