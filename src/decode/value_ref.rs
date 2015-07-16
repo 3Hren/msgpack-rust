@@ -64,7 +64,7 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
 
     let val = match marker {
         Marker::FixedString(len) => {
-            // Impossible to panic, since u8 is always less than usize.
+            // Impossible to panic, since u8 always fits in usize.
             let len = len as usize;
 
             if len > buf.len() {
@@ -82,7 +82,7 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
         Marker::Str8 => {
             let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
 
-            // Impossible to panic, since u8 is always less than usize.
+            // Impossible to panic, since u8 always fits in usize.
             let len = len as usize;
 
             if len > buf.len() {
