@@ -63,6 +63,22 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
     let marker = try!(read_marker(&mut buf));
 
     let val = match marker {
+        Marker::FixedString(len) => {
+            // Impossible to panic, since u8 is always less than usize.
+            let len = len as usize;
+
+            if len > buf.len() {
+                return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF));
+            }
+
+            // Take a slice.
+            let buf = &buf[..len];
+
+            // Try to decode sliced buffer as UTF-8.
+            let res = try!(from_utf8(buf).map_err(|err| Error::InvalidUtf8(buf, err)));
+
+            ValueRef::String(res)
+        }
         Marker::Str8 => {
             let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
 

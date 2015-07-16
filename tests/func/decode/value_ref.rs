@@ -3,7 +3,15 @@ use msgpack::decode::read_value_ref;
 use msgpack::decode::value_ref::Error;
 
 #[test]
-fn from_string() {
+fn from_strfix() {
+    let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::String("le message"), read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_str8() {
     let buf = [
         0xd9, // Type.
         0x20, // Size
