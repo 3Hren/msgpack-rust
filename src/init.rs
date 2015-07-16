@@ -4,7 +4,9 @@ const FIXMAP_SIZE   : u8 = 0x0f;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Marker {
+    // TODO: Possibly will be renamed to `FixPos`.
     PositiveFixnum(u8),
+    // TODO: Possibly will be renamed to `FixNeg`.
     NegativeFixnum(i8),
     Null,
     True,
@@ -19,6 +21,7 @@ pub enum Marker {
     I64,
     F32,
     F64,
+    // TODO: Possibly will be renamed to `FixStr`.
     FixedString(u8),
     Str8,
     Str16,
@@ -26,9 +29,11 @@ pub enum Marker {
     Bin8,
     Bin16,
     Bin32,
+    // TODO: Possibly will be renamed to `FixArray`.
     FixedArray(u8),
     Array16,
     Array32,
+    // TODO: Possibly will be renamed to `FixMap`.
     FixedMap(u8),
     Map16,
     Map32,
