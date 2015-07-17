@@ -14,6 +14,31 @@ use super::{BigEndianRead};
 use super::super::init::Marker;
 use super::super::value::ValueRef;
 
+trait USizeCast {
+    fn from(v: Self) -> Option<usize> where Self: Sized;
+}
+
+impl USizeCast for u8 {
+    fn from(v: u8) -> Option<usize> {
+        // Impossible to panic, since u8 always fits in usize.
+        Some(v as usize)
+    }
+}
+
+impl USizeCast for u16 {
+    fn from(v: u16) -> Option<usize> {
+        // TODO: This can overflow on 8-bit systems.
+        Some(v as usize)
+    }
+}
+
+impl USizeCast for u32 {
+    fn from(v: u32) -> Option<usize> {
+        // TODO: This can overflow on 8- and 16-bit systems.
+        Some(v as usize)
+    }
+}
+
 // TODO: Display trait.
 #[derive(Debug)]
 pub enum Error<'r> {
@@ -31,7 +56,8 @@ pub enum Error<'r> {
     /// Failed to read packed non-marker data.
     InvalidDataRead(ReadError),
 
-    // length overflow (read length >= usize -> cannot be sliced).
+    /// Failed to cast the length read to machine size.
+    InvalidLengthSize,
 
     /// Failed to interpret a byte slice as a UTF-8 string.
     ///
@@ -66,6 +92,16 @@ fn read_str(buf: &[u8], len: usize) -> Result<&str, Error> {
     Ok(res)
 }
 
+#[inline]
+fn read_str_value<U>(buf: &[u8], len: U) -> Result<ValueRef, Error>
+    where U: USizeCast
+{
+    let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
+    let res = try!(read_str(buf, len));
+
+    Ok(ValueRef::String(res))
+}
+
 // NOTE: Consumes nothing from the given `BufRead` either on success or fail.
 pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
     where R: BufRead
@@ -78,34 +114,19 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
 
     let val = match marker {
         Marker::FixedString(len) => {
-            // Impossible to panic, since u8 always fits in usize.
-            let len = len as usize;
-            let res = try!(read_str(buf, len));
-            ValueRef::String(res)
+            try!(read_str_value(buf, len))
         }
         Marker::Str8 => {
             let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
-
-            // Impossible to panic, since u8 always fits in usize.
-            let len = len as usize;
-            let res = try!(read_str(buf, len));
-            ValueRef::String(res)
+            try!(read_str_value(buf, len))
         }
         Marker::Str16 => {
             let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
-
-            // TODO: This can overflow on 8-bit systems.
-            let len = len as usize;
-            let res = try!(read_str(buf, len));
-            ValueRef::String(res)
+            try!(read_str_value(buf, len))
         }
         Marker::Str32 => {
             let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
-
-            // TODO: This can overflow on 8- and 16-bit systems.
-            let len = len as usize;
-            let res = try!(read_str(buf, len));
-            ValueRef::String(res)
+            try!(read_str_value(buf, len))
         }
         _ => unimplemented!(),
     };
