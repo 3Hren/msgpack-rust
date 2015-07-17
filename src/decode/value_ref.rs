@@ -147,10 +147,12 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
             try!(read_bin_value(buf, len))
         }
         Marker::Bin16 => {
-            unimplemented!();
+            let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            try!(read_bin_value(buf, len))
         }
         Marker::Bin32 => {
-            unimplemented!();
+            let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            try!(read_bin_value(buf, len))
         }
         _ => unimplemented!(),
     };

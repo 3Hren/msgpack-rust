@@ -155,6 +155,26 @@ fn from_bin8() {
 }
 
 #[test]
+fn from_bin16() {
+    let buf = [0xc5, 0x00, 0x05, 0x00, 0x01, 0x02, 0x03, 0x04];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Binary(&[0, 1, 2, 3, 4]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_bin32() {
+    let buf = [0xc6, 0x00, 0x00, 0x00, 0x05, 0x00, 0x01, 0x02, 0x03, 0x04];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Binary(&[0, 1, 2, 3, 4]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
 fn from_bin8_eof_while_reading_data() {
     let buf = [0xc4, 0x05, 0x00, 0x01, 0x02, 0x03];
 
