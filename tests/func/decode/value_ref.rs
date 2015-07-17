@@ -186,5 +186,24 @@ fn from_bin8_eof_while_reading_data() {
     }
 }
 
-// TODO: Today () 2hr/20min - 6 tests: bin. ext.
-// then map.
+#[test]
+fn from_fixext1() {
+    let buf = [0xd4, 0x2a, 0xff];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Ext(42, &[255]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_ext1_eof_while_reading_type() {
+    let buf = [0xd4];
+
+    let mut rd = &buf[..];
+
+    match read_value_ref(&mut rd).err().unwrap() {
+        Error::InvalidExtTypeRead(..) => (),
+        _ => panic!(),
+    }
+}

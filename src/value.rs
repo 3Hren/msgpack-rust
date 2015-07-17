@@ -53,7 +53,7 @@ pub enum ValueRef<'a> {
 //    Array(&'a [ValueRef<'a>]),
 //    /// Map represents key-value pairs of objects.
 //    Map(&'a [(ValueRef<'a>, ValueRef<'a>)]),
-//    /// Extended implements Extension interface: represents a tuple of type information and a byte
-//    /// array where type information is an integer whose meaning is defined by applications.
-//    Ext(i8, &'a [u8]),
+   /// Extended implements Extension interface: represents a tuple of type information and a byte
+   /// array where type information is an integer whose meaning is defined by applications.
+   Ext(i8, &'a [u8]),
 }

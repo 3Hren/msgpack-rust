@@ -61,6 +61,8 @@ pub enum Error<'r> {
     ///
     /// Contains untouched bytearray with the underlying decoding error.
     InvalidUtf8(&'r [u8], Utf8Error),
+    /// Failed to read ext type.
+    InvalidExtTypeRead(ReadError),
 }
 
 impl<'r> From<MarkerReadError> for Error<'r> {
@@ -96,6 +98,20 @@ fn read_bin(buf: &[u8], len: usize) -> Result<&[u8], Error> {
     Ok(buf)
 }
 
+// Helper function that reads a single byte from the given `Read` and interpret it as an Ext type.
+fn read_ext_type<R>(rd: &mut R) -> Result<i8, ReadError>
+    where R: Read
+{
+    i8::read(rd).map_err(From::from)
+}
+
+fn read_ext(mut buf: &[u8], len: usize) -> Result<(i8, &[u8]), Error> {
+    let ty  = try!(read_ext_type(&mut buf).map_err(|err| Error::InvalidExtTypeRead(err)));
+    let buf = try!(read_bin(buf, len));
+
+    Ok((ty, buf))
+}
+
 #[inline]
 fn read_str_value<U>(buf: &[u8], len: U) -> Result<ValueRef, Error>
     where U: USizeCast
@@ -114,6 +130,16 @@ fn read_bin_value<U>(buf: &[u8], len: U) -> Result<ValueRef, Error>
     let res = try!(read_bin(buf, len));
 
     Ok(ValueRef::Binary(res))
+}
+
+#[inline]
+fn read_ext_value<U>(mut buf: &[u8], len: U) -> Result<ValueRef, Error>
+    where U: USizeCast
+{
+    let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
+    let (ty, buf) = try!(read_ext(&mut buf, len));
+
+    Ok(ValueRef::Ext(ty, buf))
 }
 
 // NOTE: Consumes nothing from the given `BufRead` both on success and fail.
@@ -153,6 +179,31 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
         Marker::Bin32 => {
             let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_bin_value(buf, len))
+        }
+        Marker::FixExt1 => {
+            let len = 1u8;
+            try!(read_ext_value(&mut buf, len))
+        }
+        Marker::FixExt2 => {
+            unimplemented!();
+        }
+        Marker::FixExt4 => {
+            unimplemented!();
+        }
+        Marker::FixExt8 => {
+            unimplemented!();
+        }
+        Marker::FixExt16 => {
+            unimplemented!();
+        }
+        Marker::Ext8 => {
+            unimplemented!();
+        }
+        Marker::Ext16 => {
+            unimplemented!();
+        }
+        Marker::Ext32 => {
+            unimplemented!();
         }
         _ => unimplemented!(),
     };
