@@ -92,7 +92,12 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
             ValueRef::String(res)
         }
         Marker::Str16 => {
-            unimplemented!();
+            let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+
+            // TODO: This can overflow on 8-bit systems.
+            let len = len as usize;
+            let res = try!(read_str(buf, len));
+            ValueRef::String(res)
         }
         Marker::Str32 => {
             unimplemented!();
