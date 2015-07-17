@@ -16,7 +16,7 @@ To use `rmp`, first add this to your `Cargo.toml`:
 
 ```toml
 [dependencies.rmp]
-rmp = "0.3.2"
+rmp = "0.4.0"
 ```
 
 Then, add this to your crate root:
