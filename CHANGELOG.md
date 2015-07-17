@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - FixedValue* -> FixVal*
 
 ## [Unreleased][unreleased]
+- Nothing yet.
+
+## 0.4.0 - 2015-07-17
+### Added
+- Low level `write_str` function allows to serialize the UTF-8 encoded strings the most efficient way.
+- Low level `write_bin` function allows to serialize the binary array the most efficient way.
 - Implemented `std::error::Error` trait for error types.
 
 ## 0.3.2 - 2015-07-05
