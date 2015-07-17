@@ -31,7 +31,7 @@ pub enum Error<'r> {
     /// Failed to read packed non-marker data.
     InvalidDataRead(ReadError),
 
-    // length overflow
+    // length overflow (read length >= usize -> cannot be sliced).
 
     /// Failed to interpret a byte slice as a UTF-8 string.
     ///
@@ -80,9 +80,7 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
         Marker::FixedString(len) => {
             // Impossible to panic, since u8 always fits in usize.
             let len = len as usize;
-
             let res = try!(read_str(buf, len));
-
             ValueRef::String(res)
         }
         Marker::Str8 => {
@@ -90,10 +88,14 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
 
             // Impossible to panic, since u8 always fits in usize.
             let len = len as usize;
-
             let res = try!(read_str(buf, len));
-
             ValueRef::String(res)
+        }
+        Marker::Str16 => {
+            unimplemented!();
+        }
+        Marker::Str32 => {
+            unimplemented!();
         }
         _ => unimplemented!(),
     };
