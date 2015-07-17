@@ -92,6 +92,17 @@ fn read_str(buf: &[u8], len: usize) -> Result<&str, Error> {
     Ok(res)
 }
 
+fn read_bin(buf: &[u8], len: usize) -> Result<&[u8], Error> {
+    if len > buf.len() {
+        return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF));
+    }
+
+    // Take a slice.
+    let buf = &buf[..len];
+
+    Ok(buf)
+}
+
 #[inline]
 fn read_str_value<U>(buf: &[u8], len: U) -> Result<ValueRef, Error>
     where U: USizeCast
@@ -102,7 +113,17 @@ fn read_str_value<U>(buf: &[u8], len: U) -> Result<ValueRef, Error>
     Ok(ValueRef::String(res))
 }
 
-// NOTE: Consumes nothing from the given `BufRead` either on success or fail.
+#[inline]
+fn read_bin_value<U>(buf: &[u8], len: U) -> Result<ValueRef, Error>
+    where U: USizeCast
+{
+    let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
+    let res = try!(read_bin(buf, len));
+
+    Ok(ValueRef::Binary(res))
+}
+
+// NOTE: Consumes nothing from the given `BufRead` both on success and fail.
 pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
     where R: BufRead
 {
@@ -130,16 +151,7 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
         }
         Marker::Bin8 => {
             let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
-            let len = try!(<u8 as USizeCast>::from(len).ok_or(Error::InvalidLengthSize));
-
-            if len > buf.len() {
-                return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF));
-            }
-
-            // Take a slice.
-            let buf = &buf[..len];
-
-            ValueRef::Binary(buf)
+            try!(read_bin_value(buf, len))
         }
         Marker::Bin16 => {
             unimplemented!();
