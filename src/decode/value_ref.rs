@@ -128,6 +128,25 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
             let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_str_value(buf, len))
         }
+        Marker::Bin8 => {
+            let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            let len = try!(<u8 as USizeCast>::from(len).ok_or(Error::InvalidLengthSize));
+
+            if len > buf.len() {
+                return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF));
+            }
+
+            // Take a slice.
+            let buf = &buf[..len];
+
+            ValueRef::Binary(buf)
+        }
+        Marker::Bin16 => {
+            unimplemented!();
+        }
+        Marker::Bin32 => {
+            unimplemented!();
+        }
         _ => unimplemented!(),
     };
 

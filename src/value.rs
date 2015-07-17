@@ -47,8 +47,8 @@ pub enum ValueRef<'a> {
 //    Float(Float),
    /// String extending Raw type represents a UTF-8 string.
    String(&'a str),
-//    /// Binary extending Raw type represents a byte array.
-//    Binary(&'a [u8]),
+   /// Binary extending Raw type represents a byte array.
+   Binary(&'a [u8]),
 //    /// Array represents a sequence of objects.
 //    Array(&'a [ValueRef<'a>]),
 //    /// Map represents key-value pairs of objects.

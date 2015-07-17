@@ -143,3 +143,28 @@ fn from_string_invalid_utf8() {
         _ => panic!(),
     }
 }
+
+#[test]
+fn from_bin8() {
+    let buf = [0xc4, 0x05, 0x00, 0x01, 0x02, 0x03, 0x04];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Binary(&[0, 1, 2, 3, 4]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_bin8_eof_while_reading_data() {
+    let buf = [0xc4, 0x05, 0x00, 0x01, 0x02, 0x03];
+
+    let mut rd = &buf[..];
+
+    match read_value_ref(&mut rd).err().unwrap() {
+        Error::InvalidDataRead(..) => (),
+        _ => panic!(),
+    }
+}
+
+// TODO: Today () 2hr/20min - 6 tests: bin. ext.
+// then map.
