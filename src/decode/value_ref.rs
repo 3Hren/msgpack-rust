@@ -55,10 +55,8 @@ pub enum Error<'r> {
     InvalidLengthRead(ReadError),
     /// Failed to read packed non-marker data.
     InvalidDataRead(ReadError),
-
     /// Failed to cast the length read to machine size.
     InvalidLengthSize,
-
     /// Failed to interpret a byte slice as a UTF-8 string.
     ///
     /// Contains untouched bytearray with the underlying decoding error.
@@ -79,12 +77,7 @@ fn read_length<R, D>(rd: &mut R) -> Result<D, ReadError>
 }
 
 fn read_str(buf: &[u8], len: usize) -> Result<&str, Error> {
-    if len > buf.len() {
-        return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF));
-    }
-
-    // Take a slice.
-    let buf = &buf[..len];
+    let buf = try!(read_bin(buf, len));
 
     // Try to decode sliced buffer as UTF-8.
     let res = try!(from_utf8(buf).map_err(|err| Error::InvalidUtf8(buf, err)));
