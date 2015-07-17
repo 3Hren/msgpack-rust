@@ -1,4 +1,4 @@
-//! This module is UNSTABLE, the reason is - just added.
+//! This module is UNSTABLE, the reason is - recently added.
 
 use std::convert::From;
 use std::io::{self, Read, BufRead};
