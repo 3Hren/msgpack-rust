@@ -181,20 +181,24 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
             try!(read_bin_value(buf, len))
         }
         Marker::FixExt1 => {
-            let len = 1u8;
+            let len: u8 = 1;
             try!(read_ext_value(&mut buf, len))
         }
         Marker::FixExt2 => {
-            unimplemented!();
+            let len: u8 = 2;
+            try!(read_ext_value(&mut buf, len))
         }
         Marker::FixExt4 => {
-            unimplemented!();
+            let len: u8 = 4;
+            try!(read_ext_value(&mut buf, len))
         }
         Marker::FixExt8 => {
-            unimplemented!();
+            let len: u8 = 8;
+            try!(read_ext_value(&mut buf, len))
         }
         Marker::FixExt16 => {
-            unimplemented!();
+            let len: u8 = 16;
+            try!(read_ext_value(&mut buf, len))
         }
         Marker::Ext8 => {
             unimplemented!();

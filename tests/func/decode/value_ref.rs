@@ -207,3 +207,47 @@ fn from_ext1_eof_while_reading_type() {
         _ => panic!(),
     }
 }
+
+#[test]
+fn from_fixext2() {
+    let buf = [0xd5, 0x2a, 0xff, 0xee];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Ext(42, &[255, 238]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_fixext4() {
+    let buf = [0xd6, 0x2a, 0xff, 0xee, 0xdd, 0xcc];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_fixext8() {
+    let buf = [0xd7, 0x2a, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204, 187, 170, 153, 136]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_fixext16() {
+    let buf = [
+        0xd8, 0x2a,
+        0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
+        0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00
+    ];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204, 187, 170, 153, 136, 119, 102, 85, 68, 51, 34, 17, 0]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
