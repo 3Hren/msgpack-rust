@@ -201,13 +201,16 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
             try!(read_ext_value(&mut buf, len))
         }
         Marker::Ext8 => {
-            unimplemented!();
+            let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            try!(read_ext_value(&mut buf, len))
         }
         Marker::Ext16 => {
-            unimplemented!();
+            let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            try!(read_ext_value(&mut buf, len))
         }
         Marker::Ext32 => {
-            unimplemented!();
+            let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            try!(read_ext_value(&mut buf, len))
         }
         _ => unimplemented!(),
     };

@@ -251,3 +251,33 @@ fn from_fixext16() {
     assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204, 187, 170, 153, 136, 119, 102, 85, 68, 51, 34, 17, 0]),
         read_value_ref(&mut rd).ok().unwrap());
 }
+
+#[test]
+fn from_ext8() {
+    let buf = [0xc7, 0x04, 0x2a, 0xff, 0xee, 0xdd, 0xcc];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_ext16() {
+    let buf = [0xc8, 0x00, 0x04, 0x2a, 0xff, 0xee, 0xdd, 0xcc];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_ext32() {
+    let buf = [0xc9, 0x00, 0x00, 0x00, 0x04, 0x2a, 0xff, 0xee, 0xdd, 0xcc];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
+        read_value_ref(&mut rd).ok().unwrap());
+}
