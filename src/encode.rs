@@ -597,8 +597,14 @@ pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     }
 }
 
+/// Encodes and attempts to write the most efficient string implementation to the given `Write`.
+///
+/// # Errors
+///
+/// This function will return `ValueWriteError` on any I/O error occurred while writing either the
+/// marker or the data, except the EINTR, which is handled internally.
 // TODO: Docs, range check, example, visibility.
-fn write_str<W>(wr: &mut W, data: &str) -> Result<(), ValueWriteError>
+pub fn write_str<W>(wr: &mut W, data: &str) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_str_len(wr, data.len() as u32));
@@ -630,8 +636,14 @@ pub fn write_bin_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     }
 }
 
+/// Encodes and attempts to write the most efficient binary implementation to the given `Write`.
+///
+/// # Errors
+///
+/// This function will return `ValueWriteError` on any I/O error occurred while writing either the
+/// marker or the data, except the EINTR, which is handled internally.
 // TODO: Docs, range check, example, visibility.
-fn write_bin<W>(wr: &mut W, data: &[u8]) -> Result<(), ValueWriteError>
+pub fn write_bin<W>(wr: &mut W, data: &[u8]) -> Result<(), ValueWriteError>
     where W: Write
 {
     try!(write_bin_len(wr, data.len() as u32));
@@ -758,8 +770,6 @@ pub use super::super::value::{
 };
 
 use super::*;
-// TODO: Make pub sometimes.
-use super::{write_str, write_bin};
 
 #[derive(Debug)]
 pub enum Error {
