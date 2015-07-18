@@ -281,3 +281,23 @@ fn from_ext32() {
     assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
         read_value_ref(&mut rd).ok().unwrap());
 }
+
+#[test]
+fn from_fixmap() {
+    let buf = [
+        0x81, // size: 2
+        // 0x2a, // 42
+        // 0xce, 0x0, 0x1, 0x88, 0x94, // 100500
+        0xa3, 0x6b, 0x65, 0x79, // 'key'
+        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // 'value'
+    ];
+    let mut rd = &buf[..];
+
+    let map = vec![
+        // (ValueRef::Integer(Integer::U64(42)), ValueRef::Integer(Integer::U64(100500))), TODO: Uncomment.
+        (ValueRef::String("key"), ValueRef::String("value")),
+    ];
+    let expected = ValueRef::Map(map);
+
+    assert_eq!(expected, read_value_ref(&mut rd).ok().unwrap());
+}

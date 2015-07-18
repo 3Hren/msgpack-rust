@@ -142,6 +142,125 @@ fn read_ext_value<U>(mut buf: &[u8], len: U) -> Result<ValueRef, Error>
     Ok(ValueRef::Ext(ty, buf))
 }
 
+fn read_map(buf: &[u8], len: usize) -> Result<(Vec<(ValueRef, ValueRef)>, usize), Error>
+{
+    let mut vec = Vec::with_capacity(len);
+
+    let buf = &buf[..];
+    let mut pos = 0;
+
+    for _ in 0..len {
+        let kbuf = &buf[pos..];
+        let (key, num) = try!(read_value_ref_impl(&kbuf));
+        pos += num;
+
+        let vbuf = &buf[pos..];
+        let (val, num) = try!(read_value_ref_impl(&vbuf));
+        pos += num;
+
+        vec.push((key, val));
+    }
+
+    Ok((vec, pos as usize))
+}
+
+// TODO: Valid for [u8], Vec<u8>... all wrappers, where get() -> &[u8]
+fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
+    let mut buf = buf;
+    let mut pos = 0usize;
+
+    // Reading the marker involves either 1 byte read or nothing. On success consumes strictly
+    // 1 byte from the `buf`, not from the `rd`.
+    let marker = try!(read_marker(&mut buf));
+    pos += 1;
+
+    let val = match marker {
+        Marker::FixedString(len) => {
+            pos += len as usize;
+            try!(read_str_value(buf, len))
+        }
+        Marker::Str8 => {
+            let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 1 + len as usize;
+            try!(read_str_value(buf, len))
+        }
+        Marker::Str16 => {
+            let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 2 + len as usize;
+            try!(read_str_value(buf, len))
+        }
+        Marker::Str32 => {
+            let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 4 + len as usize;
+            try!(read_str_value(buf, len))
+        }
+        Marker::Bin8 => {
+            let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 1 + len as usize;
+            try!(read_bin_value(buf, len))
+        }
+        Marker::Bin16 => {
+            let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 2 + len as usize;
+            try!(read_bin_value(buf, len))
+        }
+        Marker::Bin32 => {
+            let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 4 + len as usize;
+            try!(read_bin_value(buf, len))
+        }
+        Marker::FixedMap(len) => {
+            let len = len as usize;
+            let (map, bytes) = try!(read_map(&mut buf, len));
+            pos += bytes;
+            ValueRef::Map(map)
+        }
+        Marker::FixExt1 => {
+            let len: u8 = 1;
+            pos += 2;
+            try!(read_ext_value(&mut buf, len))
+        }
+        Marker::FixExt2 => {
+            let len: u8 = 2;
+            pos += 3;
+            try!(read_ext_value(&mut buf, len))
+        }
+        Marker::FixExt4 => {
+            let len: u8 = 4;
+            pos += 5;
+            try!(read_ext_value(&mut buf, len))
+        }
+        Marker::FixExt8 => {
+            let len: u8 = 8;
+            pos += 9;
+            try!(read_ext_value(&mut buf, len))
+        }
+        Marker::FixExt16 => {
+            let len: u8 = 16;
+            pos += 17;
+            try!(read_ext_value(&mut buf, len))
+        }
+        Marker::Ext8 => {
+            let len: u8 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 2 + len as usize;
+            try!(read_ext_value(&mut buf, len))
+        }
+        Marker::Ext16 => {
+            let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 3 + len as usize;
+            try!(read_ext_value(&mut buf, len))
+        }
+        Marker::Ext32 => {
+            let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            pos += 5 + len as usize;
+            try!(read_ext_value(&mut buf, len))
+        }
+        _ => unimplemented!(),
+    };
+
+    Ok((val, pos as usize))
+}
+
 // NOTE: Consumes nothing from the given `BufRead` both on success and fail.
 pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
     where R: BufRead
@@ -179,6 +298,11 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
         Marker::Bin32 => {
             let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_bin_value(buf, len))
+        }
+        Marker::FixedMap(len) => {
+            let len = len as usize;
+            let (map, _) = try!(read_map(&mut buf, len));
+            ValueRef::Map(map)
         }
         Marker::FixExt1 => {
             let len: u8 = 1;

@@ -51,8 +51,8 @@ pub enum ValueRef<'a> {
    Binary(&'a [u8]),
 //    /// Array represents a sequence of objects.
 //    Array(&'a [ValueRef<'a>]),
-//    /// Map represents key-value pairs of objects.
-//    Map(&'a [(ValueRef<'a>, ValueRef<'a>)]),
+   /// Map represents key-value pairs of objects.
+   Map(Vec<(ValueRef<'a>, ValueRef<'a>)>),
    /// Extended implements Extension interface: represents a tuple of type information and a byte
    /// array where type information is an integer whose meaning is defined by applications.
    Ext(i8, &'a [u8]),
