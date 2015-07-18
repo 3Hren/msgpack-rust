@@ -142,8 +142,7 @@ fn read_ext_value<U>(mut buf: &[u8], len: U) -> Result<ValueRef, Error>
     Ok(ValueRef::Ext(ty, buf))
 }
 
-fn read_map(buf: &[u8], len: usize) -> Result<(Vec<(ValueRef, ValueRef)>, usize), Error>
-{
+fn read_map(buf: &[u8], len: usize) -> Result<(Vec<(ValueRef, ValueRef)>, usize), Error> {
     let mut vec = Vec::with_capacity(len);
     let mut pos = 0;
 
