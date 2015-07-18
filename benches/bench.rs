@@ -40,6 +40,23 @@ fn from_string_read_value(b: &mut Bencher) {
 }
 
 #[bench]
+fn from_string_read_value_ref(b: &mut Bencher) {
+    // Lorem ipsum dolor sit amet.
+    let buf = [
+        0xbb, 0x4c, 0x6f, 0x72, 0x65, 0x6d, 0x20, 0x69, 0x70, 0x73, 0x75,
+        0x6d, 0x20, 0x64, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x73, 0x69, 0x74,
+        0x20, 0x61, 0x6d, 0x65, 0x74, 0x2e
+    ];
+
+    let mut rd = &buf[..];
+
+    b.iter(|| {
+        let res = read_value_ref(&mut rd).unwrap();
+        test::black_box(res);
+    });
+}
+
+#[bench]
 fn from_complex_read_value(b: &mut Bencher) {
     let buf = [
         0x95, // Fixed array with 5 len.
