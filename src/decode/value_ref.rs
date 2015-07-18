@@ -145,23 +145,19 @@ fn read_ext_value<U>(mut buf: &[u8], len: U) -> Result<ValueRef, Error>
 fn read_map(buf: &[u8], len: usize) -> Result<(Vec<(ValueRef, ValueRef)>, usize), Error>
 {
     let mut vec = Vec::with_capacity(len);
-
-    let buf = &buf[..];
     let mut pos = 0;
 
     for _ in 0..len {
-        let kbuf = &buf[pos..];
-        let (key, num) = try!(read_value_ref_impl(&kbuf));
+        let (key, num) = try!(read_value_ref_impl(&buf[pos..]));
         pos += num;
 
-        let vbuf = &buf[pos..];
-        let (val, num) = try!(read_value_ref_impl(&vbuf));
+        let (val, num) = try!(read_value_ref_impl(&buf[pos..]));
         pos += num;
 
         vec.push((key, val));
     }
 
-    Ok((vec, pos as usize))
+    Ok((vec, pos))
 }
 
 // TODO: Valid for [u8], Vec<u8>... all wrappers, where get() -> &[u8]
