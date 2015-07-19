@@ -226,10 +226,18 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             ValueRef::Array(vec)
         }
         Marker::Array16 => {
-            unimplemented!();
+            let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            let len = len as usize;
+            let (vec, bytes) = try!(read_array(&mut buf, len));
+            pos += bytes;
+            ValueRef::Array(vec)
         }
         Marker::Array32 => {
-            unimplemented!();
+            let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            let len = len as usize;
+            let (vec, bytes) = try!(read_array(&mut buf, len));
+            pos += bytes;
+            ValueRef::Array(vec)
         }
         Marker::FixedMap(len) => {
             let len = len as usize;

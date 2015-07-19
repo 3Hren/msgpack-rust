@@ -348,5 +348,35 @@ fn from_fixarray() {
     assert_eq!(ValueRef::Array(vec), read_value_ref(&mut rd).unwrap());
 }
 
+#[test]
+fn from_array16() {
+    let buf = [
+        0xdc,
+        0x00, 0x02,
+        0xa2, 0x76, 0x31,
+        0xa2, 0x76, 0x32,
+    ];
+    let mut rd = &buf[..];
+
+    let vec = vec![ValueRef::String("v1"), ValueRef::String("v2")];
+
+    assert_eq!(ValueRef::Array(vec), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_array32() {
+    let buf = [
+        0xdd,
+        0x00, 0x00, 0x00, 0x02,
+        0xa2, 0x76, 0x31,
+        0xa2, 0x76, 0x32,
+    ];
+    let mut rd = &buf[..];
+
+    let vec = vec![ValueRef::String("v1"), ValueRef::String("v2")];
+
+    assert_eq!(ValueRef::Array(vec), read_value_ref(&mut rd).unwrap());
+}
+
 // TODO: ValueRef with all possible types.
 // TODO: Real-life examples.
