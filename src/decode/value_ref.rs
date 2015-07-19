@@ -159,7 +159,9 @@ fn read_map(buf: &[u8], len: usize) -> Result<(Vec<(ValueRef, ValueRef)>, usize)
     Ok((vec, pos))
 }
 
-// TODO: Valid for [u8], Vec<u8>... all wrappers, where get() -> &[u8]
+// TODO: Make more generic for [u8], Vec<u8>, Cursor<&[u8]>, Cursor<Vec<u8>>, ... all wrappers,
+// where get_ref() -> &[u8].
+// TODO: Get rid of manual counting bytes number consumed;
 fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
     let mut buf = buf;
     let mut pos = 0usize;
