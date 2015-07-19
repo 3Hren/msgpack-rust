@@ -301,3 +301,35 @@ fn from_fixmap() {
 
     assert_eq!(expected, read_value_ref(&mut rd).ok().unwrap());
 }
+
+#[test]
+fn from_map16() {
+    let buf = [
+        0xde,
+        0x00, 0x01,
+        0xa3, 0x6b, 0x65, 0x79, // 'key'
+        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // 'value'
+    ];
+    let mut rd = &buf[..];
+
+    let map = vec![(ValueRef::String("key"), ValueRef::String("value"))];
+    let expected = ValueRef::Map(map);
+
+    assert_eq!(expected, read_value_ref(&mut rd).ok().unwrap());
+}
+
+#[test]
+fn from_map32() {
+    let buf = [
+        0xdf,
+        0x00, 0x00, 0x00, 0x01,
+        0xa3, 0x6b, 0x65, 0x79, // 'key'
+        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // 'value'
+    ];
+    let mut rd = &buf[..];
+
+    let map = vec![(ValueRef::String("key"), ValueRef::String("value"))];
+    let expected = ValueRef::Map(map);
+
+    assert_eq!(expected, read_value_ref(&mut rd).ok().unwrap());
+}

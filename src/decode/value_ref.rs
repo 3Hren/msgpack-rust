@@ -212,6 +212,18 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             pos += bytes;
             ValueRef::Map(map)
         }
+        Marker::Map16 => {
+            let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            let (map, bytes) = try!(read_map(&mut buf, len as usize)); // TODO: Possible overflow.
+            pos += 2 + bytes;
+            ValueRef::Map(map)
+        }
+        Marker::Map32 => {
+            let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
+            let (map, bytes) = try!(read_map(&mut buf, len as usize)); // TODO: Possible overflow.
+            pos += 4 + bytes;
+            ValueRef::Map(map)
+        }
         Marker::FixExt1 => {
             let len: u8 = 1;
             pos += 2;
