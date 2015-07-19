@@ -49,8 +49,8 @@ pub enum ValueRef<'a> {
    String(&'a str),
    /// Binary extending Raw type represents a byte array.
    Binary(&'a [u8]),
-//    /// Array represents a sequence of objects.
-//    Array(&'a [ValueRef<'a>]),
+   /// Array represents a sequence of objects.
+   Array(Vec<ValueRef<'a>>),
    /// Map represents key-value pairs of objects.
    Map(Vec<(ValueRef<'a>, ValueRef<'a>)>),
    /// Extended implements Extension interface: represents a tuple of type information and a byte

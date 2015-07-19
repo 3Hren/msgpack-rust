@@ -142,6 +142,19 @@ fn read_ext_value<U>(mut buf: &[u8], len: U) -> Result<ValueRef, Error>
     Ok(ValueRef::Ext(ty, buf))
 }
 
+fn read_array(buf: &[u8], len: usize) -> Result<(Vec<ValueRef>, usize), Error> {
+    let mut vec = Vec::with_capacity(len);
+    let mut pos = 0;
+
+    for _ in 0..len {
+        let (val, num) = try!(read_value_ref_impl(&buf[pos..]));
+        pos += num;
+        vec.push(val);
+    }
+
+    Ok((vec, pos))
+}
+
 fn read_map(buf: &[u8], len: usize) -> Result<(Vec<(ValueRef, ValueRef)>, usize), Error> {
     let mut vec = Vec::with_capacity(len);
     let mut pos = 0;
@@ -206,6 +219,18 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             pos += 4 + len as usize;
             try!(read_bin_value(buf, len))
         }
+        Marker::FixedArray(len) => {
+            let len = len as usize;
+            let (vec, bytes) = try!(read_array(&mut buf, len));
+            pos += bytes;
+            ValueRef::Array(vec)
+        }
+        Marker::Array16 => {
+            unimplemented!();
+        }
+        Marker::Array32 => {
+            unimplemented!();
+        }
         Marker::FixedMap(len) => {
             let len = len as usize;
             let (map, bytes) = try!(read_map(&mut buf, len));
@@ -214,13 +239,15 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
         }
         Marker::Map16 => {
             let len: u16 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
-            let (map, bytes) = try!(read_map(&mut buf, len as usize)); // TODO: Possible overflow.
+            let len = len as usize; // TODO: Possible overflow.
+            let (map, bytes) = try!(read_map(&mut buf, len));
             pos += 2 + bytes;
             ValueRef::Map(map)
         }
         Marker::Map32 => {
             let len: u32 = try!(read_length(&mut buf).map_err(|err| Error::InvalidLengthRead(err)));
-            let (map, bytes) = try!(read_map(&mut buf, len as usize)); // TODO: Possible overflow.
+            let len = len as usize; // TODO: Possible overflow.
+            let (map, bytes) = try!(read_map(&mut buf, len));
             pos += 4 + bytes;
             ValueRef::Map(map)
         }
@@ -271,6 +298,7 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
 }
 
 // NOTE: Consumes nothing from the given `BufRead` both on success and fail.
+// TODO: Possible non-mut reference will be better.
 pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
     where R: BufRead
 {

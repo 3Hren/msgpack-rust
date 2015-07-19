@@ -333,3 +333,20 @@ fn from_map32() {
 
     assert_eq!(expected, read_value_ref(&mut rd).ok().unwrap());
 }
+
+#[test]
+fn from_fixarray() {
+    let buf = [
+        0x92,
+        0xa2, 0x76, 0x31,
+        0xa2, 0x76, 0x32,
+    ];
+    let mut rd = &buf[..];
+
+    let vec = vec![ValueRef::String("v1"), ValueRef::String("v2")];
+
+    assert_eq!(ValueRef::Array(vec), read_value_ref(&mut rd).unwrap());
+}
+
+// TODO: ValueRef with all possible types.
+// TODO: Real-life examples.
