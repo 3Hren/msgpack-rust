@@ -379,6 +379,3 @@ pub fn read_value_ref<R>(rd: &mut R) -> Result<ValueRef, Error>
     let res = try!(read_value_ref_impl(buf)).0;
     Ok(res)
 }
-
-// TODO: Concepts: less code; more tests; fast refactoring after each test; no more than 5 min for
-// each red-yellow-green.
