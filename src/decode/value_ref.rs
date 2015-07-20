@@ -71,6 +71,12 @@ impl<'r> From<MarkerReadError> for Error<'r> {
     }
 }
 
+fn read_int<D>(mut rd: &[u8]) -> Result<D, Error>
+    where D: BigEndianRead
+{
+    D::read(&mut rd).map_err(|err| Error::InvalidDataRead(From::from(err)))
+}
+
 fn read_length<R, D>(rd: &mut R) -> Result<D, ReadError>
     where R: Read,
           D: BigEndianRead
@@ -189,16 +195,24 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U8 => {
-            unimplemented!();
+            let val: u8 = try!(read_int(buf));
+            pos += 1;
+            ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U16 => {
-            unimplemented!();
+            let val: u16 = try!(read_int(buf));
+            pos += 2;
+            ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U32 => {
-            unimplemented!();
+            let val: u32 = try!(read_int(buf));
+            pos += 4;
+            ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U64 => {
-            unimplemented!();
+            let val: u64 = try!(read_int(buf));
+            pos += 8;
+            ValueRef::Integer(Integer::U64(val))
         }
         Marker::NegativeFixnum(val) => {
             ValueRef::Integer(Integer::I64(val as i64))
