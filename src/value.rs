@@ -37,14 +37,14 @@ pub enum Value {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ValueRef<'a> {
-//    /// Nil represents nil.
-//    Nil,
-//    /// Boolean represents true or false.
-//    Boolean(bool),
+   /// Nil represents nil.
+   Nil,
+   /// Boolean represents true or false.
+   Boolean(bool),
    /// Integer represents an integer.
    Integer(Integer),
-//    /// Float represents a floating point number.
-//    Float(Float),
+   /// Float represents a floating point number.
+   Float(Float),
    /// String extending Raw type represents a UTF-8 string.
    String(&'a str),
    /// Binary extending Raw type represents a byte array.

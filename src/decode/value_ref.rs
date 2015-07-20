@@ -12,7 +12,7 @@ use super::{
 use super::{BigEndianRead};
 
 use super::super::init::Marker;
-use super::super::value::{Integer, ValueRef};
+use super::super::value::{Float, Integer, ValueRef};
 
 trait USizeCast {
     fn from(v: Self) -> Option<usize> where Self: Sized;
@@ -71,7 +71,7 @@ impl<'r> From<MarkerReadError> for Error<'r> {
     }
 }
 
-fn read_int<D>(mut rd: &[u8]) -> Result<D, Error>
+fn read_num<D>(mut rd: &[u8]) -> Result<D, Error>
     where D: BigEndianRead
 {
     D::read(&mut rd).map_err(|err| Error::InvalidDataRead(From::from(err)))
@@ -204,22 +204,22 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U8 => {
-            let val: u8 = try!(read_int(buf));
+            let val: u8 = try!(read_num(buf));
             pos += 1;
             ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U16 => {
-            let val: u16 = try!(read_int(buf));
+            let val: u16 = try!(read_num(buf));
             pos += 2;
             ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U32 => {
-            let val: u32 = try!(read_int(buf));
+            let val: u32 = try!(read_num(buf));
             pos += 4;
             ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U64 => {
-            let val: u64 = try!(read_int(buf));
+            let val: u64 = try!(read_num(buf));
             pos += 8;
             ValueRef::Integer(Integer::U64(val))
         }
@@ -227,30 +227,34 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I8 => {
-            let val: i8 = try!(read_int(buf));
+            let val: i8 = try!(read_num(buf));
             pos += 1;
             ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I16 => {
-            let val: i16 = try!(read_int(buf));
+            let val: i16 = try!(read_num(buf));
             pos += 2;
             ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I32 => {
-            let val: i32 = try!(read_int(buf));
+            let val: i32 = try!(read_num(buf));
             pos += 4;
             ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I64 => {
-            let val: i64 = try!(read_int(buf));
+            let val: i64 = try!(read_num(buf));
             pos += 8;
             ValueRef::Integer(Integer::I64(val))
         }
         Marker::F32 => {
-            unimplemented!();
+            let val: f32 = try!(read_num(buf));
+            pos += 4;
+            ValueRef::Float(Float::F32(val))
         }
         Marker::F64 => {
-            unimplemented!();
+            let val: f64 = try!(read_num(buf));
+            pos += 8;
+            ValueRef::Float(Float::F64(val))
         }
         Marker::FixedString(len) => {
             pos += len as usize;

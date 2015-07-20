@@ -1,7 +1,7 @@
 use msgpack::ValueRef;
 use msgpack::decode::read_value_ref;
 use msgpack::decode::value_ref::Error;
-use msgpack::value::Integer;
+use msgpack::value::{Float, Integer};
 
 #[test]
 fn from_strfix() {
@@ -467,6 +467,26 @@ fn from_i64() {
     let mut rd = &buf[..];
 
     assert_eq!(ValueRef::Integer(Integer::I64(9223372036854775807)), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_f32() {
+    let buf = [0xca, 0x7f, 0x7f, 0xff, 0xff];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Float(Float::F32(3.4028234e38_f32)), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_f64() {
+    use std::f64;
+
+    let buf = [0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Float(Float::F64(f64::INFINITY)), read_value_ref(&mut rd).unwrap());
 }
 
 // TODO: ValueRef with all possible types.
