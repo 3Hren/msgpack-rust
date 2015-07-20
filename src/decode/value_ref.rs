@@ -191,6 +191,15 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
     pos += 1;
 
     let val = match marker {
+        Marker::Null => {
+            unimplemented!();
+        }
+        Marker::True => {
+            unimplemented!();
+        }
+        Marker::False => {
+            unimplemented!();
+        }
         Marker::PositiveFixnum(val) => {
             ValueRef::Integer(Integer::U64(val as u64))
         }
@@ -236,6 +245,12 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             let val: i64 = try!(read_int(buf));
             pos += 8;
             ValueRef::Integer(Integer::I64(val))
+        }
+        Marker::F32 => {
+            unimplemented!();
+        }
+        Marker::F64 => {
+            unimplemented!();
         }
         Marker::FixedString(len) => {
             pos += len as usize;
@@ -351,7 +366,7 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             pos += 5 + len as usize;
             try!(read_ext_value(&mut buf, len))
         }
-        _ => unimplemented!(),
+        Marker::Reserved => unimplemented!()
     };
 
     Ok((val, pos as usize))
