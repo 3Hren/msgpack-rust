@@ -388,5 +388,14 @@ fn from_pfix() {
     assert_eq!(ValueRef::Integer(Integer::U64(31)), read_value_ref(&mut rd).unwrap());
 }
 
+#[test]
+fn from_nfix() {
+    let buf = [0xe0];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Integer(Integer::I64(-32)), read_value_ref(&mut rd).unwrap());
+}
+
 // TODO: ValueRef with all possible types.
 // TODO: Real-life examples.

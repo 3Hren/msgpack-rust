@@ -188,6 +188,33 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
         Marker::PositiveFixnum(val) => {
             ValueRef::Integer(Integer::U64(val as u64))
         }
+        Marker::U8 => {
+            unimplemented!();
+        }
+        Marker::U16 => {
+            unimplemented!();
+        }
+        Marker::U32 => {
+            unimplemented!();
+        }
+        Marker::U64 => {
+            unimplemented!();
+        }
+        Marker::NegativeFixnum(val) => {
+            ValueRef::Integer(Integer::I64(val as i64))
+        }
+        Marker::I8 => {
+            unimplemented!();
+        }
+        Marker::I16 => {
+            unimplemented!();
+        }
+        Marker::I32 => {
+            unimplemented!();
+        }
+        Marker::I64 => {
+            unimplemented!();
+        }
         Marker::FixedString(len) => {
             pos += len as usize;
             try!(read_str_value(buf, len))
