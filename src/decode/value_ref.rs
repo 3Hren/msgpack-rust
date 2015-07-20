@@ -218,16 +218,24 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
             ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I8 => {
-            unimplemented!();
+            let val: i8 = try!(read_int(buf));
+            pos += 1;
+            ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I16 => {
-            unimplemented!();
+            let val: i16 = try!(read_int(buf));
+            pos += 2;
+            ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I32 => {
-            unimplemented!();
+            let val: i32 = try!(read_int(buf));
+            pos += 4;
+            ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I64 => {
-            unimplemented!();
+            let val: i64 = try!(read_int(buf));
+            pos += 8;
+            ValueRef::Integer(Integer::I64(val))
         }
         Marker::FixedString(len) => {
             pos += len as usize;

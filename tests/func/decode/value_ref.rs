@@ -433,5 +433,41 @@ fn from_u64() {
     assert_eq!(ValueRef::Integer(Integer::U64(18446744073709551615u64)), read_value_ref(&mut rd).unwrap());
 }
 
+#[test]
+fn from_i8() {
+    let buf = [0xd0, 0x7f];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Integer(Integer::I64(127)), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_i16() {
+    let buf = [0xd1, 0x7f, 0xff];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Integer(Integer::I64(32767)), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_i32() {
+    let buf = [0xd2, 0x7f, 0xff, 0xff, 0xff];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Integer(Integer::I64(2147483647)), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_i64() {
+    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Integer(Integer::I64(9223372036854775807)), read_value_ref(&mut rd).unwrap());
+}
+
 // TODO: ValueRef with all possible types.
 // TODO: Real-life examples.
