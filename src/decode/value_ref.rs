@@ -12,7 +12,7 @@ use super::{
 use super::{BigEndianRead};
 
 use super::super::init::Marker;
-use super::super::value::ValueRef;
+use super::super::value::{Integer, ValueRef};
 
 trait USizeCast {
     fn from(v: Self) -> Option<usize> where Self: Sized;
@@ -185,6 +185,9 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
     pos += 1;
 
     let val = match marker {
+        Marker::PositiveFixnum(val) => {
+            ValueRef::Integer(Integer::U64(val as u64))
+        }
         Marker::FixedString(len) => {
             pos += len as usize;
             try!(read_str_value(buf, len))

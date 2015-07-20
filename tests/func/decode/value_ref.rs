@@ -1,6 +1,7 @@
 use msgpack::ValueRef;
 use msgpack::decode::read_value_ref;
 use msgpack::decode::value_ref::Error;
+use msgpack::value::Integer;
 
 #[test]
 fn from_strfix() {
@@ -376,6 +377,15 @@ fn from_array32() {
     let vec = vec![ValueRef::String("v1"), ValueRef::String("v2")];
 
     assert_eq!(ValueRef::Array(vec), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_pfix() {
+    let buf = [0x1f];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Integer(Integer::U64(31)), read_value_ref(&mut rd).unwrap());
 }
 
 // TODO: ValueRef with all possible types.

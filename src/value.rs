@@ -41,8 +41,8 @@ pub enum ValueRef<'a> {
 //    Nil,
 //    /// Boolean represents true or false.
 //    Boolean(bool),
-//    /// Integer represents an integer.
-//    Integer(Integer),
+   /// Integer represents an integer.
+   Integer(Integer),
 //    /// Float represents a floating point number.
 //    Float(Float),
    /// String extending Raw type represents a UTF-8 string.

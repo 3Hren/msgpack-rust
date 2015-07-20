@@ -129,7 +129,7 @@ pub mod decode;
 
 mod init;
 
-mod value;
+pub mod value;
 
 pub const MSGPACK_VERSION : u32 = 5;
 
