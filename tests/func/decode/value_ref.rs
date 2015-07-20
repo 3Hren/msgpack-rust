@@ -286,16 +286,16 @@ fn from_ext32() {
 #[test]
 fn from_fixmap() {
     let buf = [
-        0x81, // size: 2
-        // 0x2a, // 42
-        // 0xce, 0x0, 0x1, 0x88, 0x94, // 100500
+        0x82, // size: 2
+        0x2a, // 42
+        0xce, 0x0, 0x1, 0x88, 0x94, // 100500
         0xa3, 0x6b, 0x65, 0x79, // 'key'
         0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // 'value'
     ];
     let mut rd = &buf[..];
 
     let map = vec![
-        // (ValueRef::Integer(Integer::U64(42)), ValueRef::Integer(Integer::U64(100500))), TODO: Uncomment.
+        (ValueRef::Integer(Integer::U64(42)), ValueRef::Integer(Integer::U64(100500))),
         (ValueRef::String("key"), ValueRef::String("value")),
     ];
     let expected = ValueRef::Map(map);
