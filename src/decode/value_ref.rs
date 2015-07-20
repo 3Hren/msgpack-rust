@@ -191,15 +191,9 @@ fn read_value_ref_impl(buf: &[u8]) -> Result<(ValueRef, usize), Error> {
     pos += 1;
 
     let val = match marker {
-        Marker::Null => {
-            unimplemented!();
-        }
-        Marker::True => {
-            unimplemented!();
-        }
-        Marker::False => {
-            unimplemented!();
-        }
+        Marker::Null => ValueRef::Nil,
+        Marker::True => ValueRef::Boolean(true),
+        Marker::False => ValueRef::Boolean(false),
         Marker::PositiveFixnum(val) => {
             ValueRef::Integer(Integer::U64(val as u64))
         }

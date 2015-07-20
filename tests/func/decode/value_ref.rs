@@ -489,5 +489,32 @@ fn from_f64() {
     assert_eq!(ValueRef::Float(Float::F64(f64::INFINITY)), read_value_ref(&mut rd).unwrap());
 }
 
+#[test]
+fn from_null() {
+    let buf = [0xc0];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Nil, read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_bool_false() {
+    let buf = [0xc2];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Boolean(false), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_bool_true() {
+    let buf = [0xc3];
+
+    let mut rd = &buf[..];
+
+    assert_eq!(ValueRef::Boolean(true), read_value_ref(&mut rd).unwrap());
+}
+
 // TODO: ValueRef with all possible types.
 // TODO: Real-life examples.
