@@ -157,6 +157,28 @@ fn read_ext_value<'a, R, U>(mut buf: &mut R, len: U) -> Result<ValueRef<'a>, Err
     Ok(ValueRef::Ext(ty, buf))
 }
 
+#[inline]
+fn read_array_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
+    where R: BufRead<'a>,
+          U: USizeCast
+{
+    let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
+    let vec = try!(read_array(rd, len));
+
+    Ok(ValueRef::Array(vec))
+}
+
+#[inline]
+fn read_map_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
+    where R: BufRead<'a>,
+          U: USizeCast
+{
+    let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
+    let map = try!(read_map(rd, len));
+
+    Ok(ValueRef::Map(map))
+}
+
 fn read_array<'a, R>(rd: &mut R, len: usize) -> Result<Vec<ValueRef<'a>>, Error<'a>>
     where R: BufRead<'a>
 {
@@ -320,58 +342,41 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             try!(read_bin_value(rd, len))
         }
         Marker::FixedArray(len) => {
-            let len = len as usize;
-            let vec = try!(read_array(rd, len));
-            ValueRef::Array(vec)
+            try!(read_array_value(rd, len))
         }
         Marker::Array16 => {
             let len: u16 = try!(read_length(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
-            let len = len as usize; // TODO: Possible overflow.
-            let vec = try!(read_array(rd, len));
-            ValueRef::Array(vec)
+            try!(read_array_value(rd, len))
         }
         Marker::Array32 => {
             let len: u32 = try!(read_length(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
-            let len = len as usize; // TODO: Possible overflow.
-            let vec = try!(read_array(rd, len));
-            ValueRef::Array(vec)
+            try!(read_array_value(rd, len))
         }
         Marker::FixedMap(len) => {
-            let len = len as usize;
-            let map = try!(read_map(rd, len));
-            ValueRef::Map(map)
+            try!(read_map_value(rd, len))
         }
         Marker::Map16 => {
             let len: u16 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
-            let len = len as usize; // TODO: Possible overflow.
-            let map = try!(read_map(rd, len));
-            ValueRef::Map(map)
+            try!(read_map_value(rd, len))
         }
         Marker::Map32 => {
             let len: u32 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
-            let len = len as usize; // TODO: Possible overflow.
-            let map = try!(read_map(rd, len));
-            ValueRef::Map(map)
+            try!(read_map_value(rd, len))
         }
         Marker::FixExt1 => {
-            let len: u8 = 1;
-            try!(read_ext_value(rd, len))
+            try!(read_ext_value(rd, 1u8))
         }
         Marker::FixExt2 => {
-            let len: u8 = 2;
-            try!(read_ext_value(rd, len))
+            try!(read_ext_value(rd, 2u8))
         }
         Marker::FixExt4 => {
-            let len: u8 = 4;
-            try!(read_ext_value(rd, len))
+            try!(read_ext_value(rd, 4u8))
         }
         Marker::FixExt8 => {
-            let len: u8 = 8;
-            try!(read_ext_value(rd, len))
+            try!(read_ext_value(rd, 8u8))
         }
         Marker::FixExt16 => {
-            let len: u8 = 16;
-            try!(read_ext_value(rd, len))
+            try!(read_ext_value(rd, 16u8))
         }
         Marker::Ext8 => {
             let len: u8 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
