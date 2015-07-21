@@ -184,10 +184,10 @@ fn read_map<'a, R>(rd: &mut R, len: usize) -> Result<Vec<(ValueRef<'a>, ValueRef
     Ok(vec)
 }
 
-// TODO: Make more generic for [u8], Vec<u8>, Cursor<&[u8]>, Cursor<Vec<u8>>, ... all wrappers,
-// where get_ref() -> &[u8].
-
-// TODO: Better name.
+/// A BufRead is a type of Reader which has an internal buffer.
+///
+/// This magic trait acts like a standard BufRead but unlike the standard this has an explicit
+/// internal buffer lifetime, which allows to borrow from underlying buffer while consuming bytes.
 pub trait BufRead<'a>: Read {
     /// Returns the buffer contents.
     ///
@@ -215,6 +215,7 @@ impl<'a> BufRead<'a> for &'a [u8] {
     }
 }
 
+/// Useful when you want to know how much bytes has been consumed during ValueRef decoding.
 impl<'a> BufRead<'a> for Cursor<&'a [u8]> {
     fn fill_buf(&self) -> &'a [u8] {
         use std::cmp;
@@ -229,6 +230,7 @@ impl<'a> BufRead<'a> for Cursor<&'a [u8]> {
     }
 }
 
+// TODO: Doc, examples.
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>
 {
