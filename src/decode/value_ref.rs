@@ -80,10 +80,10 @@ fn read_num<'a, R, D>(mut rd: &mut R) -> Result<D, Error<'a>>
     D::read(&mut rd).map_err(|err| Error::InvalidDataRead(From::from(err)))
 }
 
-fn read_str<'a, R>(buf: &mut R, len: usize) -> Result<&'a str, Error<'a>>
+fn read_str<'a, R>(rd: &mut R, len: usize) -> Result<&'a str, Error<'a>>
     where R: BufRead<'a>
 {
-    let buf = try!(read_bin(buf, len));
+    let buf = try!(read_bin(rd, len));
 
     // Try to decode sliced buffer as UTF-8.
     let res = try!(from_utf8(buf).map_err(|err| Error::InvalidUtf8(buf, err)));
@@ -114,44 +114,44 @@ fn read_ext_type<R>(rd: &mut R) -> Result<i8, ReadError>
     i8::read(rd).map_err(From::from)
 }
 
-fn read_ext<'a, R>(mut buf: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error<'a>>
+fn read_ext<'a, R>(mut rd: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error<'a>>
     where R: BufRead<'a>
 {
-    let ty  = try!(read_ext_type(&mut buf).map_err(|err| Error::InvalidExtTypeRead(err)));
-    let buf = try!(read_bin(buf, len));
+    let ty  = try!(read_ext_type(&mut rd).map_err(|err| Error::InvalidExtTypeRead(err)));
+    let buf = try!(read_bin(rd, len));
 
     Ok((ty, buf))
 }
 
 #[inline]
-fn read_str_value<'a, R, U>(buf: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
+fn read_str_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>,
           U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
-    let res = try!(read_str(buf, len));
+    let res = try!(read_str(rd, len));
 
     Ok(ValueRef::String(res))
 }
 
 #[inline]
-fn read_bin_value<'a, R, U>(buf: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
+fn read_bin_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>,
           U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
-    let res = try!(read_bin(buf, len));
+    let res = try!(read_bin(rd, len));
 
     Ok(ValueRef::Binary(res))
 }
 
 #[inline]
-fn read_ext_value<'a, R, U>(mut buf: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
+fn read_ext_value<'a, R, U>(mut rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>,
           U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
-    let (ty, buf) = try!(read_ext(buf, len));
+    let (ty, buf) = try!(read_ext(rd, len));
 
     Ok(ValueRef::Ext(ty, buf))
 }
