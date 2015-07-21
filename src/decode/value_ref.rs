@@ -14,25 +14,25 @@ use super::{BigEndianRead};
 use super::super::init::Marker;
 use super::super::value::{Float, Integer, ValueRef};
 
-trait USizeCast {
+trait ToUnsigned {
     fn from(v: Self) -> Option<usize> where Self: Sized;
 }
 
-impl USizeCast for u8 {
+impl ToUnsigned for u8 {
     fn from(v: u8) -> Option<usize> {
         // Impossible to panic, since u8 always fits in usize.
         Some(v as usize)
     }
 }
 
-impl USizeCast for u16 {
+impl ToUnsigned for u16 {
     fn from(v: u16) -> Option<usize> {
         // TODO: This can overflow on 8-bit systems.
         Some(v as usize)
     }
 }
 
-impl USizeCast for u32 {
+impl ToUnsigned for u32 {
     fn from(v: u32) -> Option<usize> {
         // TODO: This can overflow on 8- and 16-bit systems.
         Some(v as usize)
@@ -127,7 +127,7 @@ fn read_ext<'a, R>(mut buf: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error<
 #[inline]
 fn read_str_value<'a, R, U>(buf: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>,
-          U: USizeCast
+          U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
     let res = try!(read_str(buf, len));
@@ -138,7 +138,7 @@ fn read_str_value<'a, R, U>(buf: &mut R, len: U) -> Result<ValueRef<'a>, Error<'
 #[inline]
 fn read_bin_value<'a, R, U>(buf: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>,
-          U: USizeCast
+          U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
     let res = try!(read_bin(buf, len));
@@ -149,7 +149,7 @@ fn read_bin_value<'a, R, U>(buf: &mut R, len: U) -> Result<ValueRef<'a>, Error<'
 #[inline]
 fn read_ext_value<'a, R, U>(mut buf: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>,
-          U: USizeCast
+          U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
     let (ty, buf) = try!(read_ext(buf, len));
@@ -160,7 +160,7 @@ fn read_ext_value<'a, R, U>(mut buf: &mut R, len: U) -> Result<ValueRef<'a>, Err
 #[inline]
 fn read_array_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>,
-          U: USizeCast
+          U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
     let vec = try!(read_array(rd, len));
@@ -171,7 +171,7 @@ fn read_array_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<
 #[inline]
 fn read_map_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>,
-          U: USizeCast
+          U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
     let map = try!(read_map(rd, len));
