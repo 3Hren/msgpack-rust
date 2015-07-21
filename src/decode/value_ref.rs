@@ -66,19 +66,18 @@ impl<'r> From<MarkerReadError> for Error<'r> {
     }
 }
 
+fn read_len<R, D>(rd: &mut R) -> Result<D, ReadError>
+    where R: Read,
+          D: BigEndianRead
+{
+    D::read(rd).map_err(From::from)
+}
+
 fn read_num<'a, R, D>(mut rd: &mut R) -> Result<D, Error<'a>>
     where R: BufRead<'a>,
           D: BigEndianRead
 {
     D::read(&mut rd).map_err(|err| Error::InvalidDataRead(From::from(err)))
-}
-
-// TODO: Rename to `read_len`.
-fn read_length<R, D>(rd: &mut R) -> Result<D, ReadError>
-    where R: Read,
-          D: BigEndianRead
-{
-    D::read(rd).map_err(From::from)
 }
 
 fn read_str<'a, R>(buf: &mut R, len: usize) -> Result<&'a str, Error<'a>>
@@ -318,49 +317,49 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             try!(read_str_value(rd, len))
         }
         Marker::Str8 => {
-            let len: u8 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u8 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_str_value(rd, len))
         }
         Marker::Str16 => {
-            let len: u16 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u16 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_str_value(rd, len))
         }
         Marker::Str32 => {
-            let len: u32 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u32 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_str_value(rd, len))
         }
         Marker::Bin8 => {
-            let len: u8 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u8 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_bin_value(rd, len))
         }
         Marker::Bin16 => {
-            let len: u16 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u16 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_bin_value(rd, len))
         }
         Marker::Bin32 => {
-            let len: u32 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u32 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_bin_value(rd, len))
         }
         Marker::FixedArray(len) => {
             try!(read_array_value(rd, len))
         }
         Marker::Array16 => {
-            let len: u16 = try!(read_length(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u16 = try!(read_len(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_array_value(rd, len))
         }
         Marker::Array32 => {
-            let len: u32 = try!(read_length(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u32 = try!(read_len(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_array_value(rd, len))
         }
         Marker::FixedMap(len) => {
             try!(read_map_value(rd, len))
         }
         Marker::Map16 => {
-            let len: u16 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u16 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_map_value(rd, len))
         }
         Marker::Map32 => {
-            let len: u32 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u32 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_map_value(rd, len))
         }
         Marker::FixExt1 => {
@@ -379,15 +378,15 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             try!(read_ext_value(rd, 16u8))
         }
         Marker::Ext8 => {
-            let len: u8 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u8 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_ext_value(rd, len))
         }
         Marker::Ext16 => {
-            let len: u16 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u16 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_ext_value(rd, len))
         }
         Marker::Ext32 => {
-            let len: u32 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
+            let len: u32 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_ext_value(rd, len))
         }
         Marker::Reserved => return Err(Error::TypeMismatch),
