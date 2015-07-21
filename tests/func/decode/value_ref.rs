@@ -78,26 +78,27 @@ fn from_empty_buffer_invalid_marker_read() {
 }
 
 #[test]
-fn from_empty_buffer_invalid_buffer_fill_because_eintr() {
-    use std::io::{self, Read, BufRead};
+fn from_empty_buffer_invalid_buffer_fill() {
+    use std::io::{self, Read};
+    use msgpack::decode::value_ref::BufRead;
 
-    struct InterruptRead;
+    struct ErrorRead;
 
-    impl Read for InterruptRead {
+    impl Read for ErrorRead {
         fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
-            Err(io::Error::new(io::ErrorKind::Interrupted, ""))
+            Err(io::Error::new(io::ErrorKind::Other, "mock error"))
         }
     }
 
-    impl BufRead for InterruptRead {
-        fn fill_buf(&mut self) -> io::Result<&[u8]> { Err(io::Error::new(io::ErrorKind::Interrupted, "")) }
-        fn consume(&mut self, _n: usize) {}
+    impl<'a> BufRead<'a> for ErrorRead {
+        fn fill_buf(&self) -> &'a [u8] { &[] }
+        fn consume(&mut self, _: usize) {}
     }
 
-    let mut rd = InterruptRead;
+    let mut rd = ErrorRead;
 
     match read_value_ref(&mut rd).err().unwrap() {
-        Error::InvalidBufferFill(..) => (),
+        Error::InvalidMarkerRead(..) => (),
         _ => panic!(),
     }
 }
@@ -300,7 +301,7 @@ fn from_fixmap() {
     ];
     let expected = ValueRef::Map(map);
 
-    assert_eq!(expected, read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(expected, read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -316,7 +317,7 @@ fn from_map16() {
     let map = vec![(ValueRef::String("key"), ValueRef::String("value"))];
     let expected = ValueRef::Map(map);
 
-    assert_eq!(expected, read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(expected, read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -332,7 +333,7 @@ fn from_map32() {
     let map = vec![(ValueRef::String("key"), ValueRef::String("value"))];
     let expected = ValueRef::Map(map);
 
-    assert_eq!(expected, read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(expected, read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -516,5 +517,112 @@ fn from_bool_true() {
     assert_eq!(ValueRef::Boolean(true), read_value_ref(&mut rd).unwrap());
 }
 
-// TODO: ValueRef with all possible types.
-// TODO: Real-life examples.
+#[test]
+fn from_null_read_twice() {
+    use std::io::Cursor;
+
+    let buf = [0xc0, 0xc0];
+
+    let mut cur1 = Cursor::new(&buf[..]);
+    let v1 = read_value_ref(&mut cur1).unwrap();
+
+    let mut cur2 = Cursor::new(&buf[cur1.position() as usize..]);
+    let v2 = read_value_ref(&mut cur2).unwrap();
+
+    assert_eq!(ValueRef::Nil, v1);
+    assert_eq!(ValueRef::Nil, v2);
+}
+
+#[test]
+fn from_fixmap_using_cursor() {
+    use std::io::Cursor;
+
+    let buf = [
+        0x82, // size: 2
+        0x2a, // 42
+        0xce, 0x0, 0x1, 0x88, 0x94, // 100500
+        0xa3, 0x6b, 0x65, 0x79, // 'key'
+        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // 'value'
+    ];
+    let mut rd = Cursor::new(&buf[..]);
+
+    let map = vec![
+        (ValueRef::Integer(Integer::U64(42)), ValueRef::Integer(Integer::U64(100500))),
+        (ValueRef::String("key"), ValueRef::String("value")),
+    ];
+    let expected = ValueRef::Map(map);
+
+    assert_eq!(expected, read_value_ref(&mut rd).unwrap());
+    assert_eq!(17, rd.position());
+}
+
+// [None, 42, ['le message'], {'map': [True, {42: 100500}], 'key': 'value'}, [1, 2, 3], {'key': {'k1': 'v1'}}]
+const COMPLEX_MSGPACK: [u8; 55] = [
+    0x96, 0xc0, 0x2a, 0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+    0x82, 0xa3, 0x6d, 0x61, 0x70, 0x92, 0xc3, 0x81, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94, 0xa3,
+    0x6b, 0x65, 0x79, 0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x93, 0x1, 0x2, 0x3, 0x81, 0xa3, 0x6b,
+    0x65, 0x79, 0x81, 0xa2, 0x6b, 0x31, 0xa2, 0x76, 0x31
+];
+
+fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
+    ValueRef::Array(vec![
+        ValueRef::Nil,
+        ValueRef::Integer(Integer::U64(42)),
+        ValueRef::Array(vec![
+            ValueRef::String("le message"),
+        ]),
+        ValueRef::Map(vec![
+            (
+                ValueRef::String("map"),
+                ValueRef::Array(vec![
+                    ValueRef::Boolean(true),
+                    ValueRef::Map(vec![
+                        (
+                            ValueRef::Integer(Integer::U64(42)),
+                            ValueRef::Integer(Integer::U64(100500))
+                        )
+                    ])
+                ])
+            ),
+            (
+                ValueRef::String("key"),
+                ValueRef::String("value")
+            )
+        ]),
+        ValueRef::Array(vec![
+            ValueRef::Integer(Integer::U64(1)),
+            ValueRef::Integer(Integer::U64(2)),
+            ValueRef::Integer(Integer::U64(3)),
+        ]),
+        ValueRef::Map(vec![
+            (
+                ValueRef::String("key"),
+                ValueRef::Map(vec![
+                    (
+                        ValueRef::String("k1"),
+                        ValueRef::String("v1")
+                    )
+                ])
+            )
+        ])
+    ])
+}
+
+#[test]
+fn from_complex_value_using_slice() {
+    let buf = COMPLEX_MSGPACK;
+    let mut rd = &buf[..];
+
+    assert_eq!(get_complex_msgpack_value(), read_value_ref(&mut rd).unwrap());
+}
+
+#[test]
+fn from_complex_value_using_cursor() {
+    use std::io::Cursor;
+
+    let buf = COMPLEX_MSGPACK;
+    let mut rd = Cursor::new(&buf[..]);
+
+    assert_eq!(get_complex_msgpack_value(), read_value_ref(&mut rd).unwrap());
+    assert_eq!(buf.len() as u64, rd.position());
+}

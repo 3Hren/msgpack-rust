@@ -48,10 +48,8 @@ fn from_string_read_value_ref(b: &mut Bencher) {
         0x20, 0x61, 0x6d, 0x65, 0x74, 0x2e
     ];
 
-    let mut rd = &buf[..];
-
     b.iter(|| {
-        let res = read_value_ref(&mut rd).unwrap();
+        let res = read_value_ref(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
 }
