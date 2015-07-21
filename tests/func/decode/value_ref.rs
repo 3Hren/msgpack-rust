@@ -491,7 +491,7 @@ fn from_f64() {
 }
 
 #[test]
-fn from_null() {
+fn from_nil() {
     let buf = [0xc0];
 
     let mut rd = &buf[..];
@@ -625,4 +625,16 @@ fn from_complex_value_using_cursor() {
 
     assert_eq!(get_complex_msgpack_value(), read_value_ref(&mut rd).unwrap());
     assert_eq!(buf.len() as u64, rd.position());
+}
+
+#[test]
+fn from_reserved() {
+    let buf = [0xc1];
+
+    let mut rd = &buf[..];
+
+    match read_value_ref(&mut rd).err().unwrap() {
+        Error::TypeMismatch => (),
+        _ => panic!(),
+    }
 }

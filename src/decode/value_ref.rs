@@ -56,6 +56,8 @@ pub enum Error<'r> {
     InvalidUtf8(&'r [u8], Utf8Error),
     /// Failed to read ext type.
     InvalidExtTypeRead(ReadError),
+    /// Using Reserved type found.
+    TypeMismatch,
 }
 
 impl<'r> From<MarkerReadError> for Error<'r> {
@@ -324,13 +326,13 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
         }
         Marker::Array16 => {
             let len: u16 = try!(read_length(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
-            let len = len as usize;
+            let len = len as usize; // TODO: Possible overflow.
             let vec = try!(read_array(rd, len));
             ValueRef::Array(vec)
         }
         Marker::Array32 => {
             let len: u32 = try!(read_length(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
-            let len = len as usize;
+            let len = len as usize; // TODO: Possible overflow.
             let vec = try!(read_array(rd, len));
             ValueRef::Array(vec)
         }
@@ -383,7 +385,7 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             let len: u32 = try!(read_length(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_ext_value(rd, len))
         }
-        Marker::Reserved => unimplemented!()
+        Marker::Reserved => return Err(Error::TypeMismatch),
     };
 
     Ok(val)
