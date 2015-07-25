@@ -10,6 +10,9 @@ use byteorder::WriteBytesExt;
 
 use super::Marker;
 
+#[path = "encode/value_ref.rs"]
+pub mod value_ref;
+
 /// Represents an error that can occur when attempting to write MessagePack'ed value into the write.
 #[derive(Debug)]
 pub struct WriteError(io::Error);
