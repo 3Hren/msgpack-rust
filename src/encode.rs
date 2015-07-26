@@ -846,26 +846,7 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
     Ok(())
 }
 
-// TODO: Move tests outside.
-#[cfg(test)]
-mod tests {
-
-use super::*;
-
-#[test]
-fn pack_nil() {
-    let mut buf = [0x00];
-
-    let val = Value::Nil;
-
-    write_value(&mut &mut buf[..], &val).unwrap();
-
-    assert_eq!([0xc0], buf);
-}
-
-}
-
-}
+} // mod value
 
 pub mod serialize {
 
