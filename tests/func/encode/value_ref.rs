@@ -11,3 +11,15 @@ fn pack_nil() {
 
     assert_eq!([0xc0], buf);
 }
+
+#[test]
+fn pack_nil_when_buffer_is_tool_small() {
+    let mut buf = [];
+
+    let val = ValueRef::Nil;
+
+    match write_value_ref(&mut &mut buf[..], &val) {
+        Err(..) => (),
+        other => panic!("unexpected result: {:?}", other)
+    }
+}
