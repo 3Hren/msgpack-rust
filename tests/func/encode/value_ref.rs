@@ -1,5 +1,5 @@
 use msgpack::ValueRef;
-use msgpack::value::Integer;
+use msgpack::value::{Float, Integer};
 use msgpack::encode::value_ref::write_value_ref;
 
 #[test]
@@ -56,4 +56,27 @@ fn pass_pack_i64() {
     write_value_ref(&mut &mut buf[..], &val).unwrap();
 
     assert_eq!([0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
+}
+
+fn check_packed_eq(expected: &Vec<u8>, actual: &ValueRef) {
+    let mut buf = Vec::new();
+
+    write_value_ref(&mut buf, actual).unwrap();
+
+    assert_eq!(*expected, buf);
+}
+
+#[test]
+fn pass_pack_f32() {
+    check_packed_eq(
+        &vec![0xca, 0x7f, 0x7f, 0xff, 0xff],
+        &ValueRef::Float(Float::F32(3.4028234e38_f32)));
+}
+
+#[test]
+fn pass_pack_f64() {
+    use std::f64;
+    check_packed_eq(
+        &vec![0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        &ValueRef::Float(Float::F64(f64::INFINITY)));
 }

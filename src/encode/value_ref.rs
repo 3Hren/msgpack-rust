@@ -3,7 +3,7 @@
 use std::convert::From;
 use std::io::Write;
 
-use super::super::value::{Integer, ValueRef};
+use super::super::value::{Float, Integer, ValueRef};
 use super::*;
 
 #[derive(Debug)]
@@ -38,6 +38,9 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
         &ValueRef::Integer(Integer::I64(val)) => {
             try!(write_sint(wr, val));
         }
+        // TODO: Replace with generic write_float(...).
+        &ValueRef::Float(Float::F32(val)) => try!(write_f32(wr, val)),
+        &ValueRef::Float(Float::F64(val)) => try!(write_f64(wr, val)),
         _ => unimplemented!(),
     }
 
