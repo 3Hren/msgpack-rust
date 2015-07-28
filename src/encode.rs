@@ -810,12 +810,14 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
     match val {
         &Value::Nil => try!(write_nil(wr)),
         &Value::Boolean(val) => try!(write_bool(wr, val)),
+        // TODO: Replace with generic write_int(...).
         &Value::Integer(Integer::U64(val)) => {
             try!(write_uint(wr, val));
         }
         &Value::Integer(Integer::I64(val)) => {
             try!(write_sint(wr, val));
         }
+        // TODO: Replace with generic write_float(...).
         &Value::Float(Float::F32(val)) => try!(write_f32(wr, val)),
         &Value::Float(Float::F64(val)) => try!(write_f64(wr, val)),
         &Value::String(ref val) => {
