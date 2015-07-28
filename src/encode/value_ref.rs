@@ -69,7 +69,10 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
                 try!(write_value_ref(wr, val));
             }
         }
-        _ => unimplemented!(),
+        &ValueRef::Ext(ty, data) => {
+            try!(write_ext_meta(wr, data.len() as u32, ty));
+            try!(wr.write_all(data).map_err(|err| ValueWriteError::InvalidDataWrite(WriteError(err))));
+        }
     }
 
     Ok(())

@@ -122,3 +122,11 @@ fn pass_pack_map() {
         )
     );
 }
+
+#[test]
+fn pass_pack_ext() {
+    check_packed_eq(
+        &vec![0xc7, 0x03, 0x10, 0x01, 0x02, 0x03],
+        &ValueRef::Ext(16, &[0x01, 0x02, 0x03])
+    );
+}
