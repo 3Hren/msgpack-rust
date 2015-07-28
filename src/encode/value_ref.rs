@@ -47,6 +47,9 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
         &ValueRef::String(val) => {
             try!(write_str(wr, val));
         }
+        &ValueRef::Binary(val) => {
+            try!(write_bin(wr, val));
+        }
         _ => unimplemented!(),
     }
 
