@@ -6,6 +6,9 @@ use std::io::Write;
 use super::super::value::{Float, Integer, ValueRef};
 use super::*;
 
+// TODO: Make pub sometimes.
+use super::{write_str, write_bin};
+
 #[derive(Debug)]
 pub struct Error(WriteError);
 
@@ -41,6 +44,9 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
         // TODO: Replace with generic write_float(...).
         &ValueRef::Float(Float::F32(val)) => try!(write_f32(wr, val)),
         &ValueRef::Float(Float::F64(val)) => try!(write_f64(wr, val)),
+        &ValueRef::String(val) => {
+            try!(write_str(wr, val));
+        }
         _ => unimplemented!(),
     }
 

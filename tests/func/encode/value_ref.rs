@@ -70,7 +70,8 @@ fn check_packed_eq(expected: &Vec<u8>, actual: &ValueRef) {
 fn pass_pack_f32() {
     check_packed_eq(
         &vec![0xca, 0x7f, 0x7f, 0xff, 0xff],
-        &ValueRef::Float(Float::F32(3.4028234e38_f32)));
+        &ValueRef::Float(Float::F32(3.4028234e38_f32))
+    );
 }
 
 #[test]
@@ -78,5 +79,14 @@ fn pass_pack_f64() {
     use std::f64;
     check_packed_eq(
         &vec![0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-        &ValueRef::Float(Float::F64(f64::INFINITY)));
+        &ValueRef::Float(Float::F64(f64::INFINITY))
+    );
+}
+
+#[test]
+fn pass_pack_string() {
+    check_packed_eq(
+        &vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65],
+        &ValueRef::String("le message")
+    );
 }
