@@ -22,6 +22,7 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
 {
     match val {
         &ValueRef::Nil => try!(write_nil(wr)),
+        &ValueRef::Boolean(val) => try!(write_bool(wr, val)),
         _ => unimplemented!(),
     }
 

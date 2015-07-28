@@ -23,3 +23,14 @@ fn pack_nil_when_buffer_is_tool_small() {
         other => panic!("unexpected result: {:?}", other)
     }
 }
+
+#[test]
+fn pass_pack_true() {
+    let mut buf = [0x00];
+
+    let val = ValueRef::Boolean(true);
+
+    write_value_ref(&mut &mut buf[..], &val).unwrap();
+
+    assert_eq!([0xc3], buf);
+}
