@@ -4,10 +4,20 @@ use std::convert::From;
 use std::io::Write;
 
 use super::super::value::{Float, Integer, ValueRef};
-use super::*;
-
-// TODO: Make pub sometimes.
-use super::{write_str, write_bin};
+use super::FixedValueWriteError;
+use super::ValueWriteError;
+use super::WriteError;
+use super::write_array_len;
+use super::write_bin;
+use super::write_bool;
+use super::write_ext_meta;
+use super::write_f32;
+use super::write_f64;
+use super::write_map_len;
+use super::write_nil;
+use super::write_sint;
+use super::write_str;
+use super::write_uint;
 
 #[derive(Debug)]
 pub struct Error(WriteError);
