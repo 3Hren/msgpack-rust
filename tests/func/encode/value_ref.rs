@@ -98,3 +98,17 @@ fn pass_pack_bin() {
         &ValueRef::Binary(&[0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65])
     );
 }
+
+#[test]
+fn pass_pack_array() {
+    check_packed_eq(
+        &vec![0x93, 0x01, 0x02, 0x03],
+        &ValueRef::Array(
+            vec![
+                ValueRef::Integer(Integer::U64(1)),
+                ValueRef::Integer(Integer::U64(2)),
+                ValueRef::Integer(Integer::U64(3))
+                ]
+        )
+    );
+}

@@ -50,6 +50,15 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
         &ValueRef::Binary(val) => {
             try!(write_bin(wr, val));
         }
+        &ValueRef::Array(ref val) => {
+            let len = val.len() as u32;
+
+            try!(write_array_len(wr, len));
+
+            for item in val {
+                try!(write_value_ref(wr, item));
+            }
+        }
         _ => unimplemented!(),
     }
 
