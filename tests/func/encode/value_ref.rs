@@ -1,4 +1,5 @@
 use msgpack::ValueRef;
+use msgpack::value::Integer;
 use msgpack::encode::value_ref::write_value_ref;
 
 #[test]
@@ -33,4 +34,15 @@ fn pass_pack_true() {
     write_value_ref(&mut &mut buf[..], &val).unwrap();
 
     assert_eq!([0xc3], buf);
+}
+
+#[test]
+fn pass_pack_i64() {
+    let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+
+    let val = ValueRef::Integer(Integer::I64(-9223372036854775808));
+
+    write_value_ref(&mut &mut buf[..], &val).unwrap();
+
+    assert_eq!([0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }
