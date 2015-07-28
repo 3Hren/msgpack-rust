@@ -108,7 +108,17 @@ fn pass_pack_array() {
                 ValueRef::Integer(Integer::U64(1)),
                 ValueRef::Integer(Integer::U64(2)),
                 ValueRef::Integer(Integer::U64(3))
-                ]
+            ]
+        )
+    );
+}
+
+#[test]
+fn pass_pack_map() {
+    check_packed_eq(
+        &vec![0x81, 0x01, 0x02],
+        &ValueRef::Map(
+            vec![(ValueRef::Integer(Integer::U64(1)), ValueRef::Integer(Integer::U64(2)))]
         )
     );
 }

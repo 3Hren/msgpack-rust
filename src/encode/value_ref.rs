@@ -59,6 +59,16 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
                 try!(write_value_ref(wr, item));
             }
         }
+        &ValueRef::Map(ref val) => {
+            let len = val.len() as u32;
+
+            try!(write_map_len(wr, len));
+
+            for &(ref key, ref val) in val {
+                try!(write_value_ref(wr, key));
+                try!(write_value_ref(wr, val));
+            }
+        }
         _ => unimplemented!(),
     }
 
