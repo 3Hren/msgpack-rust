@@ -1,6 +1,7 @@
 //! This module is UNSTABLE, the reason is - recently added.
 
 use std::convert::From;
+use std::fmt;
 use std::io::Write;
 
 use super::super::value::{Float, Integer, ValueRef};
@@ -21,6 +22,14 @@ use super::write_uint;
 
 #[derive(Debug)]
 pub struct Error(WriteError);
+
+impl fmt::Display for Error {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &Error(ref err) => err.fmt(fmt),
+        }
+    }
+}
 
 impl From<FixedValueWriteError> for Error {
     fn from(err: FixedValueWriteError) -> Error {
@@ -86,4 +95,19 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn display_trait() {
+        use std::io;
+        use super::super::WriteError;
+        use super::Error;
+
+        // Delegates to I/O Error.
+        let err = Error(WriteError(io::Error::new(io::ErrorKind::Other, "unexpected EOF")));
+
+        assert_eq!("err: error while writing MessagePack'ed value", format!("err: {}", err));
+    }
 }
