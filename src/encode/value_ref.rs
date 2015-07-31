@@ -127,7 +127,7 @@ mod test {
     }
 
     #[test]
-    fn error_trait_description() {
+    fn error_trait() {
         // Delegates to I/O Error.
         let err = Error(WriteError(io::Error::new(io::ErrorKind::Other, "unexpected EOF")));
 
