@@ -1,6 +1,8 @@
 //! This module is UNSTABLE, the reason is - recently added.
 
 use std::convert::From;
+use std::error;
+use std::fmt;
 use std::io::{Cursor, Read};
 use std::str::{from_utf8, Utf8Error};
 
@@ -58,6 +60,39 @@ pub enum Error<'r> {
     InvalidExtTypeRead(ReadError),
     /// Using Reserved type found.
     TypeMismatch,
+}
+
+impl<'r> error::Error for Error<'r> {
+    fn description(&self) -> &str {
+        match self {
+            &Error::InvalidMarkerRead(..) => "failed to read the type marker value",
+            &Error::InvalidLengthRead(..) => "failed to read string/array/map size",
+            &Error::InvalidDataRead(..) => "failed to read packed non-marker data",
+            &Error::InvalidLengthSize => "failed to cast the length read to machine size",
+            &Error::InvalidUtf8(..) => "failed to interpret a byte slice as a UTF-8 string",
+            &Error::InvalidExtTypeRead(..) => "failed to read ext type",
+            &Error::TypeMismatch => "using Reserved type found",
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            &Error::InvalidMarkerRead(ref err) => Some(err),
+            &Error::InvalidLengthRead(ref err) => Some(err),
+            &Error::InvalidDataRead(ref err) => Some(err),
+            &Error::InvalidLengthSize => None,
+            &Error::InvalidUtf8(_, ref err) => Some(err),
+            &Error::InvalidExtTypeRead(ref err) => Some(err),
+            &Error::TypeMismatch => None,
+        }
+    }
+}
+
+impl<'r> fmt::Display for Error<'r> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use std::error::Error;
+        self.description().fmt(f)
+    }
 }
 
 impl<'r> From<MarkerReadError> for Error<'r> {
