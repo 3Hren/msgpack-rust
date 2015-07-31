@@ -134,6 +134,7 @@ mod test {
         fn test<E: error::Error>(err: E) {
             assert_eq!("error while writing MessagePack'ed value", err.description());
             assert!(err.cause().is_some());
+            assert_eq!("unexpected EOF", err.cause().unwrap().description());
         }
 
         test(err);
