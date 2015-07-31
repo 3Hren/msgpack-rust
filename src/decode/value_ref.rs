@@ -246,6 +246,7 @@ fn read_map<'a, R>(rd: &mut R, len: usize) -> Result<Vec<(ValueRef<'a>, ValueRef
 ///
 /// This magic trait acts like a standard BufRead but unlike the standard this has an explicit
 /// internal buffer lifetime, which allows to borrow from underlying buffer while consuming bytes.
+// TODO: Rename to BorrowRead to avoid naming collisions.
 pub trait BufRead<'a>: Read {
     /// Returns the buffer contents.
     ///

@@ -44,6 +44,7 @@ impl Error for ReadError {
     fn description(&self) -> &str {
         match *self {
             ReadError::UnexpectedEOF => "unexpected end of file while reading MessagePack value",
+            // TODO: Probably we should give here a short description that I/O error occurs.
             ReadError::Io(ref err) => err.description(),
         }
     }
