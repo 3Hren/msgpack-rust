@@ -1,6 +1,7 @@
 //! This module is UNSTABLE, the reason is - recently added.
 
 use std::convert::From;
+use std::error;
 use std::fmt;
 use std::io::Write;
 
@@ -27,6 +28,20 @@ impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Error(ref err) => err.fmt(fmt),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match self {
+            &Error(ref err) => err.description(),
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            &Error(ref err) => err.cause(),
         }
     }
 }
@@ -99,15 +114,28 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
 
 #[cfg(test)]
 mod test {
+    use std::error;
+    use std::io;
+    use super::super::WriteError;
+    use super::Error;
+
     #[test]
     fn display_trait() {
-        use std::io;
-        use super::super::WriteError;
-        use super::Error;
-
-        // Delegates to I/O Error.
         let err = Error(WriteError(io::Error::new(io::ErrorKind::Other, "unexpected EOF")));
 
         assert_eq!("err: error while writing MessagePack'ed value", format!("err: {}", err));
+    }
+
+    #[test]
+    fn error_trait_description() {
+        // Delegates to I/O Error.
+        let err = Error(WriteError(io::Error::new(io::ErrorKind::Other, "unexpected EOF")));
+
+        fn test<E: error::Error>(err: E) {
+            assert_eq!("error while writing MessagePack'ed value", err.description());
+            assert!(err.cause().is_some());
+        }
+
+        test(err);
     }
 }
