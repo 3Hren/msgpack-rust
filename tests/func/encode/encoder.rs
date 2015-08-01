@@ -308,3 +308,19 @@ fn pass_encodong_struct_into_vec() {
 
     assert_eq!(vec![0x92, 0x2a, 0xaa, 0x74, 0x68, 0x65, 0x20, 0x41, 0x6e, 0x73, 0x77, 0x65, 0x72], buf);
 }
+
+#[test]
+fn encode_struct_with_string_using_vec() {
+    #[derive(Debug, PartialEq, RustcEncodable)]
+    struct Custom {
+        data: String,
+    }
+
+    let mut buf = Vec::new();
+
+    let val = Custom { data: "le message".to_string() };
+    val.encode(&mut Encoder::new(&mut buf)).ok().unwrap();
+
+    let out = vec![0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    assert_eq!(out, buf);
+}

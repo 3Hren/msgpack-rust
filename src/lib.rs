@@ -124,27 +124,18 @@
 extern crate byteorder;
 extern crate rustc_serialize as serialize;
 
-pub const MSGPACK_VERSION : u32 = 5;
-
-pub use init::Marker;
-
-pub use decode::serialize::{
-    Decoder,
-};
-
-pub use encode::serialize::{
-    Encoder,
-};
-
-mod init;
 pub mod encode;
 pub mod decode;
 
-// TODO: Not ready yet.
-mod value;
+mod init;
 
-pub use value::Value;
+pub mod value;
 
-// Suppressed due to instability.
-// #[cfg(test)]
-// mod bench;
+pub const MSGPACK_VERSION : u32 = 5;
+
+pub use decode::serialize::Decoder;
+pub use encode::serialize::Encoder;
+
+pub use init::Marker;
+
+pub use value::{Value, ValueRef};

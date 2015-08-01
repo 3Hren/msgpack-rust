@@ -24,6 +24,10 @@ use byteorder::ReadBytesExt;
 
 use super::Marker;
 
+#[path = "decode/value_ref.rs"]
+pub mod value_ref;
+pub use self::value_ref::read_value_ref;
+
 /// Represents an error that can occur when attempting to read bytes from the reader.
 ///
 /// This is a thin wrapper over the standard `io::Error` type. Namely, it adds one additional error
@@ -40,6 +44,7 @@ impl Error for ReadError {
     fn description(&self) -> &str {
         match *self {
             ReadError::UnexpectedEOF => "unexpected end of file while reading MessagePack value",
+            // TODO: Probably we should give here a short description that I/O error occurs.
             ReadError::Io(ref err) => err.description(),
         }
     }
@@ -1038,6 +1043,7 @@ fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'r st
 ///
 // TODO: it is better to return &str; may panic on len mismatch; extend documentation.
 // TODO: Also it's possible to implement all borrowing functions for all `BufRead` implementors.
+// TODO: It's not necessary to use cursor, use slices instead.
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));

@@ -10,6 +10,9 @@ use byteorder::WriteBytesExt;
 
 use super::Marker;
 
+#[path = "encode/value_ref.rs"]
+pub mod value_ref;
+
 /// Represents an error that can occur when attempting to write MessagePack'ed value into the write.
 #[derive(Debug)]
 pub struct WriteError(io::Error);
@@ -817,12 +820,14 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
     match val {
         &Value::Nil => try!(write_nil(wr)),
         &Value::Boolean(val) => try!(write_bool(wr, val)),
+        // TODO: Replace with generic write_int(...).
         &Value::Integer(Integer::U64(val)) => {
             try!(write_uint(wr, val));
         }
         &Value::Integer(Integer::I64(val)) => {
             try!(write_sint(wr, val));
         }
+        // TODO: Replace with generic write_float(...).
         &Value::Float(Float::F32(val)) => try!(write_f32(wr, val)),
         &Value::Float(Float::F64(val)) => try!(write_f64(wr, val)),
         &Value::String(ref val) => {
@@ -853,26 +858,7 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
     Ok(())
 }
 
-// TODO: Move tests outside.
-#[cfg(test)]
-mod tests {
-
-use super::*;
-
-#[test]
-fn pack_nil() {
-    let mut buf = [0x00];
-
-    let val = Value::Nil;
-
-    write_value(&mut &mut buf[..], &val).unwrap();
-
-    assert_eq!([0xc0], buf);
-}
-
-}
-
-}
+} // mod value
 
 pub mod serialize {
 
