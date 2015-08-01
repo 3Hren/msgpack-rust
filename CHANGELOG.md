@@ -6,14 +6,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - FixedValue* -> FixVal*
 - ValueRef to Value conversion.
 - Value to ValueRef casting.
-- Drop mutability requirement for `read_value_ref`.
 - Check all TODO's.
 
 ## [Unreleased][unreleased]
+### Added
 - Implemented `std::error::Error` trait for error types.
 - New `ValueRef` value struct represents MessagePack'ed value, but unlike an owning `Value` it owns nothing except its
   structure. It means that all strings/binaries it contains are borrowed from the byte array from which the value was
   created.
+- Encoding function for `ValueRef`.
+- Decoding function for `ValueRef`.
+- Conversion method from `ValueRef` to `Value`.
+- More benchmarks and tests.
+
+### Changed
+- Derive `Copy` trait for `Integer` and `Float` enums.
 
 ## 0.3.2 - 2015-07-05
 ### Changed

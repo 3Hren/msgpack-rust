@@ -59,6 +59,8 @@ pub enum ValueRef<'a> {
 }
 
 impl<'a> ValueRef<'a> {
+    /// Converts the current non-owning value to the owned one.
+    // TODO: Documentation with examples.
     pub fn to_owned(&self) -> Value {
         match self {
             &ValueRef::Nil => Value::Nil,
