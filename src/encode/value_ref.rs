@@ -64,7 +64,7 @@ impl From<ValueWriteError> for Error {
     }
 }
 
-/// Encodes and attempts to write the given non-owning ValueRef into the given Write.
+/// Encodes and attempts to write the given non-owning ValueRef into the Write.
 ///
 /// # Errors
 ///
