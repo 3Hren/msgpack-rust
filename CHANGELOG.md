@@ -4,23 +4,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Planning][planning]
 - FixedValue* -> FixVal*
-- ValueRef to Value conversion.
-- Value to ValueRef casting.
-- Check all TODO's.
 
 ## [Unreleased][unreleased]
-### Added
-- Implemented `std::error::Error` trait for error types.
-- New `ValueRef` value struct represents MessagePack'ed value, but unlike an owning `Value` it owns nothing except its
-  structure. It means that all strings/binaries it contains are borrowed from the byte array from which the value was
-  created.
-- Encoding function for `ValueRef`.
-- Decoding function for `ValueRef`.
-- Conversion method from `ValueRef` to `Value`.
-- More benchmarks and tests.
+- Nothing yet.
 
-### Changed
-- Derive `Copy` trait for `Integer` and `Float` enums.
+## 0.4.0 - 2015-07-17
+### Added
+- Low level `write_str` function allows to serialize the UTF-8 encoded strings the most efficient way.
+- Low level `write_bin` function allows to serialize the binary array the most efficient way.
+- Implemented `std::error::Error` trait for error types.
 
 ## 0.3.2 - 2015-07-05
 ### Changed
