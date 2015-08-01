@@ -120,7 +120,7 @@ impl<'a> ValueRef<'a> {
 }
 
 // For some weird reasons I can't implement it manually.
-// It gives me: conflicting implementations for trait `collections::borrow::ToOwned`
+// It gives: conflicting implementations for trait `collections::borrow::ToOwned`
 // impl<'a> ToOwned for ValueRef<'a> {
 //     type Owned = Value;
 // }
