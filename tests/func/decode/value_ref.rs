@@ -638,3 +638,54 @@ fn from_reserved() {
         _ => panic!(),
     }
 }
+
+#[test]
+fn into_owned() {
+    use msgpack::Value;
+
+    let val = get_complex_msgpack_value();
+
+    let expected = Value::Array(vec![
+        Value::Nil,
+        Value::Integer(Integer::U64(42)),
+        Value::Array(vec![
+            Value::String("le message".to_string()),
+        ]),
+        Value::Map(vec![
+            (
+                Value::String("map".to_string()),
+                Value::Array(vec![
+                    Value::Boolean(true),
+                    Value::Map(vec![
+                        (
+                            Value::Integer(Integer::U64(42)),
+                            Value::Integer(Integer::U64(100500))
+                        )
+                    ])
+                ])
+            ),
+            (
+                Value::String("key".to_string()),
+                Value::String("value".to_string())
+            )
+        ]),
+        Value::Array(vec![
+            Value::Integer(Integer::U64(1)),
+            Value::Integer(Integer::U64(2)),
+            Value::Integer(Integer::U64(3)),
+        ]),
+        Value::Map(vec![
+            (
+                Value::String("key".to_string()),
+                Value::Map(vec![
+                    (
+                        Value::String("k1".to_string()),
+                        Value::String("v1".to_string())
+                    )
+                ])
+            )
+        ])
+    ]);
+
+    assert_eq!(expected, val.to_owned());
+}
