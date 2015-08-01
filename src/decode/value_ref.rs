@@ -289,7 +289,36 @@ impl<'a> BufRead<'a> for Cursor<&'a [u8]> {
     }
 }
 
-// TODO: Doc, examples.
+/// Attempts to read the data from the given reader until either a complete MessagePack value
+/// decoded or an error detected.
+///
+/// Returns either a non-owning `ValueRef`, which borrows the buffer from the given reader or an
+/// error.
+///
+/// The reader should meet the requirement of a special `BorrowRead` trait, which allows to mutate
+/// itself but permits to mutate the buffer it contains. It allows to perform a completely
+/// zero-copy reading without a data loss fear in case of an error.
+///
+/// Currently only two types fit in this requirement: `&[u8]` and `Cursor<&[u8]>`. Using Cursor is
+/// helpful, when you need to know how exactly many bytes the decoded ValueRef consumes. A `Vec<u8>`
+/// type doesn't fit in the `BorrowRead` requirement, because its mut reference can mutate the
+/// underlying buffer - use `Vec::as_slice()` if you need to decode a value from the vector.
+///
+/// # Errors
+///
+/// Returns an `Error` value if unable to continue the decoding operation either because of read
+/// failure or any other circumstances. See `Error` documentation for more information.
+///
+/// # Examples
+/// ```
+/// use rmp::ValueRef;
+/// use rmp::decode::value_ref::read_value_ref;
+///
+/// let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+/// let mut rd = &buf[..];
+///
+/// assert_eq!(ValueRef::String("le message"), read_value_ref(&mut rd).unwrap());
+/// ```
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
     where R: BufRead<'a>
 {
