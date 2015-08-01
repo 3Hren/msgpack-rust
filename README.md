@@ -120,11 +120,6 @@ fn main() {
 }
 ```
 
-## Limitations and plans
-
-- Non-owning `ValueRef` variant, which can be created from `[u8]`, `Cursor<[u8]>` etc. and
-  borrows data from it, which makes it absolute zero-copy.
-
 ## Versioning
 
 This project adheres to [Semantic Versioning](http://semver.org/). However until 1.0.0 comes there

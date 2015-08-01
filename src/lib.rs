@@ -115,11 +115,6 @@
 //!     assert_eq!(val, res);
 //! }
 //! ```
-//!
-//! ## Limitations and plans
-//!
-//! - Non-owning `ValueRef` variant, which can be created from `[u8]`, `Cursor<[u8]>` etc. and
-//!   borrows data from it, which makes it absolute zero-copy.
 
 extern crate byteorder;
 extern crate rustc_serialize as serialize;
