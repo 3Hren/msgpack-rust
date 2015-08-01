@@ -80,7 +80,7 @@ fn from_empty_buffer_invalid_marker_read() {
 #[test]
 fn from_empty_buffer_invalid_buffer_fill() {
     use std::io::{self, Read};
-    use msgpack::decode::value_ref::BufRead;
+    use msgpack::decode::value_ref::BorrowRead;
 
     struct ErrorRead;
 
@@ -90,7 +90,7 @@ fn from_empty_buffer_invalid_buffer_fill() {
         }
     }
 
-    impl<'a> BufRead<'a> for ErrorRead {
+    impl<'a> BorrowRead<'a> for ErrorRead {
         fn fill_buf(&self) -> &'a [u8] { &[] }
         fn consume(&mut self, _: usize) {}
     }

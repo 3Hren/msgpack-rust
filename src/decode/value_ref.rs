@@ -108,14 +108,14 @@ fn read_len<R, D>(rd: &mut R) -> Result<D, ReadError>
 }
 
 fn read_num<'a, R, D>(mut rd: &mut R) -> Result<D, Error<'a>>
-    where R: BufRead<'a>,
+    where R: BorrowRead<'a>,
           D: BigEndianRead
 {
     D::read(&mut rd).map_err(|err| Error::InvalidDataRead(From::from(err)))
 }
 
 fn read_str<'a, R>(rd: &mut R, len: usize) -> Result<&'a str, Error<'a>>
-    where R: BufRead<'a>
+    where R: BorrowRead<'a>
 {
     let buf = try!(read_bin(rd, len));
 
@@ -126,7 +126,7 @@ fn read_str<'a, R>(rd: &mut R, len: usize) -> Result<&'a str, Error<'a>>
 }
 
 fn read_bin<'a, R>(rd: &mut R, len: usize) -> Result<&'a [u8], Error<'a>>
-    where R: BufRead<'a>
+    where R: BorrowRead<'a>
 {
     let buf = rd.fill_buf();
 
@@ -149,7 +149,7 @@ fn read_ext_type<R>(rd: &mut R) -> Result<i8, ReadError>
 }
 
 fn read_ext<'a, R>(mut rd: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error<'a>>
-    where R: BufRead<'a>
+    where R: BorrowRead<'a>
 {
     let ty  = try!(read_ext_type(&mut rd).map_err(|err| Error::InvalidExtTypeRead(err)));
     let buf = try!(read_bin(rd, len));
@@ -159,7 +159,7 @@ fn read_ext<'a, R>(mut rd: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error<'
 
 #[inline]
 fn read_str_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
-    where R: BufRead<'a>,
+    where R: BorrowRead<'a>,
           U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
@@ -170,7 +170,7 @@ fn read_str_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a
 
 #[inline]
 fn read_bin_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
-    where R: BufRead<'a>,
+    where R: BorrowRead<'a>,
           U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
@@ -181,7 +181,7 @@ fn read_bin_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a
 
 #[inline]
 fn read_ext_value<'a, R, U>(mut rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
-    where R: BufRead<'a>,
+    where R: BorrowRead<'a>,
           U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
@@ -192,7 +192,7 @@ fn read_ext_value<'a, R, U>(mut rd: &mut R, len: U) -> Result<ValueRef<'a>, Erro
 
 #[inline]
 fn read_array_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
-    where R: BufRead<'a>,
+    where R: BorrowRead<'a>,
           U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
@@ -203,7 +203,7 @@ fn read_array_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<
 
 #[inline]
 fn read_map_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a>>
-    where R: BufRead<'a>,
+    where R: BorrowRead<'a>,
           U: ToUnsigned
 {
     let len = try!(U::from(len).ok_or(Error::InvalidLengthSize));
@@ -213,7 +213,7 @@ fn read_map_value<'a, R, U>(rd: &mut R, len: U) -> Result<ValueRef<'a>, Error<'a
 }
 
 fn read_array<'a, R>(rd: &mut R, len: usize) -> Result<Vec<ValueRef<'a>>, Error<'a>>
-    where R: BufRead<'a>
+    where R: BorrowRead<'a>
 {
     let mut vec = Vec::with_capacity(len);
 
@@ -227,7 +227,7 @@ fn read_array<'a, R>(rd: &mut R, len: usize) -> Result<Vec<ValueRef<'a>>, Error<
 }
 
 fn read_map<'a, R>(rd: &mut R, len: usize) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error<'a>>
-    where R: BufRead<'a>
+    where R: BorrowRead<'a>
 {
     let mut vec = Vec::with_capacity(len);
 
@@ -241,12 +241,11 @@ fn read_map<'a, R>(rd: &mut R, len: usize) -> Result<Vec<(ValueRef<'a>, ValueRef
     Ok(vec)
 }
 
-/// A BufRead is a type of Reader which has an internal buffer.
+/// A BorrowRead is a type of Reader which has an internal buffer.
 ///
 /// This magic trait acts like a standard BufRead but unlike the standard this has an explicit
 /// internal buffer lifetime, which allows to borrow from underlying buffer while consuming bytes.
-// TODO: Rename to BorrowRead to avoid naming collisions.
-pub trait BufRead<'a>: Read {
+pub trait BorrowRead<'a>: Read {
     /// Returns the buffer contents.
     ///
     /// This function is a lower-level call. It needs to be paired with the consume method to
@@ -263,7 +262,7 @@ pub trait BufRead<'a>: Read {
     fn consume(&mut self, len: usize);
 }
 
-impl<'a> BufRead<'a> for &'a [u8] {
+impl<'a> BorrowRead<'a> for &'a [u8] {
     fn fill_buf(&self) -> &'a [u8] {
         self
     }
@@ -274,7 +273,7 @@ impl<'a> BufRead<'a> for &'a [u8] {
 }
 
 /// Useful when you want to know how much bytes has been consumed during ValueRef decoding.
-impl<'a> BufRead<'a> for Cursor<&'a [u8]> {
+impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
     fn fill_buf(&self) -> &'a [u8] {
         use std::cmp;
 
@@ -319,7 +318,7 @@ impl<'a> BufRead<'a> for Cursor<&'a [u8]> {
 /// assert_eq!(ValueRef::String("le message"), read_value_ref(&mut rd).unwrap());
 /// ```
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
-    where R: BufRead<'a>
+    where R: BorrowRead<'a>
 {
     let mut rd = rd;
 
