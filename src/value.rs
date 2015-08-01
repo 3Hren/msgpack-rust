@@ -59,8 +59,37 @@ pub enum ValueRef<'a> {
 }
 
 impl<'a> ValueRef<'a> {
-    /// Converts the current non-owning value to the owned one.
-    // TODO: Documentation with examples.
+    /// Converts the current non-owning value to an owned Value.
+    ///
+    /// This is achieved by deep copying all underlying structures and borrowed buffers.
+    ///
+    /// # Panics
+    ///
+    /// Panics in unable to allocate memory to keep all internal structures and buffers.
+    ///
+    /// # Examples
+    /// ```
+    /// use rmp::{Value, ValueRef};
+    /// use rmp::value::Integer;
+    ///
+    /// let val = ValueRef::Array(vec![
+    ///    ValueRef::Nil,
+    ///    ValueRef::Integer(Integer::U64(42)),
+    ///    ValueRef::Array(vec![
+    ///        ValueRef::String("le message"),
+    ///    ])
+    /// ]);
+    ///
+    /// let expected = Value::Array(vec![
+    ///     Value::Nil,
+    ///     Value::Integer(Integer::U64(42)),
+    ///     Value::Array(vec![
+    ///         Value::String("le message".to_string())
+    ///     ])
+    /// ]);
+    ///
+    /// assert_eq!(expected, val.to_owned());
+    /// ```
     pub fn to_owned(&self) -> Value {
         match self {
             &ValueRef::Nil => Value::Nil,
