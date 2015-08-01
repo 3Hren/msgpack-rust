@@ -41,7 +41,6 @@ impl ToUnsigned for u32 {
     }
 }
 
-// TODO: Display trait.
 #[derive(Debug)]
 pub enum Error<'r> {
     /// Failed to read the type marker value.
