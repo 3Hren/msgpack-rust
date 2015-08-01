@@ -63,6 +63,24 @@ impl From<ValueWriteError> for Error {
     }
 }
 
+/// Encodes and attempts to write the given non-owning ValueRef into the given Write.
+///
+/// # Errors
+///
+/// This function returns Error with an underlying I/O error if unable to properly write entire
+/// value. Interruption errors are handled internally by silent operation restarting.
+///
+/// # Examples
+/// ```
+/// use rmp::ValueRef;
+/// use rmp::encode::value_ref::write_value_ref;
+///
+/// let mut buf = Vec::new();
+/// let val = ValueRef::String("le message");
+///
+/// write_value_ref(&mut buf, &val).unwrap();
+/// assert_eq!(vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65], buf);
+/// ```
 pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
     where W: Write
 {
