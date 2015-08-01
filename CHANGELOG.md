@@ -6,7 +6,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - FixedValue* -> FixVal*
 
 ## [Unreleased][unreleased]
-- Nothing yet.
+
+## 0.5.0 - 2015-08-01
+### Added
+- New `ValueRef` value struct represents MessagePack'ed value, but unlike an owning `Value` it owns nothing except its
+  structure. It means that all strings and binaries it contains are borrowed from the byte array from which the value
+  was created.
+- New `BorrowRead` trait, which looks like a standard `BufRead` but unlike the standard this has an explicit internal
+  buffer lifetime, which allows to borrow from underlying buffer while mutating the type.
+- Encoding function for `ValueRef` with its own error category.
+- Decoding function for `ValueRef` with its own error category.
+- Conversion method from `ValueRef` to `Value`.
+- More benchmarks and tests.
+
+### Changed
+- Derive `Copy` trait for `Integer` and `Float` enums.
 
 ## 0.4.0 - 2015-07-17
 ### Added
