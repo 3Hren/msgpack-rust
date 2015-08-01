@@ -34,6 +34,11 @@ extern crate rmp as msgpack;
   there are high-level API, which provides you convenient interface using Rust standard library and
   compiler reflection, allowing to encode/decode structures using `derive` attribute.
 
+- **Zero-copy value decoding**
+
+  RMP allows to decode bytes from a buffer in a zero-copy manner easily and blazingly fast, while Rust
+  static checks guarantees that the data will be valid until buffer lives.
+
 - **Clear error handling**
 
   RMP's error system guarantees that you never receive an error enum with unreachable variant.
