@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Integer {
     /// Every non-negative integer is treated as u64, even if it fits in i64.
     U64(u64),
@@ -6,7 +6,7 @@ pub enum Integer {
     I64(i64),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Float {
     F32(f32),
     F64(f64),
