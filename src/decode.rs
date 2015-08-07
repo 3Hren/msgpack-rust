@@ -893,6 +893,63 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64, ValueReadError>
     }
 }
 
+use super::value::Integer;
+
+macro_rules! make_read_int_fit {
+    ($name:ident, $ty:ty) => {
+        #[allow(unused_comparisons)]
+        fn $name<R>(rd: &mut R) -> Result<$ty, ValueReadError>
+            where R: Read
+        {
+            let marker = try!(read_marker(rd));
+            let val = match marker {
+                // TODO: From trait.
+                Marker::PositiveFixnum(val) => Ok(Integer::U64(val as u64)),
+                Marker::NegativeFixnum(val) => Ok(Integer::I64(val as i64)),
+                Marker::U8  => Ok(Integer::U64(try!(read_numeric_data::<R, u8>(rd))  as u64)),
+                Marker::I8  => Ok(Integer::I64(try!(read_numeric_data::<R, i8>(rd))  as i64)),
+                Marker::U16 => Ok(Integer::U64(try!(read_numeric_data::<R, u16>(rd)) as u64)),
+                Marker::I16 => Ok(Integer::I64(try!(read_numeric_data::<R, i16>(rd)) as i64)),
+                Marker::U32 => Ok(Integer::U64(try!(read_numeric_data::<R, u32>(rd)) as u64)),
+                Marker::I32 => Ok(Integer::I64(try!(read_numeric_data::<R, i32>(rd)) as i64)),
+                Marker::U64 => Ok(Integer::U64(try!(read_numeric_data::<R, u64>(rd)) as u64)),
+                Marker::I64 => Ok(Integer::I64(try!(read_numeric_data::<R, i64>(rd)) as i64)),
+                marker => Err(ValueReadError::TypeMismatch(marker)),
+            };
+
+            match try!(val) {
+                Integer::I64(v) => {
+                    let res = v as $ty;
+
+                    if v == res as i64 && (res > 0) == (v > 0) {
+                        Ok(res)
+                    } else {
+                        Err(ValueReadError::TypeMismatch(marker))
+                    }
+                }
+                Integer::U64(v) => {
+                    let res = v as $ty;
+
+                    if v == res as u64 && res >= 0 {
+                        Ok(res)
+                    } else {
+                        Err(ValueReadError::TypeMismatch(marker))
+                    }
+                }
+            }
+        }
+    }
+}
+
+make_read_int_fit!(read_i8_fit, i8);
+make_read_int_fit!(read_i16_fit, i16);
+make_read_int_fit!(read_i32_fit, i32);
+make_read_int_fit!(read_i64_fit, i64);
+make_read_int_fit!(read_u8_fit, u8);
+make_read_int_fit!(read_u16_fit, u16);
+make_read_int_fit!(read_u32_fit, u32);
+make_read_int_fit!(read_u64_fit, u64);
+
 /// Attempts to read exactly 5 bytes from the given reader and to decode them as `f32` value.
 ///
 /// The first byte should be the marker and the others should represent the data itself.
@@ -1651,14 +1708,14 @@ use super::{
     DecodeStringError,
     read_nil,
     read_bool,
-    read_u8_loosely,
-    read_u16_loosely,
-    read_u32_loosely,
-    read_u64_loosely,
-    read_i8_loosely,
-    read_i16_loosely,
-    read_i32_loosely,
-    read_i64_loosely,
+    read_u8_fit,
+    read_u16_fit,
+    read_u32_fit,
+    read_u64_fit,
+    read_i8_fit,
+    read_i16_fit,
+    read_i32_fit,
+    read_i64_fit,
     read_f32,
     read_f64,
     read_str_len,
@@ -1769,19 +1826,19 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     }
 
     fn read_u8(&mut self) -> Result<u8> {
-        Ok(try!(read_u8_loosely(&mut self.rd)))
+        Ok(try!(read_u8_fit(&mut self.rd)))
     }
 
     fn read_u16(&mut self) -> Result<u16> {
-        Ok(try!(read_u16_loosely(&mut self.rd)))
+        Ok(try!(read_u16_fit(&mut self.rd)))
     }
 
     fn read_u32(&mut self) -> Result<u32> {
-        Ok(try!(read_u32_loosely(&mut self.rd)))
+        Ok(try!(read_u32_fit(&mut self.rd)))
     }
 
     fn read_u64(&mut self) -> Result<u64> {
-        Ok(try!(read_u64_loosely(&mut self.rd)))
+        Ok(try!(read_u64_fit(&mut self.rd)))
     }
 
     /// TODO: Doesn't look safe.
@@ -1791,19 +1848,19 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     }
 
     fn read_i8(&mut self) -> Result<i8> {
-        Ok(try!(read_i8_loosely(&mut self.rd)))
+        Ok(try!(read_i8_fit(&mut self.rd)))
     }
 
     fn read_i16(&mut self) -> Result<i16> {
-        Ok(try!(read_i16_loosely(&mut self.rd)))
+        Ok(try!(read_i16_fit(&mut self.rd)))
     }
 
     fn read_i32(&mut self) -> Result<i32> {
-        Ok(try!(read_i32_loosely(&mut self.rd)))
+        Ok(try!(read_i32_fit(&mut self.rd)))
     }
 
     fn read_i64(&mut self) -> Result<i64> {
-        Ok(try!(read_i64_loosely(&mut self.rd)))
+        Ok(try!(read_i64_fit(&mut self.rd)))
     }
 
     /// TODO: Doesn't look safe.
