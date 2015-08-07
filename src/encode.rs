@@ -534,11 +534,48 @@ pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
     }
 }
 
-#[allow(dead_code, unused_variables)]
-fn write_int<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
+/// Encodes and attempts to write an `i64` value using the most effective representation.
+fn write_sint_eff<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
     where W: Write
 {
-    unimplemented!()
+    match val {
+        val if -32 <= val && val < 0 => {
+            let marker = Marker::NegativeFixnum(val as i8);
+            try!(write_fixval(wr, marker));
+
+            Ok(marker)
+        }
+        val if -128 <= val && val < -32 => {
+           write_i8(wr, val as i8).and(Ok(Marker::I8))
+        }
+        val if -32768 <= val && val < -128 => {
+           write_i16(wr, val as i16).and(Ok(Marker::I16))
+        }
+        val if -2147483648 <= val && val < -32768 => {
+           write_i32(wr, val as i32).and(Ok(Marker::I32))
+        }
+        val if val < -2147483648 => {
+           write_i64(wr, val).and(Ok(Marker::I64))
+        }
+        val if 0 <= val && val < 128 => {
+            let marker = Marker::PositiveFixnum(val as u8);
+            try!(write_fixval(wr, marker));
+
+            Ok(marker)
+        }
+        val if val < 256 => {
+            write_u8(wr, val as u8).and(Ok(Marker::U8))
+        }
+        val if val < 65536 => {
+            write_u16(wr, val as u16).and(Ok(Marker::U16))
+        }
+        val if val < 4294967296 => {
+            write_u32(wr, val as u32).and(Ok(Marker::U32))
+        }
+        val => {
+            write_i64(wr, val).and(Ok(Marker::I64))
+        }
+    }
 }
 
 /// Encodes and attempts to write an `f32` value as a 5-byte sequence into the given write.
@@ -871,7 +908,7 @@ use super::{
     write_nil,
     write_bool,
     write_uint,
-    write_sint,
+    write_sint_eff,
     write_f32,
     write_f64,
     write_str,
@@ -997,7 +1034,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     }
 
     fn emit_i64(&mut self, val: i64) -> Result<(), Error> {
-        try!(write_sint(&mut self.wr, val));
+        try!(write_sint_eff(&mut self.wr, val));
 
         Ok(())
     }
