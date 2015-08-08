@@ -99,20 +99,10 @@ impl<'a> ValueRef<'a> {
             &ValueRef::String(val) => Value::String(val.to_string()),
             &ValueRef::Binary(val) => Value::Binary(val.to_vec()),
             &ValueRef::Array(ref val) => {
-                let mut vec = Vec::new();
-                for item in val {
-                    vec.push(item.to_owned());
-                }
-
-                Value::Array(vec)
+                Value::Array(val.iter().map(|v| v.to_owned()).collect())
             }
             &ValueRef::Map(ref val) => {
-                let mut vec = Vec::new();
-                for &(ref key, ref val) in val {
-                    vec.push((key.to_owned(), val.to_owned()));
-                }
-
-                Value::Map(vec)
+                Value::Map(val.iter().map(|&(ref k, ref v)| (k.to_owned(), v.to_owned())).collect())
             }
             &ValueRef::Ext(ty, buf) => Value::Ext(ty, buf.to_vec()),
         }
