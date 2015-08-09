@@ -124,6 +124,8 @@
 extern crate byteorder;
 extern crate rustc_serialize as serialize;
 
+extern crate serde;
+
 pub mod encode;
 pub mod decode;
 
@@ -135,6 +137,8 @@ pub const MSGPACK_VERSION : u32 = 5;
 
 pub use decode::serialize::Decoder;
 pub use encode::serialize::Encoder;
+
+pub use encode::serde::Serializer;
 
 pub use init::Marker;
 
