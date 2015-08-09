@@ -1,4 +1,5 @@
 *.pro
+Cargo.lock
 rmp.config
 rmp.creator
 rmp.creator.user
