@@ -11,5 +11,6 @@ mod ext;
 
 // High-level serialize interface.
 mod encoder;
+mod serializer;
 mod value;
 mod value_ref;
