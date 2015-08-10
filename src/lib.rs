@@ -138,6 +138,7 @@ pub const MSGPACK_VERSION : u32 = 5;
 pub use decode::serialize::Decoder;
 pub use encode::serialize::Encoder;
 
+pub use decode::serde::Deserializer;
 pub use encode::serde::Serializer;
 
 pub use init::Marker;
