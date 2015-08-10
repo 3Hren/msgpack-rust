@@ -463,4 +463,37 @@ mod unspecified {
 
         assert_eq!(Custom::Second { id: 42 }, actual);
     }
+
+    #[test]
+    fn pass_symmetric_0i32() {
+        use msgpack::Encoder;
+        use rustc_serialize::Encodable;
+
+        let val = 0i32;
+        let mut buf = Vec::new();
+
+        val.encode(&mut Encoder::new(&mut buf)).unwrap();
+        let mut decoder = Decoder::new(&buf[..]);
+
+        let res: i32 = Decodable::decode(&mut decoder).unwrap();
+
+        assert_eq!(val, res);
+    }
+
+    #[test]
+    fn pass_generalized_integer_decoding() {
+        use msgpack::Encoder;
+        use rustc_serialize::Encodable;
+
+        // Note, that we encode the value as `i64` and decode it as `u16`.
+        let val = 10050i64;
+        let mut buf = Vec::new();
+
+        val.encode(&mut Encoder::new(&mut buf)).unwrap();
+        let mut decoder = Decoder::new(&buf[..]);
+
+        let res: u16 = Decodable::decode(&mut decoder).unwrap();
+
+        assert_eq!(val, res as i64);
+    }
 }
