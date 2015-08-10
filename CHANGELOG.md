@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 
+## 0.5.1 - 2015-08-10
+### Changed
+- Now the `rustc_serialize::Encoder` should encode signed integers using the most effective underlying representation.
+- Now the `rustc_serialize::Decoder` should properly map integers to the result type if the decoded value fits in
+  result type's range.
+
 ## 0.5.0 - 2015-08-01
 ### Added
 - New `ValueRef` value struct represents MessagePack'ed value, but unlike an owning `Value` it owns nothing except its
