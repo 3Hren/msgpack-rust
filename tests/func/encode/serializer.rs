@@ -328,3 +328,16 @@ fn encode_struct_with_string_using_vec() {
     let out = vec![0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     assert_eq!(out, buf);
 }
+
+#[test]
+fn pass_bin() {
+    use serde::bytes::Bytes;
+
+    let mut buf = Vec::new();
+    let vec = vec![0xcc, 0x80];
+    let val = Bytes::from(&vec);
+
+    val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
+
+    assert_eq!(vec![0xc4, 0x02, 0xcc, 0x80], buf);
+}

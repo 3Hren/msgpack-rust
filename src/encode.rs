@@ -1214,6 +1214,7 @@ use super::{
     write_str,
     write_array_len,
     write_map_len,
+    write_bin_len,
 };
 
 use super::{
@@ -1492,6 +1493,11 @@ impl<'a> serde::Serializer for Serializer<'a> {
         where V: serde::Serialize,
     {
         value.serialize(self)
+    }
+
+    fn visit_bytes(&mut self, value: &[u8]) -> Result<(), Error> {
+        try!(write_bin_len(&mut self.wr, value.len() as u32));
+        self.wr.write_all(value).map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(WriteError(err))))
     }
 }
 
