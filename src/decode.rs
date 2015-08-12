@@ -2274,6 +2274,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
                 self.read_map(len, visitor)
             }
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
+            // TODO: Make something with binary and exts.
             marker => Err(From::from(FixedValueReadError::TypeMismatch(marker))),
         }
     }
