@@ -2044,6 +2044,7 @@ use super::{
     read_numeric_data,
     read_str_data,
     read_marker,
+    read_full,
 };
 
 /// Unstable: docs; incomplete
@@ -2212,6 +2213,21 @@ impl<R: Read> Deserializer<R> {
         })
     }
 
+    fn read_bin_data<V>(&mut self, len: usize, mut visitor: V) -> Result<V::Value>
+        where V: serde::de::Visitor
+    {
+        self.buf.clear();
+        self.buf.extend((0..len).map(|_| 0));
+
+        match read_full(&mut self.rd, &mut self.buf[..]) {
+            Ok(n) if n == self.buf.len() => (),
+            Ok(..)   => return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF)),
+            Err(err) => return Err(Error::InvalidDataRead(ReadError::Io(err))),
+        }
+
+        visitor.visit_bytes(&mut self.buf[..])
+    }
+
     // TODO: Add an ability to borrow underlying reader and to destruct this decoder.
 }
 
@@ -2273,8 +2289,20 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
                 let len: u32 = try!(read_numeric_data(&mut self.rd));
                 self.read_map(len, visitor)
             }
+            Marker::Bin8 => {
+                let len: u8 = try!(read_numeric_data(&mut self.rd));
+                self.read_bin_data(len as usize, visitor)
+            }
+            Marker::Bin16 => {
+                let len: u16 = try!(read_numeric_data(&mut self.rd));
+                self.read_bin_data(len as usize, visitor)
+            }
+            Marker::Bin32 => {
+                let len: u32 = try!(read_numeric_data(&mut self.rd));
+                self.read_bin_data(len as usize, visitor)
+            }
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
-            // TODO: Make something with binary and exts.
+            // TODO: Make something with exts.
             marker => Err(From::from(FixedValueReadError::TypeMismatch(marker))),
         }
     }

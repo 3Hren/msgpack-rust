@@ -470,4 +470,47 @@ mod unspecified {
 
         assert_eq!(Custom::Second { id: 42 }, actual);
     }
+
+    // TODO: Merge three of them.
+    #[test]
+    fn pass_bin8_into_bytebuf() {
+        use serde::bytes::ByteBuf;
+
+        let buf = [0xc4, 0x02, 0xcc, 0x80];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut deserializer = Deserializer::new(cur);
+        let actual: ByteBuf = Deserialize::deserialize(&mut deserializer).unwrap();
+        let actual: Vec<u8> = actual.into();
+
+        assert_eq!(vec![0xcc, 0x80], actual);
+    }
+
+    #[test]
+    fn pass_bin16_into_bytebuf() {
+        use serde::bytes::ByteBuf;
+
+        let buf = [0xc5, 0x00, 0x02, 0xcc, 0x80];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut deserializer = Deserializer::new(cur);
+        let actual: ByteBuf = Deserialize::deserialize(&mut deserializer).unwrap();
+        let actual: Vec<u8> = actual.into();
+
+        assert_eq!(vec![0xcc, 0x80], actual);
+    }
+
+    #[test]
+    fn pass_bin32_into_bytebuf() {
+        use serde::bytes::ByteBuf;
+
+        let buf = [0xc6, 0x00, 0x00, 0x00, 0x02, 0xcc, 0x80];
+        let cur = Cursor::new(&buf[..]);
+
+        let mut deserializer = Deserializer::new(cur);
+        let actual: ByteBuf = Deserialize::deserialize(&mut deserializer).unwrap();
+        let actual: Vec<u8> = actual.into();
+
+        assert_eq!(vec![0xcc, 0x80], actual);
+    }
 }
