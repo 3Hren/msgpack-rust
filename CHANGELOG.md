@@ -2,14 +2,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Planning][planning]
-- FixedValue* -> FixVal*
-
 ## [Unreleased][unreleased]
 ### Added
 - Initial support for [Serde](https://github.com/serde-rs/serde) serializer and deserializer.
 - Efficient bytes serialization with Serde.
 - Efficient binaries deserialization with Serde using `ByteBuf`.
+
+### Changed
+- Renamed `PositiveFixnum` marker to `FixPos`.
+- Renamed `NegativeFixnum` marker to `FixNeg`.
+- Renamed `FixedString` marker to `FixStr`.
+- Renamed `FixedArray` marker to `FixArray`.
+- Renamed `FixedMap` to `FixMap`.
 
 ## 0.5.1 - 2015-08-10
 ### Changed
