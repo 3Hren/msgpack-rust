@@ -129,7 +129,7 @@ fn pass_pack_i64() {
 fn pass_pack_uint_fix() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    assert_eq!(Marker::PositiveFixnum(127), write_uint(&mut &mut buf[..], 127).ok().unwrap());
+    assert_eq!(Marker::FixPos(127), write_uint(&mut &mut buf[..], 127).ok().unwrap());
 
     assert_eq!([0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }
@@ -174,7 +174,7 @@ fn pass_pack_uint_u64() {
 fn pass_pack_sint_fix() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    assert_eq!(Marker::NegativeFixnum(-32), write_sint(&mut &mut buf[..], -32).ok().unwrap());
+    assert_eq!(Marker::FixNeg(-32), write_sint(&mut &mut buf[..], -32).ok().unwrap());
 
     assert_eq!([0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }

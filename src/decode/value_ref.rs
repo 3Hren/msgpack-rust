@@ -330,7 +330,7 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
         Marker::Null => ValueRef::Nil,
         Marker::True => ValueRef::Boolean(true),
         Marker::False => ValueRef::Boolean(false),
-        Marker::PositiveFixnum(val) => {
+        Marker::FixPos(val) => {
             ValueRef::Integer(Integer::U64(val as u64))
         }
         Marker::U8 => {
@@ -349,7 +349,7 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             let val: u64 = try!(read_num(rd));
             ValueRef::Integer(Integer::U64(val))
         }
-        Marker::NegativeFixnum(val) => {
+        Marker::FixNeg(val) => {
             ValueRef::Integer(Integer::I64(val as i64))
         }
         Marker::I8 => {
@@ -376,7 +376,7 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             let val: f64 = try!(read_num(rd));
             ValueRef::Float(Float::F64(val))
         }
-        Marker::FixedString(len) => {
+        Marker::FixStr(len) => {
             try!(read_str_value(rd, len))
         }
         Marker::Str8 => {
@@ -403,7 +403,7 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             let len: u32 = try!(read_len(rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_bin_value(rd, len))
         }
-        Marker::FixedArray(len) => {
+        Marker::FixArray(len) => {
             try!(read_array_value(rd, len))
         }
         Marker::Array16 => {
@@ -414,7 +414,7 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             let len: u32 = try!(read_len(&mut rd).map_err(|err| Error::InvalidLengthRead(err)));
             try!(read_array_value(rd, len))
         }
-        Marker::FixedMap(len) => {
+        Marker::FixMap(len) => {
             try!(read_map_value(rd, len))
         }
         Marker::Map16 => {

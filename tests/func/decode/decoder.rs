@@ -82,7 +82,7 @@ mod bool {
 
             let res: Result<bool> = Decodable::decode(&mut decoder);
             match res.err() {
-                Some(Error::TypeMismatch(Marker::PositiveFixnum(0))) => (),
+                Some(Error::TypeMismatch(Marker::FixPos(0))) => (),
                 other => panic!("unexpected result: {:?}", other)
             }
         }

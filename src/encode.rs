@@ -200,7 +200,7 @@ pub fn write_pfix<W>(wr: &mut W, val: u8) -> Result<(), FixedValueWriteError>
 {
     assert!(val < 128);
 
-    write_fixval(wr, Marker::PositiveFixnum(val))
+    write_fixval(wr, Marker::FixPos(val))
 }
 
 /// Encodes and attempts to write a negative small integer value as a negative fixnum into the
@@ -228,7 +228,7 @@ pub fn write_nfix<W>(wr: &mut W, val: i8) -> Result<(), FixedValueWriteError>
 {
     assert!(-32 <= val && val < 0);
 
-    write_fixval(wr, Marker::NegativeFixnum(val))
+    write_fixval(wr, Marker::FixNeg(val))
 }
 
 // TODO: Eliminate this or not?
@@ -481,7 +481,7 @@ pub fn write_uint<W>(wr: &mut W, val: u64) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if val < 128 {
-        let marker = Marker::PositiveFixnum(val as u8);
+        let marker = Marker::FixPos(val as u8);
 
         try!(write_fixval(wr, marker));
 
@@ -518,7 +518,7 @@ pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if -32 <= val && val <= 0 {
-        let marker = Marker::NegativeFixnum(val as i8);
+        let marker = Marker::FixNeg(val as i8);
 
         try!(write_fixval(wr, marker));
 
@@ -540,7 +540,7 @@ fn write_sint_eff<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
 {
     match val {
         val if -32 <= val && val < 0 => {
-            let marker = Marker::NegativeFixnum(val as i8);
+            let marker = Marker::FixNeg(val as i8);
             try!(write_fixval(wr, marker));
 
             Ok(marker)
@@ -558,7 +558,7 @@ fn write_sint_eff<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
            write_i64(wr, val).and(Ok(Marker::I64))
         }
         val if 0 <= val && val < 128 => {
-            let marker = Marker::PositiveFixnum(val as u8);
+            let marker = Marker::FixPos(val as u8);
             try!(write_fixval(wr, marker));
 
             Ok(marker)
@@ -622,7 +622,7 @@ pub fn write_str_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if len < 32 {
-        let marker = Marker::FixedString(len as u8);
+        let marker = Marker::FixStr(len as u8);
         try!(write_fixval(wr, marker));
         Ok(marker)
     } else if len < 256 {
@@ -701,7 +701,7 @@ pub fn write_array_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteErro
     where W: Write
 {
     if len < 16 {
-        let marker = Marker::FixedArray(len as u8);
+        let marker = Marker::FixArray(len as u8);
         try!(write_fixval(wr, marker));
         Ok(marker)
     } else if len < 65536 {
@@ -724,7 +724,7 @@ pub fn write_map_len<W>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     if len < 16 {
-        let marker = Marker::FixedMap(len as u8);
+        let marker = Marker::FixMap(len as u8);
         try!(write_fixval(wr, marker));
         Ok(marker)
     } else if len < 65536 {

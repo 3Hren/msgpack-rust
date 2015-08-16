@@ -347,7 +347,7 @@ pub fn read_pfix<R>(rd: &mut R) -> Result<u8, FixedValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val),
+        Marker::FixPos(val) => Ok(val),
         marker => Err(FixedValueReadError::TypeMismatch(marker)),
     }
 }
@@ -374,7 +374,7 @@ pub fn read_nfix<R>(rd: &mut R) -> Result<i8, FixedValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val),
+        Marker::FixNeg(val) => Ok(val),
         marker => Err(FixedValueReadError::TypeMismatch(marker)),
     }
 }
@@ -659,7 +659,7 @@ pub fn read_u8_loosely<R>(rd: &mut R) -> Result<u8, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val),
+        Marker::FixPos(val) => Ok(val),
         Marker::U8 => Ok(try!(read_numeric_data(rd))),
         marker     => Err(ValueReadError::TypeMismatch(marker)),
     }
@@ -689,7 +689,7 @@ pub fn read_u16_loosely<R>(rd: &mut R) -> Result<u16, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val as u16),
+        Marker::FixPos(val) => Ok(val as u16),
         Marker::U8  => Ok(try!(read_numeric_data::<R, u8>(rd)) as u16),
         Marker::U16 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
@@ -720,7 +720,7 @@ pub fn read_u32_loosely<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val as u32),
+        Marker::FixPos(val) => Ok(val as u32),
         Marker::U8  => Ok(try!(read_numeric_data::<R, u8>(rd))  as u32),
         Marker::U16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
         Marker::U32 => Ok(try!(read_numeric_data(rd))),
@@ -755,7 +755,7 @@ pub fn read_u64_loosely<R>(rd: &mut R) -> Result<u64, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::PositiveFixnum(val) => Ok(val as u64),
+        Marker::FixPos(val) => Ok(val as u64),
         Marker::U8  => Ok(try!(read_numeric_data::<R, u8>(rd))  as u64),
         Marker::U16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u64),
         Marker::U32 => Ok(try!(read_numeric_data::<R, u32>(rd)) as u64),
@@ -788,7 +788,7 @@ pub fn read_i8_loosely<R>(rd: &mut R) -> Result<i8, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val),
+        Marker::FixNeg(val) => Ok(val),
         Marker::I8  => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
     }
@@ -818,7 +818,7 @@ pub fn read_i16_loosely<R>(rd: &mut R) -> Result<i16, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val as i16),
+        Marker::FixNeg(val) => Ok(val as i16),
         Marker::I8  => Ok(try!(read_numeric_data::<R, i8>(rd)) as i16),
         Marker::I16 => Ok(try!(read_numeric_data(rd))),
         marker      => Err(ValueReadError::TypeMismatch(marker)),
@@ -849,7 +849,7 @@ pub fn read_i32_loosely<R>(rd: &mut R) -> Result<i32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val as i32),
+        Marker::FixNeg(val) => Ok(val as i32),
         Marker::I8  => Ok(try!(read_numeric_data::<R, i8>(rd))  as i32),
         Marker::I16 => Ok(try!(read_numeric_data::<R, i16>(rd)) as i32),
         Marker::I32 => Ok(try!(read_numeric_data(rd))),
@@ -884,7 +884,7 @@ pub fn read_i64_loosely<R>(rd: &mut R) -> Result<i64, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::NegativeFixnum(val) => Ok(val as i64),
+        Marker::FixNeg(val) => Ok(val as i64),
         Marker::I8  => Ok(try!(read_numeric_data::<R, i8>(rd))  as i64),
         Marker::I16 => Ok(try!(read_numeric_data::<R, i16>(rd)) as i64),
         Marker::I32 => Ok(try!(read_numeric_data::<R, i32>(rd)) as i64),
@@ -904,8 +904,8 @@ macro_rules! make_read_int_fit {
             let marker = try!(read_marker(rd));
             let val = match marker {
                 // TODO: From trait.
-                Marker::PositiveFixnum(val) => Ok(Integer::U64(val as u64)),
-                Marker::NegativeFixnum(val) => Ok(Integer::I64(val as i64)),
+                Marker::FixPos(val) => Ok(Integer::U64(val as u64)),
+                Marker::FixNeg(val) => Ok(Integer::I64(val as i64)),
                 Marker::U8  => Ok(Integer::U64(try!(read_numeric_data::<R, u8>(rd))  as u64)),
                 Marker::I8  => Ok(Integer::I64(try!(read_numeric_data::<R, i8>(rd))  as i64)),
                 Marker::U16 => Ok(Integer::U64(try!(read_numeric_data::<R, u16>(rd)) as u64)),
@@ -1022,7 +1022,7 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::FixedString(size) => Ok(size as u32),
+        Marker::FixStr(size) => Ok(size as u32),
         Marker::Str8  => Ok(try!(read_numeric_data::<R, u8>(rd))  as u32),
         Marker::Str16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
         Marker::Str32 => Ok(try!(read_numeric_data(rd))),
@@ -1124,7 +1124,7 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::FixedArray(size) => Ok(size as u32),
+        Marker::FixArray(size) => Ok(size as u32),
         Marker::Array16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
         Marker::Array32 => Ok(try!(read_numeric_data(rd))),
         marker => Err(ValueReadError::TypeMismatch(marker))
@@ -1146,7 +1146,7 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
-        Marker::FixedMap(size) => Ok(size as u32),
+        Marker::FixMap(size) => Ok(size as u32),
         Marker::Map16 => Ok(try!(read_numeric_data::<R, u16>(rd)) as u32),
         Marker::Map32 => Ok(try!(read_numeric_data(rd))),
         marker => Err(ValueReadError::TypeMismatch(marker))
@@ -1566,8 +1566,8 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::Null  => Value::Nil,
         Marker::True  => Value::Boolean(true),
         Marker::False => Value::Boolean(false),
-        Marker::PositiveFixnum(val) => Value::Integer(Integer::U64(val as u64)),
-        Marker::NegativeFixnum(val) => Value::Integer(Integer::I64(val as i64)),
+        Marker::FixPos(val) => Value::Integer(Integer::U64(val as u64)),
+        Marker::FixNeg(val) => Value::Integer(Integer::I64(val as i64)),
         Marker::U8  => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u8>(rd))  as u64)),
         Marker::U16 => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u16>(rd)) as u64)),
         Marker::U32 => Value::Integer(Integer::U64(try!(read_numeric_data::<R, u32>(rd)) as u64)),
@@ -1578,7 +1578,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::I64 => Value::Integer(Integer::I64(try!(read_numeric_data(rd)))),
         Marker::F32 => Value::Float(Float::F32(try!(read_numeric_data(rd)))),
         Marker::F64 => Value::Float(Float::F64(try!(read_numeric_data(rd)))),
-        Marker::FixedString(len) => {
+        Marker::FixStr(len) => {
             let len = len as u32;
             let res = try!(read_str(rd, len));
             Value::String(res)
@@ -1598,7 +1598,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             let res = try!(read_str(rd, len));
             Value::String(res)
         }
-        Marker::FixedArray(len) => {
+        Marker::FixArray(len) => {
             let len = len as usize;
             let vec = try!(read_array(rd, len));
             Value::Array(vec)
@@ -1613,7 +1613,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             let vec = try!(read_array(rd, len));
             Value::Array(vec)
         }
-        Marker::FixedMap(len) => {
+        Marker::FixMap(len) => {
             let len = len as usize;
             let map = try!(read_map(rd, len));
             Value::Map(map)
@@ -2088,12 +2088,12 @@ impl serde::de::Error for Error {
     fn type_mismatch(ty: serde::de::Type) -> Error {
         match ty {
             serde::de::Type::Bool => Error::TypeMismatch(Marker::True),
-            serde::de::Type::Usize => Error::TypeMismatch(Marker::PositiveFixnum(0)),
+            serde::de::Type::Usize => Error::TypeMismatch(Marker::FixPos(0)),
             serde::de::Type::U8 => Error::TypeMismatch(Marker::U8),
             serde::de::Type::U16 => Error::TypeMismatch(Marker::U16),
             serde::de::Type::U32 => Error::TypeMismatch(Marker::U32),
             serde::de::Type::U64 => Error::TypeMismatch(Marker::U64),
-            serde::de::Type::Isize => Error::TypeMismatch(Marker::NegativeFixnum(0)),
+            serde::de::Type::Isize => Error::TypeMismatch(Marker::FixNeg(0)),
             serde::de::Type::I8 => Error::TypeMismatch(Marker::I8),
             serde::de::Type::I16 => Error::TypeMismatch(Marker::I16),
             serde::de::Type::I32 => Error::TypeMismatch(Marker::I32),
@@ -2257,8 +2257,8 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
             Marker::Null => visitor.visit_unit(),
             Marker::True => visitor.visit_bool(true),
             Marker::False => visitor.visit_bool(false),
-            Marker::PositiveFixnum(val) => visitor.visit_u8(val),
-            Marker::NegativeFixnum(val) => visitor.visit_i8(val),
+            Marker::FixPos(val) => visitor.visit_u8(val),
+            Marker::FixNeg(val) => visitor.visit_i8(val),
             Marker::U8 => visitor.visit_u8(try!(read_numeric_data(&mut self.rd))),
             Marker::U16 => visitor.visit_u16(try!(read_numeric_data(&mut self.rd))),
             Marker::U32 => visitor.visit_u32(try!(read_numeric_data(&mut self.rd))),
@@ -2269,7 +2269,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
             Marker::I64 => visitor.visit_i64(try!(read_numeric_data(&mut self.rd))),
             Marker::F32 => visitor.visit_f32(try!(read_numeric_data(&mut self.rd))),
             Marker::F64 => visitor.visit_f64(try!(read_numeric_data(&mut self.rd))),
-            Marker::FixedString(len) => self.read_str(len as u32, visitor),
+            Marker::FixStr(len) => self.read_str(len as u32, visitor),
             Marker::Str8 => {
                 let len: u8 = try!(read_numeric_data(&mut self.rd));
                 self.read_str(len as u32, visitor)
@@ -2282,7 +2282,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
                 let len: u32 = try!(read_numeric_data(&mut self.rd));
                 self.read_str(len, visitor)
             }
-            Marker::FixedArray(len) => {
+            Marker::FixArray(len) => {
                 self.read_array(len as u32, visitor)
             }
             Marker::Array16 => {
@@ -2293,7 +2293,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
                 let len: u32 = try!(read_numeric_data(&mut self.rd));
                 self.read_array(len, visitor)
             }
-            Marker::FixedMap(len) => {
+            Marker::FixMap(len) => {
                 self.read_map(len as u32, visitor)
             }
             Marker::Map16 => {

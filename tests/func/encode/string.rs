@@ -5,7 +5,7 @@ use msgpack::encode::*;
 fn pass_pack_len_fix() {
     let mut buf = [0x00];
 
-    assert_eq!(Marker::FixedString(31), write_str_len(&mut &mut buf[..], 31).unwrap());
+    assert_eq!(Marker::FixStr(31), write_str_len(&mut &mut buf[..], 31).unwrap());
 
     assert_eq!([0xbf], buf);
 }
