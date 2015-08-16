@@ -2077,10 +2077,16 @@ impl ::std::error::Error for Error {
 }
 
 impl serde::de::Error for Error {
-    fn syntax(msg: &str) -> Error { Error::Syntax(format!("syntax error: {}", msg)) }
-    fn length_mismatch(len: usize) -> Error { Error::LengthMismatch(len as u32) }
-    fn type_mismatch(typ: serde::de::Type) -> Error {
-        match typ {
+    fn syntax(msg: &str) -> Error {
+        Error::Syntax(format!("syntax error: {}", msg))
+    }
+
+    fn length_mismatch(len: usize) -> Error {
+        Error::LengthMismatch(len as u32)
+    }
+
+    fn type_mismatch(ty: serde::de::Type) -> Error {
+        match ty {
             serde::de::Type::Bool => Error::TypeMismatch(Marker::True),
             serde::de::Type::Usize => Error::TypeMismatch(Marker::PositiveFixnum(0)),
             serde::de::Type::U8 => Error::TypeMismatch(Marker::U8),
@@ -2113,9 +2119,18 @@ impl serde::de::Error for Error {
             serde::de::Type::Bytes => Error::TypeMismatch(Marker::Array32),
         }
     }
-    fn end_of_stream() -> Error { Error::Uncategorized("end of stream".to_string()) }
-    fn missing_field(_field: &str) -> Error { Error::Uncategorized("missing field".to_string()) }
-    fn unknown_field(_field: &str) -> Error { Error::Uncategorized("unknown field".to_string()) }
+
+    fn end_of_stream() -> Error {
+        Error::Uncategorized("end of stream".to_string())
+    }
+
+    fn missing_field(_field: &str) -> Error {
+        Error::Uncategorized("missing field".to_string())
+    }
+
+    fn unknown_field(_field: &str) -> Error {
+        Error::Uncategorized("unknown field".to_string())
+    }
 }
 
 impl fmt::Display for Error {
