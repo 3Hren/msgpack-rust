@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - FixedValue* -> FixVal*
 
 ## [Unreleased][unreleased]
+### Added
+- Initial support for [Serde](https://github.com/serde-rs/serde) serializer and deserializer.
+- Efficient bytes serialization with Serde.
+- Efficient binaries deserialization with Serde using `ByteBuf`.
 
 ## 0.5.1 - 2015-08-10
 ### Changed
