@@ -379,7 +379,7 @@ pub fn read_nfix<R>(rd: &mut R) -> Result<i8, FixedValueReadError>
     }
 }
 
-trait BigEndianRead {
+trait BigEndianRead: Sized {
     fn read<R: Read>(rd: &mut R) -> Result<Self, byteorder::Error>;
 }
 
