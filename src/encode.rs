@@ -972,7 +972,7 @@ impl From<ValueWriteError> for Error {
 ///
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
-// TODO: Docs. Examples.
+// TODO: Docs. Examples, variant encoding policy.
 pub struct Encoder<'a> {
     wr: &'a mut Write,
 }
@@ -984,8 +984,6 @@ impl<'a> Encoder<'a> {
             wr: wr,
         }
     }
-
-    // TODO: An ability to borrow the `Write`.
 }
 
 impl<'a> serialize::Encoder for Encoder<'a> {

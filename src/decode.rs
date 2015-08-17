@@ -1810,7 +1810,20 @@ impl<R: Read> Decoder<R> {
         }
     }
 
-    // TODO: Add an ability to borrow underlying reader and to destruct this decoder.
+    /// Gets a reference to the underlying reader in this decoder.
+    pub fn get_ref(&self) -> &R {
+        &self.rd
+    }
+
+    /// Gets a mutable reference to the underlying reader in this decoder.
+    pub fn get_mut(&mut self) -> &mut R {
+        &mut self.rd
+    }
+
+    /// Consumes this decoder returning the underlying reader.
+    pub fn into_inner(self) -> R {
+        self.rd
+    }
 }
 
 /// Unstable: docs; examples; incomplete
