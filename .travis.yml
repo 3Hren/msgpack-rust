@@ -12,6 +12,7 @@ addons:
 
 rust:
   - 1.1.0
+  - stable
   - beta
   - nightly
 
