@@ -2213,6 +2213,21 @@ impl<R: Read> Deserializer<R> {
         }
     }
 
+    /// Gets a reference to the underlying reader in this decoder.
+    pub fn get_ref(&self) -> &R {
+        &self.rd
+    }
+
+    /// Gets a mutable reference to the underlying reader in this decoder.
+    pub fn get_mut(&mut self) -> &mut R {
+        &mut self.rd
+    }
+
+    /// Consumes this decoder returning the underlying reader.
+    pub fn into_inner(self) -> R {
+        self.rd
+    }
+
     fn read_str<V>(&mut self, len: u32, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
@@ -2255,8 +2270,6 @@ impl<R: Read> Deserializer<R> {
 
         visitor.visit_bytes(&mut self.buf[..])
     }
-
-    // TODO: Add an ability to borrow underlying reader and to destruct this decoder.
 }
 
 /// Unstable: docs; examples; incomplete
