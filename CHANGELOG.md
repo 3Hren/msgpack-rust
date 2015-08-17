@@ -11,11 +11,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   last case.
 
 ### Changed
+- Update well-formness for `BigEndianRead` trait to be implemented only for sized types.
 - Renamed `PositiveFixnum` marker to `FixPos`.
 - Renamed `NegativeFixnum` marker to `FixNeg`.
 - Renamed `FixedString` marker to `FixStr`.
 - Renamed `FixedArray` marker to `FixArray`.
 - Renamed `FixedMap` to `FixMap`.
+- Minor documentation updates and markdown fixes.
 
 ## 0.5.1 - 2015-08-10
 ### Changed
