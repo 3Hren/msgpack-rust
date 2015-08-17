@@ -1,3 +1,5 @@
+//! Contains Value and ValueRef structs and its conversion traits.
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Integer {
     /// Every non-negative integer is treated as u64, even if it fits in i64.

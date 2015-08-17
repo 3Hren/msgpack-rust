@@ -1,4 +1,4 @@
-//! # Note
+//! Provides various functions and structs for MessagePack decoding.
 //!
 //! Most of the function defined in this module will silently handle interruption error (EINTR)
 //! received from the given `Read` to be in consistent state with the `Write::write_all` method in
@@ -1153,6 +1153,8 @@ pub fn read_map_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
     }
 }
 
+/// Attempts to read up to 5 bytes from the given reader and to decode them as Binary array length.
+///
 /// # Note
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
@@ -1169,10 +1171,19 @@ pub fn read_bin_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     }
 }
 
+/// Attempts to read some bytes from the given slice until a complete Binary message is decoded,
+/// returning a borrowed slice with the data.
+///
+/// This includes reading both length and the data itself.
+///
 /// # Note
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
+///
+/// # Unstable
+///
+/// This function is unstable, moreover I have a plan to drop it.
 // TODO: Docs; not sure about naming.
 pub fn read_bin_borrow(rd: &[u8]) -> Result<&[u8], ValueReadError> {
     let mut cur = io::Cursor::new(rd);

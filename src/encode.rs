@@ -1,3 +1,5 @@
+//! Provides various functions and structs for MessagePack encoding.
+
 use std::convert::From;
 use std::error::Error;
 use std::fmt;
@@ -846,6 +848,8 @@ impl From<ValueWriteError> for Error {
     }
 }
 
+/// Encodes and attempts to write the most efficient representation of the given Value.
+///
 /// # Note
 ///
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
