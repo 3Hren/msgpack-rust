@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Initial support for [Serde](https://github.com/serde-rs/serde) serializer and deserializer.
 - Efficient bytes serialization with Serde.
 - Efficient binaries deserialization with Serde using `ByteBuf`.
+- Rust serialize Decoder now can provide the underlying reader both by reference or by value, destroying itself in the
+  last case.
 
 ### Changed
 - Renamed `PositiveFixnum` marker to `FixPos`.
