@@ -1283,8 +1283,6 @@ impl<'a> Serializer<'a> {
             wr: wr,
         }
     }
-
-    // TODO: An ability to borrow the `Write`.
 }
 
 impl<'a> serde::Serializer for Serializer<'a> {
