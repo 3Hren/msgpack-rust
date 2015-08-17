@@ -2217,7 +2217,7 @@ impl<R: Read> Deserializer<R> {
         where V: serde::de::Visitor
     {
         self.buf.clear();
-        self.buf.extend((0 .. len).map(|_| 0));
+        self.buf.extend((0..len).map(|_| 0));
         visitor.visit_str(try!(read_str_data(&mut self.rd, len, &mut self.buf[..])))
     }
 
