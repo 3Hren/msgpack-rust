@@ -70,7 +70,7 @@ impl From<byteorder::Error> for MarkerWriteError {
 
 /// Represents an error that can occur when attempting to write MessagePack'ed single-byte value.
 #[derive(Debug)]
-pub struct FixedValueWriteError(WriteError);
+pub struct FixedValueWriteError(pub WriteError);
 
 impl Error for FixedValueWriteError {
     fn description(&self) -> &str { "error while writing MessagePack'ed single-byte value" }
