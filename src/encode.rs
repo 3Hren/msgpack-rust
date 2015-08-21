@@ -537,7 +537,7 @@ pub fn write_sint<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
 }
 
 /// Encodes and attempts to write an `i64` value using the most effective representation.
-fn write_sint_eff<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
+pub fn write_sint_eff<W>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteError>
     where W: Write
 {
     match val {
