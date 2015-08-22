@@ -1,9 +1,9 @@
-use std::io::Cursor;
+extern crate rmp_serialize;
+extern crate rustc_serialize;
 
 use rustc_serialize::Encodable;
 
-use msgpack::Encoder;
-use msgpack::encode::serialize::Error;
+use rmp_serialize::encode::{Encoder, Error};
 
 #[test]
 fn pass_null() {
@@ -29,6 +29,8 @@ fn fail_null() {
 
 #[test]
 fn pass_bool() {
+    use std::io::Cursor;
+
     let mut buf = [0x00, 0x00];
 
     {

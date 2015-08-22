@@ -18,6 +18,5 @@ license = "MIT"
 
 [dependencies]
 byteorder = "*"
-rustc-serialize = "0.3"
 serde = "*"
 serde_macros = { version = "*", optional = true }

@@ -10,7 +10,6 @@ mod map;
 mod ext;
 
 // High-level deserialize interface.
-mod decoder;
 mod deserializer;
 mod value;
 mod value_ref;
