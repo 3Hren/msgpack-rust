@@ -1,20 +1,13 @@
 [package]
-
 name = "rmp"
 version = "0.6.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
-
-description = "Pure Rust MessagePack serialization implementation"
-
-documentation = "https://3hren.github.io/msgpack-rust/rmp/index.html"
-
-repository = "https://github.com/3Hren/msgpack-rust"
-
-readme = "README.md"
-
-keywords = ["msgpack", "MessagePack"]
-
 license = "MIT"
+description = "Pure Rust MessagePack serialization implementation"
+repository = "https://github.com/3Hren/msgpack-rust"
+documentation = "https://3hren.github.io/msgpack-rust/rmp/index.html"
+readme = "../README.md"
+keywords = ["msgpack", "MessagePack"]
 
 [dependencies]
 byteorder = "*"
