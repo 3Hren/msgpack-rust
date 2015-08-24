@@ -1,13 +1,15 @@
 [package]
-name = "rmp"
+name = "rmp-serde"
 version = "0.6.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
-description = "Pure Rust MessagePack serialization implementation"
+description = "Serde bindings for RMP"
 repository = "https://github.com/3Hren/msgpack-rust"
 documentation = "https://3hren.github.io/msgpack-rust/rmp/index.html"
 readme = "../README.md"
-keywords = ["msgpack", "MessagePack"]
+keywords = ["msgpack", "MessagePack", "serder", "serialization"]
 
 [dependencies]
-byteorder = "*"
+rmp = { version = "*", path = "../rmp" }
+serde = "*"
+serde_macros = { version = "*", optional = true }

@@ -46,8 +46,6 @@
 
 extern crate byteorder;
 
-extern crate serde;
-
 pub mod encode;
 pub mod decode;
 
@@ -56,9 +54,6 @@ mod init;
 pub mod value;
 
 pub const MSGPACK_VERSION : u32 = 5;
-
-pub use decode::serde::Deserializer;
-pub use encode::serde::Serializer;
 
 pub use init::Marker;
 

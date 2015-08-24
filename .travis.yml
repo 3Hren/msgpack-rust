@@ -19,6 +19,7 @@ rust:
 env:
   - CRATE=rmp
   - CRATE=rmp-serialize
+  - CRATE=rmp-serde
 
 # Load travis-cargo.
 before_script:

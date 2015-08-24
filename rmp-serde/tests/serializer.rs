@@ -1,9 +1,15 @@
+#![cfg_attr(feature = "serde_macros", feature(custom_derive, plugin))]
+#![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
+
+extern crate serde;
+extern crate rmp_serde;
+
 use std::io::Cursor;
 
 use serde::Serialize;
 
-use msgpack::Serializer;
-use msgpack::encode::serde::Error;
+use rmp_serde::Serializer;
+use rmp_serde::encode::Error;
 
 #[test]
 fn pass_null() {
