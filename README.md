@@ -6,7 +6,10 @@ RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
 [![](http://meritbadge.herokuapp.com/rmp)](https://crates.io/crates/rmp)
 [![Coverage Status][coveralls-img]][coveralls-url]
 
-- [API documentation](http://3hren.github.io/msgpack-rust/rmp/index.html)
+- API documentation
+  - [RMP](http://3hren.github.io/msgpack-rust/rmp/rmp/index.html)
+  - [RMP Serialize Bindings](http://3hren.github.io/msgpack-rust/rmp-serialize/rmp_serialize/index.html)
+  - [RMP Serde Bindings](http://3hren.github.io/msgpack-rust/rmp-serde/rmp_serde/index.html)
 
 - [Crates.io](http://crates.io/crates/rmp)
 
