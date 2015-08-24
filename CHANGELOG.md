@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 
+## 0.7.0 - 2015-08-24
+### Changed
+- The big single crate has been refactored, which results in three crates: `rmp`, `rmp-serialize` and `rmp-serde`.
+
 ## 0.6.0 - 2015-08-17
 ### Added
 - Initial support for [Serde](https://github.com/serde-rs/serde) serializer and deserializer.

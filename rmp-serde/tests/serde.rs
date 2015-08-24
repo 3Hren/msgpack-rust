@@ -1,8 +1,11 @@
+extern crate serde;
+extern crate rmp_serde;
+
 use std::io::Cursor;
 
 use serde::Deserialize;
 
-use msgpack::Deserializer;
+use rmp_serde::Deserializer;
 
 #[test]
 fn pass_deserializer_get_ref() {
