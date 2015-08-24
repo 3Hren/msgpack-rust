@@ -56,7 +56,7 @@ extern crate rmp as msgpack;
 Let's try to encode a tuple of int and string.
 
 ```rust
-extern crate rmp as msgpack;
+extern crate rmp_serialize as msgpack;
 extern crate rustc_serialize;
 
 use rustc_serialize::Encodable;
@@ -77,7 +77,7 @@ fn main() {
 Now we have an encoded buffer, which we can decode the same way:
 
 ```rust
-extern crate rmp as msgpack;
+extern crate rmp_serialize as msgpack;
 extern crate rustc_serialize;
 
 use rustc_serialize::Decodable;
@@ -99,7 +99,7 @@ reflection. To enable this feature, derive RustcEncodable and RustcDecodable att
 shown in the following example:
 
 ```rust
-extern crate rmp as msgpack;
+extern crate rmp_serialize as msgpack;
 extern crate rustc_serialize;
 
 use rustc_serialize::{Encodable, Decodable};
