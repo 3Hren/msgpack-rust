@@ -72,6 +72,7 @@ impl From<ValueWriteError> for Error {
 // TODO: Docs. Examples.
 pub struct Serializer<'a> {
     wr: &'a mut Write,
+    verbose: bool,
 }
 
 impl<'a> Serializer<'a> {
@@ -79,6 +80,16 @@ impl<'a> Serializer<'a> {
     pub fn new(wr: &'a mut Write) -> Serializer<'a> {
         Serializer {
             wr: wr,
+            verbose: false,
+        }
+    }
+
+    /// Creates a new MessagePack encoder whose output will be written to the writer specified.
+    /// structs will be written as maps in MessagePack
+    pub fn new_verbose(wr: &'a mut Write) -> Serializer<'a> {
+        Serializer {
+            wr: wr,
+            verbose: true,
         }
     }
 }
@@ -276,7 +287,11 @@ impl<'a> serde::Serializer for Serializer<'a> {
             None => panic!("do not know how to serialize a sequence with no length"),
         };
 
-        try!(write_array_len(&mut self.wr, len as u32));
+        if self.verbose {
+            try!(write_map_len(&mut self.wr, len as u32));
+        } else {
+            try!(write_array_len(&mut self.wr, len as u32));
+        }
 
         while let Some(()) = try!(visitor.visit(self)) { }
 
@@ -286,6 +301,11 @@ impl<'a> serde::Serializer for Serializer<'a> {
     fn visit_struct_elt<V>(&mut self, _key: &str, value: V) -> Result<(), Error>
         where V: serde::Serialize,
     {
+        if self.verbose {
+            if let Err(e) = write_str(&mut self.wr, _key).map_err(From::from) {
+                return Err(e);
+            }
+        }
         value.serialize(self)
     }
 

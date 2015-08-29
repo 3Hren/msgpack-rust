@@ -342,6 +342,36 @@ fn pass_map() {
 
 #[cfg(feature = "serde_macros")]
 #[test]
+fn pass_struct_map() {
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Custom {
+        et: String,
+        le: u8,
+        shit: u8,
+    }
+
+    let buf = [
+        0x83, // 3 (size)
+        0xa2, 0x65, 0x74, // "et"
+        0xa5, 0x76, 0x6f, 0x69, 0x6c, 0x61, // "voila"
+        0xa2, 0x6c, 0x65, // "le"
+        0x00, // 0
+        0xa4, 0x73, 0x68, 0x69, 0x74, // "shit"
+        0x01, // 1
+    ];
+    let cur = Cursor::new(&buf[..]);
+
+    // it appears no special behavior is needed for deserializing structs encoded as maps
+    let mut deserializer = Deserializer::new(cur);
+    let actual: Custom = Deserialize::deserialize(&mut deserializer).unwrap();
+    let voila = "voila".to_string(); // so the next line looks more funny
+    let expected = Custom { et: voila, le: 0, shit: 1 };
+
+    assert_eq!(expected, actual);
+}
+
+#[cfg(feature = "serde_macros")]
+#[test]
 fn pass_enum() {
     let buf = [0x92, 0x01, 0x90];
     let cur = Cursor::new(&buf[..]);

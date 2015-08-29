@@ -269,6 +269,33 @@ fn pass_map() {
 
 #[cfg(feature = "serde_macros")]
 #[test]
+fn pass_struct_map() {
+    #[derive(Debug, PartialEq, Serialize)]
+    struct Custom<'a> {
+        et: &'a str,
+        le: u8,
+        shit: u8,
+    }
+
+    let mut buf = [0x00; 20];
+
+    let val = Custom { et: "voila", le: 0, shit: 1 };
+    val.serialize(&mut Serializer::new_verbose(&mut &mut buf[..])).ok().unwrap();
+
+    let out = [
+        0x83, // 3 (size)
+        0xa2, 0x65, 0x74, // "et"
+        0xa5, 0x76, 0x6f, 0x69, 0x6c, 0x61, // "voila"
+        0xa2, 0x6c, 0x65, // "le"
+        0x00, // 0
+        0xa4, 0x73, 0x68, 0x69, 0x74, // "shit"
+        0x01, // 1
+    ];
+    assert_eq!(out, buf);
+}
+
+#[cfg(feature = "serde_macros")]
+#[test]
 fn pass_enum() {
     // We encode enum types as [id, [args...]].
 
