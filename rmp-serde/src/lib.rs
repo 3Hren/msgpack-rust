@@ -5,4 +5,4 @@ pub mod decode;
 pub mod encode;
 
 pub use decode::Deserializer;
-pub use encode::Serializer;
+pub use encode::{Serializer, new_default_serializer, StructArrayWriter, StructMapWriter};
