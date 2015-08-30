@@ -3,6 +3,7 @@ use serde;
 use std::fmt;
 use std::io::Write;
 
+use rmp::Marker;
 use rmp::encode::{
     write_nil,
     write_bool,
@@ -58,6 +59,52 @@ impl From<ValueWriteError> for Error {
     }
 }
 
+pub trait VariantWriter {
+    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> where W: Write;
+    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError> where W: Write;
+}
+
+/// Writes struct as MessagePack array with no field names
+pub struct StructArrayWriter;
+
+impl VariantWriter for StructArrayWriter {
+    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
+        where W: Write
+    {
+        write_array_len(wr, len)
+    }
+
+    /// This implementation does not write field names
+    #[allow(unused_variables)]
+    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError>
+        where W: Write
+    {
+        Ok(())
+    }
+}
+
+/// Writes struct as MessagePack map including field names
+pub struct StructMapWriter;
+
+impl VariantWriter for StructMapWriter {
+    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
+        where W: Write
+    {
+        write_map_len(wr, len)
+    }
+
+    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError>
+        where W: Write
+    {
+        write_str(wr, _key)
+    }
+}
+
+/// Creates a new MessagePack encoder with default variant options
+pub fn new_default_serializer<'a>(wr: &'a mut Write) -> Serializer<'a, StructArrayWriter> {
+    Serializer::new(wr, StructArrayWriter)
+}
+
 /// Represents MessagePack serialization implementation.
 ///
 /// # Note
@@ -70,31 +117,22 @@ impl From<ValueWriteError> for Error {
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
 // TODO: Docs. Examples.
-pub struct Serializer<'a> {
+pub struct Serializer<'a, W: VariantWriter> {
     wr: &'a mut Write,
-    verbose: bool,
+    vw: W,
 }
 
-impl<'a> Serializer<'a> {
+impl<'a, W: VariantWriter> Serializer<'a, W> {
     /// Creates a new MessagePack encoder whose output will be written to the writer specified.
-    pub fn new(wr: &'a mut Write) -> Serializer<'a> {
+    pub fn new(wr: &'a mut Write, variant_writer: W) -> Serializer<'a, W> {
         Serializer {
             wr: wr,
-            verbose: false,
-        }
-    }
-
-    /// Creates a new MessagePack encoder whose output will be written to the writer specified.
-    /// structs will be written as maps in MessagePack
-    pub fn new_verbose(wr: &'a mut Write) -> Serializer<'a> {
-        Serializer {
-            wr: wr,
-            verbose: true,
+            vw: variant_writer,
         }
     }
 }
 
-impl<'a> serde::Serializer for Serializer<'a> {
+impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     type Error = Error;
 
     fn visit_unit(&mut self) -> Result<(), Error> {
@@ -287,11 +325,7 @@ impl<'a> serde::Serializer for Serializer<'a> {
             None => panic!("do not know how to serialize a sequence with no length"),
         };
 
-        if self.verbose {
-            try!(write_map_len(&mut self.wr, len as u32));
-        } else {
-            try!(write_array_len(&mut self.wr, len as u32));
-        }
+        try!(self.vw.write_struct_len(&mut self.wr, len as u32));
 
         while let Some(()) = try!(visitor.visit(self)) { }
 
@@ -301,11 +335,7 @@ impl<'a> serde::Serializer for Serializer<'a> {
     fn visit_struct_elt<V>(&mut self, _key: &str, value: V) -> Result<(), Error>
         where V: serde::Serialize,
     {
-        if self.verbose {
-            if let Err(e) = write_str(&mut self.wr, _key).map_err(From::from) {
-                return Err(e);
-            }
-        }
+        try!(self.vw.write_field_name(&mut self.wr, _key));
         value.serialize(self)
     }
 
