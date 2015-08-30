@@ -83,28 +83,6 @@ impl VariantWriter for StructArrayWriter {
     }
 }
 
-/// Writes struct as MessagePack map including field names
-pub struct StructMapWriter;
-
-impl VariantWriter for StructMapWriter {
-    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
-        where W: Write
-    {
-        write_map_len(wr, len)
-    }
-
-    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError>
-        where W: Write
-    {
-        write_str(wr, _key)
-    }
-}
-
-/// Creates a new MessagePack encoder with default variant options
-pub fn new_default_serializer<'a>(wr: &'a mut Write) -> Serializer<'a, StructArrayWriter> {
-    Serializer::new(wr, StructArrayWriter)
-}
-
 /// Represents MessagePack serialization implementation.
 ///
 /// # Note
@@ -122,12 +100,22 @@ pub struct Serializer<'a, W: VariantWriter> {
     vw: W,
 }
 
-impl<'a, W: VariantWriter> Serializer<'a, W> {
+impl<'a> Serializer<'a, StructArrayWriter> {
     /// Creates a new MessagePack encoder whose output will be written to the writer specified.
-    pub fn new(wr: &'a mut Write, variant_writer: W) -> Serializer<'a, W> {
+    pub fn new(wr: &'a mut Write) -> Serializer<'a, StructArrayWriter> {
         Serializer {
             wr: wr,
-            vw: variant_writer,
+            vw: StructArrayWriter,
+        }
+    }
+}
+
+impl<'a, W: VariantWriter> Serializer<'a, W> {
+    /// Creates a new MessagePack encoder whose output will be written to the writer specified.
+    pub fn with(wr: &'a mut Write, vw: W) -> Serializer<'a, W> {
+        Serializer {
+            wr: wr,
+            vw: vw,
         }
     }
 }
