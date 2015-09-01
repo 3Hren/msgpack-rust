@@ -2,6 +2,7 @@
 #![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
 
 extern crate serde;
+extern crate rmp;
 extern crate rmp_serde;
 
 use std::io::Cursor;
@@ -263,6 +264,54 @@ fn pass_map() {
         0xa2, 0x6c, 0x65, // "le"
         0x01, // 1
         0xa4, 0x73, 0x68, 0x69, 0x74, // "shit"
+    ];
+    assert_eq!(out, buf);
+}
+
+#[cfg(feature = "serde_macros")]
+#[test]
+fn pass_struct_map() {
+    use std::io::Write;
+    use rmp::Marker;
+    use rmp::encode::{ValueWriteError, write_map_len, write_str};
+    use rmp_serde::encode::VariantWriter;
+
+    struct StructMapWriter;
+
+    impl VariantWriter for StructMapWriter {
+        fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
+            where W: Write
+        {
+            write_map_len(wr, len)
+        }
+
+        fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError>
+            where W: Write
+        {
+            write_str(wr, _key)
+        }
+    }
+
+    #[derive(Debug, PartialEq, Serialize)]
+    struct Custom<'a> {
+        et: &'a str,
+        le: u8,
+        shit: u8,
+    }
+
+    let mut buf = [0x00; 20];
+
+    let val = Custom { et: "voila", le: 0, shit: 1 };
+    val.serialize(&mut Serializer::with(&mut &mut buf[..], StructMapWriter)).ok().unwrap();
+
+    let out = [
+        0x83, // 3 (size)
+        0xa2, 0x65, 0x74, // "et"
+        0xa5, 0x76, 0x6f, 0x69, 0x6c, 0x61, // "voila"
+        0xa2, 0x6c, 0x65, // "le"
+        0x00, // 0
+        0xa4, 0x73, 0x68, 0x69, 0x74, // "shit"
+        0x01, // 1
     ];
     assert_eq!(out, buf);
 }
