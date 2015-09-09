@@ -99,6 +99,7 @@ fn pass_enum() {
 #[cfg(feature = "serde_macros")]
 #[test]
 fn pass_enum_variant_with_arg() {
+    // The encoded bytearray is: [1, [42]].
     let buf = [0x92, 0x01, 0x91, 0x2a];
     let cur = Cursor::new(&buf[..]);
 
@@ -108,10 +109,11 @@ fn pass_enum_variant_with_arg() {
         Second(u32),
     }
 
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Custom = Deserialize::deserialize(&mut deserializer).unwrap();
+    let mut de = Deserializer::new(cur);
+    let actual: Custom = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Custom::Second(42), actual);
+    assert_eq!(4, de.get_ref().position())
 }
 
 #[cfg(feature = "serde_macros")]

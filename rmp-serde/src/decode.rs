@@ -150,6 +150,15 @@ impl From<MarkerReadError> for Error {
     }
 }
 
+impl From<serde::de::value::Error> for Error {
+    fn from(err: serde::de::value::Error) -> Error {
+        match err {
+            serde::de::value::Error::SyntaxError => Error::Syntax("unknown".into()),
+            _ => Error::Uncategorized("unknown".into()),
+        }
+    }
+}
+
 pub type Result<T> = result::Result<T, Error>;
 
 /// # Note
@@ -317,6 +326,19 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
             Err(err) => Err(err)
         }
     }
+
+    fn visit_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)
+        -> Result<V::Value>
+        where V: serde::de::EnumVisitor
+    {
+        // TODO: Read array len instead.
+        let marker = try!(read_marker(&mut self.rd));
+
+        match marker {
+            Marker::FixArray(2) => visitor.visit(VariantVisitor::new(self)),
+            _ => Err(Error::Syntax("expected array with len 2".into()))
+        }
+    }
 }
 
 struct SeqVisitor<'a, R: Read + 'a> {
@@ -383,5 +405,45 @@ impl<'a, R: Read + 'a> serde::de::MapVisitor for MapVisitor<'a, R> {
         } else {
             Err(Error::LengthMismatch(self.actual))
         }
+    }
+}
+
+struct VariantVisitor<'a, R: Read + 'a> {
+    de: &'a mut Deserializer<R>,
+}
+
+impl<'a, R: Read + 'a> VariantVisitor<'a, R> {
+    pub fn new(de: &'a mut Deserializer<R>) -> VariantVisitor<'a, R> {
+        VariantVisitor {
+            de: de,
+        }
+    }
+}
+
+impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
+    type Error = Error;
+
+    // Resolves an internal variant type by integer id.
+    fn visit_variant<V>(&mut self) -> Result<V>
+        where V: serde::Deserialize
+    {
+        use serde::de::value::ValueDeserializer;
+        let id: u32 = try!(serde::Deserialize::deserialize(self.de));
+
+        let mut de = (id as usize).into_deserializer();
+        Ok(try!(V::deserialize(&mut de)))
+    }
+
+    fn visit_unit(&mut self) -> Result<()> {
+        use serde::de::Deserialize;
+
+        type T = ();
+        T::deserialize(self.de)
+    }
+
+    fn visit_tuple<V>(&mut self, len: usize, visitor: V) -> Result<V::Value>
+        where V: serde::de::Visitor,
+    {
+        serde::de::Deserializer::visit_tuple(self.de, len, visitor)
     }
 }
