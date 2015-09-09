@@ -75,7 +75,7 @@ impl serde::de::Error for Error {
             serde::de::Type::Str => Error::TypeMismatch(Marker::Str32),
             serde::de::Type::String => Error::TypeMismatch(Marker::Str32),
             serde::de::Type::Unit => Error::TypeMismatch(Marker::Null),
-            serde::de::Type::Option => Error::TypeMismatch(Marker::True),
+            serde::de::Type::Option => Error::TypeMismatch(Marker::Null),
             serde::de::Type::Seq => Error::TypeMismatch(Marker::Array32),
             serde::de::Type::Map => Error::TypeMismatch(Marker::Map32),
             serde::de::Type::UnitStruct => Error::TypeMismatch(Marker::Null),
@@ -169,6 +169,7 @@ pub type Result<T> = result::Result<T, Error>;
 pub struct Deserializer<R: Read> {
     rd: R,
     buf: Vec<u8>,
+    decoding_option: bool,
 }
 
 impl<R: Read> Deserializer<R> {
@@ -177,6 +178,7 @@ impl<R: Read> Deserializer<R> {
         Deserializer {
             rd: rd,
             buf: Vec::new(),
+            decoding_option: false,
         }
     }
 
@@ -249,7 +251,13 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         let marker = try!(read_marker(&mut self.rd));
 
         match marker {
-            Marker::Null => visitor.visit_unit(),
+            Marker::Null => {
+                if self.decoding_option {
+                    visitor.visit_none()
+                } else {
+                    visitor.visit_unit()
+                }
+            }
             Marker::True => visitor.visit_bool(true),
             Marker::False => visitor.visit_bool(false),
             Marker::FixPos(val) => visitor.visit_u8(val),
@@ -318,15 +326,26 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     }
 
     /// We treat Value::Null as None.
+    ///
+    /// # Note
+    ///
+    /// Without using explicit option marker it's impossible to properly deserialize the following
+    /// specific cases:
+    ///  - `Option<()>`.
+    ///  - nested optionals, like `Option<Option<...>>`.
     fn visit_option<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor,
     {
         // Primarily try to read optimisticly.
-        match visitor.visit_some(self) {
+        self.decoding_option = true;
+        let res = match visitor.visit_some(self) {
             Ok(val) => Ok(val),
             Err(Error::TypeMismatch(Marker::Null)) => visitor.visit_none(),
             Err(err) => Err(err)
-        }
+        };
+        self.decoding_option = false;
+
+        res
     }
 
     fn visit_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)

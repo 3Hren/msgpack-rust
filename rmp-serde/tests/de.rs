@@ -243,16 +243,6 @@ fn pass_option_some() {
 }
 
 #[test]
-fn pass_option_some_null() {
-    let buf = [0xc0];
-    let cur = Cursor::new(&buf[..]);
-
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Option<()> = Deserialize::deserialize(&mut deserializer).unwrap();
-    assert_eq!(Some(()), actual);
-}
-
-#[test]
 fn pass_option_none() {
     let buf = [0xc0];
     let cur = Cursor::new(&buf[..]);
