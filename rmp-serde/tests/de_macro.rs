@@ -89,10 +89,11 @@ fn pass_enum() {
         Second,
     }
 
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Custom = Deserialize::deserialize(&mut deserializer).unwrap();
+    let mut de = Deserializer::new(cur);
+    let actual: Custom = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Custom::Second, actual);
+    assert_eq!(3, de.get_ref().position());
 }
 
 #[cfg(feature = "serde_macros")]
