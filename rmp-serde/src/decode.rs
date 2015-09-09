@@ -12,6 +12,7 @@ use rmp::decode::{
     MarkerReadError,
     ReadError,
     ValueReadError,
+    read_array_size,
     read_numeric_data,
     read_str_data,
     read_marker,
@@ -352,13 +353,11 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         -> Result<V::Value>
         where V: serde::de::EnumVisitor
     {
-        // TODO: Read array len instead.
-        let marker = try!(read_marker(&mut self.rd));
+        let len = try!(read_array_size(&mut self.rd));
 
-        match marker {
-            Marker::FixArray(2) => visitor.visit(VariantVisitor::new(self)),
-            Marker::FixArray(n) => Err(Error::LengthMismatch(n as u32)),
-            marker => Err(Error::TypeMismatch(marker)),
+        match len {
+            2 => visitor.visit(VariantVisitor::new(self)),
+            n => Err(Error::LengthMismatch(n as u32)),
         }
     }
 }
