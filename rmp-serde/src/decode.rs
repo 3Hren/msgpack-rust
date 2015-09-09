@@ -246,7 +246,9 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
-        match try!(read_marker(&mut self.rd)) {
+        let marker = try!(read_marker(&mut self.rd));
+
+        match marker {
             Marker::Null => visitor.visit_unit(),
             Marker::True => visitor.visit_bool(true),
             Marker::False => visitor.visit_bool(false),
@@ -409,6 +411,11 @@ impl<'a, R: Read + 'a> serde::de::MapVisitor for MapVisitor<'a, R> {
     }
 }
 
+/// Default variant visitor.
+///
+/// # Note
+///
+/// We use default behaviour for new type, which decodes enums with a single value as a tuple.
 struct VariantVisitor<'a, R: Read + 'a> {
     de: &'a mut Deserializer<R>,
 }
@@ -429,6 +436,7 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
         where V: serde::Deserialize
     {
         use serde::de::value::ValueDeserializer;
+
         let id: u32 = try!(serde::Deserialize::deserialize(self.de));
 
         let mut de = (id as usize).into_deserializer();
@@ -446,5 +454,11 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
         where V: serde::de::Visitor,
     {
         serde::de::Deserializer::visit_tuple(self.de, len, visitor)
+    }
+
+    fn visit_struct<V>(&mut self, fields: &'static [&'static str], visitor: V) -> Result<V::Value>
+        where V: serde::de::Visitor,
+    {
+        serde::de::Deserializer::visit_tuple(self.de, fields.len(), visitor)
     }
 }

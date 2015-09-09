@@ -24,8 +24,8 @@ fn pass_tuple_struct() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Decoded(u32, u32);
 
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Decoded = Deserialize::deserialize(&mut deserializer).unwrap();
+    let mut de = Deserializer::new(cur);
+    let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Decoded(42, 100500), actual);
 }
@@ -39,8 +39,8 @@ fn pass_struct() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Decoded { id: u32, value: u32 };
 
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Decoded = Deserialize::deserialize(&mut deserializer).unwrap();
+    let mut de = Deserializer::new(cur);
+    let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Decoded { id: 42, value: 100500 }, actual);
 }
@@ -49,7 +49,7 @@ fn pass_struct() {
 #[test]
 fn pass_struct_map() {
     #[derive(Debug, PartialEq, Deserialize)]
-    struct Custom {
+    struct Struct {
         et: String,
         le: u8,
         shit: u8,
@@ -66,11 +66,10 @@ fn pass_struct_map() {
     ];
     let cur = Cursor::new(&buf[..]);
 
-    // it appears no special behavior is needed for deserializing structs encoded as maps
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Custom = Deserialize::deserialize(&mut deserializer).unwrap();
-    let voila = "voila".to_string(); // so the next line looks more funny
-    let expected = Custom { et: voila, le: 0, shit: 1 };
+    // It appears no special behavior is needed for deserializing structs encoded as maps.
+    let mut de = Deserializer::new(cur);
+    let actual: Struct = Deserialize::deserialize(&mut de).unwrap();
+    let expected = Struct { et: "voila".into(), le: 0, shit: 1 };
 
     assert_eq!(expected, actual);
 }
@@ -84,36 +83,56 @@ fn pass_enum() {
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
-    enum Custom {
-        First,
-        Second,
+    enum Enum {
+        A,
+        B,
     }
 
     let mut de = Deserializer::new(cur);
-    let actual: Custom = Deserialize::deserialize(&mut de).unwrap();
+    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
 
-    assert_eq!(Custom::Second, actual);
+    assert_eq!(Enum::B, actual);
     assert_eq!(3, de.get_ref().position());
 }
 
 #[cfg(feature = "serde_macros")]
 #[test]
-fn pass_enum_variant_with_arg() {
+fn pass_tuple_enum_with_arg() {
     // The encoded bytearray is: [1, [42]].
     let buf = [0x92, 0x01, 0x91, 0x2a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
-    enum Custom {
-        First,
-        Second(u32),
+    enum Enum {
+        A,
+        B(u32),
     }
 
     let mut de = Deserializer::new(cur);
-    let actual: Custom = Deserialize::deserialize(&mut de).unwrap();
+    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
 
-    assert_eq!(Custom::Second(42), actual);
+    assert_eq!(Enum::B(42), actual);
     assert_eq!(4, de.get_ref().position())
+}
+
+#[cfg(feature = "serde_macros")]
+#[test]
+fn pass_tuple_enum_with_args() {
+    // The encoded bytearray is: [1, [42, 58]].
+    let buf = [0x92, 0x01, 0x92, 0x2a, 0x3a];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Enum {
+        A,
+        B(u32, u32),
+    }
+
+    let mut de = Deserializer::new(cur);
+    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
+
+    assert_eq!(Enum::B(42, 58), actual);
+    assert_eq!(5, de.get_ref().position())
 }
 
 #[cfg(feature = "serde_macros")]
@@ -124,16 +143,16 @@ fn fail_enum_sequence_mismatch() {
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
-    enum Custom {
-        First,
-        Second,
+    enum Enum {
+        A,
+        B,
     }
 
     let mut de = Deserializer::new(cur);
-    let actual: Result<Custom> = Deserialize::deserialize(&mut de);
+    let actual: Result<Enum> = Deserialize::deserialize(&mut de);
 
-    match actual.err() {
-        Some(Error::LengthMismatch(3)) => (),
+    match actual.err().unwrap() {
+        Error::LengthMismatch(3) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }
@@ -141,19 +160,21 @@ fn fail_enum_sequence_mismatch() {
 #[cfg(feature = "serde_macros")]
 #[test]
 fn fail_enum_overflow() {
+    // The encoded bytearray is: [1, [42]].
     let buf = [0x92, 0x01, 0x2a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
-    enum Custom {
-        First,
+    // TODO: Rename to Enum: A, B, C, ...
+    enum Enum {
+        A,
     }
 
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Result<Custom> = Deserialize::deserialize(&mut deserializer);
+    let mut de = Deserializer::new(cur);
+    let actual: Result<Enum> = Deserialize::deserialize(&mut de);
 
-    match actual.err() {
-        Some(Error::Uncategorized(..)) => (),
+    match actual.err().unwrap() {
+        Error::Syntax(..) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }
@@ -161,17 +182,42 @@ fn fail_enum_overflow() {
 #[cfg(feature = "serde_macros")]
 #[test]
 fn pass_struct_enum_with_arg() {
+    // The encoded bytearray is: [1, [42]].
     let buf = [0x92, 0x01, 0x91, 0x2a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
-    enum Custom {
-        First,
-        Second { id: u32 },
+    enum Enum {
+        A,
+        B { id: u32 },
     }
 
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Custom = Deserialize::deserialize(&mut deserializer).unwrap();
+    let mut de = Deserializer::new(cur);
+    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
 
-    assert_eq!(Custom::Second { id: 42 }, actual);
+    assert_eq!(Enum::B { id: 42 }, actual);
+    assert_eq!(4, de.get_ref().position())
+}
+
+#[cfg(feature = "serde_macros")]
+#[test]
+fn pass_enum_with_nested_struct() {
+    // The encoded bytearray is: [0, [['le message']]].
+    let buf = [0x92, 0x0, 0x91, 0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Nested(String);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Enum {
+        A(Nested),
+        B,
+    }
+
+    let mut de = Deserializer::new(cur);
+    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
+
+    assert_eq!(Enum::A(Nested("le message".into())), actual);
+    assert_eq!(buf.len() as u64, de.get_ref().position())
 }
