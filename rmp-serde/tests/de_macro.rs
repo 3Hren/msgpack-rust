@@ -213,3 +213,47 @@ fn pass_enum_with_nested_struct() {
     assert_eq!(Enum::A(Nested("le message".into())), actual);
     assert_eq!(buf.len() as u64, de.get_ref().position())
 }
+
+#[test]
+fn pass_enum_custom_policy() {
+    use std::io::Read;
+    use rmp_serde::decode::VariantVisitor;
+
+    // We expect enums to be endoded as id, [...] (without wrapping tuple).
+
+    let buf = [0x01, 0x90];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Enum {
+        A,
+        B,
+    }
+
+    struct CustomDeserializer<R: Read> {
+        inner: Deserializer<R>,
+    }
+
+    impl<R: Read> serde::Deserializer for CustomDeserializer<R> {
+        type Error = Error;
+
+        fn visit<V>(&mut self, visitor: V) -> Result<V::Value>
+            where V: serde::de::Visitor
+        {
+            self.inner.visit(visitor)
+        }
+
+        fn visit_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)
+            -> Result<V::Value>
+            where V: serde::de::EnumVisitor
+        {
+            visitor.visit(VariantVisitor::new(&mut self.inner))
+        }
+    }
+
+    let mut de = CustomDeserializer { inner: Deserializer::new(cur) };
+    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
+
+    assert_eq!(Enum::B, actual);
+    assert_eq!(2, de.inner.get_ref().position());
+}

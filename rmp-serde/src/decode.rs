@@ -434,7 +434,7 @@ impl<'a, R: Read + 'a> serde::de::MapVisitor for MapVisitor<'a, R> {
 /// # Note
 ///
 /// We use default behaviour for new type, which decodes enums with a single value as a tuple.
-struct VariantVisitor<'a, R: Read + 'a> {
+pub struct VariantVisitor<'a, R: Read + 'a> {
     de: &'a mut Deserializer<R>,
 }
 
