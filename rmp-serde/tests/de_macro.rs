@@ -119,6 +119,7 @@ fn pass_enum_variant_with_arg() {
 #[cfg(feature = "serde_macros")]
 #[test]
 fn fail_enum_sequence_mismatch() {
+    // The encoded bytearray is: [1, 2, 100500].
     let buf = [0x93, 0x1, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
     let cur = Cursor::new(&buf[..]);
 
@@ -128,11 +129,11 @@ fn fail_enum_sequence_mismatch() {
         Second,
     }
 
-    let mut deserializer = Deserializer::new(cur);
-    let actual: Result<Custom> = Deserialize::deserialize(&mut deserializer);
+    let mut de = Deserializer::new(cur);
+    let actual: Result<Custom> = Deserialize::deserialize(&mut de);
 
     match actual.err() {
-        Some(Error::Uncategorized(..)) => (),
+        Some(Error::LengthMismatch(3)) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }

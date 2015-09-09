@@ -336,7 +336,8 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
 
         match marker {
             Marker::FixArray(2) => visitor.visit(VariantVisitor::new(self)),
-            _ => Err(Error::Syntax("expected array with len 2".into()))
+            Marker::FixArray(n) => Err(Error::LengthMismatch(n as u32)),
+            marker => Err(Error::TypeMismatch(marker)),
         }
     }
 }
