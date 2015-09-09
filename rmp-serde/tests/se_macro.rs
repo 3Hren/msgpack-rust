@@ -1,16 +1,16 @@
 #![cfg_attr(feature = "serde_macros", feature(custom_derive, plugin))]
 #![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
 
+#![cfg(feature = "serde_macros")]
+
 extern crate serde;
 extern crate rmp;
 extern crate rmp_serde;
 
 use serde::Serialize;
-
 use rmp_serde::Serializer;
 use rmp_serde::encode::Error;
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_struct() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
@@ -24,7 +24,6 @@ fn pass_struct() {
     assert_eq!([0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94], buf);
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_struct_map() {
     use std::io::Write;
@@ -72,7 +71,6 @@ fn pass_struct_map() {
     assert_eq!(out, buf);
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_enum() {
     // We encode enum types as [id, [args...]].
@@ -93,7 +91,6 @@ fn pass_enum() {
     assert_eq!(out, buf);
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_tuple_enum_with_arg() {
     #[allow(unused)]
@@ -112,7 +109,6 @@ fn pass_tuple_enum_with_arg() {
     assert_eq!(out, buf);
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn encode_struct_with_string_using_vec() {
     #[derive(Debug, PartialEq, Serialize)]

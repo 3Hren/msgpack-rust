@@ -1,6 +1,8 @@
 #![cfg_attr(feature = "serde_macros", feature(custom_derive, plugin))]
 #![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
 
+#![cfg(feature = "serde_macros")]
+
 extern crate serde;
 extern crate rmp;
 extern crate rmp_serde;
@@ -15,7 +17,6 @@ use rmp_serde::decode::Error;
 
 type Result<T> = result::Result<T, Error>;
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_tuple_struct() {
     let buf = [0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
@@ -30,7 +31,6 @@ fn pass_tuple_struct() {
     assert_eq!(Decoded(42, 100500), actual);
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_struct() {
     let buf = [0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
@@ -45,7 +45,6 @@ fn pass_struct() {
     assert_eq!(Decoded { id: 42, value: 100500 }, actual);
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_struct_map() {
     #[derive(Debug, PartialEq, Deserialize)]
@@ -74,7 +73,6 @@ fn pass_struct_map() {
     assert_eq!(expected, actual);
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_enum() {
     // We expect enums to be endoded as [id, [...]]
@@ -95,7 +93,6 @@ fn pass_enum() {
     assert_eq!(3, de.get_ref().position());
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_tuple_enum_with_arg() {
     // The encoded bytearray is: [1, [42]].
@@ -115,7 +112,6 @@ fn pass_tuple_enum_with_arg() {
     assert_eq!(4, de.get_ref().position())
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_tuple_enum_with_args() {
     // The encoded bytearray is: [1, [42, 58]].
@@ -135,7 +131,6 @@ fn pass_tuple_enum_with_args() {
     assert_eq!(5, de.get_ref().position())
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn fail_enum_sequence_mismatch() {
     // The encoded bytearray is: [1, 2, 100500].
@@ -157,7 +152,6 @@ fn fail_enum_sequence_mismatch() {
     }
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn fail_enum_overflow() {
     // The encoded bytearray is: [1, [42]].
@@ -179,7 +173,6 @@ fn fail_enum_overflow() {
     }
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_struct_enum_with_arg() {
     // The encoded bytearray is: [1, [42]].
@@ -199,7 +192,6 @@ fn pass_struct_enum_with_arg() {
     assert_eq!(4, de.get_ref().position())
 }
 
-#[cfg(feature = "serde_macros")]
 #[test]
 fn pass_enum_with_nested_struct() {
     // The encoded bytearray is: [0, [['le message']]].
