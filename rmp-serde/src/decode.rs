@@ -12,6 +12,7 @@ use rmp::decode::{
     MarkerReadError,
     ReadError,
     ValueReadError,
+    read_array_size,
     read_numeric_data,
     read_str_data,
     read_marker,
@@ -75,7 +76,7 @@ impl serde::de::Error for Error {
             serde::de::Type::Str => Error::TypeMismatch(Marker::Str32),
             serde::de::Type::String => Error::TypeMismatch(Marker::Str32),
             serde::de::Type::Unit => Error::TypeMismatch(Marker::Null),
-            serde::de::Type::Option => Error::TypeMismatch(Marker::True),
+            serde::de::Type::Option => Error::TypeMismatch(Marker::Null),
             serde::de::Type::Seq => Error::TypeMismatch(Marker::Array32),
             serde::de::Type::Map => Error::TypeMismatch(Marker::Map32),
             serde::de::Type::UnitStruct => Error::TypeMismatch(Marker::Null),
@@ -150,6 +151,15 @@ impl From<MarkerReadError> for Error {
     }
 }
 
+impl From<serde::de::value::Error> for Error {
+    fn from(err: serde::de::value::Error) -> Error {
+        match err {
+            serde::de::value::Error::SyntaxError => Error::Syntax("unknown".into()),
+            _ => Error::Uncategorized("unknown".into()),
+        }
+    }
+}
+
 pub type Result<T> = result::Result<T, Error>;
 
 /// # Note
@@ -160,6 +170,7 @@ pub type Result<T> = result::Result<T, Error>;
 pub struct Deserializer<R: Read> {
     rd: R,
     buf: Vec<u8>,
+    decoding_option: bool,
 }
 
 impl<R: Read> Deserializer<R> {
@@ -168,6 +179,7 @@ impl<R: Read> Deserializer<R> {
         Deserializer {
             rd: rd,
             buf: Vec::new(),
+            decoding_option: false,
         }
     }
 
@@ -237,8 +249,16 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
-        match try!(read_marker(&mut self.rd)) {
-            Marker::Null => visitor.visit_unit(),
+        let marker = try!(read_marker(&mut self.rd));
+
+        match marker {
+            Marker::Null => {
+                if self.decoding_option {
+                    visitor.visit_none()
+                } else {
+                    visitor.visit_unit()
+                }
+            }
             Marker::True => visitor.visit_bool(true),
             Marker::False => visitor.visit_bool(false),
             Marker::FixPos(val) => visitor.visit_u8(val),
@@ -307,14 +327,37 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     }
 
     /// We treat Value::Null as None.
+    ///
+    /// # Note
+    ///
+    /// Without using explicit option marker it's impossible to properly deserialize the following
+    /// specific cases:
+    ///  - `Option<()>`.
+    ///  - nested optionals, like `Option<Option<...>>`.
     fn visit_option<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor,
     {
         // Primarily try to read optimisticly.
-        match visitor.visit_some(self) {
+        self.decoding_option = true;
+        let res = match visitor.visit_some(self) {
             Ok(val) => Ok(val),
             Err(Error::TypeMismatch(Marker::Null)) => visitor.visit_none(),
             Err(err) => Err(err)
+        };
+        self.decoding_option = false;
+
+        res
+    }
+
+    fn visit_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)
+        -> Result<V::Value>
+        where V: serde::de::EnumVisitor
+    {
+        let len = try!(read_array_size(&mut self.rd));
+
+        match len {
+            2 => visitor.visit(VariantVisitor::new(self)),
+            n => Err(Error::LengthMismatch(n as u32)),
         }
     }
 }
@@ -383,5 +426,57 @@ impl<'a, R: Read + 'a> serde::de::MapVisitor for MapVisitor<'a, R> {
         } else {
             Err(Error::LengthMismatch(self.actual))
         }
+    }
+}
+
+/// Default variant visitor.
+///
+/// # Note
+///
+/// We use default behaviour for new type, which decodes enums with a single value as a tuple.
+pub struct VariantVisitor<'a, R: Read + 'a> {
+    de: &'a mut Deserializer<R>,
+}
+
+impl<'a, R: Read + 'a> VariantVisitor<'a, R> {
+    pub fn new(de: &'a mut Deserializer<R>) -> VariantVisitor<'a, R> {
+        VariantVisitor {
+            de: de,
+        }
+    }
+}
+
+impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
+    type Error = Error;
+
+    // Resolves an internal variant type by integer id.
+    fn visit_variant<V>(&mut self) -> Result<V>
+        where V: serde::Deserialize
+    {
+        use serde::de::value::ValueDeserializer;
+
+        let id: u32 = try!(serde::Deserialize::deserialize(self.de));
+
+        let mut de = (id as usize).into_deserializer();
+        Ok(try!(V::deserialize(&mut de)))
+    }
+
+    fn visit_unit(&mut self) -> Result<()> {
+        use serde::de::Deserialize;
+
+        type T = ();
+        T::deserialize(self.de)
+    }
+
+    fn visit_tuple<V>(&mut self, len: usize, visitor: V) -> Result<V::Value>
+        where V: serde::de::Visitor,
+    {
+        serde::de::Deserializer::visit_tuple(self.de, len, visitor)
+    }
+
+    fn visit_struct<V>(&mut self, fields: &'static [&'static str], visitor: V) -> Result<V::Value>
+        where V: serde::de::Visitor,
+    {
+        serde::de::Deserializer::visit_tuple(self.de, fields.len(), visitor)
     }
 }

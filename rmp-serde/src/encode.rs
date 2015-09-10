@@ -25,15 +25,25 @@ pub enum Error {
     /// Failed to write MessagePack'ed single-byte value into the write.
     InvalidFixedValueWrite(WriteError),
     InvalidValueWrite(ValueWriteError),
+
+    /// Failed to serialize struct, sequence or map, because its length is unknown.
+    UnknownLength,
 }
 
 impl ::std::error::Error for Error {
-    fn description(&self) -> &str { "an error occurred while writing encoded value" }
+    fn description(&self) -> &str {
+        match *self {
+            Error::InvalidFixedValueWrite(..) => "invalid fixed value write",
+            Error::InvalidValueWrite(..) => "invalid value write",
+            Error::UnknownLength => "attempt to serialize struct, sequence or map with unknown length",
+        }
+    }
 
     fn cause(&self) -> Option<&::std::error::Error> {
         match *self {
             Error::InvalidFixedValueWrite(ref err) => Some(err),
             Error::InvalidValueWrite(ref err) => Some(err),
+            Error::UnknownLength => None,
         }
     }
 }
@@ -229,7 +239,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
         let len = match visitor.len() {
             Some(len) => len,
-            None => panic!("do not know how to serialize a sequence with no length"),
+            None => return Err(Error::UnknownLength),
         };
 
         // ... and its arguments length.
@@ -266,7 +276,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     {
         let len = match visitor.len() {
             Some(len) => len,
-            None => panic!("do not know how to serialize a sequence with no length"),
+            None => return Err(Error::UnknownLength),
         };
 
         try!(write_array_len(&mut self.wr, len as u32));
@@ -287,7 +297,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     {
         let len = match visitor.len() {
             Some(len) => len,
-            None => panic!("do not know how to serialize a map with no length"),
+            None => return Err(Error::UnknownLength),
         };
 
         try!(write_map_len(&mut self.wr, len as u32));
@@ -305,12 +315,18 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
         value.serialize(self)
     }
 
+    fn visit_unit_struct(&mut self, _name: &'static str) -> Result<(), Error> {
+        try!(write_array_len(&mut self.wr, 0));
+
+        Ok(())
+    }
+
     fn visit_struct<V>(&mut self, _name: &str, mut visitor: V) -> Result<(), Error>
         where V: serde::ser::MapVisitor,
     {
         let len = match visitor.len() {
             Some(len) => len,
-            None => panic!("do not know how to serialize a sequence with no length"),
+            None => return Err(Error::UnknownLength),
         };
 
         try!(self.vw.write_struct_len(&mut self.wr, len as u32));
