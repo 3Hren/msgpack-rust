@@ -305,6 +305,12 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
         value.serialize(self)
     }
 
+    fn visit_unit_struct(&mut self, _name: &'static str) -> Result<(), Error> {
+        try!(write_array_len(&mut self.wr, 0));
+
+        Ok(())
+    }
+
     fn visit_struct<V>(&mut self, _name: &str, mut visitor: V) -> Result<(), Error>
         where V: serde::ser::MapVisitor,
     {

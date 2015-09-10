@@ -25,6 +25,20 @@ fn pass_struct() {
 }
 
 #[test]
+fn pass_empty_struct() {
+    // Must be encoded as [].
+    let mut buf = vec![];
+
+    #[derive(Serialize)]
+    struct Struct;
+
+    let val = Struct;
+    val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
+
+    assert_eq!(vec![0x90], buf);
+}
+
+#[test]
 fn pass_struct_map() {
     use std::io::Write;
     use rmp::Marker;
