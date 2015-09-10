@@ -98,7 +98,7 @@ impl<'a> ValueRef<'a> {
             &ValueRef::Boolean(val) => Value::Boolean(val),
             &ValueRef::Integer(val) => Value::Integer(val),
             &ValueRef::Float(val) => Value::Float(val),
-            &ValueRef::String(val) => Value::String(val.to_string()),
+            &ValueRef::String(val) => Value::String(val.to_owned()),
             &ValueRef::Binary(val) => Value::Binary(val.to_vec()),
             &ValueRef::Array(ref val) => {
                 Value::Array(val.iter().map(|v| v.to_owned()).collect())
