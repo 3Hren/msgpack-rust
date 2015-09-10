@@ -18,14 +18,14 @@ rust:
 env:
   - CRATE=rmp
   - CRATE=rmp-serialize
-  - CRATE=rmp-serde FEATURES=serde_macros
+  - CRATE=rmp-serde
 
 # Load travis-cargo.
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 
 script:
-  - (cd $CRATE && cargo test --features=$FEATURES)
+  - (cd $CRATE && cargo test)
 
 # Measure code coverage and upload to coveralls.io.
 after_success:
