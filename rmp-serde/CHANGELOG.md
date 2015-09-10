@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Changed
 - Serializer can now be extended with custom struct encoding policy.
+- Improved error types and its messages for serialization part.
+    - New error type introduced - UnknownLength. Returned on attempt to serialize struct, map or serquence with unknown
+    length (Serde allows this).
+    - The new type is returned if necessary.
 
 ### Fixed
 - Deserializer now properly works with enums.
