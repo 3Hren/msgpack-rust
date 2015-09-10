@@ -13,3 +13,5 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - Option<()>.
     - Option<Option<...>>.
   It's impossible to properly deserialize the listed cases without explicit option marker in protocol.
+- Serializer now properly serializes unit structs.
+  Previously it was serialized as a unit (nil), now there is just an empty array ([]).
