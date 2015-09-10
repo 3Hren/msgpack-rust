@@ -252,6 +252,21 @@ fn pass_map() {
 }
 
 #[test]
+fn pass_empty_map() {
+    use std::collections::BTreeMap;
+
+    let mut buf = vec![];
+
+    let val: BTreeMap<u64, u64> = BTreeMap::new();
+    val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
+
+    let out = vec![
+        0x80, // (size: 0)
+    ];
+    assert_eq!(out, buf);
+}
+
+#[test]
 fn pass_encoding_struct_into_vec() {
     let val = (42u8, "the Answer");
 
