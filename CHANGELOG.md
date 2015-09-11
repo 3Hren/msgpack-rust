@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 ## 0.7.1 - 2015-09-11
+### Changed
 - Use `to_owned` instead of `to_string` while converting `ValueRef` into `Value`.
   This change improves `ValueRef::to_owned()` method performance by approximately 10-20%.
   Also after this commit it's cheaper to decode directly into `ValueRef` with further converting to owned value rather
