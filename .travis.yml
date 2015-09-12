@@ -25,7 +25,7 @@ before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 
 script:
-  - (cd $CRATE && cargo test)
+  - if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ "$CRATE" = "rmp-serde" ]; then (cd $CRATE && cargo test --features=serde_macros); else (cd $CRATE && cargo test); fi
 
 # Measure code coverage and upload to coveralls.io.
 after_success:
