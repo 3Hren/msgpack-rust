@@ -51,3 +51,10 @@ fn display_map() {
     assert_eq!("{nil: nil, true: false}", format!("{}", Value::Map(vec![(Value::Nil, Value::Nil),
         (Value::Boolean(true), Value::Boolean(false))])));
 }
+
+#[test]
+fn display_ext() {
+    assert_eq!("[1, []]", format!("{}", Value::Ext(1, vec![])));
+    assert_eq!("[1, [100]]", format!("{}", Value::Ext(1, vec![100])));
+    assert_eq!("[1, [100, 42]]", format!("{}", Value::Ext(1, vec![100, 42])));
+}

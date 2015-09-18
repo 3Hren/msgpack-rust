@@ -77,7 +77,9 @@ impl ::std::fmt::Display for Value {
 
                 write!(f, "}}")
             }
-            _ => unimplemented!()
+            Value::Ext(ty, ref data) => {
+                write!(f, "[{}, {:?}]", ty, data)
+            }
         }
     }
 }
