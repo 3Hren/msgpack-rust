@@ -98,6 +98,24 @@ fn from_complex_read_value_ref(b: &mut Bencher) {
     });
     b.bytes = buf.len() as u64;
 }
+
+#[bench]
+fn from_complex_write_value_ref(b: &mut Bencher) {
+    use msgpack::ValueRef::*;
+    use msgpack::value::Float::*;
+    use msgpack::value::Integer::*;
+    use msgpack::encode::value_ref::write_value_ref;
+
+    let val = Array(vec![Nil, Integer(U64(42)), Float(F64(3.1415)),
+        String("Lorem ipsum dolor sit amet."), Map(vec![(String("key"), String("value"))])]);
+
+    let mut buf = [0u8; 64];
+
+    b.iter(|| {
+        let res = write_value_ref(&mut &mut buf[..], &val).unwrap();
+        test::black_box(res);
+    });
+    b.bytes = 51;
 }
 
 #[bench]
