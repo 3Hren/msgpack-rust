@@ -349,8 +349,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         res
     }
 
-    fn visit_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)
-        -> Result<V::Value>
+    fn visit_enum<V>(&mut self, _enum: &str, _variants: &[&str], mut visitor: V) -> Result<V::Value>
         where V: serde::de::EnumVisitor
     {
         let len = try!(read_array_size(&mut self.rd));
