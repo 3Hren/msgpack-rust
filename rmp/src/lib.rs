@@ -12,7 +12,7 @@
 //!
 //! ```toml
 //! [dependencies.rmp]
-//! rmp = "0.7.1"
+//! rmp = "0.7.2"
 //! ```
 //!
 //! Then, add this to your crate root:
