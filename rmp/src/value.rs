@@ -37,27 +37,74 @@ pub enum Value {
     Ext(i8, Vec<u8>),
 }
 
+/// Implements human-readable value formatting.
+impl ::std::fmt::Display for Value {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match *self {
+            Value::Nil => write!(f, "nil"),
+            Value::Boolean(val) => write!(f, "{}", val),
+            Value::Integer(Integer::U64(val)) => write!(f, "{}", val),
+            Value::Integer(Integer::I64(val)) => write!(f, "{}", val),
+            Value::Float(Float::F32(val)) => write!(f, "{}", val),
+            Value::Float(Float::F64(val)) => write!(f, "{}", val),
+            Value::String(ref val) => write!(f, "\"{}\"", val),
+            Value::Binary(ref val) => write!(f, "{:?}", val),
+            Value::Array(ref vec) => {
+                // TODO: This can be slower than naive implementation. Need benchmarks for more
+                // information.
+                let res = vec.iter()
+                    .map(|val| format!("{}", val))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                write!(f, "[{}]", res)
+            }
+            Value::Map(ref vec) => {
+                try!(write!(f, "{{"));
+
+                match vec.iter().take(1).next() {
+                    Some(&(ref k, ref v)) => {
+                        try!(write!(f, "{}: {}", k, v));
+                    }
+                    None => {
+                        try!(write!(f, ""));
+                    }
+                }
+
+                for &(ref k, ref v) in vec.iter().skip(1) {
+                    try!(write!(f, ", {}: {}", k, v));
+                }
+
+                write!(f, "}}")
+            }
+            Value::Ext(ty, ref data) => {
+                write!(f, "[{}, {:?}]", ty, data)
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum ValueRef<'a> {
-   /// Nil represents nil.
-   Nil,
-   /// Boolean represents true or false.
-   Boolean(bool),
-   /// Integer represents an integer.
-   Integer(Integer),
-   /// Float represents a floating point number.
-   Float(Float),
-   /// String extending Raw type represents a UTF-8 string.
-   String(&'a str),
-   /// Binary extending Raw type represents a byte array.
-   Binary(&'a [u8]),
-   /// Array represents a sequence of objects.
-   Array(Vec<ValueRef<'a>>),
-   /// Map represents key-value pairs of objects.
-   Map(Vec<(ValueRef<'a>, ValueRef<'a>)>),
-   /// Extended implements Extension interface: represents a tuple of type information and a byte
-   /// array where type information is an integer whose meaning is defined by applications.
-   Ext(i8, &'a [u8]),
+    /// Nil represents nil.
+    Nil,
+    /// Boolean represents true or false.
+    Boolean(bool),
+    /// Integer represents an integer.
+    Integer(Integer),
+    /// Float represents a floating point number.
+    Float(Float),
+    /// String extending Raw type represents a UTF-8 string.
+    String(&'a str),
+    /// Binary extending Raw type represents a byte array.
+    Binary(&'a [u8]),
+    /// Array represents a sequence of objects.
+    Array(Vec<ValueRef<'a>>),
+    /// Map represents key-value pairs of objects.
+    Map(Vec<(ValueRef<'a>, ValueRef<'a>)>),
+    /// Extended implements Extension interface: represents a tuple of type information and a byte
+    /// array where type information is an integer whose meaning is defined by applications.
+    Ext(i8, &'a [u8]),
 }
 
 impl<'a> ValueRef<'a> {

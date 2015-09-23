@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+### Added
+- Implemented `Display` trait for `Value`.
 
 ## 0.7.1 - 2015-09-11
 ### Changed
