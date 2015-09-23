@@ -96,6 +96,8 @@ fn from_complex_read_value_ref(b: &mut Bencher) {
         let res = read_value_ref(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
+    b.bytes = buf.len() as u64;
+}
 }
 
 #[bench]
