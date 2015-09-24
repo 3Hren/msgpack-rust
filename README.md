@@ -26,7 +26,7 @@ rmp = "0.7.2"
 Then, add this to your crate root:
 
 ```rust
-extern crate rmp as msgpack;
+extern crate rmp as msgpack; // Or just `rmp`.
 ```
 
 ## Features

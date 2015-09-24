@@ -18,7 +18,7 @@
 //! Then, add this to your crate root:
 //!
 //! ```rust
-//! extern crate rmp as msgpack;
+//! extern crate rmp as msgpack; // Or just `rmp`.
 //! ```
 //!
 //! ## Features
