@@ -43,6 +43,9 @@
 //!
 //!   This project is developed using TDD and CI, so any found bugs will be fixed without breaking
 //!   existing functionality.
+//!
+//! ## Detailed
+//!
 
 extern crate byteorder;
 
