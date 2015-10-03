@@ -4,6 +4,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 
+## 0.8.1 - 2015-10-03
+### Changed
+- Upper limit for serde version.
+
+### Fixed
+- Use the most effective int encoding
+  Even if the value is explicitly marked as i64 it must be encoded using
+  the most effective bytes representation despite of signed it or
+  unsigned.
+
 ## 0.8.0 - 2015-09-11
 ### Changed
 - Serializer can now be extended with custom struct encoding policy.
