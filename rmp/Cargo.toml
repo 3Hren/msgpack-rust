@@ -10,4 +10,4 @@ readme = "../README.md"
 keywords = ["msgpack", "MessagePack"]
 
 [dependencies]
-byteorder = "*"
+byteorder = "^0.3"
