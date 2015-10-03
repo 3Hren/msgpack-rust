@@ -150,6 +150,18 @@ fn pass_i64() {
 }
 
 #[test]
+fn pass_i64_most_effective() {
+    let mut buf = [0x00, 0x00];
+
+    // This value can be represented using 2 bytes although it's i64.
+    let val = 128i64;
+    val.serialize(&mut Serializer::new(&mut &mut buf[..])).unwrap();
+
+    assert_eq!([0xcc, 0x80], buf);
+}
+
+
+#[test]
 fn pass_f32() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00];
 

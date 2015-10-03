@@ -8,7 +8,7 @@ use rmp::encode::{
     write_nil,
     write_bool,
     write_uint,
-    write_sint,
+    write_sint_eff,
     write_f32,
     write_f64,
     write_str,
@@ -176,7 +176,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn visit_i64(&mut self, val: i64) -> Result<(), Error> {
-        try!(write_sint(&mut self.wr, val));
+        try!(write_sint_eff(&mut self.wr, val));
 
         Ok(())
     }
