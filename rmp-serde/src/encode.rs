@@ -28,6 +28,9 @@ pub enum Error {
 
     /// Failed to serialize struct, sequence or map, because its length is unknown.
     UnknownLength,
+
+    /// Depth limit exceeded
+    DepthLimitExceeded
 }
 
 impl ::std::error::Error for Error {
@@ -36,6 +39,7 @@ impl ::std::error::Error for Error {
             Error::InvalidFixedValueWrite(..) => "invalid fixed value write",
             Error::InvalidValueWrite(..) => "invalid value write",
             Error::UnknownLength => "attempt to serialize struct, sequence or map with unknown length",
+            Error::DepthLimitExceeded => "depth limit exceeded",
         }
     }
 
@@ -44,6 +48,7 @@ impl ::std::error::Error for Error {
             Error::InvalidFixedValueWrite(ref err) => Some(err),
             Error::InvalidValueWrite(ref err) => Some(err),
             Error::UnknownLength => None,
+            Error::DepthLimitExceeded => None,
         }
     }
 }
@@ -108,7 +113,29 @@ impl VariantWriter for StructArrayWriter {
 pub struct Serializer<'a, W: VariantWriter> {
     wr: &'a mut Write,
     vw: W,
+    depth: usize,
 }
+
+impl<'a, W: VariantWriter> Serializer<'a, W> {
+    /// Changes the maximum nesting depth that is allowed
+    pub fn set_max_depth(&mut self, depth: usize) {
+        self.depth = depth;
+    }
+}
+
+macro_rules! depth_count(
+    ( $counter:expr, $expr:expr ) => {
+        {
+            $counter -= 1;
+            if $counter == 0 {
+                return Err(Error::DepthLimitExceeded)
+            }
+            let res = $expr;
+            $counter += 1;
+            res
+        }
+    }
+);
 
 impl<'a> Serializer<'a, StructArrayWriter> {
     /// Creates a new MessagePack encoder whose output will be written to the writer specified.
@@ -116,6 +143,7 @@ impl<'a> Serializer<'a, StructArrayWriter> {
         Serializer {
             wr: wr,
             vw: StructArrayWriter,
+            depth: 1000,
         }
     }
 }
@@ -126,6 +154,7 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
         Serializer {
             wr: wr,
             vw: vw,
+            depth: 1000,
         }
     }
 }
@@ -245,7 +274,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
         // ... and its arguments length.
         try!(write_array_len(&mut self.wr, len as u32));
 
-        while let Some(()) = try!(visitor.visit(self)) { }
+        while let Some(()) = try!(depth_count!(self.depth, visitor.visit(self))) { }
 
         Ok(())
     }
@@ -267,7 +296,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     fn visit_some<T>(&mut self, v: T) -> Result<(), Error>
         where T: serde::Serialize,
     {
-        v.serialize(self)
+        depth_count!(self.depth, v.serialize(self))
     }
 
     // TODO: Check len, overflow is possible.
@@ -281,7 +310,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
         try!(write_array_len(&mut self.wr, len as u32));
 
-        while let Some(()) = try!(visitor.visit(self)) { }
+        while let Some(()) = try!(depth_count!(self.depth, visitor.visit(self))) { }
 
         Ok(())
     }
@@ -302,7 +331,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
         try!(write_map_len(&mut self.wr, len as u32));
 
-        while let Some(()) = try!(visitor.visit(self)) { }
+        while let Some(()) = try!(depth_count!(self.depth, visitor.visit(self))) { }
 
         Ok(())
     }
@@ -331,7 +360,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
         try!(self.vw.write_struct_len(&mut self.wr, len as u32));
 
-        while let Some(()) = try!(visitor.visit(self)) { }
+        while let Some(()) = try!(depth_count!(self.depth, visitor.visit(self))) { }
 
         Ok(())
     }
