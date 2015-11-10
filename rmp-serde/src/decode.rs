@@ -30,6 +30,7 @@ pub enum Error {
     /// Uncategorized error.
     Uncategorized(String),
     Syntax(String),
+    DepthLimitExceeded,
 }
 
 impl ::std::error::Error for Error {
@@ -44,6 +45,7 @@ impl ::std::error::Error for Error {
             LengthMismatch(_) => None,
             Uncategorized(_) => None,
             Syntax(_) => None,
+            DepthLimitExceeded => None,
         }
     }
 }
@@ -171,7 +173,22 @@ pub struct Deserializer<R: Read> {
     rd: R,
     buf: Vec<u8>,
     decoding_option: bool,
+    depth: usize,
 }
+
+macro_rules! depth_count(
+    ( $counter:expr, $expr:expr ) => {
+        {
+            $counter -= 1;
+            if $counter == 0 {
+                return Err(Error::DepthLimitExceeded)
+            }
+            let res = $expr;
+            $counter += 1;
+            res
+        }
+    }
+);
 
 impl<R: Read> Deserializer<R> {
     // TODO: Docs.
@@ -180,7 +197,13 @@ impl<R: Read> Deserializer<R> {
             rd: rd,
             buf: Vec::new(),
             decoding_option: false,
+            depth: 1000,
         }
+    }
+
+    /// Changes the maximum nesting depth that is allowed
+    pub fn set_max_depth(&mut self, depth: usize) {
+        self.depth = depth;
     }
 
     /// Gets a reference to the underlying reader in this decoder.
@@ -209,21 +232,21 @@ impl<R: Read> Deserializer<R> {
     fn read_array<V>(&mut self, len: u32, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
-        visitor.visit_seq(SeqVisitor {
+        depth_count!(self.depth, visitor.visit_seq(SeqVisitor {
             deserializer: self,
             len: len,
             actual: len,
-        })
+        }))
     }
 
     fn read_map<V>(&mut self, len: u32, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
-        visitor.visit_map(MapVisitor {
+        depth_count!(self.depth, visitor.visit_map(MapVisitor {
             deserializer: self,
             len: len,
             actual: len,
-        })
+        }))
     }
 
     fn read_bin_data<V>(&mut self, len: usize, mut visitor: V) -> Result<V::Value>
@@ -339,7 +362,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     {
         // Primarily try to read optimisticly.
         self.decoding_option = true;
-        let res = match visitor.visit_some(self) {
+        let res = match depth_count!(self.depth, visitor.visit_some(self)) {
             Ok(val) => Ok(val),
             Err(Error::TypeMismatch(Marker::Null)) => visitor.visit_none(),
             Err(err) => Err(err)
@@ -355,7 +378,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         let len = try!(read_array_size(&mut self.rd));
 
         match len {
-            2 => visitor.visit(VariantVisitor::new(self)),
+            2 => depth_count!(self.depth, visitor.visit(VariantVisitor::new(self))),
             n => Err(Error::LengthMismatch(n as u32)),
         }
     }
