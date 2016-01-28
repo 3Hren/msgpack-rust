@@ -12,4 +12,4 @@ keywords = ["msgpack", "MessagePack", "serder", "serialization"]
 [dependencies]
 rmp = { version = "*", path = "../rmp" }
 serde = "^0.6"
-serde_macros = { version = "^0.5", optional = true }
+serde_macros = { version = "^0.6", optional = true }
