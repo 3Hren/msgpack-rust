@@ -237,13 +237,13 @@ fn pass_enum_custom_policy() {
     impl<R: Read> serde::Deserializer for CustomDeserializer<R> {
         type Error = Error;
 
-        fn visit<V>(&mut self, visitor: V) -> Result<V::Value>
+        fn deserialize<V>(&mut self, visitor: V) -> Result<V::Value>
             where V: serde::de::Visitor
         {
-            self.inner.visit(visitor)
+            self.inner.deserialize(visitor)
         }
 
-        fn visit_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)
+        fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)
             -> Result<V::Value>
             where V: serde::de::EnumVisitor
         {
