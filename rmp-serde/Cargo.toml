@@ -10,6 +10,6 @@ readme = "../README.md"
 keywords = ["msgpack", "MessagePack", "serder", "serialization"]
 
 [dependencies]
-rmp = { version = "*", path = "../rmp" }
+rmp = { version = "^0.7", path = "../rmp" }
 serde = "^0.7"
 serde_macros = { version = "^0.7", optional = true }
