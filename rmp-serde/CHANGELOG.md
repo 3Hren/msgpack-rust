@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+## 0.9.0 - 2016-03-28
+### Changed
+- Adapt code to be compilable with Serde v0.7.
+
 ## 0.8.2 - 2015-11-10
 ### Changed
 - Fixed stack overflow when unpacking recursive data structures.
