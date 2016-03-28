@@ -51,15 +51,15 @@ impl ::std::error::Error for Error {
 }
 
 impl serde::de::Error for Error {
-    fn syntax(msg: &str) -> Error {
+    fn invalid_value(msg: &str) -> Error {
         Error::Syntax(format!("syntax error: {}", msg))
     }
 
-    fn length_mismatch(len: usize) -> Error {
+    fn invalid_length(len: usize) -> Error {
         Error::LengthMismatch(len as u32)
     }
 
-    fn type_mismatch(ty: serde::de::Type) -> Error {
+    fn invalid_type(ty: serde::de::Type) -> Error {
         match ty {
             serde::de::Type::Bool => Error::TypeMismatch(Marker::True),
             serde::de::Type::Usize => Error::TypeMismatch(Marker::FixPos(0)),
@@ -91,6 +91,8 @@ impl serde::de::Error for Error {
             serde::de::Type::TupleVariant => Error::TypeMismatch(Marker::Array32),
             serde::de::Type::UnitVariant => Error::TypeMismatch(Marker::Array32),
             serde::de::Type::Bytes => Error::TypeMismatch(Marker::Array32),
+            serde::de::Type::FieldName => Error::TypeMismatch(Marker::Str32),
+            serde::de::Type::VariantName => Error::TypeMismatch(Marker::Str32),
         }
     }
 
@@ -104,6 +106,10 @@ impl serde::de::Error for Error {
 
     fn unknown_field(_field: &str) -> Error {
         Error::Uncategorized("unknown field".to_string())
+    }
+
+     fn custom<T: Into<String>>(msg: T) -> Error {
+        Error::Uncategorized(msg.into())
     }
 }
 
@@ -155,10 +161,33 @@ impl From<MarkerReadError> for Error {
 
 impl From<serde::de::value::Error> for Error {
     fn from(err: serde::de::value::Error) -> Error {
+        use serde::de::Error as SerdeError;
         match err {
-            serde::de::value::Error::SyntaxError => Error::Syntax("unknown".into()),
-            _ => Error::Uncategorized("unknown".into()),
-        }
+           serde::de::value::Error::Custom(e) => {
+               Error::custom(e)
+           }
+           serde::de::value::Error::EndOfStream => {
+               Error::end_of_stream()
+           }
+           serde::de::value::Error::InvalidType(ty) => {
+               Error::invalid_type(ty)
+           }
+           serde::de::value::Error::InvalidValue(msg) => {
+               Error::invalid_value(&msg)
+           }
+           serde::de::value::Error::InvalidLength(len) => {
+               Error::invalid_length(len)
+           }
+           serde::de::value::Error::UnknownVariant(_) => {
+               Error::Uncategorized("unknown variant".to_string())
+           }
+           serde::de::value::Error::UnknownField(field) => {
+               Error::unknown_field(&field)
+           }
+           serde::de::value::Error::MissingField(field) => {
+               Error::missing_field(field)
+           }
+       }
     }
 }
 
@@ -269,7 +298,7 @@ impl<R: Read> Deserializer<R> {
 impl<R: Read> serde::Deserializer for Deserializer<R> {
     type Error = Error;
 
-    fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value>
+    fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
         let marker = try!(read_marker(&mut self.rd));
@@ -357,7 +386,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     /// specific cases:
     ///  - `Option<()>`.
     ///  - nested optionals, like `Option<Option<...>>`.
-    fn visit_option<V>(&mut self, mut visitor: V) -> Result<V::Value>
+    fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor,
     {
         // Primarily try to read optimisticly.
@@ -372,7 +401,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         res
     }
 
-    fn visit_enum<V>(&mut self, _enum: &str, _variants: &[&str], mut visitor: V) -> Result<V::Value>
+    fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &[&str], mut visitor: V) -> Result<V::Value>
         where V: serde::de::EnumVisitor
     {
         let len = try!(read_array_size(&mut self.rd));
@@ -480,7 +509,11 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
         let id: u32 = try!(serde::Deserialize::deserialize(self.de));
 
         let mut de = (id as usize).into_deserializer();
-        Ok(try!(V::deserialize(&mut de)))
+        let val = match V::deserialize(&mut de) {
+            Ok(val) => val,
+            Err(e) => return Err(e)
+        };
+        Ok(val)
     }
 
     fn visit_unit(&mut self) -> Result<()> {
@@ -493,12 +526,12 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
     fn visit_tuple<V>(&mut self, len: usize, visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor,
     {
-        serde::de::Deserializer::visit_tuple(self.de, len, visitor)
+        serde::de::Deserializer::deserialize_tuple(self.de, len, visitor)
     }
 
     fn visit_struct<V>(&mut self, fields: &'static [&'static str], visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor,
     {
-        serde::de::Deserializer::visit_tuple(self.de, fields.len(), visitor)
+        serde::de::Deserializer::deserialize_tuple(self.de, fields.len(), visitor)
     }
 }
