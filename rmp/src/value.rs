@@ -1,5 +1,7 @@
 //! Contains Value and ValueRef structs and its conversion traits.
 
+use std::convert::From;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Integer {
     /// Every non-negative integer is treated as u64, even if it fits in i64.
@@ -35,6 +37,84 @@ pub enum Value {
     /// Extended implements Extension interface: represents a tuple of type information and a byte
     /// array where type information is an integer whose meaning is defined by applications.
     Ext(i8, Vec<u8>),
+}
+
+impl From<bool> for Value {
+    fn from(v: bool) -> Value {
+        Value::Boolean(v)
+    }
+}
+
+impl From<u8> for Value {
+    fn from(v: u8) -> Value {
+        Value::Integer(Integer::U64(From::from(v)))
+    }
+}
+
+impl From<u16> for Value {
+    fn from(v: u16) -> Value {
+        Value::Integer(Integer::U64(From::from(v)))
+    }
+}
+
+impl From<u32> for Value {
+    fn from(v: u32) -> Value {
+        Value::Integer(Integer::U64(From::from(v)))
+    }
+}
+
+impl From<u64> for Value {
+    fn from(v: u64) -> Value {
+        Value::Integer(Integer::U64(From::from(v)))
+    }
+}
+
+impl From<usize> for Value {
+    fn from(v: usize) -> Value {
+        Value::Integer(Integer::U64(v as u64))
+    }
+}
+
+impl From<i8> for Value {
+    fn from(v: i8) -> Value {
+        Value::Integer(Integer::I64(From::from(v)))
+    }
+}
+
+impl From<i16> for Value {
+    fn from(v: i16) -> Value {
+        Value::Integer(Integer::I64(From::from(v)))
+    }
+}
+
+impl From<i32> for Value {
+    fn from(v: i32) -> Value {
+        Value::Integer(Integer::I64(From::from(v)))
+    }
+}
+
+impl From<i64> for Value {
+    fn from(v: i64) -> Value {
+        Value::Integer(Integer::I64(From::from(v)))
+    }
+}
+
+impl From<isize> for Value {
+    fn from(v: isize) -> Value {
+        Value::Integer(Integer::I64(v as i64))
+    }
+}
+
+impl From<f32> for Value {
+    fn from(v: f32) -> Value {
+        Value::Float(Float::F32(v))
+    }
+}
+
+impl From<f64> for Value {
+    fn from(v: f64) -> Value {
+        Value::Float(Float::F64(v))
+    }
 }
 
 /// Implements human-readable value formatting.
