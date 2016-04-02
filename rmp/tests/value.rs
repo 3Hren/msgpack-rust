@@ -58,3 +58,69 @@ fn display_ext() {
     assert_eq!("[1, [100]]", format!("{}", Value::Ext(1, vec![100])));
     assert_eq!("[1, [100, 42]]", format!("{}", Value::Ext(1, vec![100, 42])));
 }
+
+#[test]
+fn from_bool() {
+    assert_eq!(Value::Boolean(true), Value::from(true));
+    assert_eq!(Value::Boolean(false), Value::from(false));
+}
+
+#[test]
+fn from_u8() {
+    assert_eq!(Value::Integer(Integer::U64(42)), Value::from(42u8));
+}
+
+#[test]
+fn from_u16() {
+    assert_eq!(Value::Integer(Integer::U64(42)), Value::from(42u16));
+}
+
+#[test]
+fn from_u32() {
+    assert_eq!(Value::Integer(Integer::U64(42)), Value::from(42u32));
+}
+
+#[test]
+fn from_u64() {
+    assert_eq!(Value::Integer(Integer::U64(42)), Value::from(42u64));
+}
+
+#[test]
+fn from_usize() {
+    assert_eq!(Value::Integer(Integer::U64(42)), Value::from(42usize));
+}
+
+#[test]
+fn from_i8() {
+    assert_eq!(Value::Integer(Integer::I64(-42)), Value::from(-42i8));
+}
+
+#[test]
+fn from_i16() {
+    assert_eq!(Value::Integer(Integer::I64(-42)), Value::from(-42i16));
+}
+
+#[test]
+fn from_i32() {
+    assert_eq!(Value::Integer(Integer::I64(-42)), Value::from(-42i32));
+}
+
+#[test]
+fn from_i64() {
+    assert_eq!(Value::Integer(Integer::I64(-42)), Value::from(-42i64));
+}
+
+#[test]
+fn from_isize() {
+    assert_eq!(Value::Integer(Integer::I64(-42)), Value::from(-42isize));
+}
+
+#[test]
+fn from_f32() {
+    assert_eq!(Value::Float(Float::F32(3.1415)), Value::from(3.1415f32));
+}
+
+#[test]
+fn from_f64() {
+    assert_eq!(Value::Float(Float::F64(3.1415)), Value::from(3.1415f64));
+}
