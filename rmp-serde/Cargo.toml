@@ -1,6 +1,6 @@
 [package]
 name = "rmp-serde"
-version = "0.9.0"
+version = "0.9.1"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Serde bindings for RMP"

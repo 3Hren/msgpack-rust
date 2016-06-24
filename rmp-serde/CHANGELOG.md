@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+
+## 0.9.1 - 2016-06-24
+### Fixed
+- Serializer should no longer panic with unimplemented error on struct variant serialization ([#64]).
+
 ## 0.9.0 - 2016-03-28
 ### Changed
 - Adapt code to be compilable with Serde v0.7.
@@ -38,3 +43,5 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   It's impossible to properly deserialize the listed cases without explicit option marker in protocol.
 - Serializer now properly serializes unit structs.
   Previously it was serialized as a unit (nil), now there is just an empty array ([]).
+
+[#64]: (https://github.com/3Hren/msgpack-rust/pull/64)
