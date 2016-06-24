@@ -9,7 +9,6 @@ extern crate rmp_serde;
 
 use serde::Serialize;
 use rmp_serde::Serializer;
-use rmp_serde::encode::Error;
 
 #[test]
 fn pass_struct() {
@@ -137,4 +136,21 @@ fn encode_struct_with_string_using_vec() {
 
     let out = vec![0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     assert_eq!(out, buf);
+}
+
+#[test]
+fn serialize_struct_variant() {
+    #[derive(Debug, PartialEq, Serialize)]
+    enum Custom {
+        First { data: u32 },
+        Second { data: u32 },
+    }
+    let out_first = vec![0x92, 0x00, 0x91, 0x2a];
+    let out_second = vec![0x92, 0x01, 0x91, 0x2a];
+
+    for (val, out) in vec![(Custom::First{ data: 42 }, out_first), (Custom::Second { data: 42 }, out_second)] {
+        let mut buf = Vec::new();
+        val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
+        assert_eq!(out, buf);
+    }
 }

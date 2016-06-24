@@ -167,6 +167,28 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
             depth: 1000,
         }
     }
+
+    #[inline]
+    fn serialize_variant<F>(&mut self, variant_index: usize, maybe_len: Option<usize>, mut visit: F) -> Result<(), Error>
+        where F: FnMut(&mut Self) -> Result<Option<()>, <Self as serde::Serializer>::Error>
+    {
+        try!(write_array_len(&mut self.wr, 2));
+
+        // Encode a value position...
+        try!(serde::Serializer::serialize_usize(self, variant_index));
+
+        let len = match maybe_len {
+            Some(len) => len,
+            None => return Err(Error::UnknownLength),
+        };
+
+        // ... and its arguments length.
+        try!(write_array_len(&mut self.wr, len as u32));
+
+        while let Some(()) = try!(depth_count!(self.depth, visit(self))) { }
+
+        Ok(())
+    }
 }
 
 impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
@@ -270,33 +292,17 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
                               mut visitor: V) -> Result<(), Error>
         where V: serde::ser::SeqVisitor,
     {
-        // Mark that we want to encode a variant type.
-        try!(write_array_len(&mut self.wr, 2));
-
-        // Encode a value position...
-        try!(self.serialize_usize(variant_index));
-
-        let len = match visitor.len() {
-            Some(len) => len,
-            None => return Err(Error::UnknownLength),
-        };
-
-        // ... and its arguments length.
-        try!(write_array_len(&mut self.wr, len as u32));
-
-        while let Some(()) = try!(depth_count!(self.depth, visitor.visit(self))) { }
-
-        Ok(())
+        self.serialize_variant(variant_index, visitor.len(), |s| visitor.visit(s))
     }
 
     fn serialize_struct_variant<V>(&mut self,
                                _name: &str,
-                               _variant_index: usize,
+                               variant_index: usize,
                                _variant: &str,
-                               _visitor: V) -> Result<(), Error>
+                               mut visitor: V) -> Result<(), Error>
         where V: serde::ser::MapVisitor,
     {
-        unimplemented!()
+        self.serialize_variant(variant_index, visitor.len(), |s| visitor.visit(s))
     }
 
     fn serialize_none(&mut self) -> Result<(), Error> {

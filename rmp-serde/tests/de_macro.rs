@@ -257,3 +257,20 @@ fn pass_enum_custom_policy() {
     assert_eq!(Enum::B, actual);
     assert_eq!(2, de.inner.get_ref().position());
 }
+
+#[test]
+fn pass_serialize_struct_variant() {
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Custom {
+        First { data: u32 },
+        Second { data: u32 },
+    }
+    let out_first = vec![0x92, 0x00, 0x91, 0x2a];
+    let out_second = vec![0x92, 0x01, 0x91, 0x2a];
+
+    for (expected, out) in vec![(Custom::First{ data: 42 }, out_first), (Custom::Second { data: 42 }, out_second)] {
+        let mut de = Deserializer::new(Cursor::new(&out[..]));
+        let val: Custom = Deserialize::deserialize(&mut de).unwrap();
+        assert_eq!(expected, val);
+    }
+}
