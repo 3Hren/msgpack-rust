@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+## 0.9.2 - 2016-07-03
+### Added
+- Implement `size_hint()` function for `SeqVisitor` and `MapVisitor`, so it can be possible to preallocate things, increasing the performance greatly.
 
 ## 0.9.1 - 2016-06-24
 ### Fixed
