@@ -441,6 +441,10 @@ impl<'a, R: Read + 'a> serde::de::SeqVisitor for SeqVisitor<'a, R> {
             Err(Error::LengthMismatch(self.actual))
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.actual as usize, Some(self.actual as usize))
+    }
 }
 
 struct MapVisitor<'a, R: Read + 'a> {
@@ -477,6 +481,10 @@ impl<'a, R: Read + 'a> serde::de::MapVisitor for MapVisitor<'a, R> {
         } else {
             Err(Error::LengthMismatch(self.actual))
         }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.actual as usize, Some(self.actual as usize))
     }
 }
 
