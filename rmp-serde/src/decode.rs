@@ -250,12 +250,21 @@ impl<R: Read> Deserializer<R> {
         self.rd
     }
 
+    fn prepare_buf(&mut self, len: usize) -> usize {
+        let buf_len = len as usize;
+        if buf_len > self.buf.len() {
+            let diff = buf_len - self.buf.len();
+            self.buf.extend((0..diff).map(|_| 0));
+        }
+        buf_len
+    }
+
     fn read_str<V>(&mut self, len: u32, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
-        self.buf.clear();
-        self.buf.extend((0..len).map(|_| 0));
-        visitor.visit_str(try!(read_str_data(&mut self.rd, len, &mut self.buf[..])))
+        let buf_len = self.prepare_buf(len as usize);
+
+        visitor.visit_str(try!(read_str_data(&mut self.rd, len, &mut self.buf[..buf_len])))
     }
 
     fn read_array<V>(&mut self, len: u32, mut visitor: V) -> Result<V::Value>
@@ -281,16 +290,15 @@ impl<R: Read> Deserializer<R> {
     fn read_bin_data<V>(&mut self, len: usize, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
-        self.buf.clear();
-        self.buf.extend((0..len).map(|_| 0));
+        let buf_len = self.prepare_buf(len);
 
-        match read_full(&mut self.rd, &mut self.buf[..]) {
+        match read_full(&mut self.rd, &mut self.buf[..buf_len]) {
             Ok(n) if n == self.buf.len() => (),
             Ok(..)   => return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF)),
             Err(err) => return Err(Error::InvalidDataRead(ReadError::Io(err))),
         }
 
-        visitor.visit_bytes(&mut self.buf[..])
+        visitor.visit_bytes(&mut self.buf[..buf_len])
     }
 }
 
