@@ -339,3 +339,18 @@ fn pass_bin32_into_bytebuf() {
 
     assert_eq!(vec![0xcc, 0x80], actual);
 }
+
+#[test]
+fn pass_bin8_into_bytebuf_regression_growing_buffer() {
+    use serde::bytes::ByteBuf;
+
+    // Try to deserialize large buf and a small buf
+    let buf = [0x92, 0xc4, 0x04, 0x71, 0x75, 0x75, 0x78, 0xc4, 0x03, 0x62, 0x61, 0x72];
+    let cur = Cursor::new(&buf[..]);
+
+    let mut deserializer = Deserializer::new(cur);
+    let (large, small): (ByteBuf, ByteBuf) = Deserialize::deserialize(&mut deserializer).unwrap();
+    let (large, small): (Vec<u8>, Vec<u8>) = (large.into(), small.into());
+
+    assert_eq!((b"quux".to_vec(), b"bar".to_vec()), (large, small));
+}

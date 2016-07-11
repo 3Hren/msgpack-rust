@@ -292,7 +292,7 @@ impl<R: Read> Deserializer<R> {
         let buf_len = self.prepare_buf(len);
 
         match read_full(&mut self.rd, &mut self.buf[..buf_len]) {
-            Ok(n) if n == self.buf.len() => (),
+            Ok(n) if n == buf_len => (),
             Ok(..)   => return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF)),
             Err(err) => return Err(Error::InvalidDataRead(ReadError::Io(err))),
         }
