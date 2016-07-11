@@ -251,12 +251,11 @@ impl<R: Read> Deserializer<R> {
     }
 
     fn prepare_buf(&mut self, len: usize) -> usize {
-        let buf_len = len as usize;
-        if buf_len > self.buf.len() {
-            let diff = buf_len - self.buf.len();
+        if len > self.buf.len() {
+            let diff = len - self.buf.len();
             self.buf.extend((0..diff).map(|_| 0));
         }
-        buf_len
+        len
     }
 
     fn read_str<V>(&mut self, len: u32, mut visitor: V) -> Result<V::Value>
