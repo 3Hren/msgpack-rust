@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+## 0.9.3 - 2016-07-11
+### Changed
+- Reuse deserializer buffer on every read for string and binary deserialization without unnecessary intermediate buffer creation.
+  This change increases the string and binary deserialization performance (many thanks to Fedor Gogolev <knsd@knsd.net>).
+
 ## 0.9.2 - 2016-07-03
 ### Added
 - Implement `size_hint()` function for `SeqVisitor` and `MapVisitor`, so it can be possible to preallocate things, increasing the performance greatly.
