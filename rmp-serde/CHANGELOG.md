@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+
+## 0.9.4 - 2016-07-11
+### Fixed
+- Reading binary should no longer trigger unexpected EOF error on valid read.
+
 ## 0.9.3 - 2016-07-11
 ### Changed
 - Reuse deserializer buffer on every read for string and binary deserialization without unnecessary intermediate buffer creation.
