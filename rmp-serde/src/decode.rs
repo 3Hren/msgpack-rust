@@ -289,15 +289,13 @@ impl<R: Read> Deserializer<R> {
     fn read_bin_data<V>(&mut self, len: usize, mut visitor: V) -> Result<V::Value>
         where V: serde::de::Visitor
     {
-        let buf_len = self.prepare_buf(len);
+        let len = self.prepare_buf(len);
 
-        match read_full(&mut self.rd, &mut self.buf[..buf_len]) {
-            Ok(n) if n == buf_len => (),
-            Ok(..)   => return Err(Error::InvalidDataRead(ReadError::UnexpectedEOF)),
-            Err(err) => return Err(Error::InvalidDataRead(ReadError::Io(err))),
+        match read_full(&mut self.rd, &mut self.buf[..len]) {
+            Ok(n) if n == len => visitor.visit_bytes(&mut self.buf[..len]),
+            Ok(..)   => Err(Error::InvalidDataRead(ReadError::UnexpectedEOF)),
+            Err(err) => Err(Error::InvalidDataRead(ReadError::Io(err))),
         }
-
-        visitor.visit_bytes(&mut self.buf[..buf_len])
     }
 }
 
