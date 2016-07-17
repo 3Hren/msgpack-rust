@@ -46,6 +46,26 @@
 //!
 //! ## Detailed
 //!
+//! This crate represents the very basic functionality needed to work with MessagePack format.
+//! Ideologically it is developed as a basis for building high-level abstractions.
+//!
+//! Currently there are three large modules: encode, decode and value. More detail you can find
+//! in the corresponding sections.
+//!
+//! Formally every MessagePack message consists of some marker encapsulating a date type and the
+//! data itself. Sometimes there are no separate data chunk, for example for booleans. In these
+//! cases a marker contains the value. For example, the `true` value is encoded as `0xc3`.
+//!
+//! Also note, that a single value can be encoded in multiple ways. For example a value of `42` can
+//! be represented as: `[0x2a], [0xcc, 0x2a], [0xcd, 0x00, 0x2a]` and so on.
+//!
+//! In these cases RMP guarantees that for encoding the most compact representation will be chosen.
+//! On the other hand for deserialization it is not matter in which representation the value is
+//! encoded - RMP deals with all of them.
+//!
+//! ## API
+//!
+//! Almost all API are represented as pure functions, which accepts a generic `Write` and the value.
 
 extern crate byteorder;
 

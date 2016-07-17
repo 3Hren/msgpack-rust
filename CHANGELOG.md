@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 
+## 0.7.4 - 2016-07-18
+### Changed
+- Regenerate cached documentation.
+
 ## 0.7.3 - 2015-09-23
 ### Changed
 - Restricted upper version limit for dependencies.
