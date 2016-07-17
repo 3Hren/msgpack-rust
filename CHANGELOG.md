@@ -5,8 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 ## 0.7.4 - 2016-07-18
-### Changed
-- Regenerate cached documentation.
+### Added
+- Value now can be initialized from primitive values using From trait.
 
 ## 0.7.3 - 2015-09-23
 ### Changed
