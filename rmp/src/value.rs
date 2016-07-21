@@ -103,12 +103,46 @@ impl Value {
     /// assert_eq!(Some(42u64), Value::Integer(Integer::U64(42)).as_u64());
     ///
     /// assert_eq!(None, Value::Integer(Integer::I64(-42)).as_u64());
-    /// assert_eq!(None, Value::Float(Float::F64(42.0)).as_i64());
+    /// assert_eq!(None, Value::Float(Float::F64(42.0)).as_u64());
     /// ```
     pub fn as_u64(&self) -> Option<u64> {
         match *self {
             Value::Integer(Integer::I64(n)) if 0 <= n => Some(n as u64),
             Value::Integer(Integer::U64(n)) => Some(n),
+            _ => None,
+        }
+    }
+
+    /// If the `Value` is a number, return or cast it to a f64.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    /// use rmp::value::{Float, Integer};
+    ///
+    /// assert_eq!(Some(42.0), Value::Integer(Integer::I64(42)).as_f64());
+    /// assert_eq!(Some(42.0), Value::Integer(Integer::U64(42)).as_f64());
+    /// assert_eq!(Some(42.0), Value::Float(Float::F32(42.0f32)).as_f64());
+    /// assert_eq!(Some(42.0), Value::Float(Float::F64(42.0f64)).as_f64());
+    ///
+    /// assert_eq!(Some(2147483647.0), Value::Integer(Integer::I64(i32::max_value() as i64)).as_f64());
+    ///
+    /// assert_eq!(None, Value::Nil.as_f64());
+    ///
+    /// assert_eq!(None, Value::Integer(Integer::I64(i32::max_value() as i64 + 1)).as_f64());
+    /// ```
+    pub fn as_f64(&self) -> Option<f64> {
+        match *self {
+            Value::Integer(Integer::I64(n)) if (i32::min_value() as i64 <= n) && (n <= i32::max_value() as i64) => {
+                Some(From::from(n as i32))
+            }
+            Value::Integer(Integer::U64(n)) if n <= u32::max_value() as u64 => {
+                Some(From::from(n as u32))
+            }
+            Value::Float(Float::F32(n)) => Some(From::from(n)),
+            Value::Float(Float::F64(n)) => Some(n),
             _ => None,
         }
     }
