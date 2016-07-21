@@ -89,6 +89,29 @@ impl Value {
             _ => None,
         }
     }
+
+    /// If the `Value` is an integer, return or cast it to a u64.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    /// use rmp::value::{Float, Integer};
+    ///
+    /// assert_eq!(Some(42u64), Value::Integer(Integer::I64(42)).as_u64());
+    /// assert_eq!(Some(42u64), Value::Integer(Integer::U64(42)).as_u64());
+    ///
+    /// assert_eq!(None, Value::Integer(Integer::I64(-42)).as_u64());
+    /// assert_eq!(None, Value::Float(Float::F64(42.0)).as_i64());
+    /// ```
+    pub fn as_u64(&self) -> Option<u64> {
+        match *self {
+            Value::Integer(Integer::I64(n)) if 0 <= n => Some(n as u64),
+            Value::Integer(Integer::U64(n)) => Some(n),
+            _ => None,
+        }
+    }
 }
 
 impl From<bool> for Value {
