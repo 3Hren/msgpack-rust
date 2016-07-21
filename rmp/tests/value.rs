@@ -124,3 +124,9 @@ fn from_f32() {
 fn from_f64() {
     assert_eq!(Value::Float(Float::F64(3.1415)), Value::from(3.1415f64));
 }
+
+#[test]
+fn is_nil() {
+    assert!(Value::Nil.is_nil());
+    assert!(!Value::Boolean(true).is_nil());
+}

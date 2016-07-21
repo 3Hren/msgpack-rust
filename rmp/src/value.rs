@@ -39,6 +39,16 @@ pub enum Value {
     Ext(i8, Vec<u8>),
 }
 
+impl Value {
+    pub fn is_nil(&self) -> bool {
+        return if let Value::Nil = *self {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 impl From<bool> for Value {
     fn from(v: bool) -> Value {
         Value::Boolean(v)
