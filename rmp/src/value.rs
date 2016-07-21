@@ -40,11 +40,31 @@ pub enum Value {
 }
 
 impl Value {
+    /// Returns true if the `Value` is a Null. Returns false otherwise.
     pub fn is_nil(&self) -> bool {
-        return if let Value::Nil = *self {
+        if let Value::Nil = *self {
             true
         } else {
             false
+        }
+    }
+
+    /// If the `Value` is a Boolean, returns the associated bool.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// assert_eq!(Some(true), Value::Boolean(true).as_bool());
+    /// assert_eq!(None, Value::Nil.as_bool());
+    /// ```
+    pub fn as_bool(&self) -> Option<bool> {
+        if let Value::Boolean(val) = *self {
+            Some(val)
+        } else {
+            None
         }
     }
 }
