@@ -67,6 +67,28 @@ impl Value {
             None
         }
     }
+
+    /// If the `Value` is an integer, return or cast it to a i64.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    /// use rmp::value::{Float, Integer};
+    ///
+    /// assert_eq!(Some(42i64), Value::Integer(Integer::I64(42)).as_i64());
+    /// assert_eq!(Some(42i64), Value::Integer(Integer::U64(42)).as_i64());
+    ///
+    /// assert_eq!(None, Value::Float(Float::F64(42.0)).as_i64());
+    /// ```
+    pub fn as_i64(&self) -> Option<i64> {
+        match *self {
+            Value::Integer(Integer::I64(n)) => Some(n),
+            Value::Integer(Integer::U64(n)) if n <= i64::max_value() as u64 => Some(n as i64),
+            _ => None,
+        }
+    }
 }
 
 impl From<bool> for Value {
