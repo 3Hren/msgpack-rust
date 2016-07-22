@@ -190,6 +190,36 @@ impl Value {
         }
     }
 
+    /// Returns true if the `Value` is a String. Returns false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// assert!(Value::String("value".into()).is_str());
+    ///
+    /// assert!(!Value::Nil.is_str());
+    /// ```
+    pub fn is_str(&self) -> bool {
+        self.as_str().is_some()
+    }
+
+    /// Returns true if the `Value` is a Binary. Returns false otherwise.
+    pub fn is_bin(&self) -> bool {
+        self.as_slice().is_some()
+    }
+
+    /// Returns true if the `Value` is an Array. Returns false otherwise.
+    pub fn is_array(&self) -> bool {
+        self.as_array().is_some()
+    }
+
+    /// Returns true if the `Value` is a Map. Returns false otherwise.
+    pub fn is_map(&self) -> bool {
+        self.as_map().is_some()
+    }
+
     /// If the `Value` is a Boolean, returns the associated bool.
     /// Returns None otherwise.
     ///
