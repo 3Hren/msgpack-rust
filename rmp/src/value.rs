@@ -188,6 +188,32 @@ impl Value {
             None
         }
     }
+
+    /// If the `Value` is a Map, returns the associated vector of key-value tuples.
+    /// Returns None otherwise.
+    ///
+    /// # Note
+    ///
+    /// MessagePack represents map as a vector of key-value tuples.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// let val = Value::Map(vec![(Value::Nil, Value::Boolean(true))]);
+    ///
+    /// assert_eq!(Some(&vec![(Value::Nil, Value::Boolean(true))]), val.as_map());
+    ///
+    /// assert_eq!(None, Value::Nil.as_map());
+    /// ```
+    pub fn as_map(&self) -> Option<&Vec<(Value, Value)>> {
+        if let Value::Map(ref map) = *self {
+            Some(map)
+        } else {
+            None
+        }
+    }
 }
 
 impl From<bool> for Value {
