@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+### Added
+- Add `is_*` methods for Value for checking its underlying value without matching.
+- Add `as_*` methods for Value for borrowing its underlying value.
+- Value is now indexable by integer.
 
 ## 0.7.4 - 2016-07-18
 ### Added
