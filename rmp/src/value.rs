@@ -146,6 +146,25 @@ impl Value {
             _ => None,
         }
     }
+
+    /// If the `Value` is a String, returns the associated str.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// assert_eq!(Some("le message"), Value::String("le message".into()).as_str());
+    /// assert_eq!(None, Value::Boolean(true).as_str());
+    /// ```
+    pub fn as_str(&self) -> Option<&str> {
+        if let Value::String(ref val) = *self {
+            Some(val)
+        } else {
+            None
+        }
+    }
 }
 
 impl From<bool> for Value {
