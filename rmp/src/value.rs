@@ -220,6 +220,11 @@ impl Value {
         self.as_map().is_some()
     }
 
+    /// Returns true if the `Value` is an Ext. Returns false otherwise.
+    pub fn is_ext(&self) -> bool {
+        self.as_ext().is_some()
+    }
+
     /// If the `Value` is a Boolean, returns the associated bool.
     /// Returns None otherwise.
     ///
@@ -402,6 +407,26 @@ impl Value {
     pub fn as_map(&self) -> Option<&Vec<(Value, Value)>> {
         if let Value::Map(ref map) = *self {
             Some(map)
+        } else {
+            None
+        }
+    }
+
+    /// If the `Value` is an Ext, returns the associated tuple with a ty and slice.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// assert_eq!(Some((42, &[1, 2, 3, 4, 5][..])), Value::Ext(42, vec![1, 2, 3, 4, 5]).as_ext());
+    ///
+    /// assert_eq!(None, Value::Boolean(true).as_ext());
+    /// ```
+    pub fn as_ext(&self) -> Option<(i8, &[u8])> {
+        if let Value::Ext(ty, ref buf) = *self {
+            Some((ty, buf))
         } else {
             None
         }
