@@ -136,7 +136,7 @@ will be the following rules:
 
  - Any API/ABI breaking changes will be notified in the changelog explicitly and results in minor
    version bumping.
- - API extending features results in minor version bumping.
+ - API extending features results in patch version bumping.
  - Non-breaking bug fixes and performance improving results in patch version bumping.
 
 [coveralls-img]: https://coveralls.io/repos/3Hren/msgpack-rust/badge.svg?branch=master&service=github
