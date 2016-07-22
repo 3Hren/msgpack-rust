@@ -1,6 +1,14 @@
 //! Contains Value and ValueRef structs and its conversion traits.
+//!
+//! Using macros and indexing, it's easy to work with the data.
+//!
+//! # Examples
+//!
+//! ```
+//! ```
 
 use std::convert::From;
+use std::ops::Index;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Integer {
@@ -213,6 +221,16 @@ impl Value {
         } else {
             None
         }
+    }
+}
+
+static NIL: Value = Value::Nil;
+
+impl Index<usize> for Value {
+    type Output = Value;
+
+    fn index(&self, index: usize) -> &Value {
+        self.as_array().and_then(|v| v.get(index)).unwrap_or(&NIL)
     }
 }
 
