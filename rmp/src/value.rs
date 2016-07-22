@@ -1,7 +1,5 @@
 //! Contains Value and ValueRef structs and its conversion traits.
 //!
-//! Using macros and indexing, it's easy to work with the data.
-//!
 //! # Examples
 //!
 //! ```
@@ -10,6 +8,7 @@
 use std::convert::From;
 use std::ops::Index;
 
+/// Integer representation.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Integer {
     /// Every non-negative integer is treated as u64, even if it fits in i64.
@@ -18,6 +17,7 @@ pub enum Integer {
     I64(i64),
 }
 
+/// Floating point numbers representation.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Float {
     F32(f32),
