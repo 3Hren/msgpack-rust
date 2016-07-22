@@ -49,11 +49,144 @@ pub enum Value {
 
 impl Value {
     /// Returns true if the `Value` is a Null. Returns false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// assert!(Value::Nil.is_nil());
+    /// ```
     pub fn is_nil(&self) -> bool {
         if let Value::Nil = *self {
             true
         } else {
             false
+        }
+    }
+
+    /// Returns true if the `Value` is a Boolean. Returns false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// assert!(Value::Boolean(true).is_bool());
+    ///
+    /// assert!(!Value::Nil.is_bool());
+    /// ```
+    pub fn is_bool(&self) -> bool {
+        self.as_bool().is_some()
+    }
+
+    /// Returns true if (and only if) the `Value` is a i64. Returns false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    /// use rmp::value::{Float, Integer};
+    ///
+    /// assert!(Value::Integer(Integer::I64(42)).is_i64());
+    ///
+    /// assert!(!Value::Integer(Integer::U64(42)).is_i64());
+    /// assert!(!Value::Float(Float::F32(42.0)).is_i64());
+    /// assert!(!Value::Float(Float::F64(42.0)).is_i64());
+    /// ```
+    pub fn is_i64(&self) -> bool {
+        if let Value::Integer(Integer::I64(..)) = *self {
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Returns true if (and only if) the `Value` is a u64. Returns false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    /// use rmp::value::{Float, Integer};
+    ///
+    /// assert!(Value::Integer(Integer::U64(42)).is_u64());
+    ///
+    /// assert!(!Value::Integer(Integer::I64(42)).is_u64());
+    /// assert!(!Value::Float(Float::F32(42.0)).is_u64());
+    /// assert!(!Value::Float(Float::F64(42.0)).is_u64());
+    /// ```
+    pub fn is_u64(&self) -> bool {
+        if let Value::Integer(Integer::U64(..)) = *self {
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Returns true if (and only if) the `Value` is a f32. Returns false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    /// use rmp::value::{Float, Integer};
+    ///
+    /// assert!(Value::Float(Float::F32(42.0)).is_f32());
+    ///
+    /// assert!(!Value::Integer(Integer::I64(42)).is_f32());
+    /// assert!(!Value::Integer(Integer::U64(42)).is_f32());
+    /// assert!(!Value::Float(Float::F64(42.0)).is_f32());
+    /// ```
+    pub fn is_f32(&self) -> bool {
+        if let Value::Float(Float::F32(..)) = *self {
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Returns true if (and only if) the `Value` is a f64. Returns false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    /// use rmp::value::{Float, Integer};
+    ///
+    /// assert!(Value::Float(Float::F64(42.0)).is_f64());
+    ///
+    /// assert!(!Value::Integer(Integer::I64(42)).is_f64());
+    /// assert!(!Value::Integer(Integer::U64(42)).is_f64());
+    /// assert!(!Value::Float(Float::F32(42.0)).is_f64());
+    /// ```
+    pub fn is_f64(&self) -> bool {
+        if let Value::Float(Float::F64(..)) = *self {
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Returns true if the `Value` is a Number. Returns false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    /// use rmp::value::{Float, Integer};
+    ///
+    /// assert!(Value::Integer(Integer::I64(42)).is_number());
+    /// assert!(Value::Integer(Integer::U64(42)).is_number());
+    /// assert!(Value::Float(Float::F32(42.0)).is_number());
+    /// assert!(Value::Float(Float::F64(42.0)).is_number());
+    ///
+    /// assert!(!Value::Nil.is_number());
+    /// ```
+    pub fn is_number(&self) -> bool {
+        match *self {
+            Value::Integer(..) | Value::Float(..) => true,
+            _ => false,
         }
     }
 
@@ -66,6 +199,7 @@ impl Value {
     /// use rmp::Value;
     ///
     /// assert_eq!(Some(true), Value::Boolean(true).as_bool());
+    ///
     /// assert_eq!(None, Value::Nil.as_bool());
     /// ```
     pub fn as_bool(&self) -> Option<bool> {
