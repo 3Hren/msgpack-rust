@@ -156,11 +156,34 @@ impl Value {
     /// use rmp::Value;
     ///
     /// assert_eq!(Some("le message"), Value::String("le message".into()).as_str());
+    ///
     /// assert_eq!(None, Value::Boolean(true).as_str());
     /// ```
     pub fn as_str(&self) -> Option<&str> {
         if let Value::String(ref val) = *self {
             Some(val)
+        } else {
+            None
+        }
+    }
+
+    /// If the `Value` is an Array, returns the associated vector.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// let val = Value::Array(vec![Value::Nil, Value::Boolean(true)]);
+    ///
+    /// assert_eq!(Some(&vec![Value::Nil, Value::Boolean(true)]), val.as_array());
+    ///
+    /// assert_eq!(None, Value::Nil.as_array());
+    /// ```
+    pub fn as_array(&self) -> Option<&Vec<Value>> {
+        if let Value::Array(ref array) = *self {
+            Some(&*array)
         } else {
             None
         }
