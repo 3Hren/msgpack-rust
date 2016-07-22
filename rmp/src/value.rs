@@ -175,6 +175,26 @@ impl Value {
         }
     }
 
+    /// If the `Value` is a Binary, returns the associated slice.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmp::Value;
+    ///
+    /// assert_eq!(Some(&[1, 2, 3, 4, 5][..]), Value::Binary(vec![1, 2, 3, 4, 5]).as_slice());
+    ///
+    /// assert_eq!(None, Value::Boolean(true).as_slice());
+    /// ```
+    pub fn as_slice(&self) -> Option<&[u8]> {
+        if let Value::Binary(ref val) = *self {
+            Some(val)
+        } else {
+            None
+        }
+    }
+
     /// If the `Value` is an Array, returns the associated vector.
     /// Returns None otherwise.
     ///
