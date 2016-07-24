@@ -24,9 +24,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## 0.7.1 - 2015-09-11
 ### Changed
 - Use `to_owned` instead of `to_string` while converting `ValueRef` into `Value`.
-  This change improves `ValueRef::to_owned()` method performance by approximately 10-20%.
-  Also after this commit it's cheaper to decode directly into `ValueRef` with further converting to owned value rather
-  than decoding directly into `Value`.
+  This change improves `ValueRef::to_owned()` method performance by approximately 10-20%.s Also after this change it's cheaper to decode directly into `ValueRef` with further converting to owned value rather than decoding directly into `Value`.
 
 ## 0.7.0 - 2015-08-24
 ### Changed
@@ -37,8 +35,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Initial support for [Serde](https://github.com/serde-rs/serde) serializer and deserializer.
 - Efficient bytes serialization with Serde.
 - Efficient binaries deserialization with Serde using `ByteBuf`.
-- Rust serialize Decoder now can provide the underlying reader both by reference or by value, destroying itself in the
-  last case.
+- Rust serialize Decoder now can provide the underlying reader both by reference or by value, destroying itself in the last case.
 
 ### Changed
 - Update well-formness for `BigEndianRead` trait to be implemented only for sized types.
