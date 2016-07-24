@@ -1,6 +1,6 @@
 [package]
 name = "rmp"
-version = "0.7.4"
+version = "0.7.5"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Pure Rust MessagePack serialization implementation"
