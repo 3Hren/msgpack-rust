@@ -15,7 +15,7 @@
 use std::error::Error;
 use std::fmt;
 use std::io;
-use std::io::Read;
+use std::io::{BufRead, Read};
 use std::result::Result;
 use std::str::{Utf8Error, from_utf8};
 
@@ -1103,11 +1103,38 @@ pub fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'
 // TODO: it is better to return &str; may panic on len mismatch; extend documentation.
 // TODO: Also it's possible to implement all borrowing functions for all `BufRead` implementors.
 // TODO: It's not necessary to use cursor, use slices instead.
+// TODO: Is str_len - for chars or bytes?
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
     let start = cur.position() as usize;
     Ok(&rd[start .. start + len as usize])
+}
+
+/// Attempts to read and decode a string value from the given BufRead, returning a tuple with an
+/// UTF-8 string decoded and number of bytes "read" to be consume.
+///
+/// This function does not consume bytes read from the buffer, which makes possible safe retrying
+/// in the case of failed read attempts, for example where the buffer isn't large enough.
+///
+/// # Examples
+///
+/// ```
+/// ```
+pub fn read_str_from_buf_read<R: BufRead>(rd: &mut R) -> Result<(&str, usize), DecodeStringError> {
+    let mut buf = try!(rd.fill_buf()
+        .map_err(|e| DecodeStringError::InvalidMarkerRead(From::from(e))));
+    let len = try!(read_str_len(&mut buf));
+    let ulen = len as usize;
+
+    if buf[..].len() >= ulen {
+        match from_utf8(&mut &buf[..]) {
+            Ok(val) => Ok((val, 1 + ulen)),
+            Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
+        }
+    } else {
+        Err(DecodeStringError::BufferSizeTooSmall(len))
+    }
 }
 
 /// Attempts to read up to 5 bytes from the given reader and to decode them as a big-endian u32

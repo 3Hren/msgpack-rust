@@ -233,3 +233,20 @@ fn from_str_strfix_ref() {
     assert_eq!(10, out.len());
     assert!(buf[1..11] == out[0..10])
 }
+
+#[test]
+fn from_str_strfix_decode_buf() {
+    // [1, 2, 3, 4] -> W[1, 2, 3, 4] >>= F -> W[3, 4]?
+    // Wrap an incomplete buffer into the Cursor to see how many bytes were consumed.
+    let mut cur = Cursor::new(vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73]);
+    assert!(read_str_from_buf_read(&mut cur).is_err());
+
+    // Did not read anything actually.
+    assert_eq!(0, cur.position());
+
+    // ... complete the buffer and try to parse again.
+    cur.get_mut().append(&mut vec![0x73, 0x61, 0x67, 0x65]);
+    assert_eq!(("le message", cur.get_ref().len()), read_str_from_buf_read(&mut cur).unwrap());
+
+    assert_eq!(0, cur.position());
+}
