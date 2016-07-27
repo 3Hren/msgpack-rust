@@ -198,11 +198,45 @@ fn from_str_strfix_buffer_too_small() {
 }
 
 #[test]
-fn from_str_strfix_ref() {
-    let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+fn from_str_strfix_decode_from_slice() {
+    // Wrap an incomplete buffer into the Cursor to see how many bytes were consumed.
+    let mut buf = vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73];
+    assert!(read_str_from_slice(&buf).is_err());
 
-    let out = read_str_ref(&buf[..]).unwrap();
+    // ... complete the buffer and try to parse again.
+    buf.append(&mut vec![0x73, 0x61, 0x67, 0x65]);
+    assert_eq!(("le message", &[][..]), read_str_from_slice(&buf).unwrap());
+}
 
-    assert_eq!(10, out.len());
-    assert!(buf[1..11] == out[0..10])
+#[test]
+fn from_str_strfix_decode_from_slice_with_trailing_bytes() {
+    let buf = vec![
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x01, 0x02, 0x03
+    ];
+
+    assert_eq!(("le message", &[0x01, 0x02, 0x03][..]), read_str_from_slice(&buf).unwrap());
+}
+
+#[test]
+fn example_process_sequence_of_strings() {
+    // Encoded: 'Unpacking', 'multiple', 'strings'.
+    let vec = vec![
+        0xa9, 0x55, 0x6e, 0x70, 0x61, 0x63, 0x6b, 0x69, 0x6e, 0x67,
+        0xa8, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x65, 0xa7,
+        0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x73
+    ];
+
+    let mut chunks = Vec::new();
+    let mut unparsed = &vec[..];
+    loop {
+        match read_str_from_slice(unparsed) {
+            Ok((chunk, tail)) => {
+                chunks.push(chunk);
+                unparsed = tail;
+            }
+            Err(..) => break,
+        }
+    }
+
+    assert_eq!(vec!["Unpacking", "multiple", "strings"], chunks);
 }

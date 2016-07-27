@@ -61,24 +61,25 @@ impl<'a> From<ValueReadError> for DecodeStringError<'a> {
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
-///
-/// # Note
-///
-/// This function will silently retry on every EINTR received from the underlying `Read` until
-/// successful read.
 pub fn read_str_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
-    match try!(read_marker(rd)) {
-        Marker::FixStr(size) => Ok(size as u32),
-        Marker::Str8 => Ok(try!(read_data_u8(rd)) as u32),
-        Marker::Str16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Str32 => Ok(try!(read_data_u32(rd))),
-        marker => Err(ValueReadError::TypeMismatch(marker)),
+    Ok(read_str_len_with_nread(rd)?.0)
+}
+
+fn read_str_len_with_nread<R>(rd: &mut R) -> Result<(u32, usize), ValueReadError>
+    where R: Read
+{
+    match read_marker(rd)? {
+        Marker::FixStr(size) => Ok((size as u32, 1)),
+        Marker::Str8 => Ok((read_data_u8(rd)? as u32, 2)),
+        Marker::Str16 => Ok((read_data_u16(rd)? as u32, 3)),
+        Marker::Str32 => Ok((read_data_u32(rd)?, 5)),
+        marker => Err(ValueReadError::TypeMismatch(marker))
     }
 }
 
 /// Attempts to read a string data from the given reader and copy it to the buffer provided.
 ///
-/// On success returns a borrowed string type, allowing to view the copyed bytes as properly utf-8
+/// On success returns a borrowed string type, allowing to view the copied bytes as properly utf-8
 /// string.
 /// According to the spec, the string's data must to be encoded using utf-8.
 ///
@@ -88,9 +89,9 @@ pub fn read_str_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
 ///
 ///  - if any IO error (including unexpected EOF) occurs, while reading an `rd`, except the EINTR,
 ///    which is handled internally.
-///  - if the `out` buffer size is not large enough to keep all the data copyed.
+///  - if the `out` buffer size is not large enough to keep all the data copied.
 ///  - if the data is not utf-8, with a description as to why the provided data is not utf-8 and
-///    with a size of bytes actually copyed to be able to get them from `out`.
+///    with a size of bytes actually copied to be able to get them from `out`.
 ///
 /// # Examples
 /// ```
@@ -105,11 +106,6 @@ pub fn read_str_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
 /// # Unstable
 ///
 /// This function is **unstable**, because it needs review.
-///
-/// # Note
-///
-/// This function will silently retry on every EINTR received from the underlying `Read` until
-/// successful read.
 // TODO: Stabilize. Mark error values for each error case (in docs).
 pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str, DecodeStringError<'r>>
     where R: Read
@@ -146,13 +142,51 @@ pub fn read_str_data<'r, R>(rd: &mut R,
 
 /// Attempts to read and decode a string value from the reader, returning a borrowed slice from it.
 ///
-// TODO: it is better to return &str; may panic on len mismatch; extend documentation.
 // TODO: Also it's possible to implement all borrowing functions for all `BufRead` implementors.
-// TODO: It's not necessary to use cursor, use slices instead.
-// TODO: Candidate to be removed/replaced.
+#[deprecated(since = "0.8.6", note = "useless, use `read_str_from_slice` instead")]
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
     let mut cur = io::Cursor::new(rd);
     let len = try!(read_str_len(&mut cur));
     let start = cur.position() as usize;
     Ok(&rd[start..start + len as usize])
+}
+
+/// Attempts to read and decode a string value from the reader, returning a borrowed slice from it.
+///
+/// # Examples
+///
+/// ```
+/// use rmp::encode::write_str;
+/// use rmp::decode::read_str_from_slice;
+///
+/// let mut buf = Vec::new();
+/// write_str(&mut buf, "Unpacking").unwrap();
+/// write_str(&mut buf, "multiple").unwrap();
+/// write_str(&mut buf, "strings").unwrap();
+///
+/// let mut chunks = Vec::new();
+/// let mut unparsed = &buf[..];
+/// while let Ok((chunk, tail)) = read_str_from_slice(unparsed) {
+///     chunks.push(chunk);
+///     unparsed = tail;
+/// }
+///
+/// assert_eq!(vec!["Unpacking", "multiple", "strings"], chunks);
+/// ```
+pub fn read_str_from_slice<T: ?Sized + AsRef<[u8]>>(buf: &T) ->
+    Result<(&str, &[u8]), DecodeStringError>
+{
+    let buf = buf.as_ref();
+    let (len, nread) = read_str_len_with_nread(&mut &buf[..])?;
+    let ulen = len as usize;
+
+    if buf[nread..].len() >= ulen {
+        let (head, tail) = buf.split_at(nread + ulen);
+        match from_utf8(&mut &head[nread..]) {
+            Ok(val) => Ok((val, tail)),
+            Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
+        }
+    } else {
+        Err(DecodeStringError::BufferSizeTooSmall(len))
+    }
 }

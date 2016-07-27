@@ -18,7 +18,7 @@ mod ext;
 pub use self::sint::{read_nfix, read_i8, read_i16, read_i32, read_i64};
 pub use self::uint::{read_pfix, read_u8, read_u16, read_u32, read_u64};
 pub use self::dec::{read_f32, read_f64};
-pub use self::str::{read_str_len, read_str, read_str_ref, DecodeStringError};
+pub use self::str::{read_str_len, read_str, read_str_from_slice, read_str_ref, DecodeStringError};
 pub use self::ext::{read_fixext1, read_fixext2, read_fixext4, read_fixext8, read_fixext16,
                     read_ext_meta, ExtMeta};
 

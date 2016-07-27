@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+### Added
+- New `rmp::decode::read_str_from_slice` function for zero-copy reading strings from slices.
+
+### Changed
+- Deprecate `rmp::decode::read_str_ref`, because it's useless and inconvenient.
 
 ## 0.8.5 - 2017-03-13
 ### Fixed
