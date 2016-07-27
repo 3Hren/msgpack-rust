@@ -1032,6 +1032,18 @@ pub fn read_str_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     }
 }
 
+fn read_str_len_with_nread<R>(rd: &mut R) -> Result<(u32, usize), ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixStr(size) => Ok((size as u32, 1)),
+        Marker::Str8  => Ok((try!(read_numeric_data::<R, u8>(rd))  as u32, 2)),
+        Marker::Str16 => Ok((try!(read_numeric_data::<R, u16>(rd)) as u32, 3)),
+        Marker::Str32 => Ok((try!(read_numeric_data(rd)), 5)),
+        marker        => Err(ValueReadError::TypeMismatch(marker))
+    }
+}
+
 /// Attempts to read a string data from the given reader and copy it to the buffer provided.
 ///
 /// On success returns a borrowed string type, allowing to view the copyed bytes as properly utf-8
@@ -1095,6 +1107,24 @@ pub fn read_str_data<'r, R>(rd: &mut R, len: u32, buf: &'r mut[u8]) -> Result<&'
         }
         Ok(n) => Err(DecodeStringError::InvalidDataCopy(&buf[..n], ReadError::UnexpectedEOF)),
         Err(err) => Err(DecodeStringError::InvalidDataRead(ReadError::Io(From::from(err)))),
+    }
+}
+
+pub fn read_str_from_slice<R>(buf: &R) -> Result<(&str, &[u8]), DecodeStringError>
+    where R: AsRef<[u8]>
+{
+    let buf = buf.as_ref();
+    let (len, nread) = try!(read_str_len_with_nread(&mut &buf[..]));
+    let ulen = len as usize;
+
+    if buf[nread..].len() >= ulen {
+        let (head, tail) = buf.split_at(nread + ulen);
+        match from_utf8(&mut &head[nread..]) {
+            Ok(val) => Ok((val, tail)),
+            Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
+        }
+    } else {
+        Err(DecodeStringError::BufferSizeTooSmall(len))
     }
 }
 
