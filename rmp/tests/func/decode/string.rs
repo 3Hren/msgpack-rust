@@ -225,11 +225,46 @@ fn from_str_strfix_buffer_too_small() {
 }
 
 #[test]
-fn from_str_strfix_ref() {
-    let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+fn from_str_strfix_decode_buf() {
+    // Wrap an incomplete buffer into the Cursor to see how many bytes were consumed.
+    let mut cur = Cursor::new(vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73]);
+    assert!(read_str_from_buf_read(&mut cur).is_err());
 
-    let out = read_str_ref(&buf[..]).unwrap();
+    // Did not read anything actually.
+    assert_eq!(0, cur.position());
 
-    assert_eq!(10, out.len());
-    assert!(buf[1..11] == out[0..10])
+    // ... complete the buffer and try to parse again.
+    cur.get_mut().append(&mut vec![0x73, 0x61, 0x67, 0x65]);
+    assert_eq!(("le message", cur.get_ref().len()), read_str_from_buf_read(&mut cur).unwrap());
+
+    assert_eq!(0, cur.position());
+}
+
+#[test]
+fn from_str_strfix_decode_buf_with_trailing_bytes() {
+    let buf = vec![
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x01, 0x02, 0x03
+    ];
+
+    assert_eq!(("le message", 11), read_str_from_buf_read(&mut &buf[..]).unwrap());
+}
+
+#[test]
+fn from_str_strfix_decode_from_slice() {
+    // Wrap an incomplete buffer into the Cursor to see how many bytes were consumed.
+    let mut buf = vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73];
+    assert!(read_str_from_slice(&buf).is_err());
+
+    // ... complete the buffer and try to parse again.
+    buf.append(&mut vec![0x73, 0x61, 0x67, 0x65]);
+    assert_eq!(("le message", &[][..]), read_str_from_slice(&buf).unwrap());
+}
+
+#[test]
+fn from_str_strfix_decode_from_slice_with_trailing_bytes() {
+    let buf = vec![
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x01, 0x02, 0x03
+    ];
+
+    assert_eq!(("le message", &[0x01, 0x02, 0x03][..]), read_str_from_slice(&buf).unwrap());
 }
