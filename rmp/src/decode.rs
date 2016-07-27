@@ -1128,7 +1128,7 @@ pub fn read_str_from_buf_read<R: BufRead>(rd: &mut R) -> Result<(&str, usize), D
     let ulen = len as usize;
 
     if buf[..].len() >= ulen {
-        match from_utf8(&mut &buf[..]) {
+        match from_utf8(&mut &buf[..ulen]) {
             Ok(val) => Ok((val, 1 + ulen)),
             Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
         }
