@@ -41,7 +41,7 @@ impl ::std::error::Error for Error {
             Error::InvalidValueWrite(..) => "invalid value write",
             Error::UnknownLength => "attempt to serialize struct, sequence or map with unknown length",
             Error::DepthLimitExceeded => "depth limit exceeded",
-            Error::Custom(_) => "custom message",
+            Error::Custom(..) => "custom message",
         }
     }
 
