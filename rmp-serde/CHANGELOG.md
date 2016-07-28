@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+## 0.9.5 - 2016-07-28
+### Added
+- Added a wrapper over rmp::Value to be able to serialize it.
 
 ## 0.9.4 - 2016-07-11
 ### Fixed
