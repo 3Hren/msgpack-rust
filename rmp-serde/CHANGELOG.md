@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+## 0.9.6 - 2016-08-05
+### Fixed
+- Switch unit structs to using the same serialization mechanism as other structs (#76).
+
 ## 0.9.5 - 2016-07-28
 ### Added
 - Added a wrapper over rmp::Value to be able to serialize it.
@@ -61,3 +65,4 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   Previously it was serialized as a unit (nil), now there is just an empty array ([]).
 
 [#64]: (https://github.com/3Hren/msgpack-rust/pull/64)
+[#76]: (https://github.com/3Hren/msgpack-rust/pull/76)
