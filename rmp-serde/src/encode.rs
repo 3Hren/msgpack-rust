@@ -361,7 +361,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_unit_struct(&mut self, _name: &'static str) -> Result<(), Error> {
-        try!(write_array_len(&mut self.wr, 0));
+        try!(self.vw.write_struct_len(&mut self.wr, 0));
 
         Ok(())
     }
