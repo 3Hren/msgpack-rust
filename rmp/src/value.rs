@@ -481,31 +481,51 @@ impl From<usize> for Value {
 
 impl From<i8> for Value {
     fn from(v: i8) -> Value {
-        Value::Integer(Integer::I64(From::from(v)))
+        if v < 0 {
+            Value::Integer(Integer::I64(From::from(v)))
+        } else {
+            Value::from(v as u8)
+        }
     }
 }
 
 impl From<i16> for Value {
     fn from(v: i16) -> Value {
-        Value::Integer(Integer::I64(From::from(v)))
+        if v < 0 {
+            Value::Integer(Integer::I64(From::from(v)))
+        } else {
+            Value::from(v as u16)
+        }
     }
 }
 
 impl From<i32> for Value {
     fn from(v: i32) -> Value {
-        Value::Integer(Integer::I64(From::from(v)))
+        if v < 0 {
+            Value::Integer(Integer::I64(From::from(v)))
+        } else {
+            Value::from(v as u32)
+        }
     }
 }
 
 impl From<i64> for Value {
     fn from(v: i64) -> Value {
-        Value::Integer(Integer::I64(From::from(v)))
+        if v < 0 {
+            Value::Integer(Integer::I64(From::from(v)))
+        } else {
+            Value::from(v as u64)
+        }
     }
 }
 
 impl From<isize> for Value {
     fn from(v: isize) -> Value {
-        Value::Integer(Integer::I64(v as i64))
+        if v < 0 {
+            Value::Integer(Integer::I64(v as i64))
+        } else {
+            Value::from(v as usize)
+        }
     }
 }
 
