@@ -4,21 +4,9 @@ use std::fmt;
 use std::io::Write;
 
 use rmp::Marker;
-use rmp::encode::{
-    write_nil,
-    write_bool,
-    write_uint,
-    write_sint_eff,
-    write_f32,
-    write_f64,
-    write_str,
-    write_array_len,
-    write_map_len,
-    write_bin_len,
-    WriteError,
-    FixedValueWriteError,
-    ValueWriteError,
-};
+use rmp::encode::{write_nil, write_bool, write_uint, write_sint_eff, write_f32, write_f64,
+                  write_str, write_array_len, write_map_len, write_bin_len, WriteError,
+                  FixedValueWriteError, ValueWriteError};
 
 #[derive(Debug)]
 pub enum Error {
@@ -31,7 +19,7 @@ pub enum Error {
 
     /// Depth limit exceeded
     DepthLimitExceeded,
-    Custom(String)
+    Custom(String),
 }
 
 impl ::std::error::Error for Error {
@@ -39,7 +27,9 @@ impl ::std::error::Error for Error {
         match *self {
             Error::InvalidFixedValueWrite(..) => "invalid fixed value write",
             Error::InvalidValueWrite(..) => "invalid value write",
-            Error::UnknownLength => "attempt to serialize struct, sequence or map with unknown length",
+            Error::UnknownLength => {
+                "attempt to serialize struct, sequence or map with unknown length"
+            }
             Error::DepthLimitExceeded => "depth limit exceeded",
             Error::Custom(..) => "custom message",
         }
@@ -66,7 +56,7 @@ impl fmt::Display for Error {
 impl From<FixedValueWriteError> for Error {
     fn from(err: FixedValueWriteError) -> Error {
         match err {
-            FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err)
+            FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err),
         }
     }
 }
@@ -85,8 +75,10 @@ impl serde::ser::Error for Error {
 }
 
 pub trait VariantWriter {
-    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> where W: Write;
-    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError> where W: Write;
+    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
+        where W: Write;
+    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError>
+        where W: Write;
 }
 
 /// Writes struct as MessagePack array with no field names
@@ -169,7 +161,11 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
     }
 
     #[inline]
-    fn serialize_variant<F>(&mut self, variant_index: usize, maybe_len: Option<usize>, mut visit: F) -> Result<(), Error>
+    fn serialize_variant<F>(&mut self,
+                            variant_index: usize,
+                            maybe_len: Option<usize>,
+                            mut visit: F)
+                            -> Result<(), Error>
         where F: FnMut(&mut Self) -> Result<Option<()>, <Self as serde::Serializer>::Error>
     {
         try!(write_array_len(&mut self.wr, 2));
@@ -266,10 +262,10 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_unit_variant(&mut self,
-                          _name: &str,
-                          variant_index: usize,
-                          _variant: &str) -> Result<(), Error>
-    {
+                              _name: &str,
+                              variant_index: usize,
+                              _variant: &str)
+                              -> Result<(), Error> {
         // Mark that we want to encode a variant type.
         try!(write_array_len(&mut self.wr, 2));
 
@@ -286,21 +282,23 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     ///
     /// Currently we encode variant types as a tuple of id with array of args, like: [id, [args...]]
     fn serialize_tuple_variant<V>(&mut self,
-                              _name: &str,
-                              variant_index: usize,
-                              _variant: &str,
-                              mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::SeqVisitor,
+                                  _name: &str,
+                                  variant_index: usize,
+                                  _variant: &str,
+                                  mut visitor: V)
+                                  -> Result<(), Error>
+        where V: serde::ser::SeqVisitor
     {
         self.serialize_variant(variant_index, visitor.len(), |s| visitor.visit(s))
     }
 
     fn serialize_struct_variant<V>(&mut self,
-                               _name: &str,
-                               variant_index: usize,
-                               _variant: &str,
-                               mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::MapVisitor,
+                                   _name: &str,
+                                   variant_index: usize,
+                                   _variant: &str,
+                                   mut visitor: V)
+                                   -> Result<(), Error>
+        where V: serde::ser::MapVisitor
     {
         self.serialize_variant(variant_index, visitor.len(), |s| visitor.visit(s))
     }
@@ -310,14 +308,14 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_some<T>(&mut self, v: T) -> Result<(), Error>
-        where T: serde::Serialize,
+        where T: serde::Serialize
     {
         depth_count!(self.depth, v.serialize(self))
     }
 
     // TODO: Check len, overflow is possible.
     fn serialize_seq<V>(&mut self, mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::SeqVisitor,
+        where V: serde::ser::SeqVisitor
     {
         let len = match visitor.len() {
             Some(len) => len,
@@ -332,13 +330,13 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_seq_elt<V>(&mut self, value: V) -> Result<(), Error>
-        where V: serde::Serialize,
+        where V: serde::Serialize
     {
         value.serialize(self)
     }
 
     fn serialize_map<V>(&mut self, mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::MapVisitor,
+        where V: serde::ser::MapVisitor
     {
         let len = match visitor.len() {
             Some(len) => len,
@@ -354,7 +352,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
     fn serialize_map_elt<K, V>(&mut self, key: K, value: V) -> Result<(), Error>
         where K: serde::Serialize,
-              V: serde::Serialize,
+              V: serde::Serialize
     {
         try!(key.serialize(self));
         value.serialize(self)
@@ -367,7 +365,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_struct<V>(&mut self, _name: &str, mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::MapVisitor,
+        where V: serde::ser::MapVisitor
     {
         let len = match visitor.len() {
             Some(len) => len,
@@ -382,7 +380,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_struct_elt<V>(&mut self, _key: &str, value: V) -> Result<(), Error>
-        where V: serde::Serialize,
+        where V: serde::Serialize
     {
         try!(self.vw.write_field_name(&mut self.wr, _key));
         value.serialize(self)
@@ -390,6 +388,8 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
     fn serialize_bytes(&mut self, value: &[u8]) -> Result<(), Error> {
         try!(write_bin_len(&mut self.wr, value.len() as u32));
-        self.wr.write_all(value).map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(WriteError(err))))
+        self.wr.write_all(value).map_err(|err| {
+            Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(WriteError(err)))
+        })
     }
 }
