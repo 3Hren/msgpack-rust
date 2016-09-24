@@ -1,8 +1,10 @@
 extern crate rmp;
+
+#[macro_use]
 extern crate serde;
 
 use serde::bytes::Bytes;
-use serde::ser::{Serialize, SeqVisitor, MapVisitor};
+use serde::ser::Serialize;
 use serde::de::Deserialize;
 
 use rmp::value::{Float, Integer};
@@ -41,53 +43,23 @@ impl<'a> Serialize for BorrowedValue<'a> {
             rmp::Value::String(ref v) => s.serialize_str(v),
             rmp::Value::Binary(ref v) => Bytes::from(v).serialize(s),
             rmp::Value::Array(ref array) => {
-                struct Visitor<'a> {
-                    array: &'a [rmp::Value],
-                }
+                let mut state = try!(s.serialize_seq(Some(array.len())));
 
-                impl<'a> SeqVisitor for Visitor<'a> {
-                    fn visit<S>(&mut self, _s: &mut S) -> Result<Option<()>, S::Error>
-                        where S: serde::ser::Serializer
-                    {
-                        Ok(None)
-                    }
-
-                    fn len(&self) -> Option<usize> {
-                        Some(self.array.len())
-                    }
-                }
-
-                // TODO: let state = try!(s.serialize_seq(Some(array.len()))); when serde 0.8 comes.
-                try!(s.serialize_seq(Visitor { array: &array[..] }));
                 for elt in array {
-                    // TODO: try!(s.serialize_seq_elt(&mut state, elt)); when serde 0.8 comes.
-                    try!(s.serialize_seq_elt(BorrowedValue(elt)));
+                    try!(s.serialize_seq_elt(&mut state, Value(elt.clone())));
                 }
-                // TODO: try!(s.serialize_seq_end(&mut state)) when serde 0.8 comes.
-                Ok(())
+
+                s.serialize_seq_end(state)
             }
             rmp::Value::Map(ref map) => {
-                struct Visitor<'a> {
-                    map: &'a [(rmp::Value, rmp::Value)],
-                }
+                let mut state = try!(s.serialize_map(Some(map.len())));
 
-                impl<'a> MapVisitor for Visitor<'a> {
-                    fn visit<S>(&mut self, _s: &mut S) -> Result<Option<()>, S::Error>
-                        where S: serde::ser::Serializer
-                    {
-                        Ok(None)
-                    }
-
-                    fn len(&self) -> Option<usize> {
-                        Some(self.map.len())
-                    }
-                }
-
-                try!(s.serialize_map(Visitor { map: &map[..] }));
                 for &(ref key, ref val) in map {
-                    try!(s.serialize_map_elt(BorrowedValue(key), BorrowedValue(val)));
+                    try!(s.serialize_map_key(&mut state, Value(key.clone())));
+                    try!(s.serialize_map_value(&mut state, Value(val.clone())));
                 }
-                Ok(())
+
+                s.serialize_map_end(state)
             }
             rmp::Value::Ext(ty, ref buf) => {
                 try!(s.serialize_i8(ty));
@@ -96,7 +68,6 @@ impl<'a> Serialize for BorrowedValue<'a> {
         }
     }
 }
-
 
 impl Serialize for Value {
     #[inline]
