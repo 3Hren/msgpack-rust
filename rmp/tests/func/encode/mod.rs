@@ -10,5 +10,5 @@ mod map;
 mod ext;
 
 // High-level serialize interface.
-mod value;
-mod value_ref;
+// mod value;
+// mod value_ref;

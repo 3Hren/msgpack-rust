@@ -14,10 +14,7 @@ fn pass_pack_pfix() {
 fn fail_pack_pfix_too_small_buffer() {
     let mut buf = [];
 
-    match write_pfix(&mut &mut buf[..], 127) {
-        Err(FixedValueWriteError(..)) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    write_pfix(&mut &mut buf[..], 127).err().unwrap();
 }
 
 #[test]
@@ -201,9 +198,9 @@ fn pass_pack_sint_i16_min() {
 fn pass_pack_sint_i16_max() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    assert_eq!(Marker::I16, write_sint(&mut &mut buf[..], 32767).ok().unwrap());
+    assert_eq!(Marker::U16, write_sint(&mut &mut buf[..], 32767).ok().unwrap());
 
-    assert_eq!([0xd1, 0x7f, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
+    assert_eq!([0xcd, 0x7f, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }
 
 #[test]
@@ -219,9 +216,9 @@ fn pass_pack_sint_i32_min() {
 fn pass_pack_sint_i32_max() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    assert_eq!(Marker::I32, write_sint(&mut &mut buf[..], 2147483647).ok().unwrap());
+    assert_eq!(Marker::U32, write_sint(&mut &mut buf[..], 2147483647).ok().unwrap());
 
-    assert_eq!([0xd2, 0x7f, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00], buf);
+    assert_eq!([0xce, 0x7f, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00], buf);
 }
 
 #[test]

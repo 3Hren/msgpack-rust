@@ -1,3 +1,109 @@
+// // pub mod value {
+// //
+// //     use std::convert::From;
+// //     use std::fmt;
+// //     use std::io::Write;
+// //     use std::result::Result;
+// //
+// //     pub use super::super::value::{Integer, Float, Value};
+// //
+// //     use super::*;
+// //
+// //     #[derive(Debug)]
+// //     pub enum Error {
+// //         // TODO: Will be replaced with more concrete values.
+// //         UnstableCommonError(String),
+// //     }
+// //
+// //     impl ::std::error::Error for Error {
+// //         fn description(&self) -> &str {
+// //             match *self {
+// //                 Error::UnstableCommonError(ref s) => s,
+// //             }
+// //         }
+// //     }
+// //
+// //     impl fmt::Display for Error {
+// //         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+// //             ::std::error::Error::description(self).fmt(f)
+// //         }
+// //     }
+// //
+// //
+// //     impl From<FixedValueWriteError> for Error {
+// //         fn from(err: FixedValueWriteError) -> Error {
+// //             match err {
+// //                 FixedValueWriteError(..) => {
+// //                     Error::UnstableCommonError("fixed value error".to_string())
+// //                 }
+// //             }
+// //         }
+// //     }
+// //
+// //     impl From<ValueWriteError> for Error {
+// //         fn from(_: ValueWriteError) -> Error {
+// //             Error::UnstableCommonError("value error".to_string())
+// //         }
+// //     }
+// //
+// //     /// Encodes and attempts to write the most efficient representation of the given Value.
+// //     ///
+// //     /// # Note
+// //     ///
+// //     /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
+// //     /// operation is retried.
+// //     // TODO: Docs. Examples.
+// //     pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
+// //         where W: Write
+// //     {
+// //         match val {
+// //             &Value::Nil => try!(write_nil(wr)),
+// //             &Value::Boolean(val) => try!(write_bool(wr, val)),
+// //             // TODO: Replace with generic write_int(...).
+// //             &Value::Integer(Integer::U64(val)) => {
+// //                 try!(write_uint(wr, val));
+// //             }
+// //             &Value::Integer(Integer::I64(val)) => {
+// //                 try!(write_sint(wr, val));
+// //             }
+// //             // TODO: Replace with generic write_float(...).
+// //             &Value::Float(Float::F32(val)) => try!(write_f32(wr, val)),
+// //             &Value::Float(Float::F64(val)) => try!(write_f64(wr, val)),
+// //             &Value::String(ref val) => {
+// //                 try!(write_str(wr, &val));
+// //             }
+// //             &Value::Binary(ref val) => {
+// //                 try!(write_bin(wr, &val));
+// //             }
+// //             &Value::Array(ref val) => {
+// //                 try!(write_array_len(wr, val.len() as u32));
+// //                 for item in val {
+// //                     try!(write_value(wr, item));
+// //                 }
+// //             }
+// //             &Value::Map(ref val) => {
+// //                 try!(write_map_len(wr, val.len() as u32));
+// //                 for &(ref key, ref val) in val {
+// //                     try!(write_value(wr, key));
+// //                     try!(write_value(wr, val));
+// //                 }
+// //             }
+// //             &Value::Ext(ty, ref data) => {
+// //                 try!(write_ext_meta(wr, data.len() as u32, ty));
+// //                 try!(wr.write_all(data)
+// //                     .map_err(|err| ValueWriteError::InvalidDataWrite(WriteError(err))));
+// //             }
+// //         }
+// //
+// //         Ok(())
+// //     }
+// //
+// // } // mod value
+// //
+// // #[path = "encode/value_ref.rs"]
+// // pub mod value_ref;
+
+
 //! This module is UNSTABLE, the reason is - recently added.
 
 use std::convert::From;

@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+### Changed
+- Unexpected EOF variant has been merged with the default one in the I/O Error enum.
+- Function `write_sint` now encodes an 64-bit integer using the most compact representation.
+- Update `byteorder` dependency to 0.5.
+
+### Removed
+- Remove conversions from `byteorder` crate errors, because since 0.5 there are no such errors.
+- The `MarkerWriteError` struct is no longer public. All functions, that previously returned such kind of error now return the Standard I/O error.
+- The `FixedValueWriteError` struct is no longer public. All functions, that previously returned such kind of error now return the Standard I/O error.
+- There is no more `write_sint_eff` function; its functionality can now be done using `write_sint` function instead.
+- The function `read_marker` is no longer public.
+
 ## 0.7.5 - 2016-07-24
 ### Added
 - Add `is_*` methods for Value for checking its underlying value without explicit matching.
