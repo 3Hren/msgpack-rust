@@ -1,6 +1,6 @@
 [package]
 name = "rmp-serde"
-version = "0.9.6"
+version = "0.10.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Serde bindings for RMP"
@@ -11,5 +11,5 @@ keywords = ["msgpack", "MessagePack", "serder", "serialization"]
 
 [dependencies]
 rmp = { version = "^0.7", path = "../rmp" }
-serde = "^0.7"
-serde_macros = { version = "^0.7", optional = true }
+serde = "^0.8"
+serde_derive = { version = "^0.8", optional = true }
