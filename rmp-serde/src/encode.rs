@@ -191,7 +191,7 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
 
 impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     type Error = Error;
-    type SeqState = (); //Depth?
+    type SeqState = ();
     type TupleState = ();
     type TupleStructState = ();
     type TupleVariantState = ();
