@@ -416,6 +416,12 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
             n => Err(Error::LengthMismatch(n as u32)),
         }
     }
+
+    forward_to_deserialize! {
+        bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string unit seq
+        seq_fixed_size bytes map unit_struct newtype_struct tuple_struct struct struct_field
+        tuple ignored_any
+    }
 }
 
 struct SeqVisitor<'a, R: Read + 'a> {
@@ -540,6 +546,12 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
         where V: serde::de::Visitor,
     {
         serde::de::Deserializer::deserialize_tuple(self.de, len, visitor)
+    }
+
+    fn visit_newtype<T>(&mut self) -> Result<T>
+        where T: serde::de::Deserialize
+    {
+        serde::de::Deserialize::deserialize(self.de)
     }
 
     fn visit_struct<V>(&mut self, fields: &'static [&'static str], visitor: V) -> Result<V::Value>

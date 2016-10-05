@@ -168,9 +168,9 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
         }
     }
 
+    ///Follow with standard seq style for variables
     #[inline]
-    fn serialize_variant<F>(&mut self, variant_index: usize, maybe_len: Option<usize>, mut visit: F) -> Result<(), Error>
-        where F: FnMut(&mut Self) -> Result<Option<()>, <Self as serde::Serializer>::Error>
+    fn serialize_variant(&mut self, variant_index: usize, maybe_len: Option<usize>) -> Result<(), Error>
     {
         try!(write_array_len(&mut self.wr, 2));
 
@@ -185,14 +185,19 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
         // ... and its arguments length.
         try!(write_array_len(&mut self.wr, len as u32));
 
-        while let Some(()) = try!(depth_count!(self.depth, visit(self))) { }
-
         Ok(())
     }
 }
 
 impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     type Error = Error;
+    type SeqState = ();
+    type TupleState = ();
+    type TupleStructState = ();
+    type TupleVariantState = ();
+    type MapState = ();
+    type StructState = ();
+    type StructVariantState = ();
 
     fn serialize_unit(&mut self) -> Result<(), Error> {
         write_nil(&mut self.wr).map_err(From::from)
@@ -279,117 +284,210 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
         // ... and its arguments length.
         try!(write_array_len(&mut self.wr, 0));
 
+        try!(write_nil(&mut self.wr));
+
         Ok(())
     }
 
     /// Encodes and attempts to write the enum value into the Write.
     ///
     /// Currently we encode variant types as a tuple of id with array of args, like: [id, [args...]]
-    fn serialize_tuple_variant<V>(&mut self,
-                              _name: &str,
-                              variant_index: usize,
-                              _variant: &str,
-                              mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::SeqVisitor,
+    fn serialize_tuple_variant(&mut self, name: &'static str, variant_index: usize, _variant : &'static str, len: usize) ->
+        Result<Self::TupleVariantState, Self::Error>
     {
-        self.serialize_variant(variant_index, visitor.len(), |s| visitor.visit(s))
+        self.serialize_variant(variant_index, Some(len))
+        .and_then(|_| self.serialize_tuple_struct(name, len))
     }
 
-    fn serialize_struct_variant<V>(&mut self,
-                               _name: &str,
-                               variant_index: usize,
-                               _variant: &str,
-                               mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::MapVisitor,
+    fn serialize_tuple_variant_elt<T>(&mut self, state: &mut Self::TupleVariantState, value: T) -> Result<(), Self::Error>
+        where T: serde::Serialize
     {
-        self.serialize_variant(variant_index, visitor.len(), |s| visitor.visit(s))
+        self.serialize_tuple_struct_elt(state, value)
+    }
+
+    fn serialize_tuple_variant_end(&mut self, state: Self::TupleVariantState) -> Result<(), Self::Error> {
+        self.serialize_tuple_struct_end(state)
     }
 
     fn serialize_none(&mut self) -> Result<(), Error> {
         self.serialize_unit()
     }
 
-    fn serialize_some<T>(&mut self, v: T) -> Result<(), Error>
-        where T: serde::Serialize,
+    fn serialize_some<V>(&mut self, v: V) -> Result<(), Error>
+        where V: serde::Serialize,
     {
-        depth_count!(self.depth, v.serialize(self))
+        v.serialize(self)
     }
 
     // TODO: Check len, overflow is possible.
-    fn serialize_seq<V>(&mut self, mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::SeqVisitor,
+    fn serialize_seq(&mut self, length: Option<usize>) -> Result<Self::SeqState, Error>
     {
-        let len = match visitor.len() {
+        let len = match length {
             Some(len) => len,
             None => return Err(Error::UnknownLength),
         };
 
         try!(write_array_len(&mut self.wr, len as u32));
 
-        while let Some(()) = try!(depth_count!(self.depth, visitor.visit(self))) { }
-
         Ok(())
     }
 
-    fn serialize_seq_elt<V>(&mut self, value: V) -> Result<(), Error>
-        where V: serde::Serialize,
+    fn serialize_seq_elt<V>(&mut self, _state: &mut Self::SeqState, value: V) -> Result<Self::SeqState, Error>
+        where V: serde::Serialize
     {
-        value.serialize(self)
+        let _ = value.serialize(self);
+        Ok(())
     }
 
-    fn serialize_map<V>(&mut self, mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::MapVisitor,
+    fn serialize_seq_end(&mut self, _state: Self::SeqState) -> Result<(), Self::Error> 
     {
-        let len = match visitor.len() {
+        Ok(())
+    }
+
+    fn serialize_seq_fixed_size(&mut self, size: usize) -> Result<Self::SeqState, Self::Error>
+    {
+        self.serialize_seq(Some(size))
+    }
+
+    fn serialize_map(&mut self, length: Option<usize>) -> Result<Self::MapState, Error>
+    {
+        let len = match length {
             Some(len) => len,
             None => return Err(Error::UnknownLength),
         };
 
         try!(write_map_len(&mut self.wr, len as u32));
 
-        while let Some(()) = try!(depth_count!(self.depth, visitor.visit(self))) { }
+        Ok(())
+    }
+
+    fn serialize_map_key<T>(&mut self, _state: &mut Self::MapState, key: T) -> Result<(), Self::Error>
+        where T: serde::Serialize
+    {
+        let _ = key.serialize(self);
 
         Ok(())
     }
 
-    fn serialize_map_elt<K, V>(&mut self, key: K, value: V) -> Result<(), Error>
-        where K: serde::Serialize,
-              V: serde::Serialize,
+    fn serialize_map_value<T>(&mut self, _state: &mut Self::MapState, value: T) -> Result<(), Self::Error>
+        where T: serde::Serialize
     {
-        try!(key.serialize(self));
-        value.serialize(self)
+        let _ = value.serialize(self);
+
+        Ok(())
     }
 
-    fn serialize_unit_struct(&mut self, _name: &'static str) -> Result<(), Error> {
+    fn serialize_map_end(&mut self, _state: Self::MapState) -> Result<(), Self::Error>
+    {
+        Ok(())
+    }
+
+    fn serialize_unit_struct(&mut self, _name: &'static str) -> Result<(), Error>
+    {
         try!(self.vw.write_struct_len(&mut self.wr, 0));
 
         Ok(())
     }
 
-    fn serialize_struct<V>(&mut self, _name: &str, mut visitor: V) -> Result<(), Error>
-        where V: serde::ser::MapVisitor,
+    fn serialize_tuple(&mut self, len: usize) -> Result<Self::TupleState, Self::Error>
     {
-        let len = match visitor.len() {
-            Some(len) => len,
-            None => return Err(Error::UnknownLength),
-        };
-
-        try!(self.vw.write_struct_len(&mut self.wr, len as u32));
-
-        while let Some(()) = try!(depth_count!(self.depth, visitor.visit(self))) { }
-
-        Ok(())
+        self.serialize_seq(Some(len))
     }
 
-    fn serialize_struct_elt<V>(&mut self, _key: &str, value: V) -> Result<(), Error>
-        where V: serde::Serialize,
+    fn serialize_tuple_elt<T>(&mut self, state: &mut Self::TupleState, value: T) -> Result<(), Self::Error>
+        where T: serde::Serialize
     {
-        try!(self.vw.write_field_name(&mut self.wr, _key));
-        value.serialize(self)
+        self.serialize_seq_elt(state, value)
+    }
+
+    fn serialize_tuple_end(&mut self, state: Self::TupleState) -> Result<(), Self::Error>
+    {
+        self.serialize_seq_end(state)
+    }
+
+    fn serialize_tuple_struct(&mut self, _name: &'static str, len: usize) -> Result<Self::TupleStructState, Self::Error>
+    {
+        self.serialize_tuple(len)
+    }
+
+    fn serialize_tuple_struct_elt<T>(&mut self, state: &mut Self::TupleStructState, value: T) -> Result<(), Self::Error>
+        where T: serde::Serialize
+    {
+        self.serialize_tuple_elt(state, value)
+    }
+
+    fn serialize_tuple_struct_end(&mut self, state: Self::TupleStructState) -> Result<(), Self::Error>
+    {
+        self.serialize_tuple_end(state)
+    }
+
+    fn serialize_newtype_struct<T>(&mut self, name: &'static str, value: T) -> Result<(), Self::Error>
+        where T: serde::Serialize
+    {
+        self.serialize_tuple_struct(name, 1)
+        .and_then(|mut state: Self::TupleState| self.serialize_tuple_struct_elt(&mut state, value))   
+        .and_then(|state: Self::TupleState| self.serialize_tuple_struct_end(state))
+    }
+
+    fn serialize_newtype_variant<T>(&mut self, name: &'static str, variant_index: usize, variant: &'static str, value: T) -> Result<(), Self::Error>
+        where T: serde::Serialize
+    {
+        self.serialize_tuple_variant(name, variant_index, variant, 1)
+        .and_then(|mut state: Self::TupleState| self.serialize_tuple_variant_elt(&mut state, value))
+        .and_then(|state: Self::TupleState| self.serialize_tuple_variant_end(state))
     }
 
     fn serialize_bytes(&mut self, value: &[u8]) -> Result<(), Error> {
         try!(write_bin_len(&mut self.wr, value.len() as u32));
         self.wr.write_all(value).map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(WriteError(err))))
+    }
+
+    /// Begins to serialize a struct. This call must be followed by zero or more
+    /// calls to `serialize_struct_elt`, then a call to `serialize_struct_end`.
+    fn serialize_struct(&mut self, _name: &'static str, len: usize) -> Result<Self::StructState, Self::Error>
+    {
+        try!(self.vw.write_struct_len(&mut self.wr, len as u32));
+        Ok(())
+    }
+
+    /// Serializes a struct field. Must have previously called
+    /// `serialize_struct`.
+    fn serialize_struct_elt<V>(&mut self, _state: &mut Self::StructState, key: &'static str, value: V) ->  Result<(), Self::Error>
+        where V: serde::Serialize
+    {
+        self.vw.write_field_name(&mut self.wr, key)
+            .map_err(|e| e.into())
+            .and_then(|_| value.serialize(self))
+            .map(|_| ())
+    }
+
+    /// Finishes serializing a struct.
+    fn serialize_struct_end(&mut self, _state: Self::StructState) -> Result<(), Self::Error>
+    {
+        Ok(())
+    }
+
+    /// Begins to serialize a struct variant. This call must be followed by zero
+    /// or more calls to `serialize_struct_variant_elt`, then a call to
+    /// `serialize_struct_variant_end`.
+    fn serialize_struct_variant(&mut self, name: &'static str, variant_index: usize, _variant: &'static str, len: usize) -> 
+        Result<Self::StructVariantState, Self::Error> 
+    {
+        let _ = self.serialize_variant(variant_index, Some(len));
+        self.serialize_struct(name, len)
+    }
+
+    /// Serialize a struct variant element. Must have previously called
+    /// `serialize_struct_variant`.
+    fn serialize_struct_variant_elt<V>(&mut self, state: &mut Self::StructVariantState, key: &'static str, value: V) -> Result<(), Self::Error>
+        where V: serde::Serialize
+    {
+        self.serialize_struct_elt(state, key, value)
+    }
+
+    /// Finishes serializing a struct variant.
+    fn serialize_struct_variant_end(&mut self,state: Self::StructVariantState) -> Result<(), Self::Error>
+    {
+        self.serialize_struct_end(state)    
     }
 }

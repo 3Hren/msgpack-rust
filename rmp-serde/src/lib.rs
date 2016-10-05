@@ -1,9 +1,11 @@
 extern crate rmp;
+#[macro_use]
 extern crate serde;
 
+use std::ops::Deref;
+
 use serde::bytes::Bytes;
-use serde::ser::{Serialize, SeqVisitor, MapVisitor};
-use serde::de::Deserialize;
+use serde::{Serialize, Deserialize};
 
 use rmp::value::{Float, Integer};
 
@@ -17,6 +19,14 @@ pub mod encode;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Value(pub rmp::Value);
 
+impl Deref for Value {
+    type Target = rmp::Value;
+
+    fn deref(&self) -> &rmp::Value {
+        let &Value(ref value) = self;
+        value
+    }
+}
 /// Non-owning wrapper over rmp `Value` reference to allow serialization and deserialization.
 pub struct BorrowedValue<'a>(pub &'a rmp::Value);
 
@@ -29,7 +39,7 @@ impl<T: Into<rmp::Value>> From<T> for Value {
 impl<'a> Serialize for BorrowedValue<'a> {
     #[inline]
     fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
-        where S: serde::ser::Serializer
+        where S: serde::Serializer
     {
         match *self.0 {
             rmp::Value::Nil => s.serialize_unit(),
@@ -41,53 +51,19 @@ impl<'a> Serialize for BorrowedValue<'a> {
             rmp::Value::String(ref v) => s.serialize_str(v),
             rmp::Value::Binary(ref v) => Bytes::from(v).serialize(s),
             rmp::Value::Array(ref array) => {
-                struct Visitor<'a> {
-                    array: &'a [rmp::Value],
-                }
-
-                impl<'a> SeqVisitor for Visitor<'a> {
-                    fn visit<S>(&mut self, _s: &mut S) -> Result<Option<()>, S::Error>
-                        where S: serde::ser::Serializer
-                    {
-                        Ok(None)
-                    }
-
-                    fn len(&self) -> Option<usize> {
-                        Some(self.array.len())
-                    }
-                }
-
-                // TODO: let state = try!(s.serialize_seq(Some(array.len()))); when serde 0.8 comes.
-                try!(s.serialize_seq(Visitor { array: &array[..] }));
+                let mut state = try!(s.serialize_seq(Some(array.len())));
                 for elt in array {
-                    // TODO: try!(s.serialize_seq_elt(&mut state, elt)); when serde 0.8 comes.
-                    try!(s.serialize_seq_elt(BorrowedValue(elt)));
+                    try!(s.serialize_seq_elt(&mut state, BorrowedValue(elt)));
                 }
-                // TODO: try!(s.serialize_seq_end(&mut state)) when serde 0.8 comes.
-                Ok(())
+                s.serialize_seq_end(state) //Ok(())
             }
             rmp::Value::Map(ref map) => {
-                struct Visitor<'a> {
-                    map: &'a [(rmp::Value, rmp::Value)],
-                }
-
-                impl<'a> MapVisitor for Visitor<'a> {
-                    fn visit<S>(&mut self, _s: &mut S) -> Result<Option<()>, S::Error>
-                        where S: serde::ser::Serializer
-                    {
-                        Ok(None)
-                    }
-
-                    fn len(&self) -> Option<usize> {
-                        Some(self.map.len())
-                    }
-                }
-
-                try!(s.serialize_map(Visitor { map: &map[..] }));
+                let mut state = try!(s.serialize_map(Some(map.len())));
                 for &(ref key, ref val) in map {
-                    try!(s.serialize_map_elt(BorrowedValue(key), BorrowedValue(val)));
+                    try!(s.serialize_map_key(&mut state, BorrowedValue(key)));
+                    try!(s.serialize_map_value(&mut state, BorrowedValue(val)));
                 }
-                Ok(())
+                s.serialize_map_end(state) //Ok(())
             }
             rmp::Value::Ext(ty, ref buf) => {
                 try!(s.serialize_i8(ty));
@@ -97,11 +73,10 @@ impl<'a> Serialize for BorrowedValue<'a> {
     }
 }
 
-
 impl Serialize for Value {
     #[inline]
     fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
-        where S: serde::ser::Serializer
+        where S: serde::Serializer
     {
         BorrowedValue(&self.0).serialize(s)
     }
@@ -110,7 +85,7 @@ impl Serialize for Value {
 impl Deserialize for Value {
     #[inline]
     fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
-        where D: serde::de::Deserializer
+        where D: serde::Deserializer
     {
         struct ValueVisitor;
 
