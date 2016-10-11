@@ -6,9 +6,18 @@ use std::result;
 use serde;
 
 use rmp::Marker;
-use rmp::decode::{DecodeStringError, FixedValueReadError, MarkerReadError, ReadError,
-                  ValueReadError, read_array_size, read_numeric_data, read_str_data, read_marker,
-                  read_full};
+use rmp::decode::{
+    DecodeStringError,
+    FixedValueReadError,
+    MarkerReadError,
+    ReadError,
+    ValueReadError,
+    read_array_size,
+    read_numeric_data,
+    read_str_data,
+    read_marker,
+    read_full,
+};
 
 /// Unstable: docs; incomplete
 #[derive(Debug)]
@@ -25,9 +34,7 @@ pub enum Error {
 }
 
 impl ::std::error::Error for Error {
-    fn description(&self) -> &str {
-        "error while decoding value"
-    }
+    fn description(&self) -> &str { "error while decoding value" }
 
     fn cause(&self) -> Option<&::std::error::Error> {
         use self::Error::*;
@@ -101,7 +108,7 @@ impl serde::de::Error for Error {
         Error::Uncategorized("unknown field".to_string())
     }
 
-    fn custom<T: Into<String>>(msg: T) -> Error {
+     fn custom<T: Into<String>>(msg: T) -> Error {
         Error::Uncategorized(msg.into())
     }
 }
@@ -115,9 +122,7 @@ impl fmt::Display for Error {
 impl From<FixedValueReadError> for Error {
     fn from(err: FixedValueReadError) -> Error {
         match err {
-            FixedValueReadError::UnexpectedEOF => {
-                Error::InvalidMarkerRead(ReadError::UnexpectedEOF)
-            }
+            FixedValueReadError::UnexpectedEOF => Error::InvalidMarkerRead(ReadError::UnexpectedEOF),
             FixedValueReadError::Io(err) => Error::InvalidMarkerRead(ReadError::Io(err)),
             FixedValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
         }
@@ -127,9 +132,9 @@ impl From<FixedValueReadError> for Error {
 impl From<ValueReadError> for Error {
     fn from(err: ValueReadError) -> Error {
         match err {
-            ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
+            ValueReadError::TypeMismatch(marker)   => Error::TypeMismatch(marker),
             ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+            ValueReadError::InvalidDataRead(err)   => Error::InvalidDataRead(err),
         }
     }
 }
@@ -139,16 +144,10 @@ impl<'a> From<DecodeStringError<'a>> for Error {
     fn from(err: DecodeStringError) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            DecodeStringError::InvalidDataRead(..) => {
-                Error::Uncategorized("InvalidDataRead".to_string())
-            }
+            DecodeStringError::InvalidDataRead(..) => Error::Uncategorized("InvalidDataRead".to_string()),
             DecodeStringError::TypeMismatch(..) => Error::Uncategorized("TypeMismatch".to_string()),
-            DecodeStringError::BufferSizeTooSmall(..) => {
-                Error::Uncategorized("BufferSizeTooSmall".to_string())
-            }
-            DecodeStringError::InvalidDataCopy(..) => {
-                Error::Uncategorized("InvalidDataCopy".to_string())
-            }
+            DecodeStringError::BufferSizeTooSmall(..) => Error::Uncategorized("BufferSizeTooSmall".to_string()),
+            DecodeStringError::InvalidDataCopy(..) => Error::Uncategorized("InvalidDataCopy".to_string()),
             DecodeStringError::InvalidUtf8(..) => Error::Uncategorized("InvalidUtf8".to_string()),
         }
     }
@@ -164,17 +163,31 @@ impl From<serde::de::value::Error> for Error {
     fn from(err: serde::de::value::Error) -> Error {
         use serde::de::Error as SerdeError;
         match err {
-            serde::de::value::Error::Custom(e) => Error::custom(e),
-            serde::de::value::Error::EndOfStream => Error::end_of_stream(),
-            serde::de::value::Error::InvalidType(ty) => Error::invalid_type(ty),
-            serde::de::value::Error::InvalidValue(msg) => Error::invalid_value(&msg),
-            serde::de::value::Error::InvalidLength(len) => Error::invalid_length(len),
-            serde::de::value::Error::UnknownVariant(_) => {
-                Error::Uncategorized("unknown variant".to_string())
-            }
-            serde::de::value::Error::UnknownField(field) => Error::unknown_field(&field),
-            serde::de::value::Error::MissingField(field) => Error::missing_field(field),
-        }
+           serde::de::value::Error::Custom(e) => {
+               Error::custom(e)
+           }
+           serde::de::value::Error::EndOfStream => {
+               Error::end_of_stream()
+           }
+           serde::de::value::Error::InvalidType(ty) => {
+               Error::invalid_type(ty)
+           }
+           serde::de::value::Error::InvalidValue(msg) => {
+               Error::invalid_value(&msg)
+           }
+           serde::de::value::Error::InvalidLength(len) => {
+               Error::invalid_length(len)
+           }
+           serde::de::value::Error::UnknownVariant(_) => {
+               Error::Uncategorized("unknown variant".to_string())
+           }
+           serde::de::value::Error::UnknownField(field) => {
+               Error::unknown_field(&field)
+           }
+           serde::de::value::Error::MissingField(field) => {
+               Error::missing_field(field)
+           }
+       }
     }
 }
 
@@ -280,7 +293,7 @@ impl<R: Read> Deserializer<R> {
 
         match read_full(&mut self.rd, &mut self.buf[..len]) {
             Ok(n) if n == len => visitor.visit_bytes(&mut self.buf[..len]),
-            Ok(..) => Err(Error::InvalidDataRead(ReadError::UnexpectedEOF)),
+            Ok(..)   => Err(Error::InvalidDataRead(ReadError::UnexpectedEOF)),
             Err(err) => Err(Error::InvalidDataRead(ReadError::Io(err))),
         }
     }
@@ -330,7 +343,9 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
                 let len: u32 = try!(read_numeric_data(&mut self.rd));
                 self.read_str(len, visitor)
             }
-            Marker::FixArray(len) => self.read_array(len as u32, visitor),
+            Marker::FixArray(len) => {
+                self.read_array(len as u32, visitor)
+            }
             Marker::Array16 => {
                 let len: u16 = try!(read_numeric_data(&mut self.rd));
                 self.read_array(len as u32, visitor)
@@ -339,7 +354,9 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
                 let len: u32 = try!(read_numeric_data(&mut self.rd));
                 self.read_array(len, visitor)
             }
-            Marker::FixMap(len) => self.read_map(len as u32, visitor),
+            Marker::FixMap(len) => {
+                self.read_map(len as u32, visitor)
+            }
             Marker::Map16 => {
                 let len: u16 = try!(read_numeric_data(&mut self.rd));
                 self.read_map(len as u32, visitor)
@@ -375,25 +392,21 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     ///  - `Option<()>`.
     ///  - nested optionals, like `Option<Option<...>>`.
     fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value>
-        where V: serde::de::Visitor
+        where V: serde::de::Visitor,
     {
         // Primarily try to read optimisticly.
         self.decoding_option = true;
         let res = match depth_count!(self.depth, visitor.visit_some(self)) {
             Ok(val) => Ok(val),
             Err(Error::TypeMismatch(Marker::Null)) => visitor.visit_none(),
-            Err(err) => Err(err),
+            Err(err) => Err(err)
         };
         self.decoding_option = false;
 
         res
     }
 
-    fn deserialize_enum<V>(&mut self,
-                           _enum: &str,
-                           _variants: &[&str],
-                           mut visitor: V)
-                           -> Result<V::Value>
+    fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &[&str], mut visitor: V) -> Result<V::Value>
         where V: serde::de::EnumVisitor
     {
         let len = try!(read_array_size(&mut self.rd));
@@ -421,7 +434,7 @@ impl<'a, R: Read + 'a> serde::de::SeqVisitor for SeqVisitor<'a, R> {
     type Error = Error;
 
     fn visit<T>(&mut self) -> Result<Option<T>>
-        where T: serde::de::Deserialize
+        where T: serde::de::Deserialize,
     {
         if self.len > 0 {
             self.len -= 1;
@@ -455,7 +468,7 @@ impl<'a, R: Read + 'a> serde::de::MapVisitor for MapVisitor<'a, R> {
     type Error = Error;
 
     fn visit_key<K>(&mut self) -> Result<Option<K>>
-        where K: serde::de::Deserialize
+        where K: serde::de::Deserialize,
     {
         if self.len > 0 {
             self.len -= 1;
@@ -467,7 +480,7 @@ impl<'a, R: Read + 'a> serde::de::MapVisitor for MapVisitor<'a, R> {
     }
 
     fn visit_value<V>(&mut self) -> Result<V>
-        where V: serde::de::Deserialize
+        where V: serde::de::Deserialize,
     {
         let value = try!(serde::Deserialize::deserialize(self.deserializer));
         Ok(value)
@@ -497,7 +510,9 @@ pub struct VariantVisitor<'a, R: Read + 'a> {
 
 impl<'a, R: Read + 'a> VariantVisitor<'a, R> {
     pub fn new(de: &'a mut Deserializer<R>) -> VariantVisitor<'a, R> {
-        VariantVisitor { de: de }
+        VariantVisitor {
+            de: de,
+        }
     }
 }
 
@@ -515,7 +530,7 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
         let mut de = (id as usize).into_deserializer();
         let val = match V::deserialize(&mut de) {
             Ok(val) => val,
-            Err(e) => return Err(e),
+            Err(e) => return Err(e)
         };
         Ok(val)
     }
@@ -528,13 +543,13 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
     }
 
     fn visit_tuple<V>(&mut self, len: usize, visitor: V) -> Result<V::Value>
-        where V: serde::de::Visitor
+        where V: serde::de::Visitor,
     {
         serde::de::Deserializer::deserialize_tuple(self.de, len, visitor)
     }
 
     fn visit_struct<V>(&mut self, fields: &'static [&'static str], visitor: V) -> Result<V::Value>
-        where V: serde::de::Visitor
+        where V: serde::de::Visitor,
     {
         serde::de::Deserializer::deserialize_tuple(self.de, fields.len(), visitor)
     }

@@ -4,9 +4,21 @@ use std::fmt;
 use std::io::Write;
 
 use rmp::Marker;
-use rmp::encode::{write_nil, write_bool, write_uint, write_sint_eff, write_f32, write_f64,
-                  write_str, write_array_len, write_map_len, write_bin_len, WriteError,
-                  FixedValueWriteError, ValueWriteError};
+use rmp::encode::{
+    write_nil,
+    write_bool,
+    write_uint,
+    write_sint_eff,
+    write_f32,
+    write_f64,
+    write_str,
+    write_array_len,
+    write_map_len,
+    write_bin_len,
+    WriteError,
+    FixedValueWriteError,
+    ValueWriteError,
+};
 
 #[derive(Debug)]
 pub enum Error {
@@ -19,7 +31,7 @@ pub enum Error {
 
     /// Depth limit exceeded
     DepthLimitExceeded,
-    Custom(String),
+    Custom(String)
 }
 
 impl ::std::error::Error for Error {
@@ -27,9 +39,7 @@ impl ::std::error::Error for Error {
         match *self {
             Error::InvalidFixedValueWrite(..) => "invalid fixed value write",
             Error::InvalidValueWrite(..) => "invalid value write",
-            Error::UnknownLength => {
-                "attempt to serialize struct, sequence or map with unknown length"
-            }
+            Error::UnknownLength => "attempt to serialize struct, sequence or map with unknown length",
             Error::DepthLimitExceeded => "depth limit exceeded",
             Error::Custom(..) => "custom message",
         }
@@ -56,7 +66,7 @@ impl fmt::Display for Error {
 impl From<FixedValueWriteError> for Error {
     fn from(err: FixedValueWriteError) -> Error {
         match err {
-            FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err),
+            FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err)
         }
     }
 }
@@ -75,10 +85,8 @@ impl serde::ser::Error for Error {
 }
 
 pub trait VariantWriter {
-    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
-        where W: Write;
-    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError>
-        where W: Write;
+    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> where W: Write;
+    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError> where W: Write;
 }
 
 /// Writes struct as MessagePack array with no field names
@@ -261,10 +269,10 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
     #[inline]
     fn serialize_unit_variant(&mut self,
-                              _name: &str,
-                              variant_index: usize,
-                              _variant: &str)
-                              -> Result<(), Error> {
+                          _name: &str,
+                          variant_index: usize,
+                          _variant: &str) -> Result<(), Error>
+    {
         // Mark that we want to encode a variant type.
         try!(write_array_len(&mut self.wr, 2));
 
@@ -351,7 +359,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
     #[inline]
     fn serialize_some<T>(&mut self, v: T) -> Result<(), Error>
-        where T: serde::Serialize
+        where T: serde::Serialize,
     {
         depth_count!(self.depth, v.serialize(self))
     }
@@ -530,8 +538,6 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     #[inline]
     fn serialize_bytes(&mut self, value: &[u8]) -> Result<(), Error> {
         try!(write_bin_len(&mut self.wr, value.len() as u32));
-        self.wr.write_all(value).map_err(|err| {
-            Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(WriteError(err)))
-        })
+        self.wr.write_all(value).map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(WriteError(err))))
     }
 }
