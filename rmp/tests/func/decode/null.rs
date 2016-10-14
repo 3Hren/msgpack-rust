@@ -17,7 +17,7 @@ fn fail_invalid_marker() {
     let mut cur = Cursor::new(&buf[..]);
 
     match read_nil(&mut cur) {
-        Err(FixedValueReadError::TypeMismatch(..)) => (),
+        Err(ValueReadError::TypeMismatch(..)) => (),
         other => panic!("unexpected result: {:?}", other)
     }
     assert_eq!(1, cur.position());
@@ -28,10 +28,7 @@ fn fail_unexpected_eof() {
     let buf = [];
     let mut cur = Cursor::new(&buf[..]);
 
-    match read_nil(&mut cur) {
-        Err(FixedValueReadError::UnexpectedEOF) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    read_nil(&mut cur).err().unwrap();
     assert_eq!(0, cur.position());
 }
 
