@@ -95,13 +95,13 @@ fn pass_enum() {
         Second,
     }
 
-    let mut buf = [0x00; 3];
+    let mut buf = Vec::new();
 
     let val = Custom::Second;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut buf)).expect("Failed to serialize");
 
     let out = [0x92, 0x01, 0x90];
-    assert_eq!(out, buf);
+    assert_eq!(&out, buf.as_slice());
 }
 
 #[test]
@@ -113,13 +113,13 @@ fn pass_tuple_enum_with_arg() {
         Second(u32),
     }
 
-    let mut buf = [0x00; 4];
+    let mut buf = Vec::new();
 
     let val = Custom::Second(42);
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
 
     let out = [0x92, 0x01, 0x91, 0x2a];
-    assert_eq!(out, buf);
+    assert_eq!(out, buf[..]);
 }
 
 #[test]
@@ -153,4 +153,23 @@ fn serialize_struct_variant() {
         val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
         assert_eq!(out, buf);
     }
+}
+
+#[test]
+fn serialize_enum_with_nested_struct() {
+    #[derive(Debug, PartialEq, Serialize)]
+    struct Nested(String);
+
+    #[derive(Debug, PartialEq, Serialize)]
+    enum Enum {
+        A(Nested),
+    }
+    let val = Enum::A(Nested("le message".into()));
+    let mut buf = Vec::new();
+
+    val.serialize(&mut Serializer::new(&mut buf)).expect("Failed to serialize");
+
+    // The encoded bytearray is: [0, [['le message']]].
+    let expected = [0x92, 0x0, 0x91, 0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    assert_eq!(expected, buf[..]);
 }

@@ -70,3 +70,26 @@ fn round_trip_option_cow() {
 
     assert_eq!(expected, actual);
 }
+
+#[test]
+fn round_enum_with_nested_struct() {
+    use serde::Serialize;
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    struct Nested(String);
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    enum Enum {
+        A(Nested),
+        B,
+    }
+
+    let expected = Enum::A(Nested("le message".into()));
+    let mut data = vec![];
+    expected.serialize(&mut rmp_serde::encode::Serializer::new(&mut data)).unwrap();
+
+    let mut de = rmp_serde::decode::Deserializer::new(&data[..]);
+    let actual: Enum = serde::Deserialize::deserialize(&mut de).unwrap();
+
+    assert_eq!(expected, actual);
+}

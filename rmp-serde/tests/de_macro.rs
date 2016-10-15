@@ -18,6 +18,20 @@ use rmp_serde::decode::Error;
 type Result<T> = result::Result<T, Error>;
 
 #[test]
+fn pass_newtype() {
+    let buf = [0x91, 0x2a];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Decoded(u32);
+
+    let mut de = Deserializer::new(cur);
+    let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
+
+    assert_eq!(Decoded(42), actual);
+}
+
+#[test]
 fn pass_tuple_struct() {
     let buf = [0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
     let cur = Cursor::new(&buf[..]);
@@ -274,4 +288,23 @@ fn pass_serialize_struct_variant() {
         let val: Custom = Deserialize::deserialize(&mut de).unwrap();
         assert_eq!(expected, val);
     }
+}
+
+#[test]
+fn pass_enum_with_one_arg() {
+    // The encoded bytearray is: [0, [[1, 2]]].
+    let buf = [0x92, 0x0, 0x91, 0x92, 0x01, 0x02];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Enum {
+        A(Vec<u32>),
+        B,
+    }
+
+    let mut de = Deserializer::new(cur);
+    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
+
+    assert_eq!(Enum::A(vec![1, 2]), actual);
+    assert_eq!(buf.len() as u64, de.get_ref().position())
 }

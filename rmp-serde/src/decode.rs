@@ -417,9 +417,20 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         }
     }
 
+    fn deserialize_newtype_struct<V>(&mut self, _name: &'static str, mut visitor: V) -> Result<V::Value>
+        where V: serde::de::Visitor {
+
+        let len = try!(read_array_size(&mut self.rd));
+
+        match len {
+            1 => depth_count!(self.depth, visitor.visit_newtype_struct(self)),
+            n => Err(Error::LengthMismatch(n as u32)),
+        }
+    }
+
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string unit seq
-        seq_fixed_size bytes map unit_struct newtype_struct tuple_struct struct struct_field
+        seq_fixed_size bytes map tuple_struct unit_struct struct struct_field
         tuple ignored_any
     }
 }
@@ -551,6 +562,9 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
     fn visit_newtype<T>(&mut self) -> Result<T>
         where T: serde::de::Deserialize
     {
+        // In this very specific place there is an extra array wrapping
+        try!(read_array_size(&mut self.de.rd));
+
         serde::de::Deserialize::deserialize(self.de)
     }
 
