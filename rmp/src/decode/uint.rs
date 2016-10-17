@@ -1,8 +1,7 @@
 use std::io::Read;
 
 use Marker;
-use super::{read_data_u8, read_data_u16, read_data_u32, read_data_u64, read_data_i8,
-            read_data_i16, read_data_i32, read_data_i64, read_marker, ValueReadError};
+use super::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64, ValueReadError};
 
 /// Attempts to read a single byte from the given reader and to decode it as a positive fixnum
 /// value.
@@ -136,63 +135,4 @@ pub fn read_u64<R: Read>(rd: &mut R) -> Result<u64, ValueReadError> {
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_uint<R: Read>(rd: &mut R) -> Result<u64, ValueReadError> {
-    match try!(read_marker(rd)) {
-        Marker::FixPos(val) => Ok(val as u64),
-        Marker::U8 => Ok(try!(read_data_u8(rd)) as u64),
-        Marker::U16 => Ok(try!(read_data_u16(rd)) as u64),
-        Marker::U32 => Ok(try!(read_data_u32(rd)) as u64),
-        Marker::U64 => Ok(try!(read_data_u64(rd))),
-        Marker::FixNeg(val) if val >= 0 => Ok(val as u64),
-        Marker::I8 => {
-            match try!(read_data_i8(rd)) {
-                val if val >= 0 => Ok(val as u64),
-                _ => Err(ValueReadError::TypeMismatch(Marker::I8)),
-            }
-        }
-        Marker::I16 => {
-            match try!(read_data_i16(rd)) {
-                val if val >= 0 => Ok(val as u64),
-                _ => Err(ValueReadError::TypeMismatch(Marker::I16)),
-            }
-        }
-        Marker::I32 => {
-            match try!(read_data_i32(rd)) {
-                val if val >= 0 => Ok(val as u64),
-                _ => Err(ValueReadError::TypeMismatch(Marker::I32)),
-            }
-        }
-        Marker::I64 => {
-            match try!(read_data_i64(rd)) {
-                val if val >= 0 => Ok(val as u64),
-                _ => Err(ValueReadError::TypeMismatch(Marker::I64)),
-            }
-        }
-        marker => Err(ValueReadError::TypeMismatch(marker)),
-    }
-}
-
-// read int that fit in T, type mismatch otherwise.
-pub fn read_uint<T: TryInto<T, Err=TryFromIntError>, R: Read>(rd) -> Result<T, ValueReadError> {
-    read_data(rd, try!(read_marker))
-}
-
-pub trait Integer {}
-
-impl Integer for i8 {}
-
-#[derive(Debug)]
-pub struct TryFromIntError;
-
-fn read_data<R: Read, T: TryFrom<u8> + TryFrom<>(rd: &mut R, marker: Marker) -> Result<T, Marker> {
-    match marker {
-        Marker::I8 => try!(read_data_i8(rd)).try_into().map_err(|_| Marker::I8)),
-        marker => Err(marker),
-    }
-}
-
-pub trait TryInto<T> {
-    type Err;
-
-    fn try_into(self) -> Result<T, Self::Err>;
-}
+fn stub() {}
