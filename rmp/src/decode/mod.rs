@@ -11,9 +11,11 @@
 
 mod sint;
 mod uint;
+mod float;
 
 pub use self::sint::{read_nfix, read_i8, read_i16, read_i32, read_i64};
 pub use self::uint::{read_pfix, read_u8, read_u16, read_u32, read_u64};
+pub use self::float::{read_f32, read_f64};
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
@@ -226,6 +228,14 @@ fn read_data_u32<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
 
 fn read_data_u64<R: Read>(rd: &mut R) -> Result<u64, ValueReadError> {
     rd.read_u64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+}
+
+fn read_data_f32<R: Read>(rd: &mut R) -> Result<f32, ValueReadError> {
+    rd.read_f32::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+}
+
+fn read_data_f64<R: Read>(rd: &mut R) -> Result<f64, ValueReadError> {
+    rd.read_f64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
 }
 
 /// Attempts to read up to 9 bytes from the given reader and to decode them as integral `T` value.
