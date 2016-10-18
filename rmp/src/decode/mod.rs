@@ -11,11 +11,16 @@
 
 mod sint;
 mod uint;
-mod float;
+mod decimal;
+mod string;
+mod ext;
 
 pub use self::sint::{read_nfix, read_i8, read_i16, read_i32, read_i64};
 pub use self::uint::{read_pfix, read_u8, read_u16, read_u32, read_u64};
-pub use self::float::{read_f32, read_f64};
+pub use self::decimal::{read_f32, read_f64};
+pub use self::string::{read_str_len, read_str, read_str_ref, DecodeStringError};
+pub use self::ext::{read_fixext1, read_fixext2, read_fixext4, read_fixext8, read_fixext16,
+                    read_ext_meta, ExtMeta};
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
@@ -269,4 +274,63 @@ pub fn read_int<T: FromPrimitive, R: Read>(rd: &mut R) -> Result<T, NumValueRead
     };
 
     val.ok_or(NumValueReadError::OutOfRange)
+}
+
+/// Attempts to read up to 5 bytes from the given reader and to decode them as a big-endian u32
+/// array size.
+///
+/// Array format family stores a sequence of elements in 1, 3, or 5 bytes of extra bytes in addition
+/// to the elements.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
+// TODO: Docs.
+// NOTE: EINTR is managed internally.
+pub fn read_array_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
+    where R: Read
+{
+    match try!(read_marker(rd)) {
+        Marker::FixArray(size) => Ok(size as u32),
+        Marker::Array16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Array32 => Ok(try!(read_data_u32(rd))),
+        marker => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read up to 5 bytes from the given reader and to decode them as a big-endian u32
+/// map size.
+///
+/// Map format family stores a sequence of elements in 1, 3, or 5 bytes of extra bytes in addition
+/// to the elements.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
+// TODO: Docs.
+pub fn read_map_size<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
+    match try!(read_marker(rd)) {
+        Marker::FixMap(size) => Ok(size as u32),
+        Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Map32 => Ok(try!(read_data_u32(rd))),
+        marker => Err(ValueReadError::TypeMismatch(marker)),
+    }
+}
+
+/// Attempts to read up to 5 bytes from the given reader and to decode them as Binary array length.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
+// TODO: Docs.
+pub fn read_bin_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
+    match try!(read_marker(rd)) {
+        Marker::Bin8 => Ok(try!(read_data_u8(rd)) as u32),
+        Marker::Bin16 => Ok(try!(read_data_u16(rd)) as u32),
+        Marker::Bin32 => Ok(try!(read_data_u32(rd))),
+        marker => Err(ValueReadError::TypeMismatch(marker)),
+    }
 }

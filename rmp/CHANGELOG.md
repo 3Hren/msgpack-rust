@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - There is no more `write_sint_eff` function; its functionality can now be done using `write_sint` function instead.
 - The function `read_marker` is no longer public.
 - Integral functions like `read_*_loosely` and `read_*_fit` were dropped in favor of generic `read_int` function, which allows to read integral values and cast them to specified result type even if they aren't the same.
+- Dropped `read_bin_borrow` function.
 
 ## 0.7.5 - 2016-07-24
 ### Added

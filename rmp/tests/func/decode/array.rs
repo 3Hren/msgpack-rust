@@ -47,10 +47,7 @@ fn from_array16_unexpected_eof_read_size() {
     let buf: &[u8] = &[0xdc, 0xff];
     let mut cur = Cursor::new(buf);
 
-    match read_array_size(&mut cur) {
-        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    read_array_size(&mut cur).err().unwrap();
     assert_eq!(2, cur.position());
 }
 
@@ -77,10 +74,7 @@ fn from_array32_unexpected_eof_read_size() {
     let buf: &[u8] = &[0xdd, 0xff, 0xff, 0xff];
     let mut cur = Cursor::new(buf);
 
-    match read_array_size(&mut cur) {
-        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    read_array_size(&mut cur).err().unwrap();
     assert_eq!(4, cur.position());
 }
 

@@ -53,10 +53,7 @@ fn from_str8_read_str_len_eof() {
     let buf: &[u8] = &[0xd9];
     let mut cur = Cursor::new(buf);
 
-    match read_str_len(&mut cur) {
-        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    read_str_len(&mut cur).err().unwrap();
     assert_eq!(1, cur.position());
 }
 
@@ -92,10 +89,7 @@ fn from_str16_read_str_len_eof() {
     let buf: &[u8] = &[0xda, 0x00];
     let mut cur = Cursor::new(buf);
 
-    match read_str_len(&mut cur) {
-        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    read_str_len(&mut cur).err().unwrap();
     assert_eq!(2, cur.position());
 }
 
@@ -122,10 +116,7 @@ fn from_str32_read_str_len_eof() {
     let buf: &[u8] = &[0xdb, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
 
-    match read_str_len(&mut cur) {
-        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    read_str_len(&mut cur).err().unwrap();
     assert_eq!(4, cur.position());
 }
 
@@ -172,24 +163,6 @@ fn from_str_strfix_exact_buffer() {
 
     assert_eq!("le message", read_str(&mut cur, &mut out).unwrap());
     assert_eq!(11, cur.position());
-}
-
-#[test]
-fn from_str_strfix_insufficient_bytes() {
-    // The buffer contains "le messag", which length is 9, but the total size endoded is 10.
-    // TODO: The result should be: InvalidDataCopy (EOF)
-    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67];
-    let mut cur = Cursor::new(buf);
-
-    let mut out: &mut [u8] = &mut [0u8; 16];
-
-    match read_str(&mut cur, &mut out) {
-        Err(DecodeStringError::InvalidDataCopy(actual, _)) => {
-            assert_eq!(&[0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67], &actual[..]);
-        },
-        other => panic!("unexpected result: {:?}", other)
-    }
-    assert_eq!(10, cur.position());
 }
 
 #[test]
