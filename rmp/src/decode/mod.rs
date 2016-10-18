@@ -21,6 +21,8 @@ use std::io::Read;
 
 use byteorder::{self, ReadBytesExt};
 
+use num_traits::cast::FromPrimitive;
+
 use Marker;
 
 /// An error that can occur when attempting to read bytes from the reader.
@@ -182,6 +184,16 @@ impl From<MarkerReadError> for NumValueReadError {
     }
 }
 
+impl From<ValueReadError> for NumValueReadError {
+    fn from(err: ValueReadError) -> NumValueReadError {
+        match err {
+            ValueReadError::InvalidMarkerRead(err) => NumValueReadError::InvalidMarkerRead(err),
+            ValueReadError::InvalidDataRead(err) => NumValueReadError::InvalidDataRead(err),
+            ValueReadError::TypeMismatch(err) => NumValueReadError::TypeMismatch(err),
+        }
+    }
+}
+
 // Helper functions to map I/O error into the `InvalidDataRead` error.
 
 fn read_data_i8<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
@@ -214,4 +226,37 @@ fn read_data_u32<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
 
 fn read_data_u64<R: Read>(rd: &mut R) -> Result<u64, ValueReadError> {
     rd.read_u64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+}
+
+/// Attempts to read up to 9 bytes from the given reader and to decode them as integral `T` value.
+///
+/// This function will try to read up to 9 bytes from the reader (1 for marker and up to 8 for data)
+/// and interpret them as a big-endian `T`.
+///
+/// Unlike `read_*`, this function weakens type restrictions, allowing you to safely decode packed
+/// values even if you aren't sure about the actual integral type.
+///
+/// # Errors
+///
+/// This function will return `NumValueReadError` on any I/O error while reading either the marker
+/// or the data, except the EINTR, which is handled internally.
+///
+/// It also returns `NumValueReadError::OutOfRange` if the actual type is not an integer or it does
+/// not fit in the given numeric range.
+pub fn read_int<T: FromPrimitive, R: Read>(rd: &mut R) -> Result<T, NumValueReadError> {
+    let val = match try!(read_marker(rd)) {
+        Marker::FixPos(val) => T::from_u8(val),
+        Marker::FixNeg(val) => T::from_i8(val),
+        Marker::U8 => T::from_u8(try!(read_data_u8(rd))),
+        Marker::U16 => T::from_u16(try!(read_data_u16(rd))),
+        Marker::U32 => T::from_u32(try!(read_data_u32(rd))),
+        Marker::U64 => T::from_u64(try!(read_data_u64(rd))),
+        Marker::I8 => T::from_i8(try!(read_data_i8(rd))),
+        Marker::I16 => T::from_i16(try!(read_data_i16(rd))),
+        Marker::I32 => T::from_i32(try!(read_data_i32(rd))),
+        Marker::I64 => T::from_i64(try!(read_data_i64(rd))),
+        marker => return Err(NumValueReadError::TypeMismatch(marker)),
+    };
+
+    val.ok_or(NumValueReadError::OutOfRange)
 }

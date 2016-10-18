@@ -188,3 +188,93 @@ fn from_i64_unexpected_eof() {
     read_i64(&mut cur).err().unwrap();
     assert_eq!(8, cur.position());
 }
+
+#[test]
+fn from_nfix_min_read_int() {
+    let buf: &[u8] = &[0xe0];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-32, read_int(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_nfix_max_read_int() {
+    let buf: &[u8] = &[0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-1, read_int(&mut cur).unwrap());
+    assert_eq!(1, cur.position());
+}
+
+#[test]
+fn from_i8_min_read_int() {
+    let buf: &[u8] = &[0xd0, 0x80];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-128, read_int(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i8_max_read_int() {
+    let buf: &[u8] = &[0xd0, 0x7f];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(127, read_int(&mut cur).unwrap());
+    assert_eq!(2, cur.position());
+}
+
+#[test]
+fn from_i16_min_read_int() {
+    let buf: &[u8] = &[0xd1, 0x80, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-32768, read_int(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_i16_max_read_int() {
+    let buf: &[u8] = &[0xd1, 0x7f, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(32767, read_int(&mut cur).unwrap());
+    assert_eq!(3, cur.position());
+}
+
+#[test]
+fn from_i32_min_read_int() {
+    let buf: &[u8] = &[0xd2, 0x80, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-2147483648, read_int(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_i32_max_read_int() {
+    let buf: &[u8] = &[0xd2, 0x7f, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(2147483647, read_int(&mut cur).unwrap());
+    assert_eq!(5, cur.position());
+}
+
+#[test]
+fn from_i64_min_read_int() {
+    let buf: &[u8] = &[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(-9223372036854775808i64, read_int(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}
+
+#[test]
+fn from_i64_max_read_int() {
+    let buf: &[u8] = &[0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    let mut cur = Cursor::new(buf);
+
+    assert_eq!(9223372036854775807i64, read_int(&mut cur).unwrap());
+    assert_eq!(9, cur.position());
+}

@@ -3,7 +3,6 @@ mod null;
 mod bool;
 mod sint;
 mod uint;
-// mod int;
 // mod float;
 // mod string;
 // mod bin;

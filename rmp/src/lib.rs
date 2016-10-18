@@ -68,6 +68,7 @@
 //! Almost all API are represented as pure functions, which accepts a generic `Write` and the value.
 
 extern crate byteorder;
+extern crate num_traits;
 
 pub mod encode;
 pub mod decode;
