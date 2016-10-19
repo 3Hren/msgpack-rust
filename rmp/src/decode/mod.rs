@@ -203,22 +203,6 @@ impl From<ValueReadError> for NumValueReadError {
 
 // Helper functions to map I/O error into the `InvalidDataRead` error.
 
-fn read_data_i8<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
-    rd.read_i8().map_err(ValueReadError::InvalidDataRead)
-}
-
-fn read_data_i16<R: Read>(rd: &mut R) -> Result<i16, ValueReadError> {
-    rd.read_i16::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
-}
-
-fn read_data_i32<R: Read>(rd: &mut R) -> Result<i32, ValueReadError> {
-    rd.read_i32::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
-}
-
-fn read_data_i64<R: Read>(rd: &mut R) -> Result<i64, ValueReadError> {
-    rd.read_i64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
-}
-
 fn read_data_u8<R: Read>(rd: &mut R) -> Result<u8, ValueReadError> {
     rd.read_u8().map_err(ValueReadError::InvalidDataRead)
 }
@@ -241,6 +225,22 @@ fn read_data_f32<R: Read>(rd: &mut R) -> Result<f32, ValueReadError> {
 
 fn read_data_f64<R: Read>(rd: &mut R) -> Result<f64, ValueReadError> {
     rd.read_f64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+}
+
+fn read_data_i8<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
+    rd.read_i8().map_err(ValueReadError::InvalidDataRead)
+}
+
+fn read_data_i16<R: Read>(rd: &mut R) -> Result<i16, ValueReadError> {
+    rd.read_i16::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+}
+
+fn read_data_i32<R: Read>(rd: &mut R) -> Result<i32, ValueReadError> {
+    rd.read_i32::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+}
+
+fn read_data_i64<R: Read>(rd: &mut R) -> Result<i64, ValueReadError> {
+    rd.read_i64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
 }
 
 /// Attempts to read up to 9 bytes from the given reader and to decode them as integral `T` value.
