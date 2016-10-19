@@ -23,6 +23,7 @@ use byteorder::{self, WriteBytesExt};
 
 use Marker;
 
+/// The error type for I/O operations of the `Write` and associated traits.
 pub type Error = ::std::io::Error;
 
 // An error returned from the `write_marker` and `write_fixval` functions.
@@ -88,7 +89,8 @@ pub fn write_nil<W: Write>(wr: &mut W) -> Result<(), Error> {
 ///
 /// # Errors
 ///
-/// This function will return `Error` on any I/O error occurred while writing the boolean marker.
+/// Each call to this function may generate an I/O error indicating that the operation could not be
+/// completed.
 pub fn write_bool<W: Write>(wr: &mut W, val: bool) -> Result<(), Error> {
     match val {
         true => write_marker(wr, Marker::True).map_err(|err| err.0),
@@ -238,8 +240,8 @@ pub fn write_map_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWrit
 ///
 /// # Panics
 ///
-/// Panics if `typeid` is negative, because it is reserved for future MessagePack extension
-/// including 2-byte type information.
+/// Panics if `ty` is negative, because it is reserved for future MessagePack extension including
+/// 2-byte type information.
 pub fn write_ext_meta<W: Write>(wr: &mut W, len: u32, ty: i8) -> Result<Marker, ValueWriteError> {
     assert!(ty >= 0);
 
