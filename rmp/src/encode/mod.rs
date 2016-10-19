@@ -66,8 +66,7 @@ impl From<DataWriteError> for Error {
 ///
 /// # Errors
 ///
-/// This function will return `FixedValueWriteError` on any I/O error occurred while writing the nil
-/// marker.
+/// This function will return `Error` on any I/O error occurred while writing the nil marker.
 ///
 /// # Examples
 ///
@@ -89,29 +88,12 @@ pub fn write_nil<W: Write>(wr: &mut W) -> Result<(), Error> {
 ///
 /// # Errors
 ///
-/// This function will return `FixedValueWriteError` on any I/O error occurred while writing the
-/// boolean marker.
+/// This function will return `Error` on any I/O error occurred while writing the boolean marker.
 pub fn write_bool<W: Write>(wr: &mut W, val: bool) -> Result<(), Error> {
     match val {
         true => write_marker(wr, Marker::True).map_err(|err| err.0),
         false => write_marker(wr, Marker::False).map_err(|err| err.0),
     }
-}
-
-fn write_data_i8<W: Write>(wr: &mut W, val: i8) -> Result<(), DataWriteError> {
-    wr.write_i8(val).map_err(DataWriteError)
-}
-
-fn write_data_i16<W: Write>(wr: &mut W, val: i16) -> Result<(), DataWriteError> {
-    wr.write_i16::<byteorder::BigEndian>(val).map_err(DataWriteError)
-}
-
-fn write_data_i32<W: Write>(wr: &mut W, val: i32) -> Result<(), DataWriteError> {
-    wr.write_i32::<byteorder::BigEndian>(val).map_err(DataWriteError)
-}
-
-fn write_data_i64<W: Write>(wr: &mut W, val: i64) -> Result<(), DataWriteError> {
-    wr.write_i64::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
 fn write_data_u8<W: Write>(wr: &mut W, val: u8) -> Result<(), DataWriteError> {
@@ -128,6 +110,22 @@ fn write_data_u32<W: Write>(wr: &mut W, val: u32) -> Result<(), DataWriteError> 
 
 fn write_data_u64<W: Write>(wr: &mut W, val: u64) -> Result<(), DataWriteError> {
     wr.write_u64::<byteorder::BigEndian>(val).map_err(DataWriteError)
+}
+
+fn write_data_i8<W: Write>(wr: &mut W, val: i8) -> Result<(), DataWriteError> {
+    wr.write_i8(val).map_err(DataWriteError)
+}
+
+fn write_data_i16<W: Write>(wr: &mut W, val: i16) -> Result<(), DataWriteError> {
+    wr.write_i16::<byteorder::BigEndian>(val).map_err(DataWriteError)
+}
+
+fn write_data_i32<W: Write>(wr: &mut W, val: i32) -> Result<(), DataWriteError> {
+    wr.write_i32::<byteorder::BigEndian>(val).map_err(DataWriteError)
+}
+
+fn write_data_i64<W: Write>(wr: &mut W, val: i64) -> Result<(), DataWriteError> {
+    wr.write_i64::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
 fn write_data_f32<W: Write>(wr: &mut W, val: f32) -> Result<(), DataWriteError> {
