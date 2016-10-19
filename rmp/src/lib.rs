@@ -1,8 +1,8 @@
 //! # The Rust MessagePack Library
 //!
-//! RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
-//!
-//! MessagePack is an efficient binary serialization format.
+//! RMP is a pure Rust [MessagePack](http://msgpack.org) implementation of an efficient binary
+//! serialization format. This crate provides low-level core functionality, writers and readers for
+//! primitive values with direct mapping between binary MessagePack format.
 //!
 //! **Warning** this library is still in rapid development and everything may change until 1.0
 //! comes.
@@ -50,8 +50,8 @@
 //! This crate represents the very basic functionality needed to work with MessagePack format.
 //! Ideologically it is developed as a basis for building high-level abstractions.
 //!
-//! Currently there are three large modules: encode, decode and value. More detail you can find
-//! in the corresponding sections.
+//! Currently there are two large modules: encode and decode. More detail you can find in the
+//! corresponding sections.
 //!
 //! Formally every MessagePack message consists of some marker encapsulating a date type and the
 //! data itself. Sometimes there are no separate data chunk, for example for booleans. In these
@@ -66,7 +66,17 @@
 //!
 //! ## API
 //!
-//! Almost all API are represented as pure functions, which accepts a generic `Write` and the value.
+//! Almost all API are represented as pure functions, which accepts a generic `Write` or `Read` and
+//! the value to be encoded/decoded. For example let's do a round trip for π number.
+//!
+//! ```
+//! let pi = std::f64::consts::PI;
+//! let mut buf = Vec::new();
+//! rmp::encode::write_f64(&mut buf, pi).unwrap();
+//!
+//! assert_eq!([0xcb, 0x40, 0x9, 0x21, 0xfb, 0x54, 0x44, 0x2d, 0x18], buf[..]);
+//! assert_eq!(pi, rmp::decode::read_f64(&mut &buf[..]).unwrap());
+//! ```
 
 extern crate byteorder;
 extern crate num_traits;
