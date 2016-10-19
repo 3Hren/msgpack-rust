@@ -4,7 +4,8 @@
 //!
 //! MessagePack is an efficient binary serialization format.
 //!
-//! **Warning** this library is still in rapid development and everything may change until 1.0 comes.
+//! **Warning** this library is still in rapid development and everything may change until 1.0
+//! comes.
 //!
 //! ## Usage
 //!
@@ -12,13 +13,13 @@
 //!
 //! ```toml
 //! [dependencies.rmp]
-//! rmp = "^0.7"
+//! rmp = "^0.8"
 //! ```
 //!
-//! Then, add this to your crate root:
+//! Then, add this line to your crate root:
 //!
 //! ```rust
-//! extern crate rmp as msgpack; // Or just `rmp`.
+//! extern crate rmp;
 //! ```
 //!
 //! ## Features
