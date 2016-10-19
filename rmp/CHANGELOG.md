@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 ### Added
+- Marker now implements From and Into traits for u8.
 - The `NumValueReadError` enum with additional `OutOfRange` variant for differing whether integer reading and decoding failed because of out of range cast error.
 
 ### Changed
