@@ -1,83 +1,54 @@
-use std::convert::From;
-use std::fmt;
+use std::error;
+use std::fmt::{self, Display, Formatter};
 use std::io::Read;
-use std::result;
 
 use serialize;
 
 use rmp::Marker;
-use rmp::decode::{
-    ReadError,
-    FixedValueReadError,
-    ValueReadError,
-    DecodeStringError,
-    read_nil,
-    read_bool,
-    read_u8_fit,
-    read_u16_fit,
-    read_u32_fit,
-    read_u64_fit,
-    read_i8_fit,
-    read_i16_fit,
-    read_i32_fit,
-    read_i64_fit,
-    read_f32,
-    read_f64,
-    read_str_len,
-    read_str_data,
-    read_array_size,
-    read_map_size,
-};
+use rmp::decode::{ValueReadError, DecodeStringError, read_nil, read_bool, read_int, read_f32,
+                  read_f64, read_str_len, read_str_data, read_array_size, read_map_size};
 
 /// Unstable: docs; incomplete
 #[derive(Debug)]
 pub enum Error {
     /// The actual value type isn't equal with the expected one.
-    TypeMismatch(Marker),
     InvalidMarkerRead(ReadError),
     InvalidDataRead(ReadError),
+    TypeMismatch(Marker),
     LengthMismatch(u32),
     /// Uncategorized error.
     Uncategorized(String),
 }
 
-impl ::std::error::Error for Error {
-    fn description(&self) -> &str { "error while decoding value" }
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        "error while decoding value"
+    }
 
-    fn cause(&self) -> Option<&::std::error::Error> {
+    fn cause(&self) -> Option<&error::Error> {
         use self::Error::*;
         match *self {
-            TypeMismatch(_) => None,
             InvalidMarkerRead(ref err) => Some(err),
             InvalidDataRead(ref err) => Some(err),
-            LengthMismatch(_) => None,
-            Uncategorized(_) => None,
+            TypeMismatch(..) => None,
+            LengthMismatch(..) => None,
+            Uncategorized(..) => None,
         }
     }
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        ::std::error::Error::description(self).fmt(f)
-    }
-}
-
-impl From<FixedValueReadError> for Error {
-    fn from(err: FixedValueReadError) -> Error {
-        match err {
-            FixedValueReadError::UnexpectedEOF => Error::InvalidMarkerRead(ReadError::UnexpectedEOF),
-            FixedValueReadError::Io(err) => Error::InvalidMarkerRead(ReadError::Io(err)),
-            FixedValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
-        }
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        error::Error::description(self).fmt(f)
     }
 }
 
 impl From<ValueReadError> for Error {
     fn from(err: ValueReadError) -> Error {
         match err {
-            ValueReadError::TypeMismatch(marker)   => Error::TypeMismatch(marker),
             ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+            ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
         }
     }
 }
@@ -87,16 +58,19 @@ impl<'a> From<DecodeStringError<'a>> for Error {
     fn from(err: DecodeStringError) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            DecodeStringError::InvalidDataRead(..) => Error::Uncategorized("InvalidDataRead".to_string()),
+            DecodeStringError::InvalidDataRead(..) => {
+                Error::Uncategorized("InvalidDataRead".to_string())
+            }
             DecodeStringError::TypeMismatch(..) => Error::Uncategorized("TypeMismatch".to_string()),
-            DecodeStringError::BufferSizeTooSmall(..) => Error::Uncategorized("BufferSizeTooSmall".to_string()),
-            DecodeStringError::InvalidDataCopy(..) => Error::Uncategorized("InvalidDataCopy".to_string()),
+            DecodeStringError::BufferSizeTooSmall(..) => {
+                Error::Uncategorized("BufferSizeTooSmall".to_string())
+            }
             DecodeStringError::InvalidUtf8(..) => Error::Uncategorized("InvalidUtf8".to_string()),
         }
     }
 }
 
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// # Note
 ///
@@ -110,9 +84,7 @@ pub struct Decoder<R: Read> {
 impl<R: Read> Decoder<R> {
     // TODO: Docs.
     pub fn new(rd: R) -> Decoder<R> {
-        Decoder {
-            rd: rd
-        }
+        Decoder { rd: rd }
     }
 
     /// Gets a reference to the underlying reader in this decoder.
@@ -286,9 +258,15 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     }
 
     fn read_tuple_struct<T, F>(&mut self, _name: &str, _len: usize, _f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        unimplemented!()
+    }
     fn read_tuple_struct_arg<T, F>(&mut self, _idx: usize, _f: F) -> Result<T>
-        where F: FnOnce(&mut Self) -> Result<T> { unimplemented!() }
+        where F: FnOnce(&mut Self) -> Result<T>
+    {
+        unimplemented!()
+    }
 
     /// We treat Value::Null as None.
     fn read_option<T, F>(&mut self, mut f: F) -> Result<T>
@@ -298,7 +276,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         match f(self, true) {
             Ok(val) => Ok(val),
             Err(Error::TypeMismatch(Marker::Null)) => f(self, false),
-            Err(err) => Err(err)
+            Err(err) => Err(err),
         }
     }
 

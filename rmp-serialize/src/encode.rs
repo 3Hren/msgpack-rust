@@ -1,7 +1,7 @@
 use std;
 use std::io::Write;
 
-use serialize;
+use rustc_serialize;
 
 use rmp::encode::{
     write_array_len,
@@ -10,23 +10,16 @@ use rmp::encode::{
     write_f64,
     write_map_len,
     write_nil,
-    write_sint_eff,
+    write_int,
     write_str,
-    write_uint,
 };
 
 use rmp::encode::{
-    FixedValueWriteError,
-    ValueWriteError,
     WriteError,
 };
 
 #[derive(Debug)]
-pub enum Error {
-    /// Failed to write MessagePack'ed single-byte value into the write.
-    InvalidFixedValueWrite(WriteError),
-    InvalidValueWrite(ValueWriteError),
-}
+pub type Error = ValueWriteError;
 
 impl std::error::Error for Error {
     fn description(&self) -> &str { "an error occurred while writing encoded value" }
@@ -89,7 +82,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     type Error = Error;
 
     fn emit_nil(&mut self) -> Result<(), Error> {
-        write_nil(&mut self.wr).map_err(From::from)
+        write_nil(&mut self.wr)
     }
 
     fn emit_bool(&mut self, val: bool) -> Result<(), Error> {
