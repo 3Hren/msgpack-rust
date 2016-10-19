@@ -70,15 +70,10 @@
 extern crate byteorder;
 extern crate num_traits;
 
+mod marker;
 pub mod encode;
 pub mod decode;
 
-mod init;
-
-pub mod value;
+pub use marker::Marker;
 
 pub const MSGPACK_VERSION : u32 = 5;
-
-pub use init::Marker;
-
-pub use value::{Value, ValueRef};
