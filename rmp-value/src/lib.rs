@@ -5,7 +5,6 @@
 //! ```
 //! ```
 
-use std::convert::From;
 use std::ops::Index;
 
 /// Integer representation.
