@@ -6,7 +6,7 @@ use serialize;
 
 use rmp::Marker;
 use rmp::decode::{ValueReadError, DecodeStringError, read_nil, read_bool, read_int, read_f32,
-                  read_f64, read_str_len, read_str_data, read_array_size, read_map_size};
+                  read_f64, read_str_len, read_str_data, read_array_len, read_map_len};
 
 /// Unstable: docs; incomplete
 #[derive(Debug)]
@@ -186,7 +186,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_enum<T, F>(&mut self, _name: &str, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
-        let len = try!(read_array_size(&mut self.rd));
+        let len = try!(read_array_len(&mut self.rd));
         if len == 2 {
             f(self)
         } else {
@@ -200,7 +200,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
         let id = try!(self.read_usize());
 
         if id < names.len() {
-            try!(read_array_size(&mut self.rd));
+            try!(read_array_len(&mut self.rd));
 
             f(self, id)
         } else {
@@ -241,7 +241,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_tuple<T, F>(&mut self, len: usize, f: F) -> Result<T>
         where F: FnOnce(&mut Self) -> Result<T>
     {
-        let actual = try!(read_array_size(&mut self.rd));
+        let actual = try!(read_array_len(&mut self.rd));
 
         if len == actual as usize {
             f(self)
@@ -283,7 +283,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_seq<T, F>(&mut self, f: F) -> Result<T>
         where F: FnOnce(&mut Self, usize) -> Result<T>
     {
-        let len = try!(read_array_size(&mut self.rd)) as usize;
+        let len = try!(read_array_len(&mut self.rd)) as usize;
 
         f(self, len)
     }
@@ -297,7 +297,7 @@ impl<R: Read> serialize::Decoder for Decoder<R> {
     fn read_map<T, F>(&mut self, f: F) -> Result<T>
         where F: FnOnce(&mut Self, usize) -> Result<T>
     {
-        let len = try!(read_map_size(&mut self.rd)) as usize;
+        let len = try!(read_map_len(&mut self.rd)) as usize;
 
         f(self, len)
     }

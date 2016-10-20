@@ -3,8 +3,6 @@ use std::io::{self, Read};
 use std::fmt::{self, Display, Formatter};
 use std::str::{Utf8Error, from_utf8};
 
-use byteorder::{self, ReadBytesExt};
-
 use Marker;
 use super::{read_marker, read_data_u8, read_data_u16, read_data_u32, Error, ValueReadError};
 

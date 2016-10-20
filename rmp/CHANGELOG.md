@@ -11,6 +11,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Unexpected EOF variant has been merged with the default one in the I/O Error enum.
 - Function `write_sint` now encodes an 64-bit integer using the most compact representation.
 - Update `byteorder` dependency to 0.5.
+- Rename `read_array_size` function to `read_array_len`.
+- Rename `read_map_size` function to `read_map_len`.
 
 ### Removed
 - Remove conversions from `byteorder` crate errors, because since 0.5 there are no such errors.

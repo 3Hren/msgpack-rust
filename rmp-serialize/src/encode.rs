@@ -10,7 +10,8 @@ use rmp::encode::{
     write_f64,
     write_map_len,
     write_nil,
-    write_int,
+    write_sint,
+    write_uint,
     write_str,
 };
 
@@ -18,7 +19,6 @@ use rmp::encode::{
     WriteError,
 };
 
-#[derive(Debug)]
 pub type Error = ValueWriteError;
 
 impl std::error::Error for Error {

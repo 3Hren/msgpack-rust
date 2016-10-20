@@ -30,7 +30,8 @@ pub fn write_str_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWrit
     }
 }
 
-/// Encodes and attempts to write the most efficient string implementation to the given `Write`.
+/// Encodes and attempts to write the most efficient string binary representation to the
+/// given `Write`.
 ///
 /// # Errors
 ///
@@ -39,5 +40,5 @@ pub fn write_str_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWrit
 // TODO: Docs, range check, example, visibility.
 pub fn write_str<W: Write>(wr: &mut W, data: &str) -> Result<(), ValueWriteError> {
     try!(write_str_len(wr, data.len() as u32));
-    wr.write_all(data.as_bytes()).map_err(|err| ValueWriteError::InvalidDataWrite(err))
+    wr.write_all(data.as_bytes()).map_err(ValueWriteError::InvalidDataWrite)
 }

@@ -11,14 +11,14 @@
 
 mod sint;
 mod uint;
-mod decimal;
-mod string;
+mod dec;
+mod str;
 mod ext;
 
 pub use self::sint::{read_nfix, read_i8, read_i16, read_i32, read_i64};
 pub use self::uint::{read_pfix, read_u8, read_u16, read_u32, read_u64};
-pub use self::decimal::{read_f32, read_f64};
-pub use self::string::{read_str_len, read_str, read_str_ref, DecodeStringError};
+pub use self::dec::{read_f32, read_f64};
+pub use self::str::{read_str_len, read_str, read_str_ref, DecodeStringError};
 pub use self::ext::{read_fixext1, read_fixext2, read_fixext4, read_fixext8, read_fixext16,
                     read_ext_meta, ExtMeta};
 
@@ -288,7 +288,7 @@ pub fn read_int<T: FromPrimitive, R: Read>(rd: &mut R) -> Result<T, NumValueRead
 /// successful read.
 // TODO: Docs.
 // NOTE: EINTR is managed internally.
-pub fn read_array_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
+pub fn read_array_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
     where R: Read
 {
     match try!(read_marker(rd)) {
@@ -310,7 +310,7 @@ pub fn read_array_size<R>(rd: &mut R) -> Result<u32, ValueReadError>
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
 // TODO: Docs.
-pub fn read_map_size<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
+pub fn read_map_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
     match try!(read_marker(rd)) {
         Marker::FixMap(size) => Ok(size as u32),
         Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),

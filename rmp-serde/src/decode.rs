@@ -12,7 +12,7 @@ use rmp::decode::{
     MarkerReadError,
     ReadError,
     ValueReadError,
-    read_array_size,
+    read_array_len,
     read_numeric_data,
     read_str_data,
     read_marker,
@@ -409,7 +409,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &[&str], mut visitor: V) -> Result<V::Value>
         where V: serde::de::EnumVisitor
     {
-        let len = try!(read_array_size(&mut self.rd));
+        let len = try!(read_array_len(&mut self.rd));
 
         match len {
             2 => depth_count!(self.depth, visitor.visit(VariantVisitor::new(self))),

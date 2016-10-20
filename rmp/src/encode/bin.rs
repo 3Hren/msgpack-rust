@@ -37,7 +37,7 @@ pub fn write_bin_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWrit
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data, except the EINTR, which is handled internally.
 // TODO: Docs, range check, example, visibility.
-fn write_bin<W: Write>(wr: &mut W, data: &[u8]) -> Result<(), ValueWriteError> {
+pub fn write_bin<W: Write>(wr: &mut W, data: &[u8]) -> Result<(), ValueWriteError> {
     try!(write_bin_len(wr, data.len() as u32));
-    wr.write_all(data).map_err(|err| ValueWriteError::InvalidDataWrite(err))
+    wr.write_all(data).map_err(ValueWriteError::InvalidDataWrite)
 }
