@@ -78,8 +78,8 @@
 extern crate rmp;
 extern crate rustc_serialize;
 
-// pub mod decode;
+pub mod decode;
 pub mod encode;
 
-// pub use decode::Decoder;
+pub use decode::Decoder;
 pub use encode::Encoder;

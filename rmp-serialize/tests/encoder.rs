@@ -3,7 +3,7 @@ extern crate rustc_serialize;
 
 use rustc_serialize::Encodable;
 
-use rmp_serialize::encode::{Encoder, Error};
+use rmp_serialize::encode::Encoder;
 
 #[test]
 fn pass_null() {
@@ -22,29 +22,21 @@ fn fail_null() {
     let val = ();
 
     match val.encode(&mut Encoder::new(&mut &mut buf[..])) {
-        Err(Error::InvalidFixedValueWrite(..)) => (),
+        Err(..) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }
 
 #[test]
 fn pass_bool() {
-    use std::io::Cursor;
-
-    let mut buf = [0x00, 0x00];
-
+    let mut buf = Vec::new();
     {
-        let mut cur = Cursor::new(&mut buf[..]);
-
-        let mut encoder = Encoder::new(&mut cur);
-
-        let val = true;
-        val.encode(&mut encoder).ok().unwrap();
-        let val = false;
-        val.encode(&mut encoder).ok().unwrap();
+        let mut encoder = Encoder::new(&mut buf);
+        true.encode(&mut encoder).unwrap();
+        false.encode(&mut encoder).unwrap();
     }
 
-    assert_eq!([0xc3, 0xc2], buf);
+    assert_eq!(vec![0xc3, 0xc2], buf);
 }
 
 #[test]

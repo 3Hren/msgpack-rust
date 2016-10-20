@@ -1,57 +1,13 @@
-use std;
 use std::io::Write;
 
 use rustc_serialize;
 
-use rmp::encode::{
-    write_array_len,
-    write_bool,
-    write_f32,
-    write_f64,
-    write_map_len,
-    write_nil,
-    write_sint,
-    write_uint,
-    write_str,
-};
+use rmp::encode::{write_array_len, write_bool, write_f32, write_f64, write_map_len, write_nil,
+                  write_sint, write_uint, write_str};
 
-use rmp::encode::{
-    WriteError,
-};
+use rmp::encode::ValueWriteError;
 
 pub type Error = ValueWriteError;
-
-impl std::error::Error for Error {
-    fn description(&self) -> &str { "an error occurred while writing encoded value" }
-
-    fn cause(&self) -> Option<&std::error::Error> {
-        match self {
-            &Error::InvalidFixedValueWrite(ref err) => Some(err),
-            &Error::InvalidValueWrite(ref err) => Some(err),
-        }
-    }
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::error::Error::description(self).fmt(f)
-    }
-}
-
-
-impl From<FixedValueWriteError> for Error {
-    fn from(err: FixedValueWriteError) -> Error {
-        match err {
-            FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err)
-        }
-    }
-}
-
-impl From<ValueWriteError> for Error {
-    fn from(err: ValueWriteError) -> Error {
-        Error::InvalidValueWrite(err)
-    }
-}
 
 /// Represents MessagePack serialization implementation.
 ///
@@ -78,15 +34,15 @@ impl<'a> Encoder<'a> {
     }
 }
 
-impl<'a> serialize::Encoder for Encoder<'a> {
+impl<'a> rustc_serialize::Encoder for Encoder<'a> {
     type Error = Error;
 
     fn emit_nil(&mut self) -> Result<(), Error> {
-        write_nil(&mut self.wr)
+        write_nil(&mut self.wr).map_err(|err| ValueWriteError::InvalidMarkerWrite(err))
     }
 
     fn emit_bool(&mut self, val: bool) -> Result<(), Error> {
-        write_bool(&mut self.wr, val).map_err(From::from)
+        write_bool(&mut self.wr, val).map_err(|err| ValueWriteError::InvalidMarkerWrite(err))
     }
 
     fn emit_u8(&mut self, val: u8) -> Result<(), Error> {
@@ -103,7 +59,6 @@ impl<'a> serialize::Encoder for Encoder<'a> {
 
     fn emit_u64(&mut self, val: u64) -> Result<(), Error> {
         try!(write_uint(&mut self.wr, val));
-
         Ok(())
     }
 
@@ -124,8 +79,7 @@ impl<'a> serialize::Encoder for Encoder<'a> {
     }
 
     fn emit_i64(&mut self, val: i64) -> Result<(), Error> {
-        try!(write_sint_eff(&mut self.wr, val));
-
+        try!(write_sint(&mut self.wr, val));
         Ok(())
     }
 
