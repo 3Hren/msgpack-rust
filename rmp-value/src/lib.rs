@@ -7,32 +7,20 @@
 
 use std::ops::Index;
 
-/// Integer representation.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Integer {
-    /// Every non-negative integer is treated as u64, even if it fits in i64.
-    U64(u64),
-    /// Every negative integer is treated as i64.
-    I64(i64),
-}
-
-/// Floating point numbers representation.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Float {
-    F32(f32),
-    F64(f64),
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// Nil represents nil.
     Nil,
     /// Boolean represents true or false.
     Boolean(bool),
-    /// Integer represents an integer.
-    Integer(Integer),
-    /// Float represents a floating point number.
-    Float(Float),
+    /// Unsigned integer.
+    U64(u64),
+    /// Signed integer.
+    I64(i64),
+    /// A 32-bit floating point number.
+    F32(f32),
+    /// A 64-bit floating point number.
+    F64(f64),
     /// String extending Raw type represents a UTF-8 string.
     String(String),
     /// Binary extending Raw type represents a byte array.
@@ -52,7 +40,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// assert!(Value::Nil.is_nil());
     /// ```
@@ -69,7 +57,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// assert!(Value::Boolean(true).is_bool());
     ///
@@ -84,17 +72,16 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
-    /// use rmp::value::{Float, Integer};
+    /// use rmp_value::Value;
     ///
-    /// assert!(Value::Integer(Integer::I64(42)).is_i64());
+    /// assert!(Value::I64(42).is_i64());
     ///
-    /// assert!(!Value::Integer(Integer::U64(42)).is_i64());
-    /// assert!(!Value::Float(Float::F32(42.0)).is_i64());
-    /// assert!(!Value::Float(Float::F64(42.0)).is_i64());
+    /// assert!(!Value::U64(42).is_i64());
+    /// assert!(!Value::F32(42.0).is_i64());
+    /// assert!(!Value::F64(42.0).is_i64());
     /// ```
     pub fn is_i64(&self) -> bool {
-        if let Value::Integer(Integer::I64(..)) = *self {
+        if let Value::I64(..) = *self {
             true
         } else {
             false
@@ -106,17 +93,16 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
-    /// use rmp::value::{Float, Integer};
+    /// use rmp_value::Value;
     ///
-    /// assert!(Value::Integer(Integer::U64(42)).is_u64());
+    /// assert!(Value::U64(42).is_u64());
     ///
-    /// assert!(!Value::Integer(Integer::I64(42)).is_u64());
-    /// assert!(!Value::Float(Float::F32(42.0)).is_u64());
-    /// assert!(!Value::Float(Float::F64(42.0)).is_u64());
+    /// assert!(!Value::I64(42).is_u64());
+    /// assert!(!Value::F32(42.0).is_u64());
+    /// assert!(!Value::F64(42.0).is_u64());
     /// ```
     pub fn is_u64(&self) -> bool {
-        if let Value::Integer(Integer::U64(..)) = *self {
+        if let Value::U64(..) = *self {
             true
         } else {
             false
@@ -128,17 +114,16 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
-    /// use rmp::value::{Float, Integer};
+    /// use rmp_value::Value;
     ///
-    /// assert!(Value::Float(Float::F32(42.0)).is_f32());
+    /// assert!(Value::F32(42.0).is_f32());
     ///
-    /// assert!(!Value::Integer(Integer::I64(42)).is_f32());
-    /// assert!(!Value::Integer(Integer::U64(42)).is_f32());
-    /// assert!(!Value::Float(Float::F64(42.0)).is_f32());
+    /// assert!(!Value::I64(42).is_f32());
+    /// assert!(!Value::U64(42).is_f32());
+    /// assert!(!Value::F64(42.0).is_f32());
     /// ```
     pub fn is_f32(&self) -> bool {
-        if let Value::Float(Float::F32(..)) = *self {
+        if let Value::F32(..) = *self {
             true
         } else {
             false
@@ -150,17 +135,16 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
-    /// use rmp::value::{Float, Integer};
+    /// use rmp_value::Value;
     ///
-    /// assert!(Value::Float(Float::F64(42.0)).is_f64());
+    /// assert!(Value::F64(42.0).is_f64());
     ///
-    /// assert!(!Value::Integer(Integer::I64(42)).is_f64());
-    /// assert!(!Value::Integer(Integer::U64(42)).is_f64());
-    /// assert!(!Value::Float(Float::F32(42.0)).is_f64());
+    /// assert!(!Value::I64(42).is_f64());
+    /// assert!(!Value::U64(42).is_f64());
+    /// assert!(!Value::F32(42.0).is_f64());
     /// ```
     pub fn is_f64(&self) -> bool {
-        if let Value::Float(Float::F64(..)) = *self {
+        if let Value::F64(..) = *self {
             true
         } else {
             false
@@ -172,19 +156,18 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
-    /// use rmp::value::{Float, Integer};
+    /// use rmp_value::Value;
     ///
-    /// assert!(Value::Integer(Integer::I64(42)).is_number());
-    /// assert!(Value::Integer(Integer::U64(42)).is_number());
-    /// assert!(Value::Float(Float::F32(42.0)).is_number());
-    /// assert!(Value::Float(Float::F64(42.0)).is_number());
+    /// assert!(Value::I64(42).is_number());
+    /// assert!(Value::U64(42).is_number());
+    /// assert!(Value::F32(42.0).is_number());
+    /// assert!(Value::F64(42.0).is_number());
     ///
     /// assert!(!Value::Nil.is_number());
     /// ```
     pub fn is_number(&self) -> bool {
         match *self {
-            Value::Integer(..) | Value::Float(..) => true,
+            Value::U64(..) | Value::I64(..) | Value::F32(..) | Value::F64(..) => true,
             _ => false,
         }
     }
@@ -194,7 +177,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// assert!(Value::String("value".into()).is_str());
     ///
@@ -230,7 +213,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// assert_eq!(Some(true), Value::Boolean(true).as_bool());
     ///
@@ -250,18 +233,17 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
-    /// use rmp::value::{Float, Integer};
+    /// use rmp_value::Value;
     ///
-    /// assert_eq!(Some(42i64), Value::Integer(Integer::I64(42)).as_i64());
-    /// assert_eq!(Some(42i64), Value::Integer(Integer::U64(42)).as_i64());
+    /// assert_eq!(Some(42i64), Value::I64(42).as_i64());
+    /// assert_eq!(Some(42i64), Value::U64(42).as_i64());
     ///
-    /// assert_eq!(None, Value::Float(Float::F64(42.0)).as_i64());
+    /// assert_eq!(None, Value::F64(42.0).as_i64());
     /// ```
     pub fn as_i64(&self) -> Option<i64> {
         match *self {
-            Value::Integer(Integer::I64(n)) => Some(n),
-            Value::Integer(Integer::U64(n)) if n <= i64::max_value() as u64 => Some(n as i64),
+            Value::I64(n) => Some(n),
+            Value::U64(n) if n <= i64::max_value() as u64 => Some(n as i64),
             _ => None,
         }
     }
@@ -272,19 +254,18 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
-    /// use rmp::value::{Float, Integer};
+    /// use rmp_value::Value;
     ///
-    /// assert_eq!(Some(42u64), Value::Integer(Integer::I64(42)).as_u64());
-    /// assert_eq!(Some(42u64), Value::Integer(Integer::U64(42)).as_u64());
+    /// assert_eq!(Some(42u64), Value::I64(42).as_u64());
+    /// assert_eq!(Some(42u64), Value::U64(42).as_u64());
     ///
-    /// assert_eq!(None, Value::Integer(Integer::I64(-42)).as_u64());
-    /// assert_eq!(None, Value::Float(Float::F64(42.0)).as_u64());
+    /// assert_eq!(None, Value::I64(-42).as_u64());
+    /// assert_eq!(None, Value::F64(42.0).as_u64());
     /// ```
     pub fn as_u64(&self) -> Option<u64> {
         match *self {
-            Value::Integer(Integer::I64(n)) if 0 <= n => Some(n as u64),
-            Value::Integer(Integer::U64(n)) => Some(n),
+            Value::I64(n) if 0 <= n => Some(n as u64),
+            Value::U64(n) => Some(n),
             _ => None,
         }
     }
@@ -295,30 +276,29 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
-    /// use rmp::value::{Float, Integer};
+    /// use rmp_value::Value;
     ///
-    /// assert_eq!(Some(42.0), Value::Integer(Integer::I64(42)).as_f64());
-    /// assert_eq!(Some(42.0), Value::Integer(Integer::U64(42)).as_f64());
-    /// assert_eq!(Some(42.0), Value::Float(Float::F32(42.0f32)).as_f64());
-    /// assert_eq!(Some(42.0), Value::Float(Float::F64(42.0f64)).as_f64());
+    /// assert_eq!(Some(42.0), Value::I64(42).as_f64());
+    /// assert_eq!(Some(42.0), Value::U64(42).as_f64());
+    /// assert_eq!(Some(42.0), Value::F32(42.0f32).as_f64());
+    /// assert_eq!(Some(42.0), Value::F64(42.0f64).as_f64());
     ///
-    /// assert_eq!(Some(2147483647.0), Value::Integer(Integer::I64(i32::max_value() as i64)).as_f64());
+    /// assert_eq!(Some(2147483647.0), Value::I64(i32::max_value() as i64).as_f64());
     ///
     /// assert_eq!(None, Value::Nil.as_f64());
     ///
-    /// assert_eq!(None, Value::Integer(Integer::I64(i32::max_value() as i64 + 1)).as_f64());
+    /// assert_eq!(None, Value::I64(i32::max_value() as i64 + 1).as_f64());
     /// ```
     pub fn as_f64(&self) -> Option<f64> {
         match *self {
-            Value::Integer(Integer::I64(n)) if (i32::min_value() as i64 <= n) && (n <= i32::max_value() as i64) => {
+            Value::I64(n) if (i32::min_value() as i64 <= n) && (n <= i32::max_value() as i64) => {
                 Some(From::from(n as i32))
             }
-            Value::Integer(Integer::U64(n)) if n <= u32::max_value() as u64 => {
+            Value::U64(n) if n <= u32::max_value() as u64 => {
                 Some(From::from(n as u32))
             }
-            Value::Float(Float::F32(n)) => Some(From::from(n)),
-            Value::Float(Float::F64(n)) => Some(n),
+            Value::F32(n) => Some(From::from(n)),
+            Value::F64(n) => Some(n),
             _ => None,
         }
     }
@@ -329,7 +309,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// assert_eq!(Some("le message"), Value::String("le message".into()).as_str());
     ///
@@ -349,7 +329,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// assert_eq!(Some(&[1, 2, 3, 4, 5][..]), Value::Binary(vec![1, 2, 3, 4, 5]).as_slice());
     ///
@@ -369,7 +349,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// let val = Value::Array(vec![Value::Nil, Value::Boolean(true)]);
     ///
@@ -395,7 +375,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// let val = Value::Map(vec![(Value::Nil, Value::Boolean(true))]);
     ///
@@ -417,7 +397,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp::Value;
+    /// use rmp_value::Value;
     ///
     /// assert_eq!(Some((42, &[1, 2, 3, 4, 5][..])), Value::Ext(42, vec![1, 2, 3, 4, 5]).as_ext());
     ///
@@ -450,38 +430,38 @@ impl From<bool> for Value {
 
 impl From<u8> for Value {
     fn from(v: u8) -> Value {
-        Value::Integer(Integer::U64(From::from(v)))
+        Value::U64(From::from(v))
     }
 }
 
 impl From<u16> for Value {
     fn from(v: u16) -> Value {
-        Value::Integer(Integer::U64(From::from(v)))
+        Value::U64(From::from(v))
     }
 }
 
 impl From<u32> for Value {
     fn from(v: u32) -> Value {
-        Value::Integer(Integer::U64(From::from(v)))
+        Value::U64(From::from(v))
     }
 }
 
 impl From<u64> for Value {
     fn from(v: u64) -> Value {
-        Value::Integer(Integer::U64(From::from(v)))
+        Value::U64(From::from(v))
     }
 }
 
 impl From<usize> for Value {
     fn from(v: usize) -> Value {
-        Value::Integer(Integer::U64(v as u64))
+        Value::U64(v as u64)
     }
 }
 
 impl From<i8> for Value {
     fn from(v: i8) -> Value {
         if v < 0 {
-            Value::Integer(Integer::I64(From::from(v)))
+            Value::I64(From::from(v))
         } else {
             Value::from(v as u8)
         }
@@ -491,7 +471,7 @@ impl From<i8> for Value {
 impl From<i16> for Value {
     fn from(v: i16) -> Value {
         if v < 0 {
-            Value::Integer(Integer::I64(From::from(v)))
+            Value::I64(From::from(v))
         } else {
             Value::from(v as u16)
         }
@@ -501,7 +481,7 @@ impl From<i16> for Value {
 impl From<i32> for Value {
     fn from(v: i32) -> Value {
         if v < 0 {
-            Value::Integer(Integer::I64(From::from(v)))
+            Value::I64(From::from(v))
         } else {
             Value::from(v as u32)
         }
@@ -511,7 +491,7 @@ impl From<i32> for Value {
 impl From<i64> for Value {
     fn from(v: i64) -> Value {
         if v < 0 {
-            Value::Integer(Integer::I64(From::from(v)))
+            Value::I64(From::from(v))
         } else {
             Value::from(v as u64)
         }
@@ -521,7 +501,7 @@ impl From<i64> for Value {
 impl From<isize> for Value {
     fn from(v: isize) -> Value {
         if v < 0 {
-            Value::Integer(Integer::I64(v as i64))
+            Value::I64(v as i64)
         } else {
             Value::from(v as usize)
         }
@@ -530,13 +510,13 @@ impl From<isize> for Value {
 
 impl From<f32> for Value {
     fn from(v: f32) -> Value {
-        Value::Float(Float::F32(v))
+        Value::F32(v)
     }
 }
 
 impl From<f64> for Value {
     fn from(v: f64) -> Value {
-        Value::Float(Float::F64(v))
+        Value::F64(v)
     }
 }
 
@@ -546,10 +526,10 @@ impl ::std::fmt::Display for Value {
         match *self {
             Value::Nil => write!(f, "nil"),
             Value::Boolean(val) => write!(f, "{}", val),
-            Value::Integer(Integer::U64(val)) => write!(f, "{}", val),
-            Value::Integer(Integer::I64(val)) => write!(f, "{}", val),
-            Value::Float(Float::F32(val)) => write!(f, "{}", val),
-            Value::Float(Float::F64(val)) => write!(f, "{}", val),
+            Value::U64(val) => write!(f, "{}", val),
+            Value::I64(val) => write!(f, "{}", val),
+            Value::F32(val) => write!(f, "{}", val),
+            Value::F64(val) => write!(f, "{}", val),
             Value::String(ref val) => write!(f, "\"{}\"", val),
             Value::Binary(ref val) => write!(f, "{:?}", val),
             Value::Array(ref vec) => {
@@ -593,10 +573,14 @@ pub enum ValueRef<'a> {
     Nil,
     /// Boolean represents true or false.
     Boolean(bool),
-    /// Integer represents an integer.
-    Integer(Integer),
-    /// Float represents a floating point number.
-    Float(Float),
+    /// Unsigned integer.
+    U64(u64),
+    /// Signed integer.
+    I64(i64),
+    /// A 32-bit floating point number.
+    F32(f32),
+    /// A 64-bit floating point number.
+    F64(f64),
     /// String extending Raw type represents a UTF-8 string.
     String(&'a str),
     /// Binary extending Raw type represents a byte array.
@@ -621,12 +605,11 @@ impl<'a> ValueRef<'a> {
     ///
     /// # Examples
     /// ```
-    /// use rmp::{Value, ValueRef};
-    /// use rmp::value::Integer;
+    /// use rmp_value::{Value, ValueRef};
     ///
     /// let val = ValueRef::Array(vec![
     ///    ValueRef::Nil,
-    ///    ValueRef::Integer(Integer::U64(42)),
+    ///    ValueRef::U64(42),
     ///    ValueRef::Array(vec![
     ///        ValueRef::String("le message"),
     ///    ])
@@ -634,7 +617,7 @@ impl<'a> ValueRef<'a> {
     ///
     /// let expected = Value::Array(vec![
     ///     Value::Nil,
-    ///     Value::Integer(Integer::U64(42)),
+    ///     Value::U64(42),
     ///     Value::Array(vec![
     ///         Value::String("le message".to_string())
     ///     ])
@@ -646,8 +629,10 @@ impl<'a> ValueRef<'a> {
         match self {
             &ValueRef::Nil => Value::Nil,
             &ValueRef::Boolean(val) => Value::Boolean(val),
-            &ValueRef::Integer(val) => Value::Integer(val),
-            &ValueRef::Float(val) => Value::Float(val),
+            &ValueRef::U64(val) => Value::U64(val),
+            &ValueRef::I64(val) => Value::I64(val),
+            &ValueRef::F32(val) => Value::F32(val),
+            &ValueRef::F64(val) => Value::F64(val),
             &ValueRef::String(val) => Value::String(val.to_owned()),
             &ValueRef::Binary(val) => Value::Binary(val.to_vec()),
             &ValueRef::Array(ref val) => {
