@@ -57,12 +57,19 @@
 //! data itself. Sometimes there are no separate data chunk, for example for booleans. In these
 //! cases a marker contains the value. For example, the `true` value is encoded as `0xc3`.
 //!
+//! ```
+//! let mut buf = Vec::new();
+//! rmp::encode::write_bool(&mut buf, true).unwrap();
+//!
+//! assert_eq!([0xc3], buf[..]);
+//! ```
+//!
 //! Also note, that a single value can be encoded in multiple ways. For example a value of `42` can
 //! be represented as: `[0x2a], [0xcc, 0x2a], [0xcd, 0x00, 0x2a]` and so on.
 //!
-//! In these cases RMP guarantees that for encoding the most compact representation will be chosen.
-//! On the other hand for deserialization it is not matter in which representation the value is
-//! encoded - RMP deals with all of them.
+//! In these cases RMP provides functions that guarantee that for encoding the most compact
+//! representation will be chosen. On the other hand for deserialization it is not matter in which
+//! representation the value is encoded - RMP deals with all of them.
 //!
 //! ## API
 //!
