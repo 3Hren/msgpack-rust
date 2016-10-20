@@ -2,7 +2,7 @@ const FIXSTR_SIZE   : u8 = 0x1f;
 const FIXARRAY_SIZE : u8 = 0x0f;
 const FIXMAP_SIZE   : u8 = 0x0f;
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Marker {
     FixPos(u8),
     FixNeg(i8),
