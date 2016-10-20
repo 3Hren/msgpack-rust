@@ -64,12 +64,41 @@
 //! assert_eq!([0xc3], buf[..]);
 //! ```
 //!
-//! Also note, that a single value can be encoded in multiple ways. For example a value of `42` can
-//! be represented as: `[0x2a], [0xcc, 0x2a], [0xcd, 0x00, 0x2a]` and so on.
+//! Sometimes a single value can be encoded in multiple ways. For example a value of `42` can be
+//! represented as: `[0x2a], [0xcc, 0x2a], [0xcd, 0x00, 0x2a]` and so on, and all of them are
+//! considered as valid representations. To allow fine-grained control over encoding such values
+//! the library provides direct mapping functions.
 //!
-//! In these cases RMP provides functions that guarantee that for encoding the most compact
-//! representation will be chosen. On the other hand for deserialization it is not matter in which
-//! representation the value is encoded - RMP deals with all of them.
+//! ```
+//! let mut bufs = vec![vec![]; 5];
+//!
+//! rmp::encode::write_pfix(&mut bufs[0], 42).unwrap();
+//! rmp::encode::write_u8(&mut bufs[1], 42).unwrap();
+//! rmp::encode::write_u16(&mut bufs[2], 42).unwrap();
+//! rmp::encode::write_u32(&mut bufs[3], 42).unwrap();
+//! rmp::encode::write_u64(&mut bufs[4], 42).unwrap();
+//!
+//! assert_eq!([0x2a], bufs[0][..]);
+//! assert_eq!([0xcc, 0x2a], bufs[1][..]);
+//! assert_eq!([0xcd, 0x00, 0x2a], bufs[2][..]);
+//! assert_eq!([0xce, 0x00, 0x00, 0x00, 0x2a], bufs[3][..]);
+//! assert_eq!([0xcf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2a], bufs[4][..]);
+//! ```
+//!
+//! But they aren't planned to be widely used. Instead we often need to encode bytes compactly to
+//! save space. In these cases RMP provides functions that guarantee that for encoding the most
+//! compact representation will be chosen.
+//!
+//! ```
+//! let mut buf = Vec::new();
+//!
+//! rmp::encode::write_sint(&mut buf, 300).unwrap();
+//!
+//! assert_eq!([0xcd, 0x1, 0x2c], buf[..]);
+//! ```
+//!
+//! On the other hand for deserialization it is not matter in which representation the value is
+//! encoded - RMP deals with all of them.
 //!
 //! ## API
 //!
