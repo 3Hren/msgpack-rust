@@ -1,29 +1,15 @@
-use serde;
-
-use std::fmt;
+use std::error;
+use std::fmt::{self, Display, Formatter};
 use std::io::Write;
 
+use serde;
+
 use rmp::Marker;
-use rmp::encode::{
-    write_nil,
-    write_bool,
-    write_uint,
-    write_sint_eff,
-    write_f32,
-    write_f64,
-    write_str,
-    write_array_len,
-    write_map_len,
-    write_bin_len,
-    WriteError,
-    FixedValueWriteError,
-    ValueWriteError,
-};
+use rmp::encode::{write_nil, write_bool, write_uint, write_sint, write_f32, write_f64, write_str,
+                  write_array_len, write_map_len, write_bin_len, ValueWriteError};
 
 #[derive(Debug)]
 pub enum Error {
-    /// Failed to write MessagePack'ed single-byte value into the write.
-    InvalidFixedValueWrite(WriteError),
     InvalidValueWrite(ValueWriteError),
 
     /// Failed to serialize struct, sequence or map, because its length is unknown.
@@ -34,10 +20,9 @@ pub enum Error {
     Custom(String)
 }
 
-impl ::std::error::Error for Error {
+impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
-            Error::InvalidFixedValueWrite(..) => "invalid fixed value write",
             Error::InvalidValueWrite(..) => "invalid value write",
             Error::UnknownLength => "attempt to serialize struct, sequence or map with unknown length",
             Error::DepthLimitExceeded => "depth limit exceeded",
@@ -45,29 +30,19 @@ impl ::std::error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&::std::error::Error> {
+    fn cause(&self) -> Option<&error::Error> {
         match *self {
-            Error::InvalidFixedValueWrite(ref err) => Some(err),
             Error::InvalidValueWrite(ref err) => Some(err),
             Error::UnknownLength => None,
             Error::DepthLimitExceeded => None,
-            Error::Custom(_) => None,
+            Error::Custom(..) => None,
         }
     }
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        ::std::error::Error::description(self).fmt(f)
-    }
-}
-
-
-impl From<FixedValueWriteError> for Error {
-    fn from(err: FixedValueWriteError) -> Error {
-        match err {
-            FixedValueWriteError(err) => Error::InvalidFixedValueWrite(err)
-        }
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        error::Error::description(self).fmt(f)
     }
 }
 
@@ -85,8 +60,10 @@ impl serde::ser::Error for Error {
 }
 
 pub trait VariantWriter {
-    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> where W: Write;
-    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError> where W: Write;
+    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
+        where W: Write;
+    fn write_field_name<W>(&self, wr: &mut W, _key: &str) -> Result<(), ValueWriteError>
+        where W: Write;
 }
 
 /// Writes struct as MessagePack array with no field names
@@ -153,7 +130,7 @@ impl<'a> Serializer<'a, StructArrayWriter> {
         Serializer {
             wr: wr,
             vw: StructArrayWriter,
-            depth: 1000,
+            depth: 1024,
         }
     }
 }
@@ -164,7 +141,7 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
         Serializer {
             wr: wr,
             vw: vw,
-            depth: 1000,
+            depth: 1024,
         }
     }
 
@@ -200,11 +177,13 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     type StructVariantState = ();
 
     fn serialize_unit(&mut self) -> Result<(), Error> {
-        write_nil(&mut self.wr).map_err(From::from)
+        write_nil(&mut self.wr)
+            .map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidMarkerWrite(err)))
     }
 
     fn serialize_bool(&mut self, val: bool) -> Result<(), Error> {
-        write_bool(&mut self.wr, val).map_err(From::from)
+        write_bool(&mut self.wr, val)
+            .map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidMarkerWrite(err)))
     }
 
     fn serialize_u8(&mut self, val: u8) -> Result<(), Error> {
@@ -221,7 +200,6 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
     fn serialize_u64(&mut self, val: u64) -> Result<(), Error> {
         try!(write_uint(&mut self.wr, val));
-
         Ok(())
     }
 
@@ -242,8 +220,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_i64(&mut self, val: i64) -> Result<(), Error> {
-        try!(write_sint_eff(&mut self.wr, val));
-
+        try!(write_sint(&mut self.wr, val));
         Ok(())
     }
 
@@ -284,7 +261,8 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
         // ... and its arguments length.
         try!(write_array_len(&mut self.wr, 0));
 
-        try!(write_nil(&mut self.wr));
+        try!(write_nil(&mut self.wr)
+            .map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidMarkerWrite(err))));
 
         Ok(())
     }
@@ -339,7 +317,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
         Ok(())
     }
 
-    fn serialize_seq_end(&mut self, _state: Self::SeqState) -> Result<(), Self::Error> 
+    fn serialize_seq_end(&mut self, _state: Self::SeqState) -> Result<(), Self::Error>
     {
         Ok(())
     }
@@ -425,7 +403,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
         where T: serde::Serialize
     {
         self.serialize_tuple_struct(name, 1)
-        .and_then(|mut state: Self::TupleState| self.serialize_tuple_struct_elt(&mut state, value))   
+        .and_then(|mut state: Self::TupleState| self.serialize_tuple_struct_elt(&mut state, value))
         .and_then(|state: Self::TupleState| self.serialize_tuple_struct_end(state))
     }
 
@@ -439,7 +417,8 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
     fn serialize_bytes(&mut self, value: &[u8]) -> Result<(), Error> {
         try!(write_bin_len(&mut self.wr, value.len() as u32));
-        self.wr.write_all(value).map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(WriteError(err))))
+        self.wr.write_all(value)
+            .map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(err)))
     }
 
     /// Begins to serialize a struct. This call must be followed by zero or more
@@ -470,8 +449,8 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     /// Begins to serialize a struct variant. This call must be followed by zero
     /// or more calls to `serialize_struct_variant_elt`, then a call to
     /// `serialize_struct_variant_end`.
-    fn serialize_struct_variant(&mut self, name: &'static str, variant_index: usize, _variant: &'static str, len: usize) -> 
-        Result<Self::StructVariantState, Self::Error> 
+    fn serialize_struct_variant(&mut self, name: &'static str, variant_index: usize, _variant: &'static str, len: usize) ->
+        Result<Self::StructVariantState, Self::Error>
     {
         let _ = self.serialize_variant(variant_index, Some(len));
         self.serialize_struct(name, len)
@@ -488,6 +467,6 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     /// Finishes serializing a struct variant.
     fn serialize_struct_variant_end(&mut self,state: Self::StructVariantState) -> Result<(), Self::Error>
     {
-        self.serialize_struct_end(state)    
+        self.serialize_struct_end(state)
     }
 }
