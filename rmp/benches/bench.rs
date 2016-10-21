@@ -1,11 +1,31 @@
 #![feature(test)]
 
+extern crate rmp;
 extern crate test;
-extern crate rmp as msgpack;
 
 use test::Bencher;
 
-use msgpack::decode::*;
+use rmp::decode::*;
+
+#[bench]
+fn from_i64_read_i64(b: &mut Bencher) {
+    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+
+    b.iter(|| {
+        let res = read_i64(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
+}
+
+#[bench]
+fn from_i64_read_int(b: &mut Bencher) {
+    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+
+    b.iter(|| {
+        let res: i64 = read_int(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
+}
 
 #[bench]
 fn from_string_read_str(b: &mut Bencher) {
@@ -20,162 +40,6 @@ fn from_string_read_str(b: &mut Bencher) {
 
     b.iter(|| {
         let res = read_str(&mut &buf[..], &mut out[..]).unwrap();
-        test::black_box(res);
-    });
-}
-
-#[bench]
-fn from_string_read_value(b: &mut Bencher) {
-    // Lorem ipsum dolor sit amet.
-    let buf = [
-        0xbb, 0x4c, 0x6f, 0x72, 0x65, 0x6d, 0x20, 0x69, 0x70, 0x73, 0x75,
-        0x6d, 0x20, 0x64, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x73, 0x69, 0x74,
-        0x20, 0x61, 0x6d, 0x65, 0x74, 0x2e
-    ];
-
-    b.iter(|| {
-        let res = read_value(&mut &buf[..]).unwrap();
-        test::black_box(res);
-    });
-}
-
-#[bench]
-fn from_string_read_value_ref(b: &mut Bencher) {
-    // Lorem ipsum dolor sit amet.
-    let buf = [
-        0xbb, 0x4c, 0x6f, 0x72, 0x65, 0x6d, 0x20, 0x69, 0x70, 0x73, 0x75,
-        0x6d, 0x20, 0x64, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x73, 0x69, 0x74,
-        0x20, 0x61, 0x6d, 0x65, 0x74, 0x2e
-    ];
-
-    b.iter(|| {
-        let res = read_value_ref(&mut &buf[..]).unwrap();
-        test::black_box(res);
-    });
-}
-
-#[bench]
-fn from_complex_read_value(b: &mut Bencher) {
-    let buf = [
-        0x95, // Fixed array with 5 len.
-        0xc0, // Nil.
-        0x2a, // 42.
-        0xcb, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f, // 3.1415
-        // Fixed string with "Lorem ipsum dolor sit amet." content.
-        0xbb, 0x4c, 0x6f, 0x72, 0x65, 0x6d, 0x20, 0x69, 0x70, 0x73, 0x75,
-        0x6d, 0x20, 0x64, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x73, 0x69, 0x74,
-        0x20, 0x61, 0x6d, 0x65, 0x74, 0x2e,
-        0x81, // Fixed map with 1 len.
-        0xa3, 0x6b, 0x65, 0x79, // Key "key".
-        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // Value: "value".
-    ];
-
-    b.iter(|| {
-        let res = read_value(&mut &buf[..]).unwrap();
-        test::black_box(res);
-    });
-}
-
-#[bench]
-fn from_complex_read_value_ref(b: &mut Bencher) {
-    let buf = [
-        0x95, // Fixed array with 5 len.
-        0xc0, // Nil.
-        0x2a, // 42.
-        0xcb, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f, // 3.1415
-        // Fixed string with "Lorem ipsum dolor sit amet." content.
-        0xbb, 0x4c, 0x6f, 0x72, 0x65, 0x6d, 0x20, 0x69, 0x70, 0x73, 0x75,
-        0x6d, 0x20, 0x64, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x73, 0x69, 0x74,
-        0x20, 0x61, 0x6d, 0x65, 0x74, 0x2e,
-        0x81, // Fixed map with 1 len.
-        0xa3, 0x6b, 0x65, 0x79, // Key "key".
-        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // Value: "value".
-    ];
-
-    b.iter(|| {
-        let res = read_value_ref(&mut &buf[..]).unwrap();
-        test::black_box(res);
-    });
-    b.bytes = buf.len() as u64;
-}
-
-#[bench]
-fn from_complex_write_value_ref(b: &mut Bencher) {
-    use msgpack::ValueRef::*;
-    use msgpack::value::Float::*;
-    use msgpack::value::Integer::*;
-    use msgpack::encode::value_ref::write_value_ref;
-
-    let val = Array(vec![Nil, Integer(U64(42)), Float(F64(3.1415)),
-        String("Lorem ipsum dolor sit amet."), Map(vec![(String("key"), String("value"))])]);
-
-    let mut buf = [0u8; 64];
-
-    b.iter(|| {
-        let res = write_value_ref(&mut &mut buf[..], &val).unwrap();
-        test::black_box(res);
-    });
-    b.bytes = 51;
-}
-
-#[bench]
-fn from_complex_read_value_ref_to_owned(b: &mut Bencher) {
-    let buf = [
-        0x95, // Fixed array with 5 len.
-        0xc0, // Nil.
-        0x2a, // 42.
-        0xcb, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f, // 3.1415
-        // Fixed string with "Lorem ipsum dolor sit amet." content.
-        0xbb, 0x4c, 0x6f, 0x72, 0x65, 0x6d, 0x20, 0x69, 0x70, 0x73, 0x75,
-        0x6d, 0x20, 0x64, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x73, 0x69, 0x74,
-        0x20, 0x61, 0x6d, 0x65, 0x74, 0x2e,
-        0x81, // Fixed map with 1 len.
-        0xa3, 0x6b, 0x65, 0x79, // Key "key".
-        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // Value: "value".
-    ];
-
-    b.iter(|| {
-        let res = read_value_ref(&mut &buf[..]).unwrap().to_owned();
-        test::black_box(res);
-    });
-}
-
-#[bench]
-fn from_i64_read_i64_loosely(b: &mut Bencher) {
-    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
-
-    b.iter(|| {
-        let res = read_i64_loosely(&mut &buf[..]).unwrap();
-        test::black_box(res);
-    });
-}
-
-//#[bench]
-//fn from_i64_read_integer(b: &mut Bencher) {
-//    let buf = [0xd3, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
-
-//    b.iter(|| {
-//        let res = read_integer(&mut &buf[..]).unwrap();
-//        test::black_box(res);
-//    });
-//}
-
-#[bench]
-fn from_i8_read_i8(b: &mut Bencher) {
-    let buf = [0xd0, 0xff];
-
-    b.iter(|| {
-        let res = read_i8(&mut &buf[..]).unwrap();
-        test::black_box(res);
-    });
-}
-
-#[bench]
-fn from_u8_read_u64_loosely(b: &mut Bencher) {
-    let buf = [0xcc, 0xff];
-
-    b.iter(|| {
-        let res = read_u64_loosely(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
 }
