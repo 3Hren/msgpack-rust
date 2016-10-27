@@ -220,7 +220,7 @@ fn fail_tuple_len_mismatch() {
     let actual: Result<(u32,)> = Deserialize::deserialize(&mut deserializer);
 
     match actual.err() {
-        Some(Error::LengthMismatch(2)) => (),
+        Some(Error::LengthMismatch(1)) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }
