@@ -301,16 +301,3 @@ fn pass_bin() {
 
     assert_eq!(vec![0xc4, 0x02, 0xcc, 0x80], buf);
 }
-
-fn check_ser<T>(val: T, buf: &mut [u8], expected: &[u8])
-    where T: Serialize
-{
-    {
-        let mut cur = Cursor::new(&mut buf[..]);
-        let mut encoder = Serializer::new(&mut cur);
-
-        val.serialize(&mut encoder).unwrap();
-    };
-
-    assert_eq!(expected, buf);
-}

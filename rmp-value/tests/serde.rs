@@ -88,3 +88,16 @@ fn pass_value_map() {
         &mut [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
         &out);
 }
+
+fn check_ser<T>(val: T, buf: &mut [u8], expected: &[u8])
+    where T: Serialize
+{
+    {
+        let mut cur = Cursor::new(&mut buf[..]);
+        let mut encoder = Serializer::new(&mut cur);
+
+        val.serialize(&mut encoder).unwrap();
+    };
+
+    assert_eq!(expected, buf);
+}

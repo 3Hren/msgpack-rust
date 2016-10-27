@@ -1,5 +1,5 @@
 use std::error;
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Display};
 use std::io::Write;
 
 use serde;

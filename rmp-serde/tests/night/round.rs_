@@ -1,7 +1,7 @@
-#![cfg_attr(feature = "serde_macros", feature(custom_derive, plugin))]
-#![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
+#![cfg_attr(feature = "serde_derive", feature(proc_macro, plugin, custom_derive))]
+#![cfg_attr(feature = "serde_derive", plugin(serde_derive))]
 
-#![cfg(feature = "serde_macros")]
+#![cfg(feature = "serde_derive")]
 
 extern crate serde;
 extern crate rmp_serde;

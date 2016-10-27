@@ -1,26 +1,23 @@
-#![cfg_attr(feature = "serde_macros", feature(custom_derive, plugin))]
-#![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
-
-#![cfg(feature = "serde_macros")]
-
-extern crate serde;
-extern crate rmp;
-extern crate rmp_serde;
-
 use serde::Serialize;
 use rmp_serde::Serializer;
 
 #[test]
 fn pass_struct() {
-    let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut buf = Vec::new();
 
     #[derive(Serialize)]
-    struct Decoded { id: u32, value: u32 }
+    struct Decoded {
+        id: u32,
+        value: u32,
+    }
 
-    let val = Decoded { id: 42, value: 100500 };
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    let val = Decoded {
+        id: 42,
+        value: 100500,
+    };
+    val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
 
-    assert_eq!([0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94], buf);
+    assert_eq!(vec![0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94], buf);
 }
 
 #[test]
@@ -69,18 +66,16 @@ fn pass_struct_map() {
 
     let mut buf = [0x00; 20];
 
-    let val = Custom { et: "voila", le: 0, shit: 1 };
+    let val = Custom {
+        et: "voila",
+        le: 0,
+        shit: 1,
+    };
     val.serialize(&mut Serializer::with(&mut &mut buf[..], StructMapWriter)).ok().unwrap();
 
-    let out = [
-        0x83, // 3 (size)
-        0xa2, 0x65, 0x74, // "et"
-        0xa5, 0x76, 0x6f, 0x69, 0x6c, 0x61, // "voila"
-        0xa2, 0x6c, 0x65, // "le"
-        0x00, // 0
-        0xa4, 0x73, 0x68, 0x69, 0x74, // "shit"
-        0x01, // 1
-    ];
+    let out = [0x83 /* 3 (size) */, 0xa2, 0x65, 0x74 /* "et" */, 0xa5, 0x76, 0x6f, 0x69, 0x6c,
+               0x61 /* "voila" */, 0xa2, 0x6c, 0x65 /* "le" */, 0x00 /* 0 */, 0xa4, 0x73,
+               0x68, 0x69, 0x74 /* "shit" */, 0x01 /* 1 */];
     assert_eq!(out, buf);
 }
 
@@ -142,13 +137,18 @@ fn encode_struct_with_string_using_vec() {
 fn serialize_struct_variant() {
     #[derive(Debug, PartialEq, Serialize)]
     enum Custom {
-        First { data: u32 },
-        Second { data: u32 },
+        First {
+            data: u32,
+        },
+        Second {
+            data: u32,
+        },
     }
     let out_first = vec![0x92, 0x00, 0x91, 0x2a];
     let out_second = vec![0x92, 0x01, 0x91, 0x2a];
 
-    for (val, out) in vec![(Custom::First{ data: 42 }, out_first), (Custom::Second { data: 42 }, out_second)] {
+    for (val, out) in vec![(Custom::First { data: 42 }, out_first),
+                           (Custom::Second { data: 42 }, out_second)] {
         let mut buf = Vec::new();
         val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
         assert_eq!(out, buf);
