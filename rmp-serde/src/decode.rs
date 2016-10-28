@@ -530,7 +530,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         unimplemented!();
     }
 
-    fn deserialize_struct<V>(&mut self, name: &'static str, fields: &'static [&'static str], visitor: V) -> Result<V::Value, Error>
+    fn deserialize_struct<V>(&mut self, _name: &'static str, fields: &'static [&'static str], visitor: V) -> Result<V::Value, Error>
         where V: Visitor
     {
         unimplemented!();

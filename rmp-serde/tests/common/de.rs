@@ -1,7 +1,3 @@
-extern crate serde;
-extern crate rmp;
-extern crate rmp_serde;
-
 use std::io::Cursor;
 use std::result;
 

@@ -1,15 +1,7 @@
-#![cfg_attr(feature = "serde_derive", feature(custom_derive, plugin))]
-#![cfg_attr(feature = "serde_derive", plugin(serde_derive))]
-
-#![cfg(feature = "serde_derive")]
-
-extern crate serde;
-extern crate rmp;
-extern crate rmp_serde;
-
 use std::io::Cursor;
 use std::result;
 
+use serde;
 use serde::Deserialize;
 
 use rmp_serde::Deserializer;
@@ -249,6 +241,12 @@ fn pass_enum_custom_policy() {
         {
             visitor.visit(VariantVisitor::new(&mut self.inner))
         }
+
+        forward_to_deserialize! {
+          bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string unit seq
+          seq_fixed_size bytes map tuple_struct unit_struct struct struct_field
+          tuple option newtype_struct ignored_any
+      }
     }
 
     let mut de = CustomDeserializer { inner: Deserializer::new(cur) };
