@@ -36,7 +36,7 @@ use Marker;
 pub type Error = ::std::io::Error;
 
 /// An error that can occur when attempting to read a MessagePack marker from the reader.
-struct MarkerReadError(Error);
+pub struct MarkerReadError(pub Error);
 
 /// An error which can occur when attempting to read a MessagePack value from the reader.
 #[derive(Debug)]
@@ -90,7 +90,7 @@ impl From<Error> for MarkerReadError {
 }
 
 /// Attempts to read a single byte from the given reader and to decode it as a MessagePack marker.
-fn read_marker<R: Read>(rd: &mut R) -> Result<Marker, MarkerReadError> {
+pub fn read_marker<R: Read>(rd: &mut R) -> Result<Marker, MarkerReadError> {
     Ok(Marker::from_u8(try!(rd.read_u8())))
 }
 

@@ -1,4 +1,5 @@
 extern crate rmp;
+extern crate byteorder;
 #[macro_use] extern crate serde;
 
 pub use decode::Deserializer;

@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 ### Added
-- Marker now implements From and Into traits for u8.
+- Marker now implements `From` and `Into` traits for `u8`.
 - The `NumValueReadError` enum with additional `OutOfRange` variant for differing whether integer reading and decoding failed because of out of range cast error.
 
 ### Changed
@@ -19,7 +19,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - The `MarkerWriteError` struct is no longer public. All functions, that previously returned such kind of error now return the Standard I/O error.
 - The `FixedValueWriteError` struct is no longer public. All functions, that previously returned such kind of error now return the Standard I/O error.
 - There is no more `write_sint_eff` function; its functionality can now be done using `write_sint` function instead.
-- The function `read_marker` is no longer public.
 - Integral functions like `read_*_loosely` and `read_*_fit` were dropped in favor of generic `read_int` function, which allows to read integral values and cast them to specified result type even if they aren't the same.
 - Dropped `read_bin_borrow` function.
 
