@@ -4,6 +4,7 @@ use std::io::Write;
 
 use serde;
 
+use rmp;
 use rmp::Marker;
 use rmp::encode::{write_nil, write_bool, write_uint, write_sint, write_f32, write_f64, write_str,
                   write_array_len, write_map_len, write_bin_len, ValueWriteError};
@@ -130,26 +131,6 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
             depth: 1024,
         }
     }
-
-    ///Follow with standard seq style for variables
-    #[inline]
-    fn serialize_variant(&mut self, variant_index: usize, maybe_len: Option<usize>) -> Result<(), Error>
-    {
-        try!(write_array_len(&mut self.wr, 2));
-
-        // Encode a value position...
-        try!(serde::Serializer::serialize_usize(self, variant_index));
-
-        let len = match maybe_len {
-            Some(len) => len,
-            None => return Err(Error::UnknownLength),
-        };
-
-        // ... and its arguments length.
-        try!(write_array_len(&mut self.wr, len as u32));
-
-        Ok(())
-    }
 }
 
 impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
@@ -254,11 +235,12 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     /// Encodes and attempts to write the enum value into the Write.
     ///
     /// Currently we encode variant types as a tuple of id with array of args, like: [id, [args...]]
-    fn serialize_tuple_variant(&mut self, name: &'static str, variant_index: usize, _variant : &'static str, len: usize) ->
-        Result<Self::TupleVariantState, Self::Error>
+    fn serialize_tuple_variant(&mut self, name: &'static str, id: usize, _variant : &'static str, len: usize) ->
+        Result<Self::TupleVariantState, Error>
     {
-        self.serialize_variant(variant_index, Some(len))
-        .and_then(|_| self.serialize_tuple_struct(name, len))
+        try!(rmp::encode::write_array_len(&mut self.wr, 2));
+        try!(self.serialize_usize(id));
+        self.serialize_tuple_struct(name, len)
     }
 
     fn serialize_tuple_variant_elt<T>(&mut self, state: &mut Self::TupleVariantState, value: T) -> Result<(), Self::Error>
@@ -425,23 +407,25 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     /// Finishes serializing a struct.
-    fn serialize_struct_end(&mut self, _state: Self::StructState) -> Result<(), Self::Error>
-    {
+    fn serialize_struct_end(&mut self, _state: Self::StructState) -> Result<(), Error> {
         Ok(())
     }
 
-    /// Begins to serialize a struct variant. This call must be followed by zero
-    /// or more calls to `serialize_struct_variant_elt`, then a call to
-    /// `serialize_struct_variant_end`.
-    fn serialize_struct_variant(&mut self, name: &'static str, variant_index: usize, _variant: &'static str, len: usize) ->
-        Result<Self::StructVariantState, Self::Error>
+    /// Begins to serialize a struct variant.
+    ///
+    /// This call must be followed by zero or more calls to `serialize_struct_variant_elt()`, then
+    /// a call to `serialize_struct_variant_end()`.
+    fn serialize_struct_variant(&mut self, name: &'static str, id: usize, _variant: &'static str, len: usize) ->
+        Result<Self::StructVariantState, Error>
     {
-        let _ = self.serialize_variant(variant_index, Some(len));
+        try!(write_array_len(&mut self.wr, 2));
+        try!(serde::Serializer::serialize_usize(self, id));
         self.serialize_struct(name, len)
     }
 
-    /// Serialize a struct variant element. Must have previously called
-    /// `serialize_struct_variant`.
+    /// Serialize a struct variant element.
+    ///
+    /// Must have previously called `serialize_struct_variant()`.
     fn serialize_struct_variant_elt<V>(&mut self, state: &mut Self::StructVariantState, key: &'static str, value: V) -> Result<(), Self::Error>
         where V: serde::Serialize
     {

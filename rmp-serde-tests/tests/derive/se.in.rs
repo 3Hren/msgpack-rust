@@ -28,8 +28,7 @@ fn pass_struct_empty() {
     #[derive(Serialize)]
     struct Struct;
 
-    let val = Struct;
-    val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
+    Struct.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
 
     // Expect: [].
     assert_eq!(vec![0x90], buf);
@@ -46,14 +45,14 @@ fn pass_struct_map() {
     struct StructMapWriter;
 
     impl VariantWriter for StructMapWriter {
-        fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> ::std::result::Result<Marker, ValueWriteError>
-            where W: Write
+        fn write_struct_len<W: Write>(&self, wr: &mut W, len: u32) ->
+            ::std::result::Result<Marker, ValueWriteError>
         {
             write_map_len(wr, len)
         }
 
-        fn write_field_name<W>(&self, wr: &mut W, key: &str) -> ::std::result::Result<(), ValueWriteError>
-            where W: Write
+        fn write_field_name<W: Write>(&self, wr: &mut W, key: &str) ->
+            ::std::result::Result<(), ValueWriteError>
         {
             write_str(wr, key)
         }
@@ -84,13 +83,14 @@ fn pass_struct_map() {
 
 #[test]
 fn pass_enum() {
+    let mut buf = Vec::new();
+
     #[derive(Serialize)]
     enum Enum {
         V1,
         V2,
     }
 
-    let mut buf = Vec::new();
     Enum::V1.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
@@ -100,13 +100,14 @@ fn pass_enum() {
 
 #[test]
 fn pass_tuple_enum_with_arg() {
-    #[derive(Debug, PartialEq, Serialize)]
+    let mut buf = Vec::new();
+
+    #[derive(Serialize)]
     enum Enum {
         V1,
         V2(u32),
     }
 
-    let mut buf = Vec::new();
     Enum::V1.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2(42).serialize(&mut Serializer::new(&mut buf)).unwrap();
 
@@ -116,38 +117,39 @@ fn pass_tuple_enum_with_arg() {
 
 #[test]
 fn encode_struct_with_string_using_vec() {
-    #[derive(Debug, PartialEq, Serialize)]
-    struct Custom {
-        data: String,
-    }
-
     let mut buf = Vec::new();
 
-    let val = Custom { data: "le message".to_string() };
-    val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
+    #[derive(Serialize)]
+    struct Struct {
+        f1: String,
+    }
 
-    let out = vec![0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
-    assert_eq!(out, buf);
+    let val = Struct {
+        f1: "le message".into(),
+    };
+    val.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    // Expect: ["le message"].
+    assert_eq!(vec![0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65], buf);
 }
 
 #[test]
 fn serialize_struct_variant() {
-    #[derive(Debug, PartialEq, Serialize)]
-    enum Custom {
-        First {
-            data: u32,
-        },
-        Second {
-            data: u32,
-        },
-    }
-    let out_first = vec![0x92, 0x00, 0x91, 0x2a];
-    let out_second = vec![0x92, 0x01, 0x91, 0x2a];
+    let mut buf = Vec::new();
 
-    for (val, out) in vec![(Custom::First { data: 42 }, out_first),
-                           (Custom::Second { data: 42 }, out_second)] {
-        let mut buf = Vec::new();
-        val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
-        assert_eq!(out, buf);
+    #[derive(Serialize)]
+    enum Enum {
+        V1 {
+            f1: u32,
+        },
+        V2 {
+            f1: u32,
+        },
     }
+
+    Enum::V1 { f1: 42 }.serialize(&mut Serializer::new(&mut buf)).unwrap();
+    Enum::V2 { f1: 43 }.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    // Expect: [0, [42]] [1, [42]].
+    assert_eq!(vec![0x92, 0x00, 0x91, 0x2a, 0x92, 0x01, 0x91, 0x2b], buf);
 }
