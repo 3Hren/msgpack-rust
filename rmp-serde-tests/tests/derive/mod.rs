@@ -1,5 +1,19 @@
 #[cfg(feature = "with-syntex")]
-include!(concat!(env!("OUT_DIR"), "/de.rs"));
+mod de {
+    include!(concat!(env!("OUT_DIR"), "/de.rs"));
+}
+
+#[cfg(feature = "with-syntex")]
+mod se {
+    include!(concat!(env!("OUT_DIR"), "/se.rs"));
+}
 
 #[cfg(not(feature = "with-syntex"))]
-include!("de.rs.in");
+mod de {
+    include!("de.in.rs");
+}
+
+#[cfg(not(feature = "with-syntex"))]
+mod se {
+    include!("se.in.rs");
+}

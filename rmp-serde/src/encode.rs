@@ -110,20 +110,6 @@ impl<'a, W: VariantWriter> Serializer<'a, W> {
     }
 }
 
-macro_rules! depth_count(
-    ( $counter:expr, $expr:expr ) => {
-        {
-            $counter -= 1;
-            if $counter == 0 {
-                return Err(Error::DepthLimitExceeded)
-            }
-            let res = $expr;
-            $counter += 1;
-            res
-        }
-    }
-);
-
 impl<'a> Serializer<'a, StructArrayWriter> {
     /// Creates a new MessagePack encoder whose output will be written to the writer specified.
     pub fn new(wr: &'a mut Write) -> Serializer<'a, StructArrayWriter> {
@@ -199,6 +185,7 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_u64(&mut self, val: u64) -> Result<(), Error> {
+        println!("serialize_u64");
         try!(write_uint(&mut self.wr, val));
         Ok(())
     }
@@ -260,9 +247,6 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
 
         // ... and its arguments length.
         try!(write_array_len(&mut self.wr, 0));
-
-        try!(write_nil(&mut self.wr)
-            .map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidMarkerWrite(err))));
 
         Ok(())
     }
