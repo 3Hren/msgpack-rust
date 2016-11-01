@@ -1,7 +1,6 @@
 use std::io::Cursor;
 use std::result;
 
-use serde;
 use serde::Deserialize;
 
 use rmp_serde::Deserializer;
