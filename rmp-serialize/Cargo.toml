@@ -1,6 +1,6 @@
 [package]
 name = "rmp-serialize"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Rust Serialize bindings for RMP"
@@ -10,5 +10,5 @@ readme = "../README.md"
 keywords = ["msgpack", "MessagePack", "serialization"]
 
 [dependencies]
-rmp = { version = "^0.7", path = "../rmp" }
+rmp = { version = "^0.8", path = "../rmp" }
 rustc-serialize = "0.3"

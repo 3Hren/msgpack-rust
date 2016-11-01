@@ -19,13 +19,23 @@ env:
   - CRATE=rmp
   - CRATE=rmp-serialize
   - CRATE=rmp-serde
+  - CRATE=rmp-serde-tests
 
 # Load travis-cargo.
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 
 script:
-  - if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ "$CRATE" = "rmp-serde" ]; then (cd $CRATE && cargo test --features=serde_derive); else (cd $CRATE && cargo test); fi
+  - |
+    if [ "$CRATE" = "rmp-serde-tests" ]; then
+        if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+            (cd $CRATE && cargo test);
+        else
+            (cd $CRATE && cargo test --features=with-syntex --no-default-features);
+        fi
+    else
+        (cd $CRATE && cargo test);
+    fi
 
 # Measure code coverage and upload to coveralls.io.
 after_success:

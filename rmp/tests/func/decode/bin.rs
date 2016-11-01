@@ -26,10 +26,7 @@ fn from_bin8_eof_read_len() {
     let buf: &[u8] = &[0xc4];
     let mut cur = Cursor::new(buf);
 
-    match read_bin_len(&mut cur) {
-        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
+    read_bin_len(&mut cur).err().unwrap();
     assert_eq!(1, cur.position());
 }
 
@@ -61,21 +58,4 @@ fn from_bin32_max_read_len() {
 
     assert_eq!(4294967295, read_bin_len(&mut cur).unwrap());
     assert_eq!(5, cur.position());
-}
-
-#[test]
-fn from_bin8_read_zero_copy() {
-    let buf = [0xc4, 0x05, 0x00, 0x00, 0x2a, 0x00, 0x00];
-
-    assert_eq!([0x00, 0x00, 0x2a, 0x00, 0x00], read_bin_borrow(&mut &buf[..]).unwrap());
-}
-
-#[test]
-fn from_bin8_read_zero_copy_insufficient_bytes() {
-    let buf = [0xc4, 0x05, 0x00, 0x00, 0x2a, 0x00];
-
-    match read_bin_borrow(&mut &buf[..]) {
-        Err(ValueReadError::InvalidDataRead(ReadError::UnexpectedEOF)) => (),
-        other => panic!("unexpected result: {:?}", other)
-    }
 }

@@ -3,6 +3,25 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+### Added
+- Marker now implements `From` and `Into` traits for `u8`.
+- The `NumValueReadError` enum with additional `OutOfRange` variant for differing whether integer reading and decoding failed because of out of range cast error.
+
+### Changed
+- Unexpected EOF variant has been merged with the default one in the I/O Error enum.
+- Function `write_sint` now encodes an 64-bit integer using the most compact representation.
+- Update `byteorder` dependency to 0.5.
+- Rename `read_array_size` function to `read_array_len`.
+- Rename `read_map_size` function to `read_map_len`.
+
+### Removed
+- Remove conversions from `byteorder` crate errors, because since 0.5 there are no such errors.
+- The `MarkerWriteError` struct is no longer public. All functions, that previously returned such kind of error now return the Standard I/O error.
+- The `FixedValueWriteError` struct is no longer public. All functions, that previously returned such kind of error now return the Standard I/O error.
+- There is no more `write_sint_eff` function; its functionality can now be done using `write_sint` function instead.
+- Integral functions like `read_*_loosely` and `read_*_fit` were dropped in favor of generic `read_int` function, which allows to read integral values and cast them to specified result type even if they aren't the same.
+- Dropped `read_bin_borrow` function.
+
 ## 0.7.5 - 2016-07-24
 ### Added
 - Add `is_*` methods for Value for checking its underlying value without explicit matching.

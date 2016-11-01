@@ -1,0 +1,19 @@
+[package]
+name = "rmp-serde-tests"
+version = "0.11.0"
+authors = ["Evgeny Safronov <division494@gmail.com>"]
+license = "MIT"
+build = "build.rs"
+
+[features]
+default = ["serde_derive"]
+with-syntex = ["serde_codegen"]
+
+[build-dependencies]
+serde_codegen = { version = "0.8", optional = true }
+
+[dependencies]
+rmp = { version = "^0.8", path = "../rmp" }
+rmp-serde = { version = "^0.11", path = "../rmp-serde" }
+serde = "^0.8"
+serde_derive = { version = "^0.8", optional = true }

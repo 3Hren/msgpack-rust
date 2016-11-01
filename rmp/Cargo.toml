@@ -1,6 +1,6 @@
 [package]
 name = "rmp"
-version = "0.7.5"
+version = "0.8.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Pure Rust MessagePack serialization implementation"
@@ -10,4 +10,8 @@ readme = "../README.md"
 keywords = ["msgpack", "MessagePack"]
 
 [dependencies]
-byteorder = "^0.4"
+byteorder = "^0.5"
+num-traits = "^0.1"
+
+[dev-dependencies]
+quickcheck = "0.3"

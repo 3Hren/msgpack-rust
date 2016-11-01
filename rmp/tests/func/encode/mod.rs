@@ -1,14 +1,9 @@
-// Low-level interface.
-mod null;
-mod bool;
-mod int;
-mod float;
-mod string;
-mod bin;
 mod array;
-mod map;
+mod bin;
+mod bool;
 mod ext;
-
-// High-level serialize interface.
-mod value;
-mod value_ref;
+mod float;
+mod int;
+mod map;
+mod null;
+mod string;

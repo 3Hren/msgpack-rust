@@ -76,7 +76,7 @@
 //! ```
 
 extern crate rmp;
-extern crate rustc_serialize as serialize;
+extern crate rustc_serialize;
 
 pub mod decode;
 pub mod encode;

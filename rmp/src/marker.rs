@@ -2,7 +2,7 @@ const FIXSTR_SIZE   : u8 = 0x1f;
 const FIXARRAY_SIZE : u8 = 0x0f;
 const FIXMAP_SIZE   : u8 = 0x0f;
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Marker {
     FixPos(u8),
     FixNeg(i8),
@@ -139,5 +139,17 @@ impl Marker {
 
             Marker::Reserved      => 0xc1,
         }
+    }
+}
+
+impl From<u8> for Marker {
+    fn from(val: u8) -> Marker {
+        Marker::from_u8(val)
+    }
+}
+
+impl Into<u8> for Marker {
+    fn into(self) -> u8 {
+        self.to_u8()
     }
 }
