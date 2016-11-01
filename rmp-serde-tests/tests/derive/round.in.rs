@@ -1,16 +1,9 @@
-#![cfg_attr(feature = "serde_derive", feature(proc_macro, plugin, custom_derive))]
-#![cfg_attr(feature = "serde_derive", plugin(serde_derive))]
-
-#![cfg(feature = "serde_derive")]
-
-extern crate serde;
-extern crate rmp_serde;
+use std::borrow::Cow;
+use std::io::Cursor;
+use serde::Serialize;
 
 #[test]
 fn round_trip_option() {
-    use std::io::Cursor;
-    use serde::Serialize;
-
     #[derive(Debug, PartialEq, Serialize, Deserialize)]
     struct Foo {
         v: Option<Vec<u8>>,
@@ -29,10 +22,6 @@ fn round_trip_option() {
 
 #[test]
 fn round_trip_cow() {
-    use std::borrow::Cow;
-    use std::io::Cursor;
-    use serde::Serialize;
-
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     struct Foo<'a> {
         v: Cow<'a, [u8]>,
