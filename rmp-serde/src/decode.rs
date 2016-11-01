@@ -465,8 +465,19 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         }
     }
 
+    fn deserialize_newtype_struct<V>(&mut self, _name: &'static str, mut visitor: V) -> Result<V::Value, Error>
+        where V: serde::de::Visitor {
+
+        let len = try!(rmp::decode::read_array_len(&mut self.rd));
+
+        match len {
+            1 => stack_protector!(self.depth, visitor.visit_newtype_struct(self)),
+            n => Err(Error::LengthMismatch(n as u32)),
+        }
+    }
+
     forward_to_deserialize! {
-        bool char str string bytes unit unit_struct newtype_struct seq seq_fixed_size map
+        bool char str string bytes unit unit_struct seq seq_fixed_size map
         tuple_struct struct struct_field tuple
         ignored_any
     }
