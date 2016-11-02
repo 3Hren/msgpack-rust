@@ -1,16 +1,10 @@
-<<<<<<< HEAD:rmp-serde-tests/tests/derive/round.in.rs
 use std::borrow::Cow;
 use std::io::Cursor;
+
+use serde;
 use serde::Serialize;
-=======
-#![cfg_attr(feature = "serde_derive", feature(proc_macro))]
 
-#![cfg(feature = "serde_derive")]
-
-extern crate serde;
-#[macro_use] extern crate serde_derive;
-extern crate rmp_serde;
->>>>>>> eea556a28452bfd58000b174d05964495e89f4a1:rmp-serde/tests/round.rs
+use rmp_serde;
 
 #[test]
 fn round_trip_option() {

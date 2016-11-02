@@ -9,7 +9,8 @@ mod with_codegen {
         let out_dir = env::var_os("OUT_DIR").unwrap();
 
         for &(src, dst) in &[("tests/derive/de.in.rs", "de.rs"),
-                             ("tests/derive/se.in.rs", "se.rs")] {
+                             ("tests/derive/se.in.rs", "se.rs"),
+                             ("tests/derive/round.in.rs", "round.rs")] {
             let src = Path::new(src);
             let dst = Path::new(&out_dir).join(dst);
 
