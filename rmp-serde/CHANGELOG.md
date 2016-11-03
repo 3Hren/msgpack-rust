@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 ### Changed
-- Adapt with RMP code 0.8.
+- Adapt with RMP core 0.8.
 - The `Serializer` now encodes integers using the most effective representation.
 - The `Deserializer` now properly decodes integer values that fit in the expected type.
 - Default stack protector depth is now 1024 instead of 1000.
