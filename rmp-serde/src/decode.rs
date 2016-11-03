@@ -543,7 +543,6 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
         use serde::de::value::ValueDeserializer;
 
         let id: u32 = try!(serde::Deserialize::deserialize(self.de));
-        println!("id: {}", id);
         let mut de = (id as usize).into_deserializer();
 
         V::deserialize(&mut de)
