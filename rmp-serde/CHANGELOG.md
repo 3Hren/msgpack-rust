@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - The `Serializer` now encodes integers using the most effective representation.
 - The `Deserializer` now properly decodes integer values that fit in the expected type.
 - Default stack protector depth is now 1024 instead of 1000.
+- Internal buffer in the `Deserializer` now have some capacity preallocated.
 
 ## 0.10.0 - 2016-10-06
 ### Changed

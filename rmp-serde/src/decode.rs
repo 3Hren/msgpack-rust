@@ -227,7 +227,7 @@ impl<R: Read> Deserializer<R> {
     pub fn new(rd: R) -> Deserializer<R> {
         Deserializer {
             rd: rd,
-            buf: Vec::with_capacity(128), // NOTE: Update changelog.
+            buf: Vec::with_capacity(128),
             decoding_option: false,
             depth: 1024,
         }
