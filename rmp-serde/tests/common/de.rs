@@ -81,7 +81,7 @@ fn fail_u32_from_u64() {
 
     let res: Result<u32> = Deserialize::deserialize(&mut deserializer);
     match res.err() {
-        Some(Error::OutOfRange) => (),
+        Some(Error::TypeMismatch(Marker::U64)) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }

@@ -373,18 +373,6 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         }
     }
 
-    fn deserialize_f32<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_f32(try!(rmp::decode::read_f32(&mut self.rd)))
-    }
-
-    fn deserialize_f64<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_f64(try!(rmp::decode::read_f64(&mut self.rd)))
-    }
-
     /// We treat Value::Null as None.
     ///
     /// Note, that without using explicit option marker it's impossible to properly deserialize
@@ -429,8 +417,8 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     }
 
     forward_to_deserialize! {
-        usize u8 u16 u32 u64 i8 i16 i32 i64 isize
-        bool char str string bytes unit unit_struct seq seq_fixed_size map
+        bool usize u8 u16 u32 u64 i8 i16 i32 i64 isize f32 f64
+        char str string bytes unit unit_struct seq seq_fixed_size map
         tuple_struct struct struct_field tuple
         ignored_any
     }
