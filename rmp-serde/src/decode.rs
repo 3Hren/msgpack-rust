@@ -308,6 +308,18 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
             }
             Marker::True => visitor.visit_bool(true),
             Marker::False => visitor.visit_bool(false),
+            Marker::FixPos(val) => visitor.visit_u8(val),
+            Marker::FixNeg(val) => visitor.visit_i8(val),
+            Marker::U8 => visitor.visit_u8(try!(rmp::decode::read_data_u8(&mut self.rd))),
+            Marker::U16 => visitor.visit_u16(try!(rmp::decode::read_data_u16(&mut self.rd))),
+            Marker::U32 => visitor.visit_u32(try!(rmp::decode::read_data_u32(&mut self.rd))),
+            Marker::U64 => visitor.visit_u64(try!(rmp::decode::read_data_u64(&mut self.rd))),
+            Marker::I8 => visitor.visit_i8(try!(rmp::decode::read_data_i8(&mut self.rd))),
+            Marker::I16 => visitor.visit_i16(try!(rmp::decode::read_data_i16(&mut self.rd))),
+            Marker::I32 => visitor.visit_i32(try!(rmp::decode::read_data_i32(&mut self.rd))),
+            Marker::I64 => visitor.visit_i64(try!(rmp::decode::read_data_i64(&mut self.rd))),
+            Marker::F32 => visitor.visit_f32(try!(rmp::decode::read_data_f32(&mut self.rd))),
+            Marker::F64 => visitor.visit_f64(try!(rmp::decode::read_data_f64(&mut self.rd))),
             Marker::FixStr(len) => visitor.visit_str(try!(self.read_str_data(len as u32))),
             Marker::Str8 => {
                 let len = try!(read_u8(&mut self.rd));
