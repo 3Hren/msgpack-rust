@@ -268,6 +268,21 @@ pub fn read_data_f64<R: Read>(rd: &mut R) -> Result<f64, ValueReadError> {
 ///
 /// It also returns `NumValueReadError::OutOfRange` if the actual type is not an integer or it does
 /// not fit in the given numeric range.
+///
+/// # Examples
+///
+/// ```
+/// let buf = [0xcd, 0x1, 0x2c];
+///
+/// assert_eq!(300u16, rmp::decode::read_int(&mut &buf[..]).unwrap());
+/// assert_eq!(300i16, rmp::decode::read_int(&mut &buf[..]).unwrap());
+/// assert_eq!(300u32, rmp::decode::read_int(&mut &buf[..]).unwrap());
+/// assert_eq!(300i32, rmp::decode::read_int(&mut &buf[..]).unwrap());
+/// assert_eq!(300u64, rmp::decode::read_int(&mut &buf[..]).unwrap());
+/// assert_eq!(300i64, rmp::decode::read_int(&mut &buf[..]).unwrap());
+/// assert_eq!(300usize, rmp::decode::read_int(&mut &buf[..]).unwrap());
+/// assert_eq!(300isize, rmp::decode::read_int(&mut &buf[..]).unwrap());
+/// ```
 pub fn read_int<T: FromPrimitive, R: Read>(rd: &mut R) -> Result<T, NumValueReadError> {
     let val = match try!(read_marker(rd)) {
         Marker::FixPos(val) => T::from_u8(val),

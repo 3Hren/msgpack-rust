@@ -100,6 +100,38 @@
 //! On the other hand for deserialization it is not matter in which representation the value is
 //! encoded - RMP deals with all of them.
 //!
+//! Sometimes you know the exact type representation and want to enforce the deserialization process
+//! to make it strongly type safe.
+//!
+//! ```
+//! let buf = [0xcd, 0x1, 0x2c];
+//!
+//! assert_eq!(300, rmp::decode::read_u16(&mut &buf[..]).unwrap());
+//! ```
+//!
+//! However if you try to decode such bytearray as other integer type, for example `u32`, there will
+//! be type mismatch error.
+//!
+//! ```
+//! let buf = [0xcd, 0x1, 0x2c];
+//! rmp::decode::read_u32(&mut &buf[..]).err().unwrap();
+//! ```
+//!
+//! But sometimes all you want is just to encode an integer that *must* fit in the specified type
+//! no matter how it was encoded. RMP provides such function to ease integration with other
+//! MessagePack libraries.
+//!
+//! ```
+//! let buf = [0xcd, 0x1, 0x2c];
+//!
+//! assert_eq!(300i16, rmp::decode::read_int(&mut &buf[..]).unwrap());
+//! assert_eq!(300i32, rmp::decode::read_int(&mut &buf[..]).unwrap());
+//! assert_eq!(300i64, rmp::decode::read_int(&mut &buf[..]).unwrap());
+//! assert_eq!(300u16, rmp::decode::read_int(&mut &buf[..]).unwrap());
+//! assert_eq!(300u32, rmp::decode::read_int(&mut &buf[..]).unwrap());
+//! assert_eq!(300u64, rmp::decode::read_int(&mut &buf[..]).unwrap());
+//! ```
+//!
 //! ## API
 //!
 //! Almost all API are represented as pure functions, which accepts a generic `Write` or `Read` and
