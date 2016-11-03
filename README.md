@@ -8,11 +8,11 @@ RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
 This repository consists of three separate crates: the RMP core and two implementations to ease serializing and
 deserializing Rust structs.
 
-|                   | Crates.io                                                 | API Documentation                      |
-|-------------------|-----------------------------------------------------------|----------------------------------------|
-| **rmp**           | [![][crates-rmp-img]][crates-rmp-url]                     | [RMP][rmp-doc-url]                     |
-| **rmp-serialize** | [![][crates-rmp-serialize-img]][crates-rmp-serialize-url] | [RMP Serialize][rmp-serialize-doc-url] |
-| **rmp-serde**     | [![][crates-rmp-serde-img]][crates-rmp-serde-url]         | [RMP Serde][rmp-serde-doc-url]         |
+|                   | Crates.io | API Documentation |
+|-------------------|-----------|-------------------|
+| **rmp**           | [![][crates-rmp-img]][crates-rmp-url] | [RMP][rmp-docs-url] |
+| **rmp-serialize** | [![][crates-rmp-ser-img]][crates-rmp-ser-url] | [RMP Serialize][rmp-ser-docs-url] |
+| **rmp-serde**     | [![][crates-rmp-serde-img]][crates-rmp-serde-url] | [RMP Serde][rmp-serde-docs-url] |
 
 ## Usage
 
@@ -142,15 +142,15 @@ will be the following rules:
 [coveralls-img]: https://coveralls.io/repos/3Hren/msgpack-rust/badge.svg?branch=master&service=github
 [coveralls-url]: https://coveralls.io/github/3Hren/msgpack-rust?branch=master
 
-[rmp-doc-url]: http://3hren.github.io/msgpack-rust/rmp/rmp/index.html
-[rmp-serialize-doc-url]: http://3hren.github.io/msgpack-rust/rmp-serialize/rmp_serialize/index.html
-[rmp-serde-doc-url]: http://3hren.github.io/msgpack-rust/rmp-serde/rmp_serde/index.html
+[rmp-docs-url]: https://docs.rs/rmp/0.7.5/rmp/
+[rmp-ser-docs-url]: https://docs.rs/rmp-serialize/0.7.0/rmp_serialize/
+[rmp-serde-docs-url]: https://docs.rs/rmp-serde/0.10.0/rmp_serde/
 
 [crates-rmp-img]: http://meritbadge.herokuapp.com/rmp
 [crates-rmp-url]: https://crates.io/crates/rmp
 
-[crates-rmp-serialize-img]: http://meritbadge.herokuapp.com/rmp-serialize
-[crates-rmp-serialize-url]: https://crates.io/crates/rmp-serialize
+[crates-rmp-ser-img]: http://meritbadge.herokuapp.com/rmp-serialize
+[crates-rmp-ser-url]: https://crates.io/crates/rmp-serialize
 
 [crates-rmp-serde-img]: http://meritbadge.herokuapp.com/rmp-serde
 [crates-rmp-serde-url]: https://crates.io/crates/rmp-serde

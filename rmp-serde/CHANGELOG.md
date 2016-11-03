@@ -3,13 +3,23 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+### Changed
+- Adapt with RMP code 0.8.
+- The `Serializer` now encodes integers using the most effective representation.
+- The `Deserializer` now properly decodes integer values that fit in the expected type.
+- Default stack protector depth is now 1024 instead of 1000.
+
+## 0.10.0 - 2016-10-06
+### Changed
+- Update serde dependency to 0.8.
+
 ## 0.9.6 - 2016-08-05
 ### Fixed
 - Switch unit structs to using the same serialization mechanism as other structs (#76).
 
 ## 0.9.5 - 2016-07-28
 ### Added
-- Added a wrapper over rmp::Value to be able to serialize it.
+- Added a wrapper over `rmp::Value` to be able to serialize it.
 
 ## 0.9.4 - 2016-07-11
 ### Fixed
