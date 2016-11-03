@@ -1,6 +1,7 @@
 use std::io::Cursor;
 use std::result;
 
+use serde::de;
 use serde::Deserialize;
 
 use rmp::Marker;
@@ -46,7 +47,7 @@ fn fail_bool_from_fixint() {
 
     let res: Result<bool> = Deserialize::deserialize(&mut deserializer);
     match res.err() {
-        Some(Error::TypeMismatch(Marker::FixPos(0))) => (),
+        Some(Error::TypeMismatch(Marker::U64)) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }
@@ -340,4 +341,44 @@ fn pass_bin8_into_bytebuf_regression_growing_buffer() {
     let (large, small): (Vec<u8>, Vec<u8>) = (large.into(), small.into());
 
     assert_eq!((b"quux".to_vec(), b"bar".to_vec()), (large, small));
+}
+
+#[test]
+fn test_deserialize_numeric() {
+    use std::result::Result;
+
+    #[derive(Debug, PartialEq)]
+    enum FloatOrInteger {
+        Float(f64),
+        Integer(u64),
+    }
+
+    impl de::Deserialize for FloatOrInteger {
+        fn deserialize<D>(deserializer: &mut D) -> Result<FloatOrInteger, D::Error> where D: de::Deserializer, {
+            struct FloatOrIntegerVisitor;
+
+            impl de::Visitor for FloatOrIntegerVisitor {
+                type Value = FloatOrInteger;
+
+                fn visit_u64<E>(&mut self, value: u64) -> Result<FloatOrInteger, E> {
+                    Ok(FloatOrInteger::Integer(value))
+                }
+
+                fn visit_f64<E>(&mut self, value: f64) -> Result<FloatOrInteger, E> {
+                    Ok(FloatOrInteger::Float(value))
+                }
+            }
+            deserializer.deserialize(FloatOrIntegerVisitor)
+        }
+    }
+
+    let buf = [203, 64, 36, 102, 102, 102, 102, 102, 102]; // 10.2
+    let mut deserializer = Deserializer::new(&buf[..]);
+    let x: FloatOrInteger = Deserialize::deserialize(&mut deserializer).unwrap();
+    assert_eq!(x, FloatOrInteger::Float(10.2));
+
+    let buf = [36]; // 36
+    let mut deserializer = Deserializer::new(&buf[..]);
+    let x: FloatOrInteger = Deserialize::deserialize(&mut deserializer).unwrap();
+    assert_eq!(x, FloatOrInteger::Integer(36));
 }
