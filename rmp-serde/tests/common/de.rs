@@ -107,6 +107,16 @@ fn pass_u8() {
 }
 
 #[test]
+fn pass_u8_from_64() {
+    let buf = [0xcf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2a];
+    let cur = Cursor::new(&buf[..]);
+
+    let mut deserializer = Deserializer::new(cur);
+
+    assert_eq!(42u8, Deserialize::deserialize(&mut deserializer).unwrap());
+}
+
+#[test]
 fn pass_usize() {
     let buf = [0xcc, 0xff];
     let cur = Cursor::new(&buf[..]);

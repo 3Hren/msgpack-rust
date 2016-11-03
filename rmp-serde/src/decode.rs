@@ -373,66 +373,6 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
         }
     }
 
-    fn deserialize_usize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_usize(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_u8<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_u8(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_u16<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_u16(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_u32<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_u32(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_u64<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_u64(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_isize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_isize(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_i8<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_i8(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_i16<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_i16(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_i32<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_i32(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
-    fn deserialize_i64<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
-    {
-        visitor.visit_i64(try!(rmp::decode::read_int(&mut self.rd)))
-    }
-
     fn deserialize_f32<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: Visitor
     {
@@ -489,6 +429,7 @@ impl<R: Read> serde::Deserializer for Deserializer<R> {
     }
 
     forward_to_deserialize! {
+        usize u8 u16 u32 u64 i8 i16 i32 i64 isize
         bool char str string bytes unit unit_struct seq seq_fixed_size map
         tuple_struct struct struct_field tuple
         ignored_any
