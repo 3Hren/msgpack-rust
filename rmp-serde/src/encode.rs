@@ -166,7 +166,6 @@ impl<'a, W: VariantWriter> serde::Serializer for Serializer<'a, W> {
     }
 
     fn serialize_u64(&mut self, val: u64) -> Result<(), Error> {
-        println!("serialize_u64");
         try!(write_uint(&mut self.wr, val));
         Ok(())
     }
