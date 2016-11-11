@@ -9,5 +9,9 @@ documentation = "https://3hren.github.io/msgpack-rust/rmp/index.html"
 readme = "../README.md"
 keywords = ["msgpack", "MessagePack", "serialization"]
 
+[features]
+with-serde = ["serde"]
+
 [dependencies]
 rmp = { version = "^0.8", path = "../rmp" }
+serde = { version = "^0.8", optional = true }

@@ -5,7 +5,14 @@
 //! ```
 //! ```
 
+#[cfg(feature = "with-serde")]
+#[macro_use]
+extern crate serde;
+
 use std::ops::Index;
+
+#[cfg(feature = "with-serde")]
+mod se;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
