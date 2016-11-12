@@ -155,4 +155,4 @@ pub mod decode;
 
 pub use marker::Marker;
 
-pub const MSGPACK_VERSION : u32 = 5;
+pub const MSGPACK_VERSION: u32 = 5;
