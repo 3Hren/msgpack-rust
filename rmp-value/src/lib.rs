@@ -11,7 +11,7 @@ extern crate serde;
 
 use std::ops::Index;
 
-mod de;
+pub mod decode;
 
 #[cfg(feature = "with-serde")]
 mod ext;
