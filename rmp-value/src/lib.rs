@@ -11,8 +11,10 @@ extern crate serde;
 
 use std::ops::Index;
 
+mod de;
+
 #[cfg(feature = "with-serde")]
-mod se;
+mod ext;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
