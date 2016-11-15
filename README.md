@@ -19,9 +19,12 @@ deserializing Rust structs.
 To use `rmp`, first add this to your `Cargo.toml`:
 
 ```toml
-[dependencies.rmp]
-rmp = "^0.7"
+[dependencies]
+rmp = "0.7"
 ```
+
+For [rustc-serialize] serialization support, add `rmp-serialize = "0.7"` to your
+dependencies. For [Serde] serialization, add `rmp-serde = "0.10"`.
 
 Then, add this to your crate root:
 
@@ -54,7 +57,8 @@ extern crate rmp as msgpack; // Or just `rmp`.
 
 ## Examples
 
-Let's try to encode a tuple of int and string.
+Let's try to encode a tuple of int and string. These examples assume you are
+using the `rustc-serialize` serialization crate.
 
 ```rust
 extern crate rmp_serialize as msgpack;
@@ -138,6 +142,9 @@ will be the following rules:
    version bumping.
  - API extending features results in patch version bumping.
  - Non-breaking bug fixes and performance improving results in patch version bumping.
+
+[rustc-serialize]: https://github.com/rust-lang-nursery/rustc-serialize
+[serde]: https://github.com/serde-rs/serde
 
 [coveralls-img]: https://coveralls.io/repos/3Hren/msgpack-rust/badge.svg?branch=master&service=github
 [coveralls-url]: https://coveralls.io/github/3Hren/msgpack-rust?branch=master
