@@ -8,6 +8,7 @@
 #[cfg(feature = "with-serde")]
 #[macro_use]
 extern crate serde;
+extern crate rmp;
 
 use std::ops::Index;
 
