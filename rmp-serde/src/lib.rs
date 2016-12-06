@@ -67,3 +67,21 @@ pub use encode::Serializer;
 
 pub mod decode;
 pub mod encode;
+
+/// Serializes a value to a byte vector.
+pub fn to_vec<T>(value: &T) -> Result<Vec<u8>, encode::Error>
+        where T: serde::Serialize
+{
+    let mut buf = Vec::with_capacity(64);
+    value.serialize(&mut Serializer::new(&mut buf))
+         .and_then(|_| Ok(buf))
+}
+
+/// Deserializes a byte slice into the desired type.
+pub fn from_slice<T>(input: &[u8]) -> Result<T, decode::Error>
+        where T: serde::Deserialize
+{
+    let cur = std::io::Cursor::new(&input[..]);
+    let mut de = Deserializer::new(cur);
+    serde::Deserialize::deserialize(&mut de)
+}
