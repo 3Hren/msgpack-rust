@@ -1,4 +1,4 @@
-use std::io::{self, Read};
+use std::io::{self, ErrorKind, Read};
 use std::string::FromUtf8Error;
 
 use rmp::Marker;
@@ -11,11 +11,24 @@ use Value;
 /// This type represents all possible errors that can occur when deserializing a value.
 #[derive(Debug)]
 pub enum Error {
+    /// Error while reading marker byte.
     InvalidMarkerRead(io::Error),
+    /// Error while reading data.
     InvalidDataRead(io::Error),
-    /// The actual value type isn't equal with the expected one.
+    /// Decoded value type isn't equal with the expected one.
     TypeMismatch(Marker),
+    /// Failed to properly decode UTF8.
     FromUtf8Error(FromUtf8Error),
+}
+
+impl Error {
+    pub fn insufficient_bytes(&self) -> bool {
+        match *self {
+            Error::InvalidMarkerRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
+            Error::InvalidDataRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
+            _ => false,
+        }
+    }
 }
 
 impl From<MarkerReadError> for Error {

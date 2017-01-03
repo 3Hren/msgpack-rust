@@ -50,7 +50,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert!(Value::Nil.is_nil());
     /// ```
@@ -67,7 +67,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert!(Value::Boolean(true).is_bool());
     ///
@@ -82,7 +82,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert!(Value::I64(42).is_i64());
     ///
@@ -103,7 +103,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert!(Value::U64(42).is_u64());
     ///
@@ -124,7 +124,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert!(Value::F32(42.0).is_f32());
     ///
@@ -145,7 +145,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert!(Value::F64(42.0).is_f64());
     ///
@@ -166,7 +166,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert!(Value::I64(42).is_number());
     /// assert!(Value::U64(42).is_number());
@@ -187,7 +187,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert!(Value::String("value".into()).is_str());
     ///
@@ -223,7 +223,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert_eq!(Some(true), Value::Boolean(true).as_bool());
     ///
@@ -243,7 +243,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert_eq!(Some(42i64), Value::I64(42).as_i64());
     /// assert_eq!(Some(42i64), Value::U64(42).as_i64());
@@ -264,7 +264,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert_eq!(Some(42u64), Value::I64(42).as_u64());
     /// assert_eq!(Some(42u64), Value::U64(42).as_u64());
@@ -286,7 +286,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert_eq!(Some(42.0), Value::I64(42).as_f64());
     /// assert_eq!(Some(42.0), Value::U64(42).as_f64());
@@ -319,7 +319,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert_eq!(Some("le message"), Value::String("le message".into()).as_str());
     ///
@@ -339,7 +339,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert_eq!(Some(&[1, 2, 3, 4, 5][..]), Value::Binary(vec![1, 2, 3, 4, 5]).as_slice());
     ///
@@ -359,7 +359,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// let val = Value::Array(vec![Value::Nil, Value::Boolean(true)]);
     ///
@@ -385,7 +385,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// let val = Value::Map(vec![(Value::Nil, Value::Boolean(true))]);
     ///
@@ -407,7 +407,7 @@ impl Value {
     /// # Examples
     ///
     /// ```
-    /// use rmp_value::Value;
+    /// use rmpv::Value;
     ///
     /// assert_eq!(Some((42, &[1, 2, 3, 4, 5][..])), Value::Ext(42, vec![1, 2, 3, 4, 5]).as_ext());
     ///
@@ -615,7 +615,7 @@ impl<'a> ValueRef<'a> {
     ///
     /// # Examples
     /// ```
-    /// use rmp_value::{Value, ValueRef};
+    /// use rmpv::{Value, ValueRef};
     ///
     /// let val = ValueRef::Array(vec![
     ///    ValueRef::Nil,

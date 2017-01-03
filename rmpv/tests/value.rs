@@ -1,6 +1,6 @@
-extern crate rmp_value;
+extern crate rmpv;
 
-use rmp_value::Value;
+use rmpv::Value;
 
 #[test]
 fn display_nil() {

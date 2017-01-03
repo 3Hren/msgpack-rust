@@ -1,7 +1,7 @@
-extern crate rmp_value;
+extern crate rmpv;
 
-use rmp_value::Value;
-use rmp_value::decode::{read_value, Error};
+use rmpv::Value;
+use rmpv::decode::value::{read_value, Error};
 
 #[test]
 fn from_null_decode_value() {
