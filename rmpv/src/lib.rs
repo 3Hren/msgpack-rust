@@ -13,8 +13,9 @@ extern crate rmp;
 use std::ops::Index;
 
 pub mod decode;
+pub mod encode;
 
-#[cfg(feature = "with-serde")]
+#[cfg(feature = "with_serde")]
 mod ext;
 
 #[derive(Clone, Debug, PartialEq)]

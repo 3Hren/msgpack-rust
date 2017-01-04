@@ -1,5 +1,4 @@
 use std;
-// use std::convert::From;
 // use std::error;
 // use std::fmt;
 use std::io::{self, Cursor, ErrorKind, Read};
