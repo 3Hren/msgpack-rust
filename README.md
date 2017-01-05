@@ -149,9 +149,9 @@ will be the following rules:
 [coveralls-img]: https://coveralls.io/repos/3Hren/msgpack-rust/badge.svg?branch=master&service=github
 [coveralls-url]: https://coveralls.io/github/3Hren/msgpack-rust?branch=master
 
-[rmp-docs-url]: https://docs.rs/rmp/0.7.5/rmp/
-[rmp-ser-docs-url]: https://docs.rs/rmp-serialize/0.7.0/rmp_serialize/
-[rmp-serde-docs-url]: https://docs.rs/rmp-serde/0.10.0/rmp_serde/
+[rmp-docs-url]: https://docs.rs/rmp
+[rmp-ser-docs-url]: https://docs.rs/rmp-serialize
+[rmp-serde-docs-url]: https://docs.rs/rmp-serde
 
 [crates-rmp-img]: http://meritbadge.herokuapp.com/rmp
 [crates-rmp-url]: https://crates.io/crates/rmp
