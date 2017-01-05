@@ -12,7 +12,6 @@ addons:
 
 rust:
   - stable
-  - beta
   - nightly
 
 env:
@@ -20,6 +19,7 @@ env:
   - CRATE=rmp-serialize
   - CRATE=rmp-serde
   - CRATE=rmp-serde-tests
+  - CRATE=rmpv
 
 # Load travis-cargo.
 before_script:
