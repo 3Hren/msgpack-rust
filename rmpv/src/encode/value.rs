@@ -1,50 +1,11 @@
-use std::error;
-use std::fmt;
-use std::io::{self, Write};
+use std::io::Write;
 
 use rmp::encode::{write_nil, write_bool, write_uint, write_sint, write_f32, write_f64, write_str,
-                  write_bin, write_array_len, write_map_len, write_ext_meta, ValueWriteError};
+                  write_bin, write_array_len, write_map_len, write_ext_meta};
+
+pub use rmp::encode::ValueWriteError as Error;
 
 use Value;
-
-#[derive(Debug)]
-pub enum Error {
-    /// I/O error while writing marker.
-    InvalidMarkerWrite(io::Error),
-    /// I/O error while writing data.
-    InvalidDataWrite(io::Error),
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::InvalidMarkerWrite(..) => "invalid marker write",
-            Error::InvalidDataWrite(..) => "invalid data write",
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            Error::InvalidMarkerWrite(ref err) => Some(err),
-            Error::InvalidDataWrite(ref err) => Some(err),
-        }
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        error::Error::description(self).fmt(f)
-    }
-}
-
-impl From<ValueWriteError> for Error {
-    fn from(err: ValueWriteError) -> Error {
-        match err {
-            ValueWriteError::InvalidMarkerWrite(err) => Error::InvalidMarkerWrite(err),
-            ValueWriteError::InvalidDataWrite(err) => Error::InvalidDataWrite(err),
-        }
-    }
-}
 
 /// Encodes and attempts to write the most efficient representation of the given Value.
 ///
@@ -95,8 +56,7 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
         }
         Value::Ext(ty, ref data) => {
             write_ext_meta(wr, data.len() as u32, ty)?;
-            wr.write_all(data)
-                .map_err(|err| ValueWriteError::InvalidDataWrite(err))?;
+            wr.write_all(data).map_err(|err| Error::InvalidDataWrite(err))?;
         }
     }
 
