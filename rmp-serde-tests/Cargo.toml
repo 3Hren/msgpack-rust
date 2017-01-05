@@ -13,7 +13,7 @@ with-syntex = ["serde_codegen"]
 serde_codegen = { version = "0.8", optional = true }
 
 [dependencies]
-rmp = { version = "^0.8", path = "../rmp" }
-rmp-serde = { version = "^0.11", path = "../rmp-serde" }
+rmp = "0.8"
+rmp-serde = "0.11"
 serde = "^0.8"
 serde_derive = { version = "^0.8", optional = true }
