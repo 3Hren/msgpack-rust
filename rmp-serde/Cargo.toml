@@ -5,11 +5,11 @@ authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Serde bindings for RMP"
 repository = "https://github.com/3Hren/msgpack-rust"
-documentation = "https://3hren.github.io/msgpack-rust/rmp/index.html"
+documentation = "https://docs.rs/rmp-serde"
 readme = "../README.md"
-keywords = ["msgpack", "MessagePack", "serder", "serialization"]
+keywords = ["msgpack", "MessagePack", "serde", "serialization"]
 
 [dependencies]
-byteorder = "^0.5"
-rmp = { version = "^0.8", path = "../rmp" }
-serde = "^0.8"
+byteorder = "1"
+serde = "0.8"
+rmp = "0.8"
