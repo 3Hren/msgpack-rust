@@ -3,9 +3,8 @@ use std::io::Write;
 use rmp::encode::{write_nil, write_bool, write_uint, write_sint, write_f32, write_f64, write_str,
                   write_bin, write_array_len, write_map_len, write_ext_meta};
 
-pub use rmp::encode::ValueWriteError as Error;
-
 use Value;
+use super::Error;
 
 /// Encodes and attempts to write the most efficient representation of the given Value.
 ///
