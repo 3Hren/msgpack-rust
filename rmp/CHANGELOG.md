@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased][unreleased]
+## 0.8.0 - 2017-01-05
 ### Added
 - Marker now implements `From` and `Into` traits for `u8`.
 - Add `read_int` function, which allows to read integer values and automatically cast to the expected result type even if they aren't the same. An additional `OutOfRange` error will be returned in the case of failed numeric cast.
