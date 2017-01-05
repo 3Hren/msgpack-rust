@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.8.1 - 2017-01-05
+### Changed
+- Fixed docs link.
+
 ## 0.8.0 - 2017-01-05
 ### Added
 - Marker now implements `From` and `Into` traits for `u8`.

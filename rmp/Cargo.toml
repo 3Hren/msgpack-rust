@@ -1,11 +1,11 @@
 [package]
 name = "rmp"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Pure Rust MessagePack serialization implementation"
 repository = "https://github.com/3Hren/msgpack-rust"
-documentation = "https://3hren.github.io/msgpack-rust/rmp/index.html"
+documentation = "https://docs.rs/rmp"
 readme = "../README.md"
 keywords = ["msgpack", "MessagePack"]
 
