@@ -5,7 +5,7 @@ authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Value variant for RMP"
 repository = "https://github.com/3Hren/msgpack-rust"
-documentation = "https://3hren.github.io/msgpack-rust/rmp/index.html"
+documentation = "https://docs.rs/rmpv"
 readme = "../README.md"
 keywords = ["msgpack", "MessagePack", "serialization"]
 
@@ -13,7 +13,7 @@ keywords = ["msgpack", "MessagePack", "serialization"]
 with-serde = ["serde"]
 
 [dependencies]
-rmp = { version = "^0.8", path = "../rmp" }
+rmp = "0.8"
 serde = { version = "^0.8", optional = true }
 
 [dev-dependencies]
