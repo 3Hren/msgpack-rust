@@ -5,11 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Added
 - Marker now implements `From` and `Into` traits for `u8`.
-- Add `read_int` function, which allows to read integral values and cast them to the specified result type even if they aren't the same.
-- Add `NumValueReadError` enum with additional `OutOfRange` variant for differing whether integer decoding failed because of out of range.
+- Add `read_int` function, which allows to read integer values and automatically cast to the expected result type even if they aren't the same. An additional `OutOfRange` error will be returned in the case of failed numeric cast.
+- Add `NumValueReadError` enum with additional `OutOfRange` variant to be able to detect whether integer decoding failed because of out of range.
 
 ### Changed
-- Update `byteorder` dependency to 0.5.
+- Update `byteorder` dependency to 1.0.
 - Unexpected EOF variant has been merged with the default one in the I/O Error enum.
 - Function `write_sint` now encodes 64-bit signed integers using the most compact representation.
 - Function `write_uint` now encodes 64-bit unsigned integers using the most compact representation.
@@ -18,7 +18,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Make `FixedValueWriteError` struct private. All functions, that previously returned such kind of error now return the Standard I/O error.
 
 ### Removed
-- Move `Value` and `ValueRef` enums and associated functions into the separate crate.
+- Move `Value` and `ValueRef` enums and associated functions into the separate `rmpv` crate.
 - Remove conversions from `byteorder` crate errors, because since 0.5 there are no such errors.
 - Remove `write_sint_eff` function - its functionality can now be done using `write_sint` instead.
 - Remove `write_uint_eff` function - its functionality can now be done using `write_uint` instead.

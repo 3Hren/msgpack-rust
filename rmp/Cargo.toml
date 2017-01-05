@@ -10,7 +10,7 @@ readme = "../README.md"
 keywords = ["msgpack", "MessagePack"]
 
 [dependencies]
-byteorder = "^0.5"
+byteorder = "1"
 num-traits = "^0.1"
 
 [dev-dependencies]
