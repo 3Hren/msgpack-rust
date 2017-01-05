@@ -15,7 +15,7 @@ use std::ops::Index;
 pub mod decode;
 pub mod encode;
 
-#[cfg(feature = "with_serde")]
+#[cfg(feature = "with-serde")]
 mod ext;
 
 #[derive(Clone, Debug, PartialEq)]

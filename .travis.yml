@@ -20,6 +20,7 @@ env:
   - CRATE=rmp-serde
   - CRATE=rmp-serde-tests
   - CRATE=rmpv
+  - CRATE=rmpv-tests
 
 # Load travis-cargo.
 before_script:
@@ -32,6 +33,10 @@ script:
             (cd $CRATE && cargo test);
         else
             (cd $CRATE && cargo test --features=with-syntex --no-default-features);
+        fi
+    elif [ "$CRATE" = "rmpv-tests" ]; then
+        if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+            (cd rmpv-tests && cargo test --features=with-serde)
         fi
     else
         (cd $CRATE && cargo test);
