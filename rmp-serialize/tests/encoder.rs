@@ -293,7 +293,7 @@ fn pass_enum_variant_with_arg() {
 }
 
 #[test]
-fn pass_encodong_struct_into_vec() {
+fn pass_encoding_struct_into_vec() {
     let val = (42u8, "the Answer");
 
     let mut buf: Vec<u8> = Vec::new();
