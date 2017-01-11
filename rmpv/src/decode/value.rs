@@ -26,7 +26,10 @@ impl Error {
         match *self {
             Error::InvalidMarkerRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
             Error::InvalidDataRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
-            _ => false,
+            Error::InvalidMarkerRead(..) |
+            Error::InvalidDataRead(..) |
+            Error::TypeMismatch(..) |
+            Error::FromUtf8Error(..) => false,
         }
     }
 }
