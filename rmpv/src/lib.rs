@@ -424,6 +424,7 @@ impl Value {
 }
 
 static NIL: Value = Value::Nil;
+static NIL_REF: ValueRef<'static> = ValueRef::Nil;
 
 impl Index<usize> for Value {
     type Output = Value;
@@ -531,7 +532,6 @@ impl From<f64> for Value {
     }
 }
 
-/// Implements human-readable value formatting.
 impl ::std::fmt::Display for Value {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         match *self {
@@ -653,6 +653,97 @@ impl<'a> ValueRef<'a> {
                 Value::Map(val.iter().map(|&(ref k, ref v)| (k.to_owned(), v.to_owned())).collect())
             }
             &ValueRef::Ext(ty, buf) => Value::Ext(ty, buf.to_vec()),
+        }
+    }
+
+    pub fn index(&self, index: usize) -> &ValueRef {
+        self.as_array().and_then(|v| v.get(index)).unwrap_or(&NIL_REF)
+    }
+
+    /// If the `ValueRef` is an integer, return or cast it to a u64.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmpv::ValueRef;
+    ///
+    /// assert_eq!(Some(42), ValueRef::I64(42).as_u64());
+    /// assert_eq!(Some(42), ValueRef::U64(42).as_u64());
+    ///
+    /// assert_eq!(None, ValueRef::I64(-42).as_u64());
+    /// assert_eq!(None, ValueRef::F64(42.0).as_u64());
+    /// ```
+    pub fn as_u64(&self) -> Option<u64> {
+        match *self {
+            ValueRef::I64(n) if 0 <= n => Some(n as u64),
+            ValueRef::U64(n) => Some(n),
+            _ => None,
+        }
+    }
+
+    /// If the `ValueRef` is an Array, returns the associated vector.
+    /// Returns None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmpv::ValueRef;
+    ///
+    /// let val = ValueRef::Array(vec![ValueRef::Nil, ValueRef::Boolean(true)]);
+    ///
+    /// assert_eq!(Some(&vec![ValueRef::Nil, ValueRef::Boolean(true)]), val.as_array());
+    /// assert_eq!(None, ValueRef::Nil.as_array());
+    /// ```
+    pub fn as_array(&self) -> Option<&Vec<ValueRef>> {
+        if let ValueRef::Array(ref array) = *self {
+            Some(&*array)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> ::std::fmt::Display for ValueRef<'a> {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match *self {
+            ValueRef::Nil => write!(f, "nil"),
+            ValueRef::Boolean(val) => write!(f, "{}", val),
+            ValueRef::U64(val) => write!(f, "{}", val),
+            ValueRef::I64(val) => write!(f, "{}", val),
+            ValueRef::F32(val) => write!(f, "{}", val),
+            ValueRef::F64(val) => write!(f, "{}", val),
+            ValueRef::String(ref val) => write!(f, "\"{}\"", val),
+            ValueRef::Binary(ref val) => write!(f, "{:?}", val),
+            ValueRef::Array(ref vec) => {
+                let res = vec.iter()
+                    .map(|val| format!("{}", val))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                write!(f, "[{}]", res)
+            }
+            ValueRef::Map(ref vec) => {
+                try!(write!(f, "{{"));
+
+                match vec.iter().take(1).next() {
+                    Some(&(ref k, ref v)) => {
+                        try!(write!(f, "{}: {}", k, v));
+                    }
+                    None => {
+                        try!(write!(f, ""));
+                    }
+                }
+
+                for &(ref k, ref v) in vec.iter().skip(1) {
+                    try!(write!(f, ", {}: {}", k, v));
+                }
+
+                write!(f, "}}")
+            }
+            ValueRef::Ext(ty, ref data) => {
+                write!(f, "[{}, {:?}]", ty, data)
+            }
         }
     }
 }
