@@ -1,6 +1,6 @@
 use std::error;
 use std::fmt::{self, Display, Formatter};
-use std::io::Read;
+use std::io;
 use std::str::{self, Utf8Error};
 
 use byteorder::{self, ReadBytesExt};
@@ -203,7 +203,6 @@ impl From<serde::de::value::Error> for Error {
 // TODO: Docs. Examples.
 pub struct Deserializer<R: Read> {
     rd: R,
-    buf: Vec<u8>,
     decoding_option: bool,
     depth: usize,
 }
@@ -222,49 +221,65 @@ macro_rules! stack_protector(
     }
 );
 
-impl<R: Read> Deserializer<R> {
+impl<'a> Deserializer<SliceReader<'a>> {
     // TODO: Docs.
-    pub fn new(rd: R) -> Deserializer<R> {
+    pub fn from_slice(slice: &'a [u8]) -> Self {
         Deserializer {
-            rd: rd,
-            buf: Vec::with_capacity(128),
+            rd: SliceReader::new(slice),
             decoding_option: false,
             depth: 1024,
         }
     }
 
     /// Gets a reference to the underlying reader in this decoder.
+    pub fn get_ref(&self) -> &[u8] {
+        self.rd.inner
+    }
+}
+
+impl<R: io::Read> Deserializer<ReadReader<R>> {
+    // TODO: Docs.
+    pub fn from_read(rd: R) -> Self {
+        Deserializer {
+            rd: ReadReader::new(rd),
+            decoding_option: false,
+            depth: 1024,
+        }
+    }
+
+    pub fn new(rd: R) -> Self {
+        Self::from_read(rd)
+    }
+
+    /// Gets a reference to the underlying reader in this decoder.
     pub fn get_ref(&self) -> &R {
-        &self.rd
+        &self.rd.inner
     }
 
     /// Gets a mutable reference to the underlying reader in this decoder.
     pub fn get_mut(&mut self) -> &mut R {
-        &mut self.rd
+        &mut self.rd.inner
     }
 
     /// Consumes this decoder returning the underlying reader.
     pub fn into_inner(self) -> R {
-        self.rd
+        self.rd.inner
     }
+}
 
+impl<R: Read> Deserializer<R> {
     /// Changes the maximum nesting depth that is allowed
     pub fn set_max_depth(&mut self, depth: usize) {
         self.depth = depth;
     }
 
     fn read_str_data(&mut self, len: u32) -> Result<&str, Error> {
-        self.buf.resize(len as usize, 0u8);
-
-        try!(self.rd.read_exact(&mut self.buf[..]).map_err(Error::InvalidDataRead));
-        str::from_utf8(&self.buf).map_err(From::from)
+        let slice = try!(self.read_bin_data(len));
+        str::from_utf8(slice).map_err(From::from)
     }
 
     fn read_bin_data(&mut self, len: u32) -> Result<&[u8], Error> {
-        self.buf.resize(len as usize, 0u8);
-
-        try!(self.rd.read_exact(&mut self.buf[..len as usize]).map_err(Error::InvalidDataRead));
-        Ok(&self.buf[..len as usize])
+        self.rd.read_slice(len as usize).map_err(Error::InvalidDataRead)
     }
 
     fn read_array<V>(&mut self, len: u32, mut visitor: V) -> Result<V::Value, Error>
@@ -564,7 +579,7 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
     fn visit_newtype<T>(&mut self) -> Result<T, Error>
         where T: serde::de::Deserialize
     {
-        try!(rmp::decode::read_array_len(self.de.get_mut()));
+        try!(rmp::decode::read_array_len(&mut self.de.rd));
         T::deserialize(self.de)
     }
 
@@ -573,4 +588,91 @@ impl<'a, R: Read> serde::de::VariantVisitor for VariantVisitor<'a, R> {
     {
         serde::de::Deserializer::deserialize_tuple(self.de, fields.len(), visitor)
     }
+}
+
+pub trait Read: io::Read {
+    fn read_slice<'r>(&'r mut self, len: usize) -> io::Result<&'r [u8]>;
+}
+
+struct SliceReader<'a> {
+    inner: &'a [u8],
+}
+
+impl<'a> SliceReader<'a> {
+    fn new(slice: &'a [u8]) -> Self {
+        SliceReader {
+            inner: slice,
+        }
+    }
+}
+
+impl<'a> Read for SliceReader<'a> {
+    #[inline]
+    fn read_slice<'r>(&'r mut self, len: usize) -> io::Result<&'r [u8]> {
+        if len > self.inner.len() {
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "Unexpected EOF"))
+        }
+        let (a, b) = self.inner.split_at(len);
+        self.inner = b;
+        Ok(a)
+    }
+}
+
+impl<'r> io::Read for SliceReader<'r> {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.inner.read(buf)
+    }
+
+    #[inline]
+    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
+        self.inner.read_exact(buf)
+    }
+}
+
+struct ReadReader<R: io::Read> {
+    inner: R,
+    buf: Vec<u8>
+}
+
+impl<R: io::Read> ReadReader<R> {
+    fn new(rd: R) -> Self {
+        ReadReader {
+            inner: rd,
+            buf: Vec::with_capacity(128),
+        }
+    }
+}
+
+impl<R: io::Read> Read for ReadReader<R> {
+    #[inline]
+    fn read_slice<'r>(&'r mut self, len: usize) -> io::Result<&'r [u8]> {
+        self.buf.resize(len, 0u8);
+
+        try!(self.inner.read_exact(&mut self.buf[..]));
+
+        Ok(&self.buf[..])
+    }
+}
+
+impl<R: io::Read> io::Read for ReadReader<R> {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.inner.read(buf)
+    }
+
+    #[inline]
+    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
+        self.inner.read_exact(buf)
+    }
+}
+
+#[test]
+fn test_slice_read() {
+    let buf = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let mut slice_reader = SliceReader::new(&buf[..]);
+    assert_eq!(slice_reader.read_slice(1).unwrap(), &[0]);
+    assert_eq!(slice_reader.read_slice(6).unwrap(), &[1, 2, 3, 4, 5, 6]);
+    assert!(slice_reader.read_slice(5).is_err());
+    assert_eq!(slice_reader.read_slice(4).unwrap(), &[7, 8, 9, 10]);
 }
