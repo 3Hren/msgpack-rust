@@ -34,6 +34,17 @@ impl Error {
     }
 }
 
+// TODO: Soon.
+// impl error::Error for Error {
+//     fn description(&self) -> &str {
+//         unimplemented!();
+//     }
+//
+//     fn cause(&self) -> Option<&error::Error> {
+//         unimplemented!();
+//     }
+// }
+
 impl From<MarkerReadError> for Error {
     fn from(err: MarkerReadError) -> Error {
         Error::InvalidMarkerRead(err.0)

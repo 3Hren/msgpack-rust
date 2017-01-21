@@ -702,6 +702,14 @@ impl<'a> ValueRef<'a> {
             None
         }
     }
+
+    pub fn into_array(self) -> Option<Vec<ValueRef<'a>>> {
+        if let ValueRef::Array(array) = self {
+            Some(array)
+        } else {
+            None
+        }
+    }
 }
 
 impl<'a> ::std::fmt::Display for ValueRef<'a> {
