@@ -20,7 +20,7 @@ To use `rmp`, first add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rmp = "0.7"
+rmp = "0.8"
 ```
 
 For [rustc-serialize] serialization support, add `rmp-serialize = "0.7"` to your
