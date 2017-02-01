@@ -334,9 +334,7 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         self.serialize_unit()
     }
 
-    fn serialize_some<T>(self, v: &T) -> Result<(), Self::Error>
-        where T: ?Sized + serde::Serialize
-    {
+    fn serialize_some<T: ?Sized + serde::Serialize>(self, v: &T) -> Result<(), Self::Error> {
         v.serialize(self)
     }
 
@@ -359,16 +357,12 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         Ok(())
     }
 
-    fn serialize_newtype_struct<T>(self, name: &'static str, value: &T) -> Result<(), Self::Error>
-        where T: ?Sized + serde::Serialize
-    {
+    fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(self, name: &'static str, value: &T) -> Result<(), Self::Error> {
         self.serialize_tuple_struct(name, 1)?;
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T>(self, name: &'static str, variant_index: usize, variant: &'static str, value: &T) -> Result<(), Self::Error>
-        where T: ?Sized + serde::Serialize
-    {
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, name: &'static str, variant_index: usize, variant: &'static str, value: &T) -> Result<(), Self::Error> {
         self.serialize_tuple_variant(name, variant_index, variant, 1)?;
         value.serialize(self)
     }
