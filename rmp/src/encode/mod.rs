@@ -163,6 +163,15 @@ impl From<DataWriteError> for ValueWriteError {
     }
 }
 
+impl From<ValueWriteError> for Error {
+    fn from(err: ValueWriteError) -> Error {
+        match err {
+            ValueWriteError::InvalidMarkerWrite(err) => err,
+            ValueWriteError::InvalidDataWrite(err) => err,
+        }
+    }
+}
+
 impl error::Error for ValueWriteError {
     fn description(&self) -> &str {
         "error while writing multibyte MessagePack value"

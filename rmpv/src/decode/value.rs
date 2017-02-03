@@ -26,10 +26,24 @@ impl Error {
         match *self {
             Error::InvalidMarkerRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
             Error::InvalidDataRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
-            _ => false,
+            Error::InvalidMarkerRead(..) |
+            Error::InvalidDataRead(..) |
+            Error::TypeMismatch(..) |
+            Error::FromUtf8Error(..) => false,
         }
     }
 }
+
+// TODO: Soon.
+// impl error::Error for Error {
+//     fn description(&self) -> &str {
+//         unimplemented!();
+//     }
+//
+//     fn cause(&self) -> Option<&error::Error> {
+//         unimplemented!();
+//     }
+// }
 
 impl From<MarkerReadError> for Error {
     fn from(err: MarkerReadError) -> Error {

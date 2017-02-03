@@ -25,6 +25,28 @@ pub enum Error<'r> {
     InvalidUtf8(&'r [u8], Utf8Error),
 }
 
+impl<'r> Error<'r> {
+    pub fn insufficient_bytes(&self) -> bool {
+        match *self {
+            Error::InvalidMarkerRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
+            Error::InvalidDataRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
+            Error::InvalidMarkerRead(..) |
+            Error::InvalidDataRead(..) |
+            Error::TypeMismatch(..) |
+            Error::InvalidUtf8(..) => false,
+        }
+    }
+
+    pub fn kind(&self) -> ErrorKind {
+        match *self {
+            Error::InvalidMarkerRead(ref err) => err.kind(),
+            Error::InvalidDataRead(ref err) => err.kind(),
+            Error::TypeMismatch(..) |
+            Error::InvalidUtf8(..) => ErrorKind::Other,
+        }
+    }
+}
+
 // impl<'r> error::Error for Error<'r> {
 //     fn description(&self) -> &str {
 //         match self {

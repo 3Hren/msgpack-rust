@@ -60,7 +60,8 @@
 
 extern crate rmp;
 extern crate byteorder;
-#[macro_use] extern crate serde;
+#[macro_use]
+extern crate serde;
 
 pub use decode::Deserializer;
 pub use encode::Serializer;
@@ -70,16 +71,16 @@ pub mod encode;
 
 /// Serializes a value to a byte vector.
 pub fn to_vec<T>(value: &T) -> Result<Vec<u8>, encode::Error>
-        where T: serde::Serialize
+    where T: serde::Serialize
 {
     let mut buf = Vec::with_capacity(64);
-    value.serialize(&mut Serializer::new(&mut buf))
-         .and_then(|_| Ok(buf))
+    value.serialize(&mut Serializer::new(&mut buf))?;
+    Ok(buf)
 }
 
 /// Deserializes a byte slice into the desired type.
 pub fn from_slice<T>(input: &[u8]) -> Result<T, decode::Error>
-        where T: serde::Deserialize
+    where T: serde::Deserialize
 {
     let mut de = Deserializer::from_slice(input);
     serde::Deserialize::deserialize(&mut de)

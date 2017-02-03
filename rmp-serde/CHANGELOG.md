@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 ### Changed
+- Adapt with serde 0.9.
+
+## 0.11.0 - 2017-01-05
+### Changed
 - Adapt with RMP core 0.8.
 - The `Serializer` now encodes integers using the most effective representation.
 - The `Deserializer` now properly decodes integer values that fit in the expected type.

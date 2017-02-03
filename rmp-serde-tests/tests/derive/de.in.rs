@@ -42,7 +42,10 @@ fn pass_struct() {
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
-    struct Decoded { id: u32, value: u32 };
+    struct Decoded {
+        id: u32,
+        value: u32
+    };
 
     let mut de = Deserializer::new(cur);
     let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
@@ -51,7 +54,7 @@ fn pass_struct() {
 }
 
 #[test]
-fn pass_struct_map() {
+fn pass_struct_from_map() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Struct {
         et: String,
@@ -79,7 +82,7 @@ fn pass_struct_map() {
 }
 
 #[test]
-fn pass_enum() {
+fn pass_unit_variant() {
     // We expect enums to be endoded as [id, [...]]
 
     let buf = [0x92, 0x01, 0x90];
@@ -198,7 +201,7 @@ fn pass_struct_enum_with_arg() {
 }
 
 #[test]
-fn pass_enum_with_nested_struct() {
+fn pass_newtype_variant() {
     // The encoded bytearray is: [0, [['le message']]].
     let buf = [0x92, 0x0, 0x91, 0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     let cur = Cursor::new(&buf[..]);
@@ -271,7 +274,7 @@ fn pass_enum_custom_policy() {
 }
 
 #[test]
-fn pass_serialize_struct_variant() {
+fn pass_struct_variant() {
     #[derive(Debug, PartialEq, Deserialize)]
     enum Custom {
         First { data: u32 },
