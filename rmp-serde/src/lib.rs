@@ -82,6 +82,6 @@ pub fn to_vec<T>(value: &T) -> Result<Vec<u8>, encode::Error>
 pub fn from_slice<T>(input: &[u8]) -> Result<T, decode::Error>
     where T: serde::Deserialize
 {
-    let mut de = Deserializer::new(&input[..]);
+    let mut de = Deserializer::from_slice(input);
     serde::Deserialize::deserialize(&mut de)
 }
