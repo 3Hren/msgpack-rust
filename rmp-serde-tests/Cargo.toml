@@ -4,6 +4,7 @@ version = "0.12.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 build = "build.rs"
+publish = false
 
 [features]
 default = ["serde_derive"]

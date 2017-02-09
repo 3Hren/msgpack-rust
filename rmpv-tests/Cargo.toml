@@ -3,6 +3,7 @@ name = "rmpv-tests"
 version = "0.1.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
+publish = false
 
 [features]
 with-serde = ["serde"]
@@ -10,4 +11,4 @@ with-serde = ["serde"]
 [dependencies]
 serde = { version = "^0.9", optional = true }
 rmp-serde = "^0.12"
-rmpv = { version = "^0.1.0", features = ["with-serde"], path = "../rmpv" }
+rmpv = { version = "^0.2.0", features = ["with-serde"] }
