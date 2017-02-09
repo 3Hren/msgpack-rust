@@ -1,12 +1,13 @@
-use serde::{self, Serialize, Deserialize};
+use std::fmt::{self, Formatter};
+use serde::{self, Serialize, Serializer, Deserialize, Deserializer};
 use serde::bytes::Bytes;
+use serde::ser::{SerializeSeq, SerializeMap};
 
 use Value;
 
 impl Serialize for Value {
-    #[inline]
-    fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
-        where S: serde::Serializer
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
     {
         match *self {
             Value::Nil => s.serialize_unit(),
@@ -18,23 +19,24 @@ impl Serialize for Value {
             Value::String(ref v) => s.serialize_str(v),
             Value::Binary(ref v) => Bytes::from(v).serialize(s),
             Value::Array(ref array) => {
-                let mut state = try!(s.serialize_seq(Some(array.len())));
+                let mut state = s.serialize_seq(Some(array.len()))?;
                 for item in array {
-                    try!(s.serialize_seq_elt(&mut state, item));
+                    state.serialize_element(item)?;
                 }
-                s.serialize_seq_end(state)
+                state.end()
             }
             Value::Map(ref map) => {
-                let mut state = try!(s.serialize_map(Some(map.len())));
+                let mut state = s.serialize_map(Some(map.len()))?;
                 for &(ref key, ref val) in map {
-                    try!(s.serialize_map_key(&mut state, key));
-                    try!(s.serialize_map_value(&mut state, val));
+                    state.serialize_entry(key, val)?;
                 }
-                s.serialize_map_end(state)
+                state.end()
             }
             Value::Ext(ty, ref buf) => {
-                try!(s.serialize_i8(ty));
-                buf.serialize(s)
+                let mut state = s.serialize_seq(Some(2))?;
+                state.serialize_element(&ty)?;
+                state.serialize_element(buf)?;
+                state.end()
             }
         }
     }
@@ -42,43 +44,47 @@ impl Serialize for Value {
 
 impl Deserialize for Value {
     #[inline]
-    fn deserialize<D>(de: &mut D) -> Result<Self, D::Error>
-        where D: serde::Deserializer
+    fn deserialize<D>(de: D) -> Result<Self, D::Error>
+        where D: Deserializer
     {
         struct ValueVisitor;
 
         impl serde::de::Visitor for ValueVisitor {
             type Value = Value;
 
+            fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+                fmt.write_str("any valid MessagePack value")
+            }
+
             #[inline]
-            fn visit_some<D>(&mut self, de: &mut D) -> Result<Value, D::Error>
-                where D: serde::de::Deserializer
+            fn visit_some<D>(self, de: D) -> Result<Value, D::Error>
+                where D: Deserializer
             {
                 Deserialize::deserialize(de)
             }
 
             #[inline]
-            fn visit_none<E>(&mut self) -> Result<Value, E> {
+            fn visit_none<E>(self) -> Result<Value, E> {
                 Ok(Value::Nil)
             }
 
             #[inline]
-            fn visit_unit<E>(&mut self) -> Result<Value, E> {
+            fn visit_unit<E>(self) -> Result<Value, E> {
                 Ok(Value::Nil)
             }
 
             #[inline]
-            fn visit_bool<E>(&mut self, value: bool) -> Result<Value, E> {
+            fn visit_bool<E>(self, value: bool) -> Result<Value, E> {
                 Ok(Value::Boolean(value))
             }
 
             #[inline]
-            fn visit_u64<E>(&mut self, value: u64) -> Result<Value, E> {
+            fn visit_u64<E>(self, value: u64) -> Result<Value, E> {
                 Ok(Value::U64(value))
             }
 
             #[inline]
-            fn visit_i64<E>(&mut self, value: i64) -> Result<Value, E> {
+            fn visit_i64<E>(self, value: i64) -> Result<Value, E> {
                 if value < 0 {
                     Ok(Value::I64(value))
                 } else {
@@ -87,29 +93,29 @@ impl Deserialize for Value {
             }
 
             #[inline]
-            fn visit_f32<E>(&mut self, value: f32) -> Result<Value, E> {
+            fn visit_f32<E>(self, value: f32) -> Result<Value, E> {
                 Ok(Value::F32(value))
             }
 
             #[inline]
-            fn visit_f64<E>(&mut self, value: f64) -> Result<Value, E> {
+            fn visit_f64<E>(self, value: f64) -> Result<Value, E> {
                 Ok(Value::F64(value))
             }
 
             #[inline]
-            fn visit_string<E>(&mut self, value: String) -> Result<Value, E> {
+            fn visit_string<E>(self, value: String) -> Result<Value, E> {
                 Ok(Value::String(value))
             }
 
             #[inline]
-            fn visit_str<E>(&mut self, value: &str) -> Result<Value, E>
+            fn visit_str<E>(self, value: &str) -> Result<Value, E>
                 where E: serde::de::Error
             {
                 self.visit_string(String::from(value))
             }
 
             #[inline]
-            fn visit_seq<V>(&mut self, visitor: V) -> Result<Value, V::Error>
+            fn visit_seq<V>(self, visitor: V) -> Result<Value, V::Error>
                 where V: serde::de::SeqVisitor
             {
                 let values: Vec<Value> = try!(serde::de::impls::VecVisitor::new()
@@ -120,14 +126,14 @@ impl Deserialize for Value {
             }
 
             #[inline]
-            fn visit_bytes<E>(&mut self, v: &[u8]) -> Result<Self::Value, E>
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
                 where E: serde::de::Error
             {
                 Ok(Value::Binary(v.to_owned()))
             }
 
             #[inline]
-            fn visit_map<V>(&mut self, mut visitor: V) -> Result<Value, V::Error>
+            fn visit_map<V>(self, mut visitor: V) -> Result<Value, V::Error>
                 where V: serde::de::MapVisitor
             {
                 let mut pairs = vec![];

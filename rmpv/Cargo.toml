@@ -14,7 +14,7 @@ with-serde = ["serde"]
 
 [dependencies]
 rmp = "0.8"
-serde = { version = "^0.8", optional = true }
+serde = { version = "^0.9", optional = true }
 
 [dev-dependencies]
 quickcheck = "0.3"
