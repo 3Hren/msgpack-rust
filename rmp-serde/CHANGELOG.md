@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+- Nothing yet.
+
+## 0.12.1 - 2017-02-11
+### Added
+- Allow `Deserializer` to return number of bytes read in case of using Cursor as an underlying reader.
+
+## 0.12.0 - 2017-02-08
 ### Changed
 - Adapt with serde 0.9.
 
