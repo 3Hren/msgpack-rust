@@ -432,3 +432,11 @@ fn pass_deserializer_into_inner() {
 
     assert_eq!(1, cur.position());
 }
+
+#[test]
+fn pass_deserializer_cursor_position() {
+    let mut de = Deserializer::new(Cursor::new(vec![0xce, 0xff, 0xff, 0xff, 0xff]));
+
+    assert_eq!(4294967295u32, Deserialize::deserialize(&mut de).unwrap());
+    assert_eq!(5, de.position());
+}

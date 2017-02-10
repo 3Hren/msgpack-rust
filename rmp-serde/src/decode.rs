@@ -1,6 +1,6 @@
 use std::error;
 use std::fmt::{self, Display, Formatter};
-use std::io;
+use std::io::{self, Cursor};
 use std::str::{self, Utf8Error};
 
 use byteorder::{self, ReadBytesExt};
@@ -114,7 +114,7 @@ impl<'a> From<DecodeStringError<'a>> for Error {
 ///
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
-pub struct Deserializer<R: Read> {
+pub struct Deserializer<R> {
     rd: R,
     marker: Option<Marker>,
     depth: usize,
@@ -163,6 +163,13 @@ impl<R: io::Read> Deserializer<ReadReader<R>> {
     /// Consumes this decoder returning the underlying reader.
     pub fn into_inner(self) -> R {
         self.rd.inner
+    }
+}
+
+impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
+    /// Returns the current position of this deserializer, i.e. how many bytes were read.
+    pub fn position(&self) -> u64 {
+        self.rd.inner.position()
     }
 }
 
