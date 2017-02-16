@@ -32,6 +32,15 @@ impl Error {
             Error::FromUtf8Error(..) => false,
         }
     }
+
+    pub fn kind(&self) -> ErrorKind {
+        match *self {
+            Error::InvalidMarkerRead(ref err) => err.kind(),
+            Error::InvalidDataRead(ref err) => err.kind(),
+            Error::TypeMismatch(..) |
+            Error::FromUtf8Error(..) => ErrorKind::Other,
+        }
+    }
 }
 
 // TODO: Soon.
