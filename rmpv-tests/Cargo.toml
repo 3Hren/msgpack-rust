@@ -1,8 +1,7 @@
 [package]
 name = "rmpv-tests"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
-license = "MIT"
 publish = false
 
 [dependencies]
