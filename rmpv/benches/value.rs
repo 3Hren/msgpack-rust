@@ -1,3 +1,11 @@
+#![feature(test)]
+
+extern crate rmpv;
+extern crate test;
+
+use test::Bencher;
+
+use rmpv::decode::*;
 
 #[bench]
 fn from_string_read_value(b: &mut Bencher) {
@@ -49,6 +57,7 @@ fn from_complex_read_value(b: &mut Bencher) {
         let res = read_value(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
+    b.bytes = buf.len() as u64;
 }
 
 #[bench]
@@ -76,12 +85,10 @@ fn from_complex_read_value_ref(b: &mut Bencher) {
 
 #[bench]
 fn from_complex_write_value_ref(b: &mut Bencher) {
-    use msgpack::ValueRef::*;
-    use msgpack::value::Float::*;
-    use msgpack::value::Integer::*;
-    use msgpack::encode::value_ref::write_value_ref;
+    use rmpv::ValueRef::*;
+    use rmpv::encode::write_value_ref;
 
-    let val = Array(vec![Nil, Integer(U64(42)), Float(F64(3.1415)),
+    let val = Array(vec![Nil, U64(42), F64(3.1415),
         String("Lorem ipsum dolor sit amet."), Map(vec![(String("key"), String("value"))])]);
 
     let mut buf = [0u8; 64];
@@ -113,4 +120,5 @@ fn from_complex_read_value_ref_to_owned(b: &mut Bencher) {
         let res = read_value_ref(&mut &buf[..]).unwrap().to_owned();
         test::black_box(res);
     });
+    b.bytes = buf.len() as u64;
 }
