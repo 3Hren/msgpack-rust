@@ -1,11 +1,8 @@
-#[cfg(feature = "with-serde")]
 extern crate serde;
 extern crate rmp_serde;
 extern crate rmpv;
 
-#[cfg(feature = "with-serde")]
-mod tests {
-
+use std::fmt::Debug;
 use std::io::Cursor;
 
 use serde::Deserialize;
@@ -260,6 +257,4 @@ fn pass_bin32_into_bytebuf_value() {
     let actual = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Value::Binary(vec![0xcc, 0x80]), actual);
-}
-
 }

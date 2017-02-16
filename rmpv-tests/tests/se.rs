@@ -1,10 +1,6 @@
-#[cfg(feature = "with-serde")]
 extern crate serde;
 extern crate rmp_serde;
 extern crate rmpv;
-
-#[cfg(feature = "with-serde")]
-mod tests {
 
 use serde::Serialize;
 
@@ -97,6 +93,4 @@ fn check_ser<T>(val: T, expected: &[u8])
     let mut buf = Vec::new();
     val.serialize(&mut Serializer::new(&mut buf)).unwrap();
     assert_eq!(expected, &buf[..]);
-}
-
 }
