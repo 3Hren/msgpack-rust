@@ -26,17 +26,6 @@ pub enum Error<'r> {
 }
 
 impl<'r> Error<'r> {
-    pub fn insufficient_bytes(&self) -> bool {
-        match *self {
-            Error::InvalidMarkerRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
-            Error::InvalidDataRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
-            Error::InvalidMarkerRead(..) |
-            Error::InvalidDataRead(..) |
-            Error::TypeMismatch(..) |
-            Error::InvalidUtf8(..) => false,
-        }
-    }
-
     pub fn kind(&self) -> ErrorKind {
         match *self {
             Error::InvalidMarkerRead(ref err) => err.kind(),

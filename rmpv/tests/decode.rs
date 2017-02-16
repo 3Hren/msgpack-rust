@@ -12,7 +12,7 @@ fn from_null_decode_value() {
 #[test]
 fn from_pfix_decode_value() {
     let buf = [0x1f];
-    assert_eq!(Value::U64(31), read_value(&mut &buf[..]).unwrap());
+    assert_eq!(Value::from(31), read_value(&mut &buf[..]).unwrap());
 }
 
 #[test]
@@ -25,7 +25,7 @@ fn from_bool_decode_value() {
 #[test]
 fn from_i32_decode_value() {
     let buf = [0xd2, 0xff, 0xff, 0xff, 0xff];
-    assert_eq!(Value::I64(-1), read_value(&mut &buf[..]).unwrap());
+    assert_eq!(Value::from(-1), read_value(&mut &buf[..]).unwrap());
 }
 
 #[test]
@@ -49,9 +49,9 @@ fn from_fixarray_decode_value() {
     ];
 
     let expected = Value::Array(vec![
-        Value::U64(0),
-        Value::U64(42),
-        Value::I64(-9),
+        Value::from(0),
+        Value::from(42),
+        Value::from(-9),
     ]);
 
     assert_eq!(expected, read_value(&mut &buf[..]).unwrap());
@@ -81,7 +81,7 @@ fn from_fixmap_decode_value() {
     ];
 
     let expected = Value::Map(vec![
-        (Value::U64(42), Value::U64(100500)),
+        (Value::from(42), Value::from(100500)),
         (Value::String("key".into()), Value::String("value".into())),
     ]);
 
@@ -115,11 +115,12 @@ fn from_str8_invalid_utf8() {
     // Invalid 2 Octet Sequence.
     let buf: &[u8] = &[0xd9, 0x02, 0xc3, 0x28];
 
-    match read_value(&mut &buf[..]) {
-        Err(Error::FromUtf8Error(err)) => {
-            assert_eq!(buf[2..].to_vec(), err.into_bytes());
+    match read_value(&mut &buf[..]).unwrap() {
+        Value::String(s) => {
+            assert!(s.is_err());
+            assert_eq!(vec![0xc3, 0x28], s.into_bytes());
         }
-        other => panic!("unexpected result: {:?}", other)
+        _ => panic!("wrong type"),
     }
 }
 
@@ -127,6 +128,6 @@ fn from_str8_invalid_utf8() {
 fn from_array_of_two_integers() {
     let buf: &[u8] = &[0x92, 0x04, 0x2a];
 
-    let vec = vec![Value::U64(4), Value::U64(42)];
+    let vec = vec![Value::from(4), Value::from(42)];
     assert_eq!(Value::Array(vec), read_value(&mut &buf[..]).unwrap());
 }

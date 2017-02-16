@@ -3,7 +3,7 @@ use std::io::Write;
 use rmp::encode::{write_nil, write_bool, write_uint, write_sint, write_f32, write_f64, write_str,
                   write_bin, write_array_len, write_map_len, write_ext_meta};
 
-use Value;
+use {Integer, IntPriv, Utf8String, Value};
 use super::Error;
 
 /// Encodes and attempts to write the most efficient representation of the given Value.
@@ -22,11 +22,15 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
         Value::Boolean(val) => {
             write_bool(wr, val).map_err(|err| Error::InvalidMarkerWrite(err))?;
         }
-        Value::U64(val) => {
-            write_uint(wr, val)?;
-        }
-        Value::I64(val) => {
-            write_sint(wr, val)?;
+        Value::Integer(Integer { n }) => {
+            match n {
+                IntPriv::PosInt(n) => {
+                    write_uint(wr, n)?;
+                }
+                IntPriv::NegInt(n) => {
+                    write_sint(wr, n)?;
+                }
+            }
         }
         Value::F32(val) => {
             write_f32(wr, val)?;
@@ -34,8 +38,11 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
         Value::F64(val) => {
             write_f64(wr, val)?;
         }
-        Value::String(ref val) => {
-            write_str(wr, &val)?;
+        Value::String(Utf8String { ref s }) => {
+            match *s {
+                Ok(ref val) => write_str(wr, &val)?,
+                Err(ref err) => write_bin(wr, &err.0)?,
+            }
         }
         Value::Binary(ref val) => {
             write_bin(wr, &val)?;

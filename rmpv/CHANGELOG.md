@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 ### Added
 - `kind()` method for `Value` decode `Error`.
+- Conversion from numeric values and all string types into `Value`.
 
 ## 0.2.0 - 2017-02-09
 ### Added

@@ -9,31 +9,311 @@
 #[macro_use]
 extern crate serde;
 extern crate rmp;
+extern crate num_traits;
 
+use std::borrow::Cow;
+use std::fmt::{self, Debug, Display};
 use std::ops::Index;
+use std::str::Utf8Error;
+
+use num_traits::NumCast;
 
 pub mod decode;
 pub mod encode;
 
 #[cfg(feature = "with-serde")]
-mod ext;
+pub mod ext;
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum IntPriv {
+    /// Always non-less than zero.
+    PosInt(u64),
+    /// Always less than zero.
+    NegInt(i64),
+}
+
+/// Represents a MessagePack integer, whether signed or unsigned.
+///
+/// A `Value` that contains integer can be constructed using `From` trait.
+#[derive(Clone, PartialEq)]
+pub struct Integer {
+    n: IntPriv,
+}
+
+impl Integer {
+    /// Returns `true` if the integer can be represented as `i64`.
+    #[inline]
+    pub fn is_i64(&self) -> bool {
+        match self.n {
+            IntPriv::PosInt(n) => n <= std::i64::MAX as u64,
+            IntPriv::NegInt(..) => true,
+        }
+    }
+
+    /// Returns `true` if the integer can be represented as `u64`.
+    #[inline]
+    pub fn is_u64(&self) -> bool {
+        match self.n {
+            IntPriv::PosInt(..) => true,
+            IntPriv::NegInt(..) => false,
+        }
+    }
+
+    /// Returns the integer represented as `i64` if possible, or else `None`.
+    #[inline]
+    pub fn as_i64(&self) -> Option<i64> {
+        match self.n {
+            IntPriv::PosInt(n) => NumCast::from(n),
+            IntPriv::NegInt(n) => Some(n),
+        }
+    }
+
+    /// Returns the integer represented as `u64` if possible, or else `None`.
+    #[inline]
+    pub fn as_u64(&self) -> Option<u64> {
+        match self.n {
+            IntPriv::PosInt(n) => Some(n),
+            IntPriv::NegInt(n) => NumCast::from(n),
+        }
+    }
+
+    /// Returns the integer represented as `f64` if possible, or else `None`.
+    #[inline]
+    pub fn as_f64(&self) -> Option<f64> {
+        match self.n {
+            IntPriv::PosInt(n) => NumCast::from(n),
+            IntPriv::NegInt(n) => NumCast::from(n),
+        }
+    }
+}
+
+impl Debug for Integer {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        Debug::fmt(&self.n, fmt)
+    }
+}
+
+impl Display for Integer {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self.n {
+            IntPriv::PosInt(v) => Display::fmt(&v, fmt),
+            IntPriv::NegInt(v) => Display::fmt(&v, fmt),
+        }
+    }
+}
+
+impl From<u8> for Integer {
+    fn from(n: u8) -> Self {
+        Integer { n: IntPriv::PosInt(n as u64) }
+    }
+}
+
+impl From<u16> for Integer {
+    fn from(n: u16) -> Self {
+        Integer { n: IntPriv::PosInt(n as u64) }
+    }
+}
+
+impl From<u32> for Integer {
+    fn from(n: u32) -> Self {
+        Integer { n: IntPriv::PosInt(n as u64) }
+    }
+}
+
+impl From<u64> for Integer {
+    fn from(n: u64) -> Self {
+        Integer { n: IntPriv::PosInt(n as u64) }
+    }
+}
+
+impl From<usize> for Integer {
+    fn from(n: usize) -> Self {
+        Integer { n: IntPriv::PosInt(n as u64) }
+    }
+}
+
+impl From<i8> for Integer {
+    fn from(n: i8) -> Self {
+        if n < 0 {
+            Integer { n: IntPriv::NegInt(n as i64) }
+        } else {
+            Integer { n: IntPriv::PosInt(n as u64) }
+        }
+    }
+}
+
+impl From<i16> for Integer {
+    fn from(n: i16) -> Self {
+        if n < 0 {
+            Integer { n: IntPriv::NegInt(n as i64) }
+        } else {
+            Integer { n: IntPriv::PosInt(n as u64) }
+        }
+    }
+}
+
+impl From<i32> for Integer {
+    fn from(n: i32) -> Self {
+        if n < 0 {
+            Integer { n: IntPriv::NegInt(n as i64) }
+        } else {
+            Integer { n: IntPriv::PosInt(n as u64) }
+        }
+    }
+}
+
+impl From<i64> for Integer {
+    fn from(n: i64) -> Self {
+        if n < 0 {
+            Integer { n: IntPriv::NegInt(n as i64) }
+        } else {
+            Integer { n: IntPriv::PosInt(n as u64) }
+        }
+    }
+}
+
+impl From<isize> for Integer {
+    fn from(n: isize) -> Self {
+        if n < 0 {
+            Integer { n: IntPriv::NegInt(n as i64) }
+        } else {
+            Integer { n: IntPriv::PosInt(n as u64) }
+        }
+    }
+}
+
+/// Represents an UTF-8 MessagePack string type.
+///
+/// According to the MessagePack spec, string objects may contain invalid byte sequence and the
+/// behavior of a deserializer depends on the actual implementation when it received invalid byte
+/// sequence.
+/// Deserializers should provide functionality to get the original byte array so that applications
+/// can decide how to handle the object.
+///
+/// Summarizing, it's prohibited to instantiate a string type with invalid UTF-8 sequences, however
+/// it is possible to obtain an underlying bytes that were attempted to convert to a `String`. This
+/// may happen when trying to unpack strings that were decoded using older MessagePack spec with
+/// raw types instead of string/binary.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Utf8String {
+    s: Result<String, (Vec<u8>, Utf8Error)>,
+}
+
+impl Utf8String {
+    /// Returns `true` if the string is valid UTF-8.
+    pub fn is_str(&self) -> bool {
+        self.s.is_ok()
+    }
+
+    /// Returns `true` if the string contains invalid UTF-8 sequence.
+    pub fn is_err(&self) -> bool {
+        self.s.is_err()
+    }
+
+    /// Returns the string reference if the string is valid UTF-8, or else `None`.
+    pub fn as_str(&self) -> Option<&str> {
+        match self.s {
+            Ok(ref s) => Some(s.as_str()),
+            Err(..) => None,
+        }
+    }
+
+    /// Returns the underlying `Utf8Error` if the string contains invalud UTF-8 sequence, or
+    /// else `None`.
+    pub fn as_err(&self) -> Option<&Utf8Error> {
+        match self.s {
+            Ok(..) => None,
+            Err((.., ref err)) => Some(&err),
+        }
+    }
+
+    /// Returns a byte slice of this `Utf8String`'s contents.
+    pub fn as_bytes(&self) -> &[u8] {
+        match self.s {
+            Ok(ref s) => s.as_bytes(),
+            Err(ref err) => &err.0[..],
+        }
+    }
+
+    /// Consumes this object, yielding the string if the string is valid UTF-8, or else `None`.
+    pub fn into_str(self) -> Option<String> {
+        self.s.ok()
+    }
+
+    /// Converts a `Utf8String` into a byte vector.
+    pub fn into_bytes(self) -> Vec<u8> {
+        match self.s {
+            Ok(s) => s.into_bytes(),
+            Err(err) => err.0,
+        }
+    }
+}
+
+impl Display for Utf8String {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self.s {
+            Ok(ref s) => write!(fmt, "\"{}\"", s),
+            Err(ref err) => Debug::fmt(&err.0, fmt),
+        }
+    }
+}
+
+impl<'a> From<String> for Utf8String {
+    fn from(val: String) -> Self {
+        Utf8String {
+            s: Ok(val),
+        }
+    }
+}
+
+impl<'a> From<&'a str> for Utf8String {
+    fn from(val: &str) -> Self {
+        Utf8String {
+            s: Ok(val.into()),
+        }
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for Utf8String {
+    fn from(val: Cow<'a, str>) -> Self {
+        Utf8String {
+            s: Ok(val.into()),
+        }
+    }
+}
+
+/// Represents any valid MessagePack value.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// Nil represents nil.
     Nil,
     /// Boolean represents true or false.
     Boolean(bool),
-    /// Unsigned integer.
-    U64(u64),
-    /// Signed integer.
-    I64(i64),
+    /// Integer represents an integer.
+    ///
+    /// A value of an `Integer` object is limited from `-(2^63)` upto `(2^64)-1`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rmpv::Value;
+    ///
+    /// assert_eq!(42, Value::from(42).as_i64().unwrap());
+    /// ```
+    Integer(Integer),
     /// A 32-bit floating point number.
     F32(f32),
     /// A 64-bit floating point number.
     F64(f64),
     /// String extending Raw type represents a UTF-8 string.
-    String(String),
+    ///
+    /// # Note
+    ///
+    /// String objects may contain invalid byte sequence and the behavior of a deserializer depends
+    /// on the actual implementation when it received invalid byte sequence. Deserializers should
+    /// provide functionality to get the original byte array so that applications can decide how to
+    /// handle the object
+    String(Utf8String),
     /// Binary extending Raw type represents a byte array.
     Binary(Vec<u8>),
     /// Array represents a sequence of objects.
@@ -78,43 +358,40 @@ impl Value {
         self.as_bool().is_some()
     }
 
-    /// Returns true if (and only if) the `Value` is a i64. Returns false otherwise.
+    /// Returns true if the `Value` is convertible to an i64. Returns false otherwise.
     ///
     /// # Examples
     ///
     /// ```
     /// use rmpv::Value;
     ///
-    /// assert!(Value::I64(42).is_i64());
+    /// assert!(Value::from(42).is_i64());
     ///
-    /// assert!(!Value::U64(42).is_i64());
-    /// assert!(!Value::F32(42.0).is_i64());
-    /// assert!(!Value::F64(42.0).is_i64());
+    /// assert!(!Value::from(42.0).is_i64());
     /// ```
     pub fn is_i64(&self) -> bool {
-        if let Value::I64(..) = *self {
-            true
+        if let Value::Integer(ref v) = *self {
+            v.is_i64()
         } else {
             false
         }
     }
 
-    /// Returns true if (and only if) the `Value` is a u64. Returns false otherwise.
+    /// Returns true if the `Value` is convertible to an u64. Returns false otherwise.
     ///
     /// # Examples
     ///
     /// ```
     /// use rmpv::Value;
     ///
-    /// assert!(Value::U64(42).is_u64());
+    /// assert!(Value::from(42).is_u64());
     ///
-    /// assert!(!Value::I64(42).is_u64());
     /// assert!(!Value::F32(42.0).is_u64());
     /// assert!(!Value::F64(42.0).is_u64());
     /// ```
     pub fn is_u64(&self) -> bool {
-        if let Value::U64(..) = *self {
-            true
+        if let Value::Integer(ref v) = *self {
+            v.is_u64()
         } else {
             false
         }
@@ -129,8 +406,7 @@ impl Value {
     ///
     /// assert!(Value::F32(42.0).is_f32());
     ///
-    /// assert!(!Value::I64(42).is_f32());
-    /// assert!(!Value::U64(42).is_f32());
+    /// assert!(!Value::from(42).is_f32());
     /// assert!(!Value::F64(42.0).is_f32());
     /// ```
     pub fn is_f32(&self) -> bool {
@@ -150,8 +426,7 @@ impl Value {
     ///
     /// assert!(Value::F64(42.0).is_f64());
     ///
-    /// assert!(!Value::I64(42).is_f64());
-    /// assert!(!Value::U64(42).is_f64());
+    /// assert!(!Value::from(42).is_f64());
     /// assert!(!Value::F32(42.0).is_f64());
     /// ```
     pub fn is_f64(&self) -> bool {
@@ -169,8 +444,7 @@ impl Value {
     /// ```
     /// use rmpv::Value;
     ///
-    /// assert!(Value::I64(42).is_number());
-    /// assert!(Value::U64(42).is_number());
+    /// assert!(Value::from(42).is_number());
     /// assert!(Value::F32(42.0).is_number());
     /// assert!(Value::F64(42.0).is_number());
     ///
@@ -178,7 +452,7 @@ impl Value {
     /// ```
     pub fn is_number(&self) -> bool {
         match *self {
-            Value::U64(..) | Value::I64(..) | Value::F32(..) | Value::F64(..) => true,
+            Value::Integer(..) | Value::F32(..) | Value::F64(..) => true,
             _ => false,
         }
     }
@@ -246,15 +520,13 @@ impl Value {
     /// ```
     /// use rmpv::Value;
     ///
-    /// assert_eq!(Some(42i64), Value::I64(42).as_i64());
-    /// assert_eq!(Some(42i64), Value::U64(42).as_i64());
+    /// assert_eq!(Some(42i64), Value::from(42).as_i64());
     ///
     /// assert_eq!(None, Value::F64(42.0).as_i64());
     /// ```
     pub fn as_i64(&self) -> Option<i64> {
         match *self {
-            Value::I64(n) => Some(n),
-            Value::U64(n) if n <= i64::max_value() as u64 => Some(n as i64),
+            Value::Integer(ref n) => n.as_i64(),
             _ => None,
         }
     }
@@ -267,16 +539,14 @@ impl Value {
     /// ```
     /// use rmpv::Value;
     ///
-    /// assert_eq!(Some(42u64), Value::I64(42).as_u64());
-    /// assert_eq!(Some(42u64), Value::U64(42).as_u64());
+    /// assert_eq!(Some(42u64), Value::from(42).as_u64());
     ///
-    /// assert_eq!(None, Value::I64(-42).as_u64());
+    /// assert_eq!(None, Value::from(-42).as_u64());
     /// assert_eq!(None, Value::F64(42.0).as_u64());
     /// ```
     pub fn as_u64(&self) -> Option<u64> {
         match *self {
-            Value::I64(n) if 0 <= n => Some(n as u64),
-            Value::U64(n) => Some(n),
+            Value::Integer(ref n) => n.as_u64(),
             _ => None,
         }
     }
@@ -289,25 +559,17 @@ impl Value {
     /// ```
     /// use rmpv::Value;
     ///
-    /// assert_eq!(Some(42.0), Value::I64(42).as_f64());
-    /// assert_eq!(Some(42.0), Value::U64(42).as_f64());
+    /// assert_eq!(Some(42.0), Value::from(42).as_f64());
     /// assert_eq!(Some(42.0), Value::F32(42.0f32).as_f64());
     /// assert_eq!(Some(42.0), Value::F64(42.0f64).as_f64());
     ///
-    /// assert_eq!(Some(2147483647.0), Value::I64(i32::max_value() as i64).as_f64());
+    /// assert_eq!(Some(2147483647.0), Value::from(i32::max_value() as i64).as_f64());
     ///
     /// assert_eq!(None, Value::Nil.as_f64());
-    ///
-    /// assert_eq!(None, Value::I64(i32::max_value() as i64 + 1).as_f64());
     /// ```
     pub fn as_f64(&self) -> Option<f64> {
         match *self {
-            Value::I64(n) if (i32::min_value() as i64 <= n) && (n <= i32::max_value() as i64) => {
-                Some(From::from(n as i32))
-            }
-            Value::U64(n) if n <= u32::max_value() as u64 => {
-                Some(From::from(n as u32))
-            }
+            Value::Integer(ref n) => n.as_f64(),
             Value::F32(n) => Some(From::from(n)),
             Value::F64(n) => Some(n),
             _ => None,
@@ -328,13 +590,13 @@ impl Value {
     /// ```
     pub fn as_str(&self) -> Option<&str> {
         if let Value::String(ref val) = *self {
-            Some(val)
+            val.as_str()
         } else {
             None
         }
     }
 
-    /// If the `Value` is a Binary, returns the associated slice.
+    /// If the `Value` is a Binary or a String, returns the associated slice.
     /// Returns None otherwise.
     ///
     /// # Examples
@@ -349,6 +611,8 @@ impl Value {
     pub fn as_slice(&self) -> Option<&[u8]> {
         if let Value::Binary(ref val) = *self {
             Some(val)
+        } else if let Value::String(ref val) = *self {
+            Some(val.as_bytes())
         } else {
             None
         }
@@ -442,81 +706,61 @@ impl From<bool> for Value {
 
 impl From<u8> for Value {
     fn from(v: u8) -> Value {
-        Value::U64(From::from(v))
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<u16> for Value {
     fn from(v: u16) -> Value {
-        Value::U64(From::from(v))
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<u32> for Value {
     fn from(v: u32) -> Value {
-        Value::U64(From::from(v))
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<u64> for Value {
     fn from(v: u64) -> Value {
-        Value::U64(From::from(v))
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<usize> for Value {
     fn from(v: usize) -> Value {
-        Value::U64(v as u64)
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<i8> for Value {
     fn from(v: i8) -> Value {
-        if v < 0 {
-            Value::I64(From::from(v))
-        } else {
-            Value::from(v as u8)
-        }
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<i16> for Value {
     fn from(v: i16) -> Value {
-        if v < 0 {
-            Value::I64(From::from(v))
-        } else {
-            Value::from(v as u16)
-        }
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<i32> for Value {
     fn from(v: i32) -> Value {
-        if v < 0 {
-            Value::I64(From::from(v))
-        } else {
-            Value::from(v as u32)
-        }
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<i64> for Value {
     fn from(v: i64) -> Value {
-        if v < 0 {
-            Value::I64(From::from(v))
-        } else {
-            Value::from(v as u64)
-        }
+        Value::Integer(From::from(v))
     }
 }
 
 impl From<isize> for Value {
     fn from(v: isize) -> Value {
-        if v < 0 {
-            Value::I64(v as i64)
-        } else {
-            Value::from(v as usize)
-        }
+        Value::Integer(From::from(v))
     }
 }
 
@@ -532,16 +776,63 @@ impl From<f64> for Value {
     }
 }
 
-impl ::std::fmt::Display for Value {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl From<String> for Value {
+    fn from(v: String) -> Self {
+        Value::String(Utf8String::from(v))
+    }
+}
+
+impl<'a> From<&'a str> for Value {
+    fn from(v: &str) -> Self {
+        Value::String(Utf8String::from(v))
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for Value {
+    fn from(v: Cow<'a, str>) -> Self {
+        Value::String(Utf8String::from(v))
+    }
+}
+
+impl From<Vec<u8>> for Value {
+    fn from(v: Vec<u8>) -> Self {
+        Value::Binary(v)
+    }
+}
+
+impl<'a> From<&'a [u8]> for Value {
+    fn from(v: &[u8]) -> Self {
+        Value::Binary(v.into())
+    }
+}
+
+impl<'a> From<Cow<'a, [u8]>> for Value {
+    fn from(v: Cow<'a, [u8]>) -> Self {
+        Value::Binary(v.into())
+    }
+}
+
+impl From<Vec<Value>> for Value {
+    fn from(v: Vec<Value>) -> Self {
+        Value::Array(v)
+    }
+}
+
+impl From<Vec<(Value, Value)>> for Value {
+    fn from(v: Vec<(Value, Value)>) -> Self {
+        Value::Map(v)
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
             Value::Nil => write!(f, "nil"),
             Value::Boolean(val) => write!(f, "{}", val),
-            Value::U64(val) => write!(f, "{}", val),
-            Value::I64(val) => write!(f, "{}", val),
+            Value::Integer(ref val) => write!(f, "{}", val),
             Value::F32(val) => write!(f, "{}", val),
             Value::F64(val) => write!(f, "{}", val),
-            Value::String(ref val) => write!(f, "\"{}\"", val),
+            Value::String(ref val) => write!(f, "{}", val),
             Value::Binary(ref val) => write!(f, "{:?}", val),
             Value::Array(ref vec) => {
                 // TODO: This can be slower than naive implementation. Need benchmarks for more
@@ -628,9 +919,9 @@ impl<'a> ValueRef<'a> {
     ///
     /// let expected = Value::Array(vec![
     ///     Value::Nil,
-    ///     Value::U64(42),
+    ///     Value::from(42),
     ///     Value::Array(vec![
-    ///         Value::String("le message".to_string())
+    ///         Value::String("le message".into())
     ///     ])
     /// ]);
     ///
@@ -640,11 +931,11 @@ impl<'a> ValueRef<'a> {
         match self {
             &ValueRef::Nil => Value::Nil,
             &ValueRef::Boolean(val) => Value::Boolean(val),
-            &ValueRef::U64(val) => Value::U64(val),
-            &ValueRef::I64(val) => Value::I64(val),
+            &ValueRef::U64(val) => Value::from(val),
+            &ValueRef::I64(val) => Value::from(val),
             &ValueRef::F32(val) => Value::F32(val),
             &ValueRef::F64(val) => Value::F64(val),
-            &ValueRef::String(val) => Value::String(val.to_owned()),
+            &ValueRef::String(val) => Value::from(val),
             &ValueRef::Binary(val) => Value::Binary(val.to_vec()),
             &ValueRef::Array(ref val) => {
                 Value::Array(val.iter().map(|v| v.to_owned()).collect())

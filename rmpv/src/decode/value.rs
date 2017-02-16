@@ -1,12 +1,13 @@
+use std::error;
+use std::fmt::{self, Display, Formatter};
 use std::io::{self, ErrorKind, Read};
-use std::string::FromUtf8Error;
 
 use rmp::Marker;
 use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64,
                   read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
                   read_data_f64, MarkerReadError, ValueReadError};
 
-use Value;
+use {Value, Utf8String};
 
 /// This type represents all possible errors that can occur when deserializing a value.
 #[derive(Debug)]
@@ -15,44 +16,45 @@ pub enum Error {
     InvalidMarkerRead(io::Error),
     /// Error while reading data.
     InvalidDataRead(io::Error),
-    /// Decoded value type isn't equal with the expected one.
-    TypeMismatch(Marker),
-    /// Failed to properly decode UTF8.
-    FromUtf8Error(FromUtf8Error),
 }
 
 impl Error {
-    pub fn insufficient_bytes(&self) -> bool {
-        match *self {
-            Error::InvalidMarkerRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
-            Error::InvalidDataRead(ref err) if err.kind() == ErrorKind::UnexpectedEof => true,
-            Error::InvalidMarkerRead(..) |
-            Error::InvalidDataRead(..) |
-            Error::TypeMismatch(..) |
-            Error::FromUtf8Error(..) => false,
-        }
-    }
-
     pub fn kind(&self) -> ErrorKind {
         match *self {
             Error::InvalidMarkerRead(ref err) => err.kind(),
             Error::InvalidDataRead(ref err) => err.kind(),
-            Error::TypeMismatch(..) |
-            Error::FromUtf8Error(..) => ErrorKind::Other,
         }
     }
 }
 
-// TODO: Soon.
-// impl error::Error for Error {
-//     fn description(&self) -> &str {
-//         unimplemented!();
-//     }
-//
-//     fn cause(&self) -> Option<&error::Error> {
-//         unimplemented!();
-//     }
-// }
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::InvalidMarkerRead(..) => "I/O error while reading marker byte",
+            Error::InvalidDataRead(..) => "I/O error while reading non-marker bytes",
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::InvalidMarkerRead(ref err) => Some(err),
+            Error::InvalidDataRead(ref err) => Some(err),
+        }
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            Error::InvalidMarkerRead(ref err) => {
+                write!(fmt, "I/O error while reading marker byte: {}", err)
+            }
+            Error::InvalidDataRead(ref err) => {
+                write!(fmt, "I/O error while reading non-marker bytes: {}", err)
+            }
+        }
+    }
+}
 
 impl From<MarkerReadError> for Error {
     fn from(err: MarkerReadError) -> Error {
@@ -65,14 +67,10 @@ impl From<ValueReadError> for Error {
         match err {
             ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
-            ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
+            ValueReadError::TypeMismatch(..) => {
+                Error::InvalidMarkerRead(io::Error::new(ErrorKind::Other, "type mismatch"))
+            }
         }
-    }
-}
-
-impl From<FromUtf8Error> for Error {
-    fn from(err: FromUtf8Error) -> Error {
-        Error::FromUtf8Error(err)
     }
 }
 
@@ -98,8 +96,17 @@ fn read_map_data<R: Read>(rd: &mut R, mut len: usize) -> Result<Vec<(Value, Valu
     Ok(vec)
 }
 
-fn read_str_data<R: Read>(rd: &mut R, len: usize) -> Result<String, Error> {
-    String::from_utf8(read_bin_data(rd, len)?).map_err(From::from)
+fn read_str_data<R: Read>(rd: &mut R, len: usize) -> Result<Utf8String, Error> {
+    match String::from_utf8(read_bin_data(rd, len)?) {
+        Ok(s) => Ok(Utf8String::from(s)),
+        Err(err) => {
+            let e = err.utf8_error();
+            let s = Utf8String {
+                s: Err((err.into_bytes(), e)),
+            };
+            Ok(s)
+        }
+    }
 }
 
 fn read_bin_data<R: Read>(rd: &mut R, len: usize) -> Result<Vec<u8>, Error> {
@@ -131,16 +138,16 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
         Marker::Null => Value::Nil,
         Marker::True => Value::Boolean(true),
         Marker::False => Value::Boolean(false),
-        Marker::FixPos(val) => Value::U64(val as u64),
-        Marker::FixNeg(val) => Value::I64(val as i64),
-        Marker::U8 => Value::U64(read_data_u8(rd)? as u64),
-        Marker::U16 => Value::U64(read_data_u16(rd)? as u64),
-        Marker::U32 => Value::U64(read_data_u32(rd)? as u64),
-        Marker::U64 => Value::U64(read_data_u64(rd)?),
-        Marker::I8 => Value::I64(read_data_i8(rd)? as i64),
-        Marker::I16 => Value::I64(read_data_i16(rd)? as i64),
-        Marker::I32 => Value::I64(read_data_i32(rd)? as i64),
-        Marker::I64 => Value::I64(read_data_i64(rd)?),
+        Marker::FixPos(val) => Value::from(val),
+        Marker::FixNeg(val) => Value::from(val),
+        Marker::U8 => Value::from(read_data_u8(rd)?),
+        Marker::U16 => Value::from(read_data_u16(rd)?),
+        Marker::U32 => Value::from(read_data_u32(rd)?),
+        Marker::U64 => Value::from(read_data_u64(rd)?),
+        Marker::I8 => Value::from(read_data_i8(rd)?),
+        Marker::I16 => Value::from(read_data_i16(rd)?),
+        Marker::I32 => Value::from(read_data_i32(rd)?),
+        Marker::I64 => Value::from(read_data_i64(rd)?),
         Marker::F32 => Value::F32(read_data_f32(rd)?),
         Marker::F64 => Value::F64(read_data_f64(rd)?),
         Marker::FixStr(len) => {
@@ -245,7 +252,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
             let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
-        Marker::Reserved => return Err(Error::TypeMismatch(Marker::Reserved)),
+        Marker::Reserved => Value::Nil,
     };
 
     Ok(val)

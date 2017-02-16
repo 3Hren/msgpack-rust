@@ -15,8 +15,8 @@ fn display_bool() {
 
 #[test]
 fn display_int() {
-    assert_eq!("42", format!("{}", Value::U64(42)));
-    assert_eq!("42", format!("{}", Value::I64(42)));
+    assert_eq!("42", format!("{}", Value::from(42)));
+    assert_eq!("42", format!("{}", Value::from(42)));
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn display_float() {
 
 #[test]
 fn display_string() {
-    assert_eq!("\"le string\"", format!("{}", Value::String("le string".to_owned())));
+    assert_eq!("\"le string\"", format!("{}", Value::String("le string".into())));
 }
 
 #[test]
@@ -66,52 +66,52 @@ fn from_bool() {
 
 #[test]
 fn from_u8() {
-    assert_eq!(Value::U64(42), Value::from(42u8));
+    assert_eq!(Value::from(42), Value::from(42u8));
 }
 
 #[test]
 fn from_u16() {
-    assert_eq!(Value::U64(42), Value::from(42u16));
+    assert_eq!(Value::from(42), Value::from(42u16));
 }
 
 #[test]
 fn from_u32() {
-    assert_eq!(Value::U64(42), Value::from(42u32));
+    assert_eq!(Value::from(42), Value::from(42u32));
 }
 
 #[test]
 fn from_u64() {
-    assert_eq!(Value::U64(42), Value::from(42u64));
+    assert_eq!(Value::from(42), Value::from(42u64));
 }
 
 #[test]
 fn from_usize() {
-    assert_eq!(Value::U64(42), Value::from(42usize));
+    assert_eq!(Value::from(42), Value::from(42usize));
 }
 
 #[test]
 fn from_i8() {
-    assert_eq!(Value::I64(-42), Value::from(-42i8));
+    assert_eq!(Value::from(-42), Value::from(-42i8));
 }
 
 #[test]
 fn from_i16() {
-    assert_eq!(Value::I64(-42), Value::from(-42i16));
+    assert_eq!(Value::from(-42), Value::from(-42i16));
 }
 
 #[test]
 fn from_i32() {
-    assert_eq!(Value::I64(-42), Value::from(-42i32));
+    assert_eq!(Value::from(-42), Value::from(-42i32));
 }
 
 #[test]
 fn from_i64() {
-    assert_eq!(Value::I64(-42), Value::from(-42i64));
+    assert_eq!(Value::from(-42), Value::from(-42i64));
 }
 
 #[test]
 fn from_isize() {
-    assert_eq!(Value::I64(-42), Value::from(-42isize));
+    assert_eq!(Value::from(-42), Value::from(-42isize));
 }
 
 #[test]

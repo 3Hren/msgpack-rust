@@ -646,40 +646,40 @@ fn into_owned() {
 
     let expected = Value::Array(vec![
         Value::Nil,
-        Value::U64(42),
+        Value::from(42),
         Value::Array(vec![
-            Value::String("le message".to_string()),
+            Value::String("le message".into()),
         ]),
         Value::Map(vec![
             (
-                Value::String("map".to_string()),
+                Value::String("map".into()),
                 Value::Array(vec![
                     Value::Boolean(true),
                     Value::Map(vec![
                         (
-                            Value::U64(42),
-                            Value::U64(100500)
+                            Value::from(42),
+                            Value::from(100500)
                         )
                     ])
                 ])
             ),
             (
-                Value::String("key".to_string()),
-                Value::String("value".to_string())
+                Value::String("key".into()),
+                Value::String("value".into())
             )
         ]),
         Value::Array(vec![
-            Value::U64(1),
-            Value::U64(2),
-            Value::U64(3),
+            Value::from(1),
+            Value::from(2),
+            Value::from(3),
         ]),
         Value::Map(vec![
             (
-                Value::String("key".to_string()),
+                Value::String("key".into()),
                 Value::Map(vec![
                     (
-                        Value::String("k1".to_string()),
-                        Value::String("v1".to_string())
+                        Value::String("k1".into()),
+                        Value::String("v1".into())
                     )
                 ])
             )

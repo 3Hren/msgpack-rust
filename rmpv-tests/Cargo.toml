@@ -5,6 +5,7 @@ authors = ["Evgeny Safronov <division494@gmail.com>"]
 publish = false
 
 [dependencies]
-serde = "^0.9"
-rmp-serde = "^0.12"
-rmpv = { version = "^0.2.0", features = ["with-serde"], path = "../rmpv" }
+serde = "0.9"
+serde_derive = "0.9"
+rmp-serde = { version = "0.12", path = "../rmp-serde" }
+rmpv = { features = ["with-serde"], path = "../rmpv" }
