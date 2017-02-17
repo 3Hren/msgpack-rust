@@ -433,3 +433,27 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         self.serialize_struct(name, len)
     }
 }
+
+/// Serialize the given data structure as MessagePack into the I/O stream.
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
+#[inline]
+pub fn write<W: ?Sized, T: ?Sized>(wr: &mut W, val: &T) -> Result<(), Error>
+    where W: Write,
+          T: Serialize
+{
+    val.serialize(&mut Serializer::new(wr))
+}
+
+
+/// Serialize the given data structure as a MessagePack byte vector.
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
+#[inline]
+pub fn to_vec<T: ?Sized>(val: &T) -> Result<Vec<u8>, Error>
+    where T: Serialize
+{
+    let mut buf = Vec::with_capacity(128);
+    write(&mut buf, val)?;
+    Ok(buf)
+}

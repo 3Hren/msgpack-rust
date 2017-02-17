@@ -3,7 +3,7 @@ use std::io::Cursor;
 use serde::Serialize;
 
 use rmp_serde::Serializer;
-use rmp_serde::encode::Error;
+use rmp_serde::encode::{self, Error};
 
 #[test]
 fn pass_null() {
@@ -296,4 +296,11 @@ fn pass_bin() {
     val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
 
     assert_eq!(vec![0xc4, 0x02, 0xcc, 0x80], buf);
+}
+
+#[test]
+fn pass_to_vec() {
+    assert_eq!(vec![0xc0], encode::to_vec(&()).unwrap());
+    assert_eq!(vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65],
+        encode::to_vec("le message").unwrap());
 }

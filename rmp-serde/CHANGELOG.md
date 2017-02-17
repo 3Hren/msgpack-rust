@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 - Nothing yet.
 
+## 0.12.2 - 2017-02-??
+### Added
+- Added `write` and `to_vec` functions to reduce boilerplate for serializing custom types that implement `Serialize`.
+
 ## 0.12.1 - 2017-02-11
 ### Added
 - Allow `Deserializer` to return number of bytes read in case of using Cursor as an underlying reader.
