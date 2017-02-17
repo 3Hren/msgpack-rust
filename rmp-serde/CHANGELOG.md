@@ -5,9 +5,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 - Nothing yet.
 
-## 0.12.2 - 2017-02-??
+## 0.12.2 - 2017-02-17
 ### Added
-- Added `write` and `to_vec` functions to reduce boilerplate for serializing custom types that implement `Serialize`.
+- Added `write`, `to_vec` and `from_read` functions to reduce boilerplate for serializing and deserializing custom types that implement `Serialize` or `Deserialize`.
 
 ## 0.12.1 - 2017-02-11
 ### Added

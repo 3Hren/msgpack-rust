@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use rmp::Marker;
 use rmp_serde::Deserializer;
-use rmp_serde::decode::Error;
+use rmp_serde::decode::{self, Error};
 
 #[test]
 fn pass_nil() {
@@ -439,4 +439,9 @@ fn pass_deserializer_cursor_position() {
 
     assert_eq!(4294967295u32, Deserialize::deserialize(&mut de).unwrap());
     assert_eq!(5, de.position());
+}
+
+#[test]
+fn pass_from() {
+    assert_eq!(2147483647, decode::from_read(&[0xd2, 0x7f, 0xff, 0xff, 0xff][..]).unwrap());
 }

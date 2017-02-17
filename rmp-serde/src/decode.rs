@@ -554,3 +554,15 @@ fn test_slice_read() {
     assert!(slice_reader.read_slice(5).is_err());
     assert_eq!(slice_reader.read_slice(4).unwrap(), &[7, 8, 9, 10]);
 }
+
+/// Deserialize an instance of type `T` from an I/O stream of MessagePack.
+///
+/// This conversion can fail if the structure of the Value does not match the structure expected
+/// by `T`. It can also fail if the structure is correct but `T`'s implementation of `Deserialize`
+/// decides that something is wrong with the data, for example required struct fields are missing.
+pub fn from_read<R, T>(rd: R) -> Result<T, Error>
+    where R: io::Read,
+          T: Deserialize
+{
+    Deserialize::deserialize(&mut Deserializer::new(rd))
+}
