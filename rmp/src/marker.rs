@@ -2,6 +2,7 @@ const FIXSTR_SIZE   : u8 = 0x1f;
 const FIXARRAY_SIZE : u8 = 0x0f;
 const FIXMAP_SIZE   : u8 = 0x0f;
 
+/// Format markers.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Marker {
     FixPos(u8),
@@ -44,6 +45,7 @@ pub enum Marker {
 }
 
 impl Marker {
+    /// Construct a msgpack marker from a single byte.
     pub fn from_u8(n: u8) -> Marker {
         match n {
             0x00 ... 0x7f => Marker::FixPos(n),
@@ -88,6 +90,7 @@ impl Marker {
         }
     }
 
+    /// Converts a marker object into a single-byte representation.
     pub fn to_u8(&self) -> u8 {
         match *self {
             Marker::FixPos(val)   => val,
