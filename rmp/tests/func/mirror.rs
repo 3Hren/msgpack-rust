@@ -14,4 +14,18 @@ quickcheck! {
 
         xs == decode::read_int(&mut &buf[..]).unwrap()
     }
+
+    fn mirror_f32(xs: f32) -> bool {
+        let mut buf = Vec::new();
+        encode::write_f32(&mut buf, xs).unwrap();
+
+        xs == decode::read_f32(&mut &buf[..]).unwrap()
+    }
+
+    fn mirror_f64(xs: f64) -> bool {
+        let mut buf = Vec::new();
+        encode::write_f64(&mut buf, xs).unwrap();
+
+        xs == decode::read_f64(&mut &buf[..]).unwrap()
+    }
 }

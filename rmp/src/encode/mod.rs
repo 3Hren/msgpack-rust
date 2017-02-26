@@ -92,10 +92,13 @@ pub fn write_nil<W: Write>(wr: &mut W) -> Result<(), Error> {
 /// Each call to this function may generate an I/O error indicating that the operation could not be
 /// completed.
 pub fn write_bool<W: Write>(wr: &mut W, val: bool) -> Result<(), Error> {
-    match val {
-        true => write_marker(wr, Marker::True).map_err(|err| err.0),
-        false => write_marker(wr, Marker::False).map_err(|err| err.0),
-    }
+    let marker = if val {
+        Marker::True
+    } else {
+        Marker::False
+    };
+
+    write_marker(wr, marker).map_err(From::from)
 }
 
 fn write_data_u8<W: Write>(wr: &mut W, val: u8) -> Result<(), DataWriteError> {
@@ -166,7 +169,7 @@ impl From<DataWriteError> for ValueWriteError {
 impl From<ValueWriteError> for Error {
     fn from(err: ValueWriteError) -> Error {
         match err {
-            ValueWriteError::InvalidMarkerWrite(err) => err,
+            ValueWriteError::InvalidMarkerWrite(err) |
             ValueWriteError::InvalidDataWrite(err) => err,
         }
     }
@@ -179,7 +182,7 @@ impl error::Error for ValueWriteError {
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            ValueWriteError::InvalidMarkerWrite(ref err) => Some(err),
+            ValueWriteError::InvalidMarkerWrite(ref err) |
             ValueWriteError::InvalidDataWrite(ref err) => Some(err),
         }
     }

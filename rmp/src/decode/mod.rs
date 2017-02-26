@@ -62,7 +62,7 @@ impl error::Error for ValueReadError {
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            ValueReadError::InvalidMarkerRead(ref err) => Some(err),
+            ValueReadError::InvalidMarkerRead(ref err) |
             ValueReadError::InvalidDataRead(ref err) => Some(err),
             ValueReadError::TypeMismatch(..) => None,
         }
@@ -169,9 +169,9 @@ impl error::Error for NumValueReadError {
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            NumValueReadError::InvalidMarkerRead(ref err) => Some(err),
+            NumValueReadError::InvalidMarkerRead(ref err) |
             NumValueReadError::InvalidDataRead(ref err) => Some(err),
-            NumValueReadError::TypeMismatch(..) => None,
+            NumValueReadError::TypeMismatch(..) |
             NumValueReadError::OutOfRange => None,
         }
     }

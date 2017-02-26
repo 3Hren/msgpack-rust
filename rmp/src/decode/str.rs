@@ -23,11 +23,11 @@ impl<'a> error::Error for DecodeStringError<'a> {
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            DecodeStringError::InvalidMarkerRead(ref err) => Some(err),
+            DecodeStringError::InvalidMarkerRead(ref err) |
             DecodeStringError::InvalidDataRead(ref err) => Some(err),
-            DecodeStringError::TypeMismatch(..) => None,
-            DecodeStringError::BufferSizeTooSmall(_) => None,
-            DecodeStringError::InvalidUtf8(_, ref err) => Some(err),
+            DecodeStringError::TypeMismatch(..) |
+            DecodeStringError::BufferSizeTooSmall(..) => None,
+            DecodeStringError::InvalidUtf8(.., ref err) => Some(err),
         }
     }
 }
