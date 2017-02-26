@@ -131,16 +131,27 @@ fn read_fixext_data<R: Read>(rd: &mut R, buf: &mut [u8]) -> Result<i8, ValueRead
     }
 }
 
+/// Extension type meta information.
+///
+/// Extension represents a tuple of type information and a byte array where type information is an
+/// integer whose meaning is defined by applications.
+///
+/// Applications can assign 0 to 127 to store application-specific type information.
+///
+/// # Note
+///
+/// MessagePack reserves -1 to -128 for future extension to add predefined types which will be
+/// described in separated documents.
 #[derive(Debug, PartialEq)]
 pub struct ExtMeta {
+    /// Type information.
     pub typeid: i8,
+    /// Byte array size.
     pub size: u32,
 }
 
-/// Unstable: docs, errors
-// NOTE: EINTR safe.
 pub fn read_ext_meta<R: Read>(rd: &mut R) -> Result<ExtMeta, ValueReadError> {
-    let size = match try!(read_marker(rd)) {
+    let size = match read_marker(rd)? {
         Marker::FixExt1 => 1,
         Marker::FixExt2 => 2,
         Marker::FixExt4 => 4,
@@ -152,7 +163,7 @@ pub fn read_ext_meta<R: Read>(rd: &mut R) -> Result<ExtMeta, ValueReadError> {
         marker => return Err(ValueReadError::TypeMismatch(marker)),
     };
 
-    let ty = try!(read_data_i8(rd));
+    let ty = read_data_i8(rd)?;
     let meta = ExtMeta {
         typeid: ty,
         size: size,

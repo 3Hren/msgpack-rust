@@ -155,4 +155,5 @@ pub mod decode;
 
 pub use marker::Marker;
 
+/// Version of the MessagePack [spec](http://github.com/msgpack/msgpack/blob/master/spec.md).
 pub const MSGPACK_VERSION: u32 = 5;
