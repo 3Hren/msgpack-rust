@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+- TBD.
+
+## 0.8.3 - 2017-03-04
+### Fixed
+- Fixed `write_sint`, so it should mark positive values as unsigned integers.
+  Before this change it marked signed integers larger than `4294967296` with I64 marker, which is not consistent with other MessagePack implementations.
+  Now it should mark such integers with U64 marker.
+
 ## 0.8.2 - 2017-02-01
 ### Added
 - Conversion from `ValueWriteError` into I/O error.

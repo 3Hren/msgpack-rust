@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use Marker;
-use encode::{write_pfix, write_u8, write_u16, write_u32, Error, ValueWriteError};
+use encode::{write_pfix, write_u8, write_u16, write_u32, write_u64, Error, ValueWriteError};
 use super::{write_data_i8, write_data_i16, write_data_i32, write_data_i64, write_marker};
 
 /// Encodes and attempts to write a negative small integer value as a negative fixnum into the
@@ -163,6 +163,6 @@ pub fn write_sint<W: Write>(wr: &mut W, val: i64) -> Result<Marker, ValueWriteEr
         val if val < 256 => write_u8(wr, val as u8).and(Ok(Marker::U8)),
         val if val < 65536 => write_u16(wr, val as u16).and(Ok(Marker::U16)),
         val if val < 4294967296 => write_u32(wr, val as u32).and(Ok(Marker::U32)),
-        val => write_i64(wr, val).and(Ok(Marker::I64)),
+        val => write_u64(wr, val as u64).and(Ok(Marker::U64)),
     }
 }
