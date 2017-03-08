@@ -118,8 +118,8 @@
 //! ```
 //!
 //! But sometimes all you want is just to encode an integer that *must* fit in the specified type
-//! no matter how it was encoded. RMP provides such function to ease integration with other
-//! MessagePack libraries.
+//! no matter how it was encoded. RMP provides [`such`][read_int] function to ease integration with
+//! other MessagePack libraries.
 //!
 //! ```
 //! let buf = [0xcd, 0x1, 0x2c];
@@ -145,6 +145,8 @@
 //! assert_eq!([0xcb, 0x40, 0x9, 0x21, 0xfb, 0x54, 0x44, 0x2d, 0x18], buf[..]);
 //! assert_eq!(pi, rmp::decode::read_f64(&mut &buf[..]).unwrap());
 //! ```
+//!
+//! [read_int]: decode/fn.read_int.html
 
 extern crate byteorder;
 extern crate num_traits;
