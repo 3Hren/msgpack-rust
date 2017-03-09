@@ -1,12 +1,9 @@
 use std::io::Cursor;
-use std::result;
 
 use serde::Deserialize;
 
 use rmp_serde::Deserializer;
 use rmp_serde::decode::Error;
-
-type Result<T> = result::Result<T, Error>;
 
 #[test]
 fn pass_newtype() {
@@ -152,7 +149,7 @@ fn fail_enum_sequence_mismatch() {
     }
 
     let mut de = Deserializer::new(cur);
-    let actual: Result<Enum> = Deserialize::deserialize(&mut de);
+    let actual: Result<Enum, Error> = Deserialize::deserialize(&mut de);
 
     match actual.err().unwrap() {
         Error::LengthMismatch(3) => (),
@@ -173,7 +170,7 @@ fn fail_enum_overflow() {
     }
 
     let mut de = Deserializer::new(cur);
-    let actual: Result<Enum> = Deserialize::deserialize(&mut de);
+    let actual: Result<Enum, Error> = Deserialize::deserialize(&mut de);
 
     match actual.err().unwrap() {
         Error::Syntax(..) => (),
@@ -246,14 +243,14 @@ fn pass_enum_custom_policy() {
     impl<R: Read> serde::Deserializer for CustomDeserializer<R> {
         type Error = Error;
 
-        fn deserialize<V>(&mut self, visitor: V) -> Result<V::Value>
+        fn deserialize<V>(&mut self, visitor: V) -> Result<V::Value, Error>
             where V: serde::de::Visitor
         {
             self.inner.deserialize(visitor)
         }
 
         fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)
-            -> Result<V::Value>
+            -> Result<V::Value, Error>
             where V: serde::de::EnumVisitor
         {
             visitor.visit(VariantVisitor::new(&mut self.inner))
