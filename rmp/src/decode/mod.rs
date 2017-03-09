@@ -36,6 +36,7 @@ use Marker;
 pub type Error = ::std::io::Error;
 
 /// An error that can occur when attempting to read a MessagePack marker from the reader.
+#[derive(Debug)]
 pub struct MarkerReadError(pub Error);
 
 /// An error which can occur when attempting to read a MessagePack value from the reader.
