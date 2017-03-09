@@ -3,7 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
-- TBD.
+
+## 0.8.4 - 2017-03-09
+### Added
+- Derive `Debug` for `MarkerReadError`.
 
 ## 0.8.3 - 2017-03-04
 ### Fixed
