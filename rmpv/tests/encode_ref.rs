@@ -41,7 +41,7 @@ fn pass_pack_true() {
 fn pass_pack_uint_u16() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    let val = ValueRef::U64(65535);
+    let val = ValueRef::from(65535);
 
     write_value_ref(&mut &mut buf[..], &val).unwrap();
 
@@ -52,7 +52,7 @@ fn pass_pack_uint_u16() {
 fn pass_pack_i64() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    let val = ValueRef::I64(-9223372036854775808);
+    let val = ValueRef::from(-9223372036854775808i64);
 
     write_value_ref(&mut &mut buf[..], &val).unwrap();
 
@@ -106,9 +106,9 @@ fn pass_pack_array() {
         &vec![0x93, 0x01, 0x02, 0x03],
         &ValueRef::Array(
             vec![
-                ValueRef::U64(1),
-                ValueRef::U64(2),
-                ValueRef::U64(3)
+                ValueRef::from(1),
+                ValueRef::from(2),
+                ValueRef::from(3)
             ]
         )
     );
@@ -119,7 +119,7 @@ fn pass_pack_map() {
     check_packed_eq(
         &vec![0x81, 0x01, 0x02],
         &ValueRef::Map(
-            vec![(ValueRef::U64(1), ValueRef::U64(2))]
+            vec![(ValueRef::from(1), ValueRef::from(2))]
         )
     );
 }

@@ -52,7 +52,7 @@ fn from_pfix() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::U64(31), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(31), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -61,7 +61,7 @@ fn from_nfix() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::I64(-32), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(-32), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn from_u8() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::U64(255), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(255), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn from_u16() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::U64(65535), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(65535), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -88,7 +88,7 @@ fn from_u32() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::U64(4294967295), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(4294967295u32), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -97,7 +97,7 @@ fn from_u64() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::U64(18446744073709551615u64), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(18446744073709551615u64), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -106,7 +106,7 @@ fn from_i8() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::I64(127), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(127), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn from_i16() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::I64(32767), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(32767), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -124,7 +124,7 @@ fn from_i32() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::I64(2147483647), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(2147483647), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -133,7 +133,7 @@ fn from_i64() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::I64(9223372036854775807), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(9223372036854775807i64), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -448,7 +448,7 @@ fn from_fixmap() {
     let mut rd = &buf[..];
 
     let map = vec![
-        (ValueRef::U64(42), ValueRef::U64(100500)),
+        (ValueRef::from(42), ValueRef::from(100500)),
         (ValueRef::String("key"), ValueRef::String("value")),
     ];
     let expected = ValueRef::Map(map);
@@ -546,7 +546,7 @@ fn from_fixmap_using_cursor() {
     let mut rd = Cursor::new(&buf[..]);
 
     let map = vec![
-        (ValueRef::U64(42), ValueRef::U64(100500)),
+        (ValueRef::from(42), ValueRef::from(100500)),
         (ValueRef::String("key"), ValueRef::String("value")),
     ];
     let expected = ValueRef::Map(map);
@@ -566,7 +566,7 @@ const COMPLEX_MSGPACK: [u8; 55] = [
 fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
     ValueRef::Array(vec![
         ValueRef::Nil,
-        ValueRef::U64(42),
+        ValueRef::from(42),
         ValueRef::Array(vec![
             ValueRef::String("le message"),
         ]),
@@ -577,8 +577,8 @@ fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
                     ValueRef::Boolean(true),
                     ValueRef::Map(vec![
                         (
-                            ValueRef::U64(42),
-                            ValueRef::U64(100500)
+                            ValueRef::from(42),
+                            ValueRef::from(100500)
                         )
                     ])
                 ])
@@ -589,9 +589,9 @@ fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
             )
         ]),
         ValueRef::Array(vec![
-            ValueRef::U64(1),
-            ValueRef::U64(2),
-            ValueRef::U64(3),
+            ValueRef::from(1),
+            ValueRef::from(2),
+            ValueRef::from(3),
         ]),
         ValueRef::Map(vec![
             (

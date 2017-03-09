@@ -34,8 +34,8 @@ enum IntPriv {
 
 /// Represents a MessagePack integer, whether signed or unsigned.
 ///
-/// A `Value` that contains integer can be constructed using `From` trait.
-#[derive(Clone, PartialEq)]
+/// A `Value` or `ValueRef` that contains integer can be constructed using `From` trait.
+#[derive(Copy, Clone, PartialEq)]
 pub struct Integer {
     n: IntPriv,
 }
@@ -827,7 +827,7 @@ impl From<Vec<(Value, Value)>> for Value {
 impl Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
-            Value::Nil => write!(f, "nil"),
+            Value::Nil => Display::fmt("nil", f),
             Value::Boolean(val) => write!(f, "{}", val),
             Value::Integer(ref val) => write!(f, "{}", val),
             Value::F32(val) => write!(f, "{}", val),
@@ -875,10 +875,7 @@ pub enum ValueRef<'a> {
     Nil,
     /// Boolean represents true or false.
     Boolean(bool),
-    /// Unsigned integer.
-    U64(u64),
-    /// Signed integer.
-    I64(i64),
+    Integer(Integer),
     /// A 32-bit floating point number.
     F32(f32),
     /// A 64-bit floating point number.
@@ -911,7 +908,7 @@ impl<'a> ValueRef<'a> {
     ///
     /// let val = ValueRef::Array(vec![
     ///    ValueRef::Nil,
-    ///    ValueRef::U64(42),
+    ///    ValueRef::from(42),
     ///    ValueRef::Array(vec![
     ///        ValueRef::String("le message"),
     ///    ])
@@ -931,8 +928,7 @@ impl<'a> ValueRef<'a> {
         match self {
             &ValueRef::Nil => Value::Nil,
             &ValueRef::Boolean(val) => Value::Boolean(val),
-            &ValueRef::U64(val) => Value::from(val),
-            &ValueRef::I64(val) => Value::from(val),
+            &ValueRef::Integer(val) => Value::Integer(val),
             &ValueRef::F32(val) => Value::F32(val),
             &ValueRef::F64(val) => Value::F64(val),
             &ValueRef::String(val) => Value::from(val),
@@ -959,16 +955,11 @@ impl<'a> ValueRef<'a> {
     /// ```
     /// use rmpv::ValueRef;
     ///
-    /// assert_eq!(Some(42), ValueRef::I64(42).as_u64());
-    /// assert_eq!(Some(42), ValueRef::U64(42).as_u64());
-    ///
-    /// assert_eq!(None, ValueRef::I64(-42).as_u64());
-    /// assert_eq!(None, ValueRef::F64(42.0).as_u64());
+    /// assert_eq!(Some(42), ValueRef::from(42).as_u64());
     /// ```
     pub fn as_u64(&self) -> Option<u64> {
         match *self {
-            ValueRef::I64(n) if 0 <= n => Some(n as u64),
-            ValueRef::U64(n) => Some(n),
+            ValueRef::Integer(ref n) => n.as_u64(),
             _ => None,
         }
     }
@@ -1003,13 +994,72 @@ impl<'a> ValueRef<'a> {
     }
 }
 
-impl<'a> ::std::fmt::Display for ValueRef<'a> {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl<'a> From<u8> for ValueRef<'a> {
+    fn from(v: u8) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<u16> for ValueRef<'a> {
+    fn from(v: u16) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<u32> for ValueRef<'a> {
+    fn from(v: u32) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<u64> for ValueRef<'a> {
+    fn from(v: u64) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<usize> for ValueRef<'a> {
+    fn from(v: usize) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<i8> for ValueRef<'a> {
+    fn from(v: i8) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<i16> for ValueRef<'a> {
+    fn from(v: i16) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<i32> for ValueRef<'a> {
+    fn from(v: i32) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<i64> for ValueRef<'a> {
+    fn from(v: i64) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<isize> for ValueRef<'a> {
+    fn from(v: isize) -> Self {
+        ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> Display for ValueRef<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
             ValueRef::Nil => write!(f, "nil"),
             ValueRef::Boolean(val) => write!(f, "{}", val),
-            ValueRef::U64(val) => write!(f, "{}", val),
-            ValueRef::I64(val) => write!(f, "{}", val),
+            ValueRef::Integer(ref val) => write!(f, "{}", val),
             ValueRef::F32(val) => write!(f, "{}", val),
             ValueRef::F64(val) => write!(f, "{}", val),
             ValueRef::String(ref val) => write!(f, "\"{}\"", val),
