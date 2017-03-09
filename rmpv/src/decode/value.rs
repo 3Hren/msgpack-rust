@@ -7,7 +7,7 @@ use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_
                   read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
                   read_data_f64, MarkerReadError, ValueReadError};
 
-use {Value, Utf8String};
+use {Utf8String, Value};
 
 /// This type represents all possible errors that can occur when deserializing a value.
 #[derive(Debug)]

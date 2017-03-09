@@ -2,14 +2,14 @@ use std;
 // use std::error;
 // use std::fmt;
 use std::io::{self, Cursor, ErrorKind, Read};
-use std::str::{from_utf8, Utf8Error};
+use std::str::{self, Utf8Error};
 
 use rmp::Marker;
 use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64,
                   read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
                   read_data_f64, MarkerReadError, ValueReadError};
 
-use ValueRef;
+use {Utf8StringRef, ValueRef};
 
 #[derive(Debug)]
 pub enum Error<'r> {
@@ -100,11 +100,19 @@ impl<'r> From<ValueReadError> for Error<'r> {
 //     D::read(&mut rd).map_err(|err| Error::InvalidDataRead(From::from(err)))
 // }
 
-fn read_str_data<'a, R>(rd: &mut R, len: usize) -> Result<&'a str, Error<'a>>
+fn read_str_data<'a, R>(rd: &mut R, len: usize) -> Result<Utf8StringRef<'a>, Error<'a>>
     where R: BorrowRead<'a>
 {
     let buf = read_bin_data(rd, len)?;
-    from_utf8(buf).map_err(|err| Error::InvalidUtf8(buf, err))
+    match str::from_utf8(buf) {
+        Ok(s) => Ok(Utf8StringRef::from(s)),
+        Err(err) => {
+            let s = Utf8StringRef {
+                s: Err((buf, err)),
+            };
+            Ok(s)
+        }
+    }
 }
 
 fn read_bin_data<'a, R>(rd: &mut R, len: usize) -> Result<&'a [u8], Error<'a>>
@@ -225,12 +233,12 @@ impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
 /// # Examples
 /// ```
 /// use rmpv::ValueRef;
-/// use rmpv::decode::value_ref::read_value_ref;
+/// use rmpv::decode::read_value_ref;
 ///
 /// let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
 /// let mut rd = &buf[..];
 ///
-/// assert_eq!(ValueRef::String("le message"), read_value_ref(&mut rd).unwrap());
+/// assert_eq!(ValueRef::from("le message"), read_value_ref(&mut rd).unwrap());
 /// ```
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
     where R: BorrowRead<'a>

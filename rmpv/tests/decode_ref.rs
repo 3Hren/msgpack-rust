@@ -160,7 +160,7 @@ fn from_f64() {
 fn from_strfix() {
     let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
 
-    assert_eq!(ValueRef::String("le message"), read_value_ref(&mut &buf[..]).unwrap());
+    assert_eq!(ValueRef::from("le message"), read_value_ref(&mut &buf[..]).unwrap());
 }
 
 #[test]
@@ -177,7 +177,7 @@ fn from_str8() {
 
     let mut slice = &buf[..];
 
-    assert_eq!(ValueRef::String("B123456789012345678901234567890E"),
+    assert_eq!(ValueRef::from("B123456789012345678901234567890E"),
         read_value_ref(&mut slice).ok().unwrap());
 }
 
@@ -195,7 +195,7 @@ fn from_str16() {
 
     let mut slice = &buf[..];
 
-    assert_eq!(ValueRef::String("B123456789012345678901234567890E"),
+    assert_eq!(ValueRef::from("B123456789012345678901234567890E"),
         read_value_ref(&mut slice).ok().unwrap());
 }
 
@@ -213,7 +213,7 @@ fn from_str32() {
 
     let mut slice = &buf[..];
 
-    assert_eq!(ValueRef::String("B123456789012345678901234567890E"),
+    assert_eq!(ValueRef::from("B123456789012345678901234567890E"),
         read_value_ref(&mut slice).ok().unwrap());
 }
 
@@ -292,9 +292,12 @@ fn from_string_invalid_utf8() {
 
     let mut rd = &buf[..];
 
-    match read_value_ref(&mut rd).err().unwrap() {
-        Error::InvalidUtf8(act, _) => { assert_eq!(&[0xc3, 0x28], act); },
-        _ => panic!(),
+    match read_value_ref(&mut rd).unwrap() {
+        ValueRef::String(s) => {
+            assert!(s.is_err());
+            assert_eq!([0xc3, 0x28], s.as_bytes());
+        }
+        _ => panic!("wrong type"),
     }
 }
 
@@ -449,7 +452,7 @@ fn from_fixmap() {
 
     let map = vec![
         (ValueRef::from(42), ValueRef::from(100500)),
-        (ValueRef::String("key"), ValueRef::String("value")),
+        (ValueRef::from("key"), ValueRef::from("value")),
     ];
     let expected = ValueRef::Map(map);
 
@@ -466,7 +469,7 @@ fn from_map16() {
     ];
     let mut rd = &buf[..];
 
-    let map = vec![(ValueRef::String("key"), ValueRef::String("value"))];
+    let map = vec![(ValueRef::from("key"), ValueRef::from("value"))];
     let expected = ValueRef::Map(map);
 
     assert_eq!(expected, read_value_ref(&mut rd).unwrap());
@@ -482,7 +485,7 @@ fn from_map32() {
     ];
     let mut rd = &buf[..];
 
-    let map = vec![(ValueRef::String("key"), ValueRef::String("value"))];
+    let map = vec![(ValueRef::from("key"), ValueRef::from("value"))];
     let expected = ValueRef::Map(map);
 
     assert_eq!(expected, read_value_ref(&mut rd).unwrap());
@@ -497,7 +500,7 @@ fn from_fixarray() {
     ];
     let mut rd = &buf[..];
 
-    let vec = vec![ValueRef::String("v1"), ValueRef::String("v2")];
+    let vec = vec![ValueRef::from("v1"), ValueRef::from("v2")];
 
     assert_eq!(ValueRef::Array(vec), read_value_ref(&mut rd).unwrap());
 }
@@ -512,7 +515,7 @@ fn from_array16() {
     ];
     let mut rd = &buf[..];
 
-    let vec = vec![ValueRef::String("v1"), ValueRef::String("v2")];
+    let vec = vec![ValueRef::from("v1"), ValueRef::from("v2")];
 
     assert_eq!(ValueRef::Array(vec), read_value_ref(&mut rd).unwrap());
 }
@@ -527,7 +530,7 @@ fn from_array32() {
     ];
     let mut rd = &buf[..];
 
-    let vec = vec![ValueRef::String("v1"), ValueRef::String("v2")];
+    let vec = vec![ValueRef::from("v1"), ValueRef::from("v2")];
 
     assert_eq!(ValueRef::Array(vec), read_value_ref(&mut rd).unwrap());
 }
@@ -547,7 +550,7 @@ fn from_fixmap_using_cursor() {
 
     let map = vec![
         (ValueRef::from(42), ValueRef::from(100500)),
-        (ValueRef::String("key"), ValueRef::String("value")),
+        (ValueRef::from("key"), ValueRef::from("value")),
     ];
     let expected = ValueRef::Map(map);
 
@@ -568,11 +571,11 @@ fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
         ValueRef::Nil,
         ValueRef::from(42),
         ValueRef::Array(vec![
-            ValueRef::String("le message"),
+            ValueRef::from("le message"),
         ]),
         ValueRef::Map(vec![
             (
-                ValueRef::String("map"),
+                ValueRef::from("map"),
                 ValueRef::Array(vec![
                     ValueRef::Boolean(true),
                     ValueRef::Map(vec![
@@ -584,8 +587,8 @@ fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
                 ])
             ),
             (
-                ValueRef::String("key"),
-                ValueRef::String("value")
+                ValueRef::from("key"),
+                ValueRef::from("value")
             )
         ]),
         ValueRef::Array(vec![
@@ -595,11 +598,11 @@ fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
         ]),
         ValueRef::Map(vec![
             (
-                ValueRef::String("key"),
+                ValueRef::from("key"),
                 ValueRef::Map(vec![
                     (
-                        ValueRef::String("k1"),
-                        ValueRef::String("v1")
+                        ValueRef::from("k1"),
+                        ValueRef::from("v1")
                     )
                 ])
             )
@@ -648,11 +651,11 @@ fn into_owned() {
         Value::Nil,
         Value::from(42),
         Value::Array(vec![
-            Value::String("le message".into()),
+            Value::from("le message"),
         ]),
         Value::Map(vec![
             (
-                Value::String("map".into()),
+                Value::from("map"),
                 Value::Array(vec![
                     Value::Boolean(true),
                     Value::Map(vec![
@@ -664,8 +667,8 @@ fn into_owned() {
                 ])
             ),
             (
-                Value::String("key".into()),
-                Value::String("value".into())
+                Value::from("key"),
+                Value::from("value")
             )
         ]),
         Value::Array(vec![
@@ -675,11 +678,11 @@ fn into_owned() {
         ]),
         Value::Map(vec![
             (
-                Value::String("key".into()),
+                Value::from("key"),
                 Value::Map(vec![
                     (
-                        Value::String("k1".into()),
-                        Value::String("v1".into())
+                        Value::from("k1"),
+                        Value::from("v1")
                     )
                 ])
             )

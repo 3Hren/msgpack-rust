@@ -282,6 +282,88 @@ impl<'a> From<Cow<'a, str>> for Utf8String {
     }
 }
 
+/// A non-owning evil twin of `Utf8String`. Does exactly the same thing except ownership.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Utf8StringRef<'a> {
+    s: Result<&'a str, (&'a [u8], Utf8Error)>,
+}
+
+impl<'a> Utf8StringRef<'a> {
+    /// Returns `true` if the string is valid UTF-8.
+    pub fn is_str(&self) -> bool {
+        self.s.is_ok()
+    }
+
+    /// Returns `true` if the string contains invalid UTF-8 sequence.
+    pub fn is_err(&self) -> bool {
+        self.s.is_err()
+    }
+
+    /// Returns the string reference if the string is valid UTF-8, or else `None`.
+    pub fn as_str(&self) -> Option<&str> {
+        match self.s {
+            Ok(ref s) => Some(s),
+            Err(..) => None,
+        }
+    }
+
+    /// Returns the underlying `Utf8Error` if the string contains invalud UTF-8 sequence, or
+    /// else `None`.
+    pub fn as_err(&self) -> Option<&Utf8Error> {
+        match self.s {
+            Ok(..) => None,
+            Err((.., ref err)) => Some(&err),
+        }
+    }
+
+    /// Returns a byte slice of this string contents no matter whether it's valid or not UTF-8.
+    pub fn as_bytes(&self) -> &[u8] {
+        match self.s {
+            Ok(ref s) => s.as_bytes(),
+            Err(ref err) => err.0,
+        }
+    }
+
+    /// Consumes this object, yielding the string if the string is valid UTF-8, or else `None`.
+    pub fn into_str(self) -> Option<String> {
+        self.s.ok().map(|s| s.into())
+    }
+
+    /// Converts a `Utf8StringRef` into a byte vector.
+    pub fn into_bytes(self) -> Vec<u8> {
+        match self.s {
+            Ok(s) => s.as_bytes().into(),
+            Err(err) => err.0.into(),
+        }
+    }
+}
+
+impl<'a> Display for Utf8StringRef<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self.s {
+            Ok(ref s) => write!(fmt, "\"{}\"", s),
+            Err(ref err) => Debug::fmt(&err.0, fmt),
+        }
+    }
+}
+
+impl<'a> From<&'a str> for Utf8StringRef<'a> {
+    fn from(val: &'a str) -> Self {
+        Utf8StringRef {
+            s: Ok(val),
+        }
+    }
+}
+
+impl<'a> Into<Utf8String> for Utf8StringRef<'a> {
+    fn into(self) -> Utf8String {
+        match self.s {
+            Ok(s) => Utf8String { s: Ok(s.into()) },
+            Err((buf, err)) => Utf8String { s: Err((buf.into(), err)) }
+        }
+    }
+}
+
 /// Represents any valid MessagePack value.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
@@ -699,79 +781,79 @@ impl Index<usize> for Value {
 }
 
 impl From<bool> for Value {
-    fn from(v: bool) -> Value {
+    fn from(v: bool) -> Self {
         Value::Boolean(v)
     }
 }
 
 impl From<u8> for Value {
-    fn from(v: u8) -> Value {
+    fn from(v: u8) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<u16> for Value {
-    fn from(v: u16) -> Value {
+    fn from(v: u16) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<u32> for Value {
-    fn from(v: u32) -> Value {
+    fn from(v: u32) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<u64> for Value {
-    fn from(v: u64) -> Value {
+    fn from(v: u64) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<usize> for Value {
-    fn from(v: usize) -> Value {
+    fn from(v: usize) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<i8> for Value {
-    fn from(v: i8) -> Value {
+    fn from(v: i8) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<i16> for Value {
-    fn from(v: i16) -> Value {
+    fn from(v: i16) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<i32> for Value {
-    fn from(v: i32) -> Value {
+    fn from(v: i32) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<i64> for Value {
-    fn from(v: i64) -> Value {
+    fn from(v: i64) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<isize> for Value {
-    fn from(v: isize) -> Value {
+    fn from(v: isize) -> Self {
         Value::Integer(From::from(v))
     }
 }
 
 impl From<f32> for Value {
-    fn from(v: f32) -> Value {
+    fn from(v: f32) -> Self {
         Value::F32(v)
     }
 }
 
 impl From<f64> for Value {
-    fn from(v: f64) -> Value {
+    fn from(v: f64) -> Self {
         Value::F64(v)
     }
 }
@@ -875,13 +957,16 @@ pub enum ValueRef<'a> {
     Nil,
     /// Boolean represents true or false.
     Boolean(bool),
+    /// Integer represents an integer.
+    ///
+    /// A value of an `Integer` object is limited from `-(2^63)` upto `(2^64)-1`.
     Integer(Integer),
     /// A 32-bit floating point number.
     F32(f32),
     /// A 64-bit floating point number.
     F64(f64),
     /// String extending Raw type represents a UTF-8 string.
-    String(&'a str),
+    String(Utf8StringRef<'a>),
     /// Binary extending Raw type represents a byte array.
     Binary(&'a [u8]),
     /// Array represents a sequence of objects.
@@ -910,7 +995,7 @@ impl<'a> ValueRef<'a> {
     ///    ValueRef::Nil,
     ///    ValueRef::from(42),
     ///    ValueRef::Array(vec![
-    ///        ValueRef::String("le message"),
+    ///        ValueRef::from("le message"),
     ///    ])
     /// ]);
     ///
@@ -931,7 +1016,7 @@ impl<'a> ValueRef<'a> {
             &ValueRef::Integer(val) => Value::Integer(val),
             &ValueRef::F32(val) => Value::F32(val),
             &ValueRef::F64(val) => Value::F64(val),
-            &ValueRef::String(val) => Value::from(val),
+            &ValueRef::String(val) => Value::String(val.into()),
             &ValueRef::Binary(val) => Value::Binary(val.to_vec()),
             &ValueRef::Array(ref val) => {
                 Value::Array(val.iter().map(|v| v.to_owned()).collect())
@@ -1051,6 +1136,42 @@ impl<'a> From<i64> for ValueRef<'a> {
 impl<'a> From<isize> for ValueRef<'a> {
     fn from(v: isize) -> Self {
         ValueRef::Integer(From::from(v))
+    }
+}
+
+impl<'a> From<f32> for ValueRef<'a> {
+    fn from(v: f32) -> Self {
+        ValueRef::F32(v)
+    }
+}
+
+impl<'a> From<f64> for ValueRef<'a> {
+    fn from(v: f64) -> Self {
+        ValueRef::F64(v)
+    }
+}
+
+impl<'a> From<&'a str> for ValueRef<'a> {
+    fn from(v: &'a str) -> Self {
+        ValueRef::String(Utf8StringRef::from(v))
+    }
+}
+
+impl<'a> From<&'a [u8]> for ValueRef<'a> {
+    fn from(v: &'a [u8]) -> Self {
+        ValueRef::Binary(v.into())
+    }
+}
+
+impl<'a> From<Vec<ValueRef<'a>>> for ValueRef<'a> {
+    fn from(v: Vec<ValueRef<'a>>) -> Self {
+        ValueRef::Array(v)
+    }
+}
+
+impl<'a> From<Vec<(ValueRef<'a>, ValueRef<'a>)>> for ValueRef<'a> {
+    fn from(v: Vec<(ValueRef<'a>, ValueRef<'a>)>) -> Self {
+        ValueRef::Map(v)
     }
 }
 

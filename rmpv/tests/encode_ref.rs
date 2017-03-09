@@ -88,7 +88,7 @@ fn pass_pack_f64() {
 fn pass_pack_string() {
     check_packed_eq(
         &vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65],
-        &ValueRef::String("le message")
+        &ValueRef::from("le message")
     );
 }
 
