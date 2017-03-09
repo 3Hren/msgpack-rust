@@ -1,7 +1,7 @@
 extern crate rmpv;
 
 use rmpv::Value;
-use rmpv::decode::value::{read_value, Error};
+use rmpv::decode::{read_value, Error};
 
 #[test]
 fn from_null_decode_value() {

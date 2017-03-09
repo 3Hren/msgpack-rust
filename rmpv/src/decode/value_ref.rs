@@ -1,106 +1,16 @@
 use std;
-// use std::error;
-// use std::fmt;
 use std::io::{self, Cursor, ErrorKind, Read};
-use std::str::{self, Utf8Error};
+use std::str;
 
 use rmp::Marker;
 use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64,
                   read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
-                  read_data_f64, MarkerReadError, ValueReadError};
+                  read_data_f64};
 
 use {Utf8StringRef, ValueRef};
+use super::Error;
 
-#[derive(Debug)]
-pub enum Error<'r> {
-    /// Failed to read the type marker value.
-    InvalidMarkerRead(io::Error),
-    /// Failed to read packed non-marker data.
-    InvalidDataRead(io::Error),
-    /// Decoded value type isn't equal with the expected one.
-    TypeMismatch(Marker),
-    /// Failed to interpret a byte slice as a UTF-8 string.
-    ///
-    /// Contains untouched bytearray with the underlying decoding error.
-    InvalidUtf8(&'r [u8], Utf8Error),
-}
-
-impl<'r> Error<'r> {
-    pub fn kind(&self) -> ErrorKind {
-        match *self {
-            Error::InvalidMarkerRead(ref err) => err.kind(),
-            Error::InvalidDataRead(ref err) => err.kind(),
-            Error::TypeMismatch(..) |
-            Error::InvalidUtf8(..) => ErrorKind::Other,
-        }
-    }
-}
-
-// impl<'r> error::Error for Error<'r> {
-//     fn description(&self) -> &str {
-//         match self {
-//             &Error::InvalidMarkerRead(..) => "failed to read the type marker value",
-//             &Error::InvalidLengthRead(..) => "failed to read string/array/map size",
-//             &Error::InvalidDataRead(..) => "failed to read packed non-marker data",
-//             &Error::InvalidLengthSize => "failed to cast the length read to machine size",
-//             &Error::InvalidUtf8(..) => "failed to interpret a byte slice as a UTF-8 string",
-//             &Error::InvalidExtTypeRead(..) => "failed to read ext type",
-//             &Error::TypeMismatch => "using Reserved type found",
-//         }
-//     }
-//
-//     fn cause(&self) -> Option<&error::Error> {
-//         match self {
-//             &Error::InvalidMarkerRead(ref err) => Some(err),
-//             &Error::InvalidLengthRead(ref err) => Some(err),
-//             &Error::InvalidDataRead(ref err) => Some(err),
-//             &Error::InvalidLengthSize => None,
-//             &Error::InvalidUtf8(_, ref err) => Some(err),
-//             &Error::InvalidExtTypeRead(ref err) => Some(err),
-//             &Error::TypeMismatch => None,
-//         }
-//     }
-// }
-//
-// impl<'r> fmt::Display for Error<'r> {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         use std::error::Error;
-//         self.description().fmt(f)
-//     }
-// }
-//
-
-impl<'r> From<MarkerReadError> for Error<'r> {
-    fn from(err: MarkerReadError) -> Error<'r> {
-        Error::InvalidMarkerRead(err.0)
-    }
-}
-
-impl<'r> From<ValueReadError> for Error<'r> {
-    fn from(err: ValueReadError) -> Error<'r> {
-        match err {
-            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
-            ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
-        }
-    }
-}
-
-// fn read_len<R, D>(rd: &mut R) -> Result<D, ReadError>
-//     where R: Read,
-//           D: BigEndianRead
-// {
-//     D::read(rd).map_err(From::from)
-// }
-//
-// fn read_num<'a, R, D>(mut rd: &mut R) -> Result<D, Error<'a>>
-//     where R: BorrowRead<'a>,
-//           D: BigEndianRead
-// {
-//     D::read(&mut rd).map_err(|err| Error::InvalidDataRead(From::from(err)))
-// }
-
-fn read_str_data<'a, R>(rd: &mut R, len: usize) -> Result<Utf8StringRef<'a>, Error<'a>>
+fn read_str_data<'a, R>(rd: &mut R, len: usize) -> Result<Utf8StringRef<'a>, Error>
     where R: BorrowRead<'a>
 {
     let buf = read_bin_data(rd, len)?;
@@ -115,7 +25,7 @@ fn read_str_data<'a, R>(rd: &mut R, len: usize) -> Result<Utf8StringRef<'a>, Err
     }
 }
 
-fn read_bin_data<'a, R>(rd: &mut R, len: usize) -> Result<&'a [u8], Error<'a>>
+fn read_bin_data<'a, R>(rd: &mut R, len: usize) -> Result<&'a [u8], Error>
     where R: BorrowRead<'a>
 {
     let buf = rd.fill_buf();
@@ -131,7 +41,7 @@ fn read_bin_data<'a, R>(rd: &mut R, len: usize) -> Result<&'a [u8], Error<'a>>
     Ok(buf)
 }
 
-fn read_ext_body<'a, R>(rd: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error<'a>>
+fn read_ext_body<'a, R>(rd: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error>
     where R: BorrowRead<'a>
 {
     let ty = read_data_i8(rd)?;
@@ -140,7 +50,7 @@ fn read_ext_body<'a, R>(rd: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error<
     Ok((ty, buf))
 }
 
-fn read_array_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<ValueRef<'a>>, Error<'a>>
+fn read_array_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<ValueRef<'a>>, Error>
     where R: BorrowRead<'a>
 {
     let mut vec = Vec::with_capacity(len);
@@ -153,7 +63,7 @@ fn read_array_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<ValueRef<'a>
     Ok(vec)
 }
 
-fn read_map_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error<'a>>
+fn read_map_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error>
     where R: BorrowRead<'a>
 {
     let mut vec = Vec::with_capacity(len);
@@ -240,7 +150,7 @@ impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
 ///
 /// assert_eq!(ValueRef::from("le message"), read_value_ref(&mut rd).unwrap());
 /// ```
-pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
+pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error>
     where R: BorrowRead<'a>
 {
     let mut rd = rd;
@@ -365,7 +275,7 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error<'a>>
             let (ty, vec) = read_ext_body(rd, len as usize)?;
             ValueRef::Ext(ty, vec)
         }
-        Marker::Reserved => return Err(Error::TypeMismatch(Marker::Reserved)),
+        Marker::Reserved => ValueRef::Nil,
     };
 
     Ok(val)

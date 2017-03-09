@@ -1,7 +1,7 @@
 extern crate rmpv;
 
 use rmpv::ValueRef;
-use rmpv::decode::value_ref::{read_value_ref, Error};
+use rmpv::decode::{read_value_ref, Error};
 
 #[test]
 fn from_nil() {
@@ -635,10 +635,7 @@ fn from_reserved() {
 
     let mut rd = &buf[..];
 
-    match read_value_ref(&mut rd).err().unwrap() {
-        Error::TypeMismatch(..) => (),
-        _ => panic!(),
-    }
+    assert_eq!(ValueRef::Nil, read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
