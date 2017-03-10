@@ -118,7 +118,13 @@ impl<W, V> Serializer<W, V> {
 }
 
 impl<W: Write> Serializer<W, StructArrayWriter> {
-    /// Constructs a new `MessagePack` encoder whose output will be written to the writer specified.
+    /// Constructs a new `MessagePack` serializer whose output will be written to the writer
+    /// specified.
+    ///
+    /// # Note
+    ///
+    /// This is the default constructor, which returns a serializer that will serialize structs
+    /// using compact tuple representation, without field names.
     pub fn new(wr: W) -> Self {
         Serializer::with(wr, StructArrayWriter)
     }
