@@ -1,9 +1,14 @@
+#[macro_use]
+extern crate serde;
+extern crate rmp;
+extern crate rmp_serde as rmps;
+
 use std::io::Cursor;
 
 use serde::Serialize;
 
-use rmp_serde::Serializer;
-use rmp_serde::encode::{self, Error};
+use rmps::Serializer;
+use rmps::encode::{self, Error};
 
 #[test]
 fn pass_null() {
