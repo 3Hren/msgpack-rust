@@ -120,11 +120,7 @@ impl<W, V> Serializer<W, V> {
 impl<W: Write> Serializer<W, StructArrayWriter> {
     /// Constructs a new `MessagePack` encoder whose output will be written to the writer specified.
     pub fn new(wr: W) -> Self {
-        Serializer {
-            wr: wr,
-            vw: StructArrayWriter,
-            depth: 1024,
-        }
+        Serializer::with(wr, StructArrayWriter)
     }
 }
 
