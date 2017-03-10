@@ -3,7 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
-- Nothing yet.
+### Added
+- Add helper `Raw` struct that allows to deserialize strings even if they contain invalid UTF-8. That can be when deserializing frames from older MessagePack spec.
 
 ## 0.12.2 - 2017-02-17
 ### Added

@@ -179,9 +179,18 @@ impl<R: Read> Deserializer<R> {
         self.depth = depth;
     }
 
-    fn read_str_data(&mut self, len: u32) -> Result<&str, Error> {
-        let slice = self.read_bin_data(len)?;
-        str::from_utf8(slice).map_err(From::from)
+    fn read_str_data<V: Visitor>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error> {
+        let buf = self.read_bin_data(len as u32)?;
+        match str::from_utf8(buf) {
+            Ok(s) => visitor.visit_str(s),
+            Err(err)=> {
+                // Allow to unpack invalid UTF-8 bytes into a byte array.
+                match visitor.visit_bytes::<Error>(buf) {
+                    Ok(buf) => Ok(buf),
+                    Err(..) => Err(Error::Utf8Error(err)),
+                }
+            }
+        }
     }
 
     fn read_bin_data(&mut self, len: u32) -> Result<&[u8], Error> {
@@ -240,18 +249,20 @@ impl<'a, R: Read> serde::Deserializer for &'a mut Deserializer<R> {
             Marker::I64 => visitor.visit_i64(rmp::decode::read_data_i64(&mut self.rd)?),
             Marker::F32 => visitor.visit_f32(rmp::decode::read_data_f32(&mut self.rd)?),
             Marker::F64 => visitor.visit_f64(rmp::decode::read_data_f64(&mut self.rd)?),
-            Marker::FixStr(len) => visitor.visit_str(self.read_str_data(len as u32)?),
+            Marker::FixStr(len) => {
+                self.read_str_data(len as u32, visitor)
+            }
             Marker::Str8 => {
                 let len = read_u8(&mut self.rd)?;
-                visitor.visit_str(self.read_str_data(len as u32)?)
+                self.read_str_data(len as u32, visitor)
             }
             Marker::Str16 => {
                 let len = read_u16(&mut self.rd)?;
-                visitor.visit_str(self.read_str_data(len as u32)?)
+                self.read_str_data(len as u32, visitor)
             }
             Marker::Str32 => {
                 let len = read_u32(&mut self.rd)?;
-                visitor.visit_str(self.read_str_data(len)?)
+                self.read_str_data(len as u32, visitor)
             }
             Marker::FixArray(len) => {
                 self.read_array(len as u32, visitor)

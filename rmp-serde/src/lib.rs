@@ -63,11 +63,130 @@ extern crate byteorder;
 #[macro_use]
 extern crate serde;
 
+use std::fmt::{self, Display, Formatter};
+use std::str::{self, Utf8Error};
+
+use serde::de::{self, Deserialize};
+
 pub use decode::Deserializer;
 pub use encode::Serializer;
 
 pub mod decode;
 pub mod encode;
+
+/// Helper that allows to decode strings no matter whether they contain valid or invalid UTF-8.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Raw {
+    s: Result<String, (Vec<u8>, Utf8Error)>,
+}
+
+impl Raw {
+    /// Returns `true` if the raw is valid UTF-8.
+    pub fn is_str(&self) -> bool {
+        self.s.is_ok()
+    }
+
+    /// Returns `true` if the raw contains invalid UTF-8 sequence.
+    pub fn is_err(&self) -> bool {
+        self.s.is_err()
+    }
+
+    /// Returns the string reference if the raw is valid UTF-8, or else `None`.
+    pub fn as_str(&self) -> Option<&str> {
+        match self.s {
+            Ok(ref s) => Some(s.as_str()),
+            Err(..) => None,
+        }
+    }
+
+    /// Returns the underlying `Utf8Error` if the raw contains invalud UTF-8 sequence, or
+    /// else `None`.
+    pub fn as_err(&self) -> Option<&Utf8Error> {
+        match self.s {
+            Ok(..) => None,
+            Err((.., ref err)) => Some(&err),
+        }
+    }
+
+    /// Returns a byte slice of this raw's contents.
+    pub fn as_bytes(&self) -> &[u8] {
+        match self.s {
+            Ok(ref s) => s.as_bytes(),
+            Err(ref err) => &err.0[..],
+        }
+    }
+
+    /// Consumes this object, yielding the string if the raw is valid UTF-8, or else `None`.
+    pub fn into_str(self) -> Option<String> {
+        self.s.ok()
+    }
+
+    /// Converts a `Raw` into a byte vector.
+    pub fn into_bytes(self) -> Vec<u8> {
+        match self.s {
+            Ok(s) => s.into_bytes(),
+            Err(err) => err.0,
+        }
+    }
+}
+
+struct RawVisitor;
+
+impl de::Visitor for RawVisitor {
+    type Value = Raw;
+
+    fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+        "string or bytes".fmt(fmt)
+    }
+
+    #[inline]
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E> {
+        Ok(Raw { s: Ok(v) })
+    }
+
+    #[inline]
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where E: de::Error
+    {
+        Ok(Raw { s: Ok(v.into()) })
+    }
+
+    #[inline]
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+        where E: serde::de::Error
+    {
+        let s = match str::from_utf8(v) {
+            Ok(s) => Ok(s.into()),
+            Err(err) => Err((v.into(), err)),
+        };
+
+        Ok(Raw { s: s })
+    }
+
+    #[inline]
+    fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
+        where E: serde::de::Error
+    {
+        let s = match String::from_utf8(v) {
+            Ok(s) => Ok(s),
+            Err(err) => {
+                let e = err.utf8_error();
+                Err((err.into_bytes(), e))
+            }
+        };
+
+        Ok(Raw { s: s })
+    }
+}
+
+impl Deserialize for Raw {
+    #[inline]
+    fn deserialize<D>(de: D) -> Result<Self, D::Error>
+        where D: de::Deserializer
+    {
+        de.deserialize(RawVisitor)
+    }
+}
 
 /// Serializes a value to a byte vector.
 pub fn to_vec<T>(value: &T) -> Result<Vec<u8>, encode::Error>

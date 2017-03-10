@@ -10,7 +10,7 @@ use serde::de;
 use serde::Deserialize;
 
 use rmp::Marker;
-use rmps::{Deserializer};
+use rmps::{Deserializer, Raw};
 use rmps::decode::{self, Error};
 
 #[test]
@@ -449,4 +449,39 @@ fn pass_deserializer_cursor_position() {
 #[test]
 fn pass_from() {
     assert_eq!(2147483647, decode::from_read(&[0xd2, 0x7f, 0xff, 0xff, 0xff][..]).unwrap());
+}
+
+#[test]
+fn pass_raw_valid_utf8() {
+    let buf = vec![0xa3, 0x6b, 0x65, 0x79];
+    let raw: Raw = rmps::from_slice(&buf[..]).unwrap();
+
+    assert!(raw.is_str());
+    assert_eq!("key", raw.as_str().unwrap());
+    assert_eq!([0x6b, 0x65, 0x79], raw.as_bytes());
+}
+
+#[test]
+fn pass_raw_invalid_utf8() {
+    // >>> msgpack.dumps(msgpack.dumps([200, []]))
+    // '\xa4\x92\xcc\xc8\x90'
+    let buf = vec![0xa4, 0x92, 0xcc, 0xc8, 0x90];
+    let raw: Raw = rmps::from_slice(&buf[..]).unwrap();
+
+    assert!(raw.is_err());
+    assert_eq!(0, raw.as_err().unwrap().valid_up_to());
+    assert_eq!([0x92, 0xcc, 0xc8, 0x90], raw.as_bytes());
+}
+
+#[test]
+fn fail_str_invald_utf8() {
+    let buf = vec![0xa4, 0x92, 0xcc, 0xc8, 0x90];
+    let err: Result<String, decode::Error> = rmps::from_slice(&buf[..]);
+
+    assert!(err.is_err());
+    match err.err().unwrap() {
+        decode::Error::Utf8Error(err) => assert_eq!(0, err.valid_up_to()),
+        // decode::Error::Syntax(err) => {}
+        err => panic!("unexpected error: {:?}", err),
+    }
 }
