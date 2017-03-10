@@ -8,11 +8,13 @@ RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
 This repository consists of three separate crates: the RMP core and two implementations to ease serializing and
 deserializing Rust structs.
 
-|                   | Crates.io | API Documentation |
-|-------------------|-----------|-------------------|
-| **rmp**           | [![][crates-rmp-img]][crates-rmp-url]             | [RMP][rmp-docs-url] |
-| **rmp-serialize** | [![][crates-rmp-ser-img]][crates-rmp-ser-url]     | [RMP Serialize][rmp-ser-docs-url] |
-| **rmp-serde**     | [![][crates-rmp-serde-img]][crates-rmp-serde-url] | [RMP Serde][rmp-serde-docs-url] |
+|                   | crates.io                                 | API Documentation               |
+|-------------------|-------------------------------------------|---------------------------------|
+| **rmp**           | [![][crates-rmp-img]][crates-rmp-url]     | [RMP][rmp-docs-url]             |
+| **rmp-serialize** | [![][crates-rmpsd-img]][crates-rmpsd-url] | [RMP Serialize][rmpsd-docs-url] |
+| **rmps**          | [![][crates-rmps-img]][crates-rmps-url]   | [RMP Serde][rmps-docs-url]      |
+| **rmpv**          | [![][crates-rmpv-img]][crates-rmpv-url]   | [RMP Value][rmpv-docs-url]      |
+
 
 
 ## Features
@@ -55,14 +57,18 @@ will be the following rules:
 [coveralls-url]: https://coveralls.io/github/3Hren/msgpack-rust?branch=master
 
 [rmp-docs-url]: https://docs.rs/rmp
-[rmp-ser-docs-url]: https://docs.rs/rmp-serialize
-[rmp-serde-docs-url]: https://docs.rs/rmp-serde
+[rmpsd-docs-url]: https://docs.rs/rmp-serialize
+[rmps-docs-url]: https://docs.rs/rmp-serde
+[rmpv-docs-url]: https://docs.rs/rmpv
 
 [crates-rmp-img]: http://meritbadge.herokuapp.com/rmp
 [crates-rmp-url]: https://crates.io/crates/rmp
 
-[crates-rmp-ser-img]: http://meritbadge.herokuapp.com/rmp-serialize
-[crates-rmp-ser-url]: https://crates.io/crates/rmp-serialize
+[crates-rmpsd-img]: http://meritbadge.herokuapp.com/rmp-serialize
+[crates-rmpsd-url]: https://crates.io/crates/rmp-serialize
 
-[crates-rmp-serde-img]: http://meritbadge.herokuapp.com/rmp-serde
-[crates-rmp-serde-url]: https://crates.io/crates/rmp-serde
+[crates-rmps-img]: http://meritbadge.herokuapp.com/rmp-serde
+[crates-rmps-url]: https://crates.io/crates/rmp-serde
+
+[crates-rmpv-img]: http://meritbadge.herokuapp.com/rmpv
+[crates-rmpv-url]: https://crates.io/crates/rmpv
