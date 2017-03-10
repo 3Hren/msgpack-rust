@@ -1,5 +1,11 @@
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate rmp;
+extern crate rmp_serde as rmps;
+
 use serde::Serialize;
-use rmp_serde::Serializer;
+use rmps::Serializer;
 
 #[test]
 fn pass_unit_struct() {
@@ -128,11 +134,21 @@ fn serialize_struct_variant() {
 
 #[test]
 fn pass_struct_as_map() {
-    // TODO: Refactor: add builder, make serializer configurable.
     use std::io::Write;
     use rmp::Marker;
     use rmp::encode::{ValueWriteError, write_map_len, write_str};
-    use rmp_serde::encode::VariantWriter;
+    use rmps::encode::VariantWriter;
+
+    #[derive(Serialize)]
+    struct Dog {
+        name: String,
+        age: u16,
+    }
+
+    let dog = Dog {
+        name: "Bobby".into(),
+        age: 8,
+    };
 
     struct StructMapWriter;
 
@@ -150,20 +166,10 @@ fn pass_struct_as_map() {
         }
     }
 
-    #[derive(Serialize)]
-    struct Struct {
-        f1: u32,
-        f2: u32,
-    }
+    let mut se = Serializer::with(Vec::new(), StructMapWriter);
+    dog.serialize(&mut se).unwrap();
 
-    let val = Struct {
-        f1: 42,
-        f2: 100500
-    };
-    let mut buf = Vec::new();
-    let mut se = Serializer::with(&mut buf, StructMapWriter);
-    val.serialize(&mut se).unwrap();
-
-    // Expect: {"f1": 42, "f2": 100500}.
-    assert_eq!(vec![0x82, 0xa2, 0x66, 0x31, 0x2a, 0xa2, 0x66, 0x32, 0xce, 0x00, 0x01, 0x88, 0x94], **se.get_ref());
+    // Expect: {"name": "Bobby", "age": 8}.
+    assert_eq!(vec![0x82, 0xa4, 0x6e, 0x61, 0x6d, 0x65, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0xa3, 0x61, 0x67, 0x65, 0x08],
+        se.into_inner());
 }

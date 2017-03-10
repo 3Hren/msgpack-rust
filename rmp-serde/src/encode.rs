@@ -96,10 +96,10 @@ impl VariantWriter for StructArrayWriter {
 ///
 /// # Note
 ///
-/// MessagePack has no specification about how to encode variant types. Thus we are free to do
+/// MessagePack has no specification about how to encode enum types. Thus we are free to do
 /// whatever we want, so the given chose may be not ideal for you.
 ///
-/// Every Rust variant value can be represented as a tuple of index and a value.
+/// Every Rust enum value can be represented as a tuple of index with a value.
 ///
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
@@ -131,8 +131,21 @@ impl<W: Write> Serializer<W, StructArrayWriter> {
 }
 
 impl<W: Write, V> Serializer<W, V> {
+    /// Gets a reference to the underlying writer.
     pub fn get_ref(&self) -> &W {
         &self.wr
+    }
+
+    /// Gets a mutable reference to the underlying writer.
+    ///
+    /// It is inadvisable to directly write to the underlying writer.
+    pub fn get_mut(&mut self) -> &mut W {
+        &mut self.wr
+    }
+
+    /// Unwraps this `Serializer`, returning the underlying writer.
+    pub fn into_inner(self) -> W {
+        self.wr
     }
 }
 

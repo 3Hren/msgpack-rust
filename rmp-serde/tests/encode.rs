@@ -309,3 +309,14 @@ fn pass_to_vec() {
     assert_eq!(vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65],
         encode::to_vec("le message").unwrap());
 }
+
+#[test]
+fn get_mut() {
+    let mut se = Serializer::new(Vec::new());
+    true.serialize(&mut se).unwrap();
+
+    assert_eq!(&vec![0xc3], se.get_ref());
+
+    se.get_mut().push(42);
+    assert_eq!(vec![0xc3, 42], se.into_inner());
+}
