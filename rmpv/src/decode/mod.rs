@@ -75,9 +75,9 @@ impl From<ValueReadError> for Error {
     }
 }
 
-impl From<Error> for io::Error {
-    fn from(err: Error) -> io::Error {
-        match err {
+impl Into<io::Error> for Error {
+    fn into(self) -> io::Error {
+        match self {
             Error::InvalidMarkerRead(err) |
             Error::InvalidDataRead(err) => err,
         }
