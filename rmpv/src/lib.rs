@@ -1183,7 +1183,7 @@ impl<'a> Display for ValueRef<'a> {
             ValueRef::Integer(ref val) => write!(f, "{}", val),
             ValueRef::F32(val) => write!(f, "{}", val),
             ValueRef::F64(val) => write!(f, "{}", val),
-            ValueRef::String(ref val) => write!(f, "\"{}\"", val),
+            ValueRef::String(ref val) => write!(f, "{}", val),
             ValueRef::Binary(ref val) => write!(f, "{:?}", val),
             ValueRef::Array(ref vec) => {
                 let res = vec.iter()
