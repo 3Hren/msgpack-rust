@@ -12,10 +12,10 @@
 //!
 //! ```rust
 //! extern crate serde;
-//! extern crate rmp_serde;
+//! extern crate rmp_serde as rmps;
 //!
 //! use serde::{Deserialize, Serialize};
-//! use rmp_serde::{Deserializer, Serializer};
+//! use rmps::{Deserializer, Serializer};
 //!
 //! fn main() {
 //!     let mut buf = Vec::new();
@@ -32,14 +32,14 @@
 //! No one gonna hurt if we add some reflection magic.
 //!
 //! ```ignore
-//! #![feature(proc_macro)]
-//!
-//! #[macro_use] extern crate serde_derive;
-//! extern crate rmp_serde;
+//! extern crate serde;
+//! #[macro_use]
+//! extern crate serde_derive;
+//! extern crate rmp_serde as rmps;
 //!
 //! use std::collections::HashMap;
 //! use serde::{Deserialize, Serialize};
-//! use rmp_serde::{Deserializer, Serializer};
+//! use rmps::{Deserializer, Serializer};
 //!
 //! #[derive(Debug, PartialEq, Deserialize, Serialize)]
 //! struct Human {
