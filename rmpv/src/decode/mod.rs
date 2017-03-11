@@ -74,3 +74,12 @@ impl From<ValueReadError> for Error {
         }
     }
 }
+
+impl From<Error> for io::Error {
+    fn from(err: Error) -> io::Error {
+        match err {
+            Error::InvalidMarkerRead(err) |
+            Error::InvalidDataRead(err) => err,
+        }
+    }
+}
