@@ -27,7 +27,7 @@ impl<'a> error::Error for DecodeStringError<'a> {
             DecodeStringError::InvalidDataRead(ref err) => Some(err),
             DecodeStringError::TypeMismatch(..) |
             DecodeStringError::BufferSizeTooSmall(..) => None,
-            DecodeStringError::InvalidUtf8(.., ref err) => Some(err),
+            DecodeStringError::InvalidUtf8(_, ref err) => Some(err),
         }
     }
 }
