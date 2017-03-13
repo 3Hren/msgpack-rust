@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+## 0.3.2 - 2017-03-13
+### Fixed
+- Fixed double-quoting for strings when formatting a `ValueRef` using `Display` trait.
+
 ## 0.3.1 - 2017-03-11
 ### Added
 - Implement `From<rmpv::decode::Error>` for `std::io::Error`.
