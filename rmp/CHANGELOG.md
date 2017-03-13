@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 0.8.5 - 2017-03-13
+### Fixed
+- Fix compilation on rustc 1.13.0.
+
 ## 0.8.4 - 2017-03-09
 ### Added
 - Derive `Debug` for `MarkerReadError`.
