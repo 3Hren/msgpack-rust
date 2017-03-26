@@ -15,8 +15,6 @@ deserializing Rust structs.
 | **rmps**          | [![][crates-rmps-img]][crates-rmps-url]   | [RMP Serde][rmps-docs-url]      |
 | **rmpv**          | [![][crates-rmpv-img]][crates-rmpv-url]   | [RMP Value][rmpv-docs-url]      |
 
-
-
 ## Features
 
 - **Convenient API**
@@ -39,6 +37,10 @@ deserializing Rust structs.
 
   This project is developed using TDD and CI, so any found bugs will be fixed without breaking
   existing functionality.
+
+## Requirements
+
+- Rust 1.13
 
 ## Versioning
 
