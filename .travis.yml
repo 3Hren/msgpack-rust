@@ -27,7 +27,7 @@ matrix:
   exclude:
     - rust: 1.13.0
       env: CRATE=rmp-serde-tests
-    - python: 1.13.0
+    - rust: 1.13.0
       env: CRATE=rmpv-tests
 
 # Load travis-cargo.
