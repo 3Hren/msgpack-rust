@@ -446,9 +446,19 @@ impl de::Deserializer for MapDeserializer {
     }
 }
 
-struct EnumDeserializer {
+#[derive(Debug)]
+pub struct EnumDeserializer {
     id: u32,
     value: Option<Value>,
+}
+
+impl EnumDeserializer {
+    pub fn new(id: u32, value: Option<Value>) -> Self {
+        Self {
+            id: id,
+            value: value,
+        }
+    }
 }
 
 impl de::EnumVisitor for EnumDeserializer {
@@ -464,7 +474,8 @@ impl de::EnumVisitor for EnumDeserializer {
     }
 }
 
-struct VariantDeserializer {
+#[derive(Debug)]
+pub struct VariantDeserializer {
     value: Option<Value>,
 }
 
@@ -482,19 +493,23 @@ impl de::VariantVisitor for VariantDeserializer {
     fn visit_newtype_seed<T>(self, seed: T) -> Result<T::Value, Error>
         where T: de::DeserializeSeed,
     {
-        // Can accept both [u32, T] and [u32, [T]] cases.
+        // Can accept both [u32, T...] and [u32, [T]] cases.
         match self.value {
             Some(Value::Array(v)) => {
-                let mut iter = v.into_iter();
-                let val = match iter.next() {
-                    Some(val) => seed.deserialize(val),
-                    None => return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element")),
-                };
-
-                if iter.next().is_some() {
-                    Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element"))
+                if v.len() > 1 {
+                    seed.deserialize(SeqDeserializer::new(v))
                 } else {
-                    val
+                    let mut iter = v.into_iter();
+                    let val = match iter.next() {
+                        Some(val) => seed.deserialize(val),
+                        None => return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element")),
+                    };
+
+                    if iter.next().is_some() {
+                        Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element"))
+                    } else {
+                        val
+                    }
                 }
             }
             Some(value) => seed.deserialize(value),
