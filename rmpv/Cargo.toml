@@ -1,6 +1,6 @@
 [package]
 name = "rmpv"
-version = "0.3.3"
+version = "0.3.4"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Value variant for RMP"

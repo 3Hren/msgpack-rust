@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+## 0.3.4 - 2017-03-26
+### Fixed
+- Fix compilation on rustc 1.13.
+
 ## 0.3.3 - 2017-03-26
 ### Changed
 - Enum deserializer can now deserialize newtype variants with more than one element nested.

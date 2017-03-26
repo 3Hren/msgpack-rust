@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 ## 0.12.4 - 2017-03-26
-### Changed
+### Fixed
 - Fix compilation on rustc 1.13.
 
 ## 0.12.3 - 2017-03-26
