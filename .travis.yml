@@ -11,6 +11,7 @@ addons:
       - libdw-dev
 
 rust:
+  - 1.13.0
   - stable
   - nightly
 
