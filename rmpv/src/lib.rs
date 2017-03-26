@@ -277,7 +277,7 @@ impl<'a> From<&'a str> for Utf8String {
 impl<'a> From<Cow<'a, str>> for Utf8String {
     fn from(val: Cow<'a, str>) -> Self {
         Utf8String {
-            s: Ok(val.into()),
+            s: Ok(val.into_owned()),
         }
     }
 }
@@ -312,7 +312,7 @@ impl<'a> Utf8StringRef<'a> {
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
             Ok(..) => None,
-            Err((.., ref err)) => Some(&err),
+            Err((_, ref err)) => Some(&err),
         }
     }
 
@@ -890,7 +890,7 @@ impl<'a> From<&'a [u8]> for Value {
 
 impl<'a> From<Cow<'a, [u8]>> for Value {
     fn from(v: Cow<'a, [u8]>) -> Self {
-        Value::Binary(v.into())
+        Value::Binary(v.into_owned())
     }
 }
 
