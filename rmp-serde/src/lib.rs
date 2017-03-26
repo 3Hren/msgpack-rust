@@ -104,7 +104,7 @@ impl Raw {
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
             Ok(..) => None,
-            Err((.., ref err)) => Some(&err),
+            Err((_, ref err)) => Some(&err),
         }
     }
 
