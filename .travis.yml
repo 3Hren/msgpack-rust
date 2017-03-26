@@ -23,12 +23,19 @@ env:
   - CRATE=rmpv
   - CRATE=rmpv-tests
 
+matrix:
+  exclude:
+    - rust: 1.13.0
+      env: CRATE=rmp-serde-tests
+    - python: 1.13.0
+      env: CRATE=rmpv-tests
+
 # Load travis-cargo.
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 
 script:
-  - (cd $CRATE && cargo test);
+  - (cd $CRATE && cargo test --verbose);
 
 # Measure code coverage and upload to coveralls.io.
 after_success:
