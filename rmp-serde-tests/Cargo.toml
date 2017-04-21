@@ -7,5 +7,5 @@ publish = false
 [dependencies]
 rmp = "0.8"
 rmp-serde = { path = "../rmp-serde", version = "*" }
-serde = "0.9"
-serde_derive = "0.9"
+serde = "1"
+serde_derive = "1"

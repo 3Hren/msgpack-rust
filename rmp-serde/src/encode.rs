@@ -363,11 +363,11 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         Ok(())
     }
 
-    fn serialize_unit_variant(self, _name: &str, idx: usize, _variant: &str) ->
-        Result<(), Self::Error>
+    fn serialize_unit_variant(self, _name: &str, idx: u32, _variant: &str) ->
+        Result<Self::Ok, Self::Error>
     {
         write_array_len(&mut self.wr, 2)?;
-        self.serialize_u64(idx as u64)?;
+        self.serialize_u32(idx)?;
         write_array_len(&mut self.wr, 0)?;
         Ok(())
     }
@@ -377,7 +377,7 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, name: &'static str, variant_index: usize, variant: &'static str, value: &T) -> Result<(), Self::Error> {
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, name: &'static str, variant_index: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
         self.serialize_tuple_variant(name, variant_index, variant, 1)?;
         value.serialize(self)
     }
@@ -393,30 +393,22 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         Ok(Compound { se: self })
     }
 
-    fn serialize_seq_fixed_size(self, size: usize) -> Result<Self::SerializeSeq, Self::Error> {
-        self.serialize_seq(Some(size))
-    }
-
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
         self.serialize_seq(Some(len))
     }
 
-    fn serialize_tuple_struct(self,
-                              _name: &'static str,
-                              len: usize)
-                              -> Result<Self::SerializeTupleStruct, Self::Error> {
+    fn serialize_tuple_struct(self, _name: &'static str, len: usize) ->
+        Result<Self::SerializeTupleStruct, Self::Error>
+    {
         self.serialize_tuple(len)
     }
 
-    fn serialize_tuple_variant(self,
-                               name: &'static str,
-                               idx: usize,
-                               _variant: &'static str,
-                               len: usize)
-                               -> Result<Self::SerializeTupleVariant, Error> {
+    fn serialize_tuple_variant(self,  name: &'static str,  idx: u32,  _variant: &'static str,  len: usize) ->
+        Result<Self::SerializeTupleVariant, Error>
+    {
         // We encode variant types as a tuple of id with array of args, like: [id, [args...]].
         rmp::encode::write_array_len(&mut self.wr, 2)?;
-        self.serialize_u64(idx as u64)?;
+        self.serialize_u32(idx)?;
         self.serialize_tuple_struct(name, len)
     }
 
@@ -437,14 +429,11 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         Ok(Compound { se: self })
     }
 
-    fn serialize_struct_variant(self,
-                                name: &'static str,
-                                id: usize,
-                                _variant: &'static str,
-                                len: usize)
-                                -> Result<Self::SerializeStructVariant, Error> {
+    fn serialize_struct_variant(self, name: &'static str, id: u32, _variant: &'static str, len: usize) ->
+        Result<Self::SerializeStructVariant, Error>
+    {
         write_array_len(&mut self.wr, 2)?;
-        self.serialize_u64(id as u64)?;
+        self.serialize_u32(id)?;
         self.serialize_struct(name, len)
     }
 }

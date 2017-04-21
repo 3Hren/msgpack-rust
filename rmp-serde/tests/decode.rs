@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate serde;
+extern crate serde_bytes;
 extern crate rmp;
 extern crate rmp_serde as rmps;
 
@@ -302,7 +303,7 @@ fn pass_map() {
 // TODO: Merge three of them.
 #[test]
 fn pass_bin8_into_bytebuf() {
-    use serde::bytes::ByteBuf;
+    use serde_bytes::ByteBuf;
 
     let buf = [0xc4, 0x02, 0xcc, 0x80];
     let cur = Cursor::new(&buf[..]);
@@ -316,7 +317,7 @@ fn pass_bin8_into_bytebuf() {
 
 #[test]
 fn pass_bin16_into_bytebuf() {
-    use serde::bytes::ByteBuf;
+    use serde_bytes::ByteBuf;
 
     let buf = [0xc5, 0x00, 0x02, 0xcc, 0x80];
     let cur = Cursor::new(&buf[..]);
@@ -330,7 +331,7 @@ fn pass_bin16_into_bytebuf() {
 
 #[test]
 fn pass_bin32_into_bytebuf() {
-    use serde::bytes::ByteBuf;
+    use serde_bytes::ByteBuf;
 
     let buf = [0xc6, 0x00, 0x00, 0x00, 0x02, 0xcc, 0x80];
     let cur = Cursor::new(&buf[..]);
@@ -344,7 +345,7 @@ fn pass_bin32_into_bytebuf() {
 
 #[test]
 fn pass_bin8_into_bytebuf_regression_growing_buffer() {
-    use serde::bytes::ByteBuf;
+    use serde_bytes::ByteBuf;
 
     // Try to deserialize large buf and a small buf
     let buf = [0x92, 0xc4, 0x04, 0x71, 0x75, 0x75, 0x78, 0xc4, 0x03, 0x62, 0x61, 0x72];
@@ -365,13 +366,13 @@ fn test_deserialize_numeric() {
         Integer(u64),
     }
 
-    impl de::Deserialize for FloatOrInteger {
+    impl<'de> de::Deserialize<'de> for FloatOrInteger {
         fn deserialize<D>(de: D) -> Result<FloatOrInteger, D::Error>
-            where D: de::Deserializer
+            where D: de::Deserializer<'de>
         {
             struct FloatOrIntegerVisitor;
 
-            impl de::Visitor for FloatOrIntegerVisitor {
+            impl<'de> de::Visitor<'de> for FloatOrIntegerVisitor {
                 type Value = FloatOrInteger;
 
                 fn expecting(&self, fmt: &mut Formatter) ->  Result<(), fmt::Error> {
@@ -386,7 +387,7 @@ fn test_deserialize_numeric() {
                     Ok(FloatOrInteger::Float(value))
                 }
             }
-            de.deserialize(FloatOrIntegerVisitor)
+            de.deserialize_any(FloatOrIntegerVisitor)
         }
     }
 
@@ -474,7 +475,7 @@ fn pass_raw_invalid_utf8() {
 }
 
 #[test]
-fn fail_str_invald_utf8() {
+fn fail_str_invalid_utf8() {
     let buf = vec![0xa4, 0x92, 0xcc, 0xc8, 0x90];
     let err: Result<String, decode::Error> = rmps::from_slice(&buf[..]);
 

@@ -120,8 +120,8 @@ pub struct Deserializer<R> {
     depth: usize,
 }
 
-impl<'a> Deserializer<SliceReader<'a>> {
-    pub fn from_slice(slice: &'a [u8]) -> Self {
+impl<'de> Deserializer<SliceReader<'de>> {
+    pub fn from_slice(slice: &'de [u8]) -> Self {
         Deserializer {
             rd: SliceReader::new(slice),
             marker: None,
@@ -179,7 +179,9 @@ impl<R: Read> Deserializer<R> {
         self.depth = depth;
     }
 
-    fn read_str_data<V: Visitor>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error> {
+    fn read_str_data<'de, V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
+        where V: Visitor<'de>
+    {
         let buf = self.read_bin_data(len as u32)?;
         match str::from_utf8(buf) {
             Ok(s) => visitor.visit_str(s),
@@ -197,16 +199,16 @@ impl<R: Read> Deserializer<R> {
         self.rd.read_slice(len as usize).map_err(Error::InvalidDataRead)
     }
 
-    fn read_array<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
+    fn read_array<'de, V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
+        where V: Visitor<'de>
     {
-        visitor.visit_seq(SeqVisitor::new(self, len))
+        visitor.visit_seq(SeqAccess::new(self, len as usize))
     }
 
-    fn read_map<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
+    fn read_map<'de, V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
+        where V: Visitor<'de>
     {
-        visitor.visit_map(MapVisitor::new(self, len))
+        visitor.visit_map(MapAccess::new(self, len as usize))
     }
 }
 
@@ -222,11 +224,11 @@ fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
     rd.read_u32::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
 }
 
-impl<'a, R: Read> serde::Deserializer for &'a mut Deserializer<R> {
+impl<'a, 'de, R: Read> serde::Deserializer<'de> for &'a mut Deserializer<R> {
     type Error = Error;
 
-    fn deserialize<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
     {
         let marker = match self.marker.take() {
             Some(marker) => marker,
@@ -305,7 +307,7 @@ impl<'a, R: Read> serde::Deserializer for &'a mut Deserializer<R> {
     }
 
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor
+        where V: Visitor<'de>
     {
         let marker = rmp::decode::read_marker(&mut self.rd)?;
 
@@ -318,16 +320,16 @@ impl<'a, R: Read> serde::Deserializer for &'a mut Deserializer<R> {
     }
 
     fn deserialize_enum<V>(self, _name: &str, _variants: &[&str], visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
+        where V: Visitor<'de>
     {
         match read_array_len(&mut self.rd)? {
-            2 => visitor.visit_enum(VariantVisitor::new(self)),
+            2 => visitor.visit_enum(VariantAccess::new(self)),
             n => Err(Error::LengthMismatch(n as u32)),
         }
     }
 
     fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
+        where V: Visitor<'de>
     {
         match read_array_len(&mut self.rd)? {
             1 => visitor.visit_newtype_struct(self),
@@ -335,87 +337,83 @@ impl<'a, R: Read> serde::Deserializer for &'a mut Deserializer<R> {
         }
     }
 
-    forward_to_deserialize! {
+    forward_to_deserialize_any! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char
-        str string bytes byte_buf unit unit_struct seq seq_fixed_size map
-        tuple_struct struct struct_field tuple
+        str string bytes byte_buf unit unit_struct seq map
+        tuple_struct struct identifier tuple
         ignored_any
     }
 }
 
-struct SeqVisitor<'a, R: Read + 'a> {
+struct SeqAccess<'a, R: Read + 'a> {
     de: &'a mut Deserializer<R>,
-    len: u32,
-    nleft: u32,
+    left: usize,
 }
 
-impl<'a, R: Read + 'a> SeqVisitor<'a, R> {
-    fn new(de: &'a mut Deserializer<R>, len: u32) -> Self {
-        SeqVisitor {
+impl<'a, R: Read + 'a> SeqAccess<'a, R> {
+    fn new(de: &'a mut Deserializer<R>, len: usize) -> Self {
+        SeqAccess {
             de: de,
-            len: len,
-            nleft: len,
+            left: len,
         }
     }
 }
 
-impl<'a, R: Read + 'a> de::SeqVisitor for SeqVisitor<'a, R> {
+impl<'a, 'de, R: Read + 'a> de::SeqAccess<'de> for SeqAccess<'a, R> {
     type Error = Error;
 
-    fn visit_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
-        where T: DeserializeSeed
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
+        where T: DeserializeSeed<'de>
     {
-        if self.nleft > 0 {
-            self.nleft -= 1;
+        if self.left > 0 {
+            self.left -= 1;
             Ok(Some(seed.deserialize(&mut *self.de)?))
         } else {
             Ok(None)
         }
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len as usize, Some(self.len as usize))
+    fn size_hint(&self) -> Option<usize> {
+        Some(self.left)
     }
 }
 
-struct MapVisitor<'a, R: Read + 'a> {
+struct MapAccess<'a, R: Read + 'a> {
     de: &'a mut Deserializer<R>,
-    len: u32,
-    nleft: u32,
+    left: usize,
 }
 
-impl<'a, R: Read + 'a> MapVisitor<'a, R> {
-    fn new(de: &'a mut Deserializer<R>, len: u32) -> Self {
-        MapVisitor {
+impl<'a, R: Read + 'a> MapAccess<'a, R> {
+    fn new(de: &'a mut Deserializer<R>, len: usize) -> Self {
+        MapAccess {
             de: de,
-            len: len,
-            nleft: len,
+            left: len,
         }
     }
 }
 
-impl<'a, R: Read + 'a> de::MapVisitor for MapVisitor<'a, R> {
+impl<'a, 'de, R: Read + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
     type Error = Error;
 
-    fn visit_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
-        where K: DeserializeSeed
+    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
+        where K: DeserializeSeed<'de>
     {
-        if self.nleft > 0 {
-            self.nleft -= 1;
+        if self.left > 0 {
+            self.left -= 1;
             Ok(Some(seed.deserialize(&mut *self.de)?))
         } else {
             Ok(None)
         }
     }
 
-    fn visit_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
-        where V: DeserializeSeed
+    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
+        where V: DeserializeSeed<'de>
     {
         Ok(seed.deserialize(&mut *self.de)?)
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len as usize, Some(self.len as usize))
+    fn size_hint(&self) -> Option<usize> {
+        Some(self.left)
     }
 }
 
@@ -424,26 +422,26 @@ impl<'a, R: Read + 'a> de::MapVisitor for MapVisitor<'a, R> {
 /// # Note
 ///
 /// We use default behaviour for new type, which decodes enums with a single value as a tuple.
-pub struct VariantVisitor<'a, R: Read + 'a> {
+pub struct VariantAccess<'a, R: Read + 'a> {
     de: &'a mut Deserializer<R>,
 }
 
-impl<'a, R: Read + 'a> VariantVisitor<'a, R> {
+impl<'a, R: Read + 'a> VariantAccess<'a, R> {
     pub fn new(de: &'a mut Deserializer<R>) -> Self {
-        VariantVisitor {
+        VariantAccess {
             de: de,
         }
     }
 }
 
-impl<'a, R: Read> de::EnumVisitor for VariantVisitor<'a, R> {
+impl<'a, 'de, R: Read> de::EnumAccess<'de> for VariantAccess<'a, R> {
     type Error = Error;
     type Variant = Self;
 
-    fn visit_variant_seed<V>(self, seed: V) -> Result<(V::Value, Self), Error>
-        where V: de::DeserializeSeed,
+    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self), Error>
+        where V: de::DeserializeSeed<'de>,
     {
-        use serde::de::value::ValueDeserializer;
+        use serde::de::IntoDeserializer;
 
         let idx: u32 = serde::Deserialize::deserialize(&mut *self.de)?;
         let val: Result<_, Error> = seed.deserialize(idx.into_deserializer());
@@ -451,29 +449,29 @@ impl<'a, R: Read> de::EnumVisitor for VariantVisitor<'a, R> {
     }
 }
 
-impl<'a, R: Read> de::VariantVisitor for VariantVisitor<'a, R> {
+impl<'a, 'de, R: Read> de::VariantAccess<'de> for VariantAccess<'a, R> {
     type Error = Error;
 
-    fn visit_unit(self) -> Result<(), Error> {
+    fn unit_variant(self) -> Result<(), Error> {
         type T = ();
         T::deserialize(self.de)
     }
 
-    fn visit_newtype_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
-        where T: DeserializeSeed
+    fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
+        where T: DeserializeSeed<'de>
     {
         read_array_len(&mut self.de.rd)?;
         seed.deserialize(self.de)
     }
 
-    fn visit_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Error>
-        where V: Visitor
+    fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Error>
+        where V: Visitor<'de>
     {
         de::Deserializer::deserialize_tuple(self.de, len, visitor)
     }
 
-    fn visit_struct<V>(self, fields: &'static [&'static str], visitor: V) -> Result<V::Value, Error>
-        where V: Visitor,
+    fn struct_variant<V>(self, fields: &'static [&'static str], visitor: V) -> Result<V::Value, Error>
+        where V: Visitor<'de>
     {
         de::Deserializer::deserialize_tuple(self.de, fields.len(), visitor)
     }
@@ -571,9 +569,9 @@ fn test_slice_read() {
 /// This conversion can fail if the structure of the Value does not match the structure expected
 /// by `T`. It can also fail if the structure is correct but `T`'s implementation of `Deserialize`
 /// decides that something is wrong with the data, for example required struct fields are missing.
-pub fn from_read<R, T>(rd: R) -> Result<T, Error>
+pub fn from_read<'de, R, T>(rd: R) -> Result<T, Error>
     where R: io::Read,
-          T: Deserialize
+          T: Deserialize<'de>
 {
     Deserialize::deserialize(&mut Deserializer::new(rd))
 }

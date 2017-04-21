@@ -1,6 +1,6 @@
 [package]
 name = "rmp-serde"
-version = "0.12.4"
+version = "0.13.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Serde bindings for RMP"
@@ -11,5 +11,8 @@ keywords = ["msgpack", "MessagePack", "serde", "serialization"]
 
 [dependencies]
 byteorder = "1"
-serde = "0.9"
+serde = "1"
 rmp = "0.8"
+
+[dev-dependencies]
+serde_bytes = "0.10"
