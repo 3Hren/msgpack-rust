@@ -1,19 +1,21 @@
+sudo: false
 language: rust
 
-sudo: false
-
-# Necessary for `travis-cargo coveralls --no-sudo`.
 addons:
   apt:
     packages:
       - libcurl4-openssl-dev
       - libelf-dev
       - libdw-dev
+      - binutils-dev
+      - cmake
+    sources:
+      - kalakris-cmake
 
 rust:
-  - 1.13.0
-  - stable
   - nightly
+  - stable
+  - 1.13.0
 
 env:
   - CRATE=rmp
@@ -29,13 +31,15 @@ matrix:
     - rust: 1.13.0
       env: CRATE=rmpv-tests
 
-# Load travis-cargo.
 before_script:
-  - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+  - |
+      cargo install -f cargo-travis &&
+      export PATH=$HOME/.cargo/bin:$PATH
 
 script:
-  - (cd $CRATE && cargo test --verbose);
+  - |
+      (cd $CRATE && cargo test --verbose)
 
-# Measure code coverage and upload to coveralls.io.
 after_success:
-  - (cd $CRATE && travis-cargo coveralls --no-sudo)
+  - |
+      (cd $CRATE && cargo coveralls)
