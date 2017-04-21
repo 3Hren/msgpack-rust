@@ -1,12 +1,14 @@
 extern crate serde;
-#[macro_use] extern crate serde_derive;
+extern crate serde_bytes;
+#[macro_use]
+extern crate serde_derive;
 extern crate rmp_serde as rmps;
 extern crate rmpv;
 
 use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
-use serde::bytes::ByteBuf;
+use serde_bytes::ByteBuf;
 
 use rmpv::Value;
 
@@ -16,8 +18,8 @@ use rmpv::Value;
 /// - `[u8]`  -> `T`     == `T`.
 /// - `[u8]`  -> `Value` == `Value`.
 /// - `Value` -> `T`     == `T`.
-fn test_round<T>(var: T, val: Value)
-    where T: Debug + PartialEq + Serialize + Deserialize
+fn test_round<'de, T>(var: T, val: Value)
+    where T: Debug + PartialEq + Serialize + Deserialize<'de>
 {
     // Serialize part.
     // Test that `T` -> `[u8]` equals with serialization from `Value` -> `[u8]`.

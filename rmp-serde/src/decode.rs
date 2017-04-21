@@ -453,8 +453,8 @@ impl<'a, 'de, R: Read> de::VariantAccess<'de> for VariantAccess<'a, R> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Error> {
-        type T = ();
-        T::deserialize(self.de)
+        read_array_len(&mut self.de.rd)?;
+        Ok(())
     }
 
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
