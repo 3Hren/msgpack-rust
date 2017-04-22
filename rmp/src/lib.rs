@@ -53,7 +53,7 @@
 //! Currently there are two large modules: encode and decode. More detail you can find in the
 //! corresponding sections.
 //!
-//! Formally every MessagePack message consists of some marker encapsulating a date type and the
+//! Formally every MessagePack message consists of some marker encapsulating a data type and the
 //! data itself. Sometimes there are no separate data chunk, for example for booleans. In these
 //! cases a marker contains the value. For example, the `true` value is encoded as `0xc3`.
 //!
