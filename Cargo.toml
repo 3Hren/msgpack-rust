@@ -2,8 +2,7 @@
 members = [
     "rmp",
     "rmp-serde",
-    "rmp-serde-tests",
     "rmp-serialize",
     "rmpv",
-    "rmpv-tests",
+    "rmpv-tests"
 ]

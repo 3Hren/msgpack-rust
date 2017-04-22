@@ -16,3 +16,4 @@ rmp = "0.8"
 
 [dev-dependencies]
 serde_bytes = "0.10"
+serde_derive = "1"

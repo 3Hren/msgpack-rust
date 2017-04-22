@@ -19,7 +19,6 @@ env:
   - CRATE=rmp
   - CRATE=rmp-serialize
   - CRATE=rmp-serde
-  - CRATE=rmp-serde-tests
   - CRATE=rmpv
   - CRATE=rmpv-tests
 
@@ -27,8 +26,6 @@ matrix:
   exclude:
     - rust: 1.13.0
       env: CRATE=rmp-serde
-    - rust: 1.13.0
-      env: CRATE=rmp-serde-tests
     - rust: 1.13.0
       env: CRATE=rmpv-tests
 
