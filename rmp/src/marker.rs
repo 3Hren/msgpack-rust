@@ -3,7 +3,7 @@ const FIXARRAY_SIZE : u8 = 0x0f;
 const FIXMAP_SIZE   : u8 = 0x0f;
 
 /// Format markers.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Marker {
     FixPos(u8),
     FixNeg(i8),
@@ -54,7 +54,7 @@ impl Marker {
             0x90 ... 0x9f => Marker::FixArray(n & FIXARRAY_SIZE),
             0xa0 ... 0xbf => Marker::FixStr(n & FIXSTR_SIZE),
             0xc0 => Marker::Null,
-            /// Marked in MessagePack spec as never used.
+            // Marked in MessagePack spec as never used.
             0xc1 => Marker::Reserved,
             0xc2 => Marker::False,
             0xc3 => Marker::True,
