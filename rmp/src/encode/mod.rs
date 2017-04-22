@@ -143,7 +143,7 @@ fn write_data_f64<W: Write>(wr: &mut W, val: f64) -> Result<(), DataWriteError> 
     wr.write_f64::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
-/// An error that can occur when attempring to write multibyte MessagePack value.
+/// An error that can occur when attempting to write multi-byte MessagePack value.
 #[derive(Debug)]
 pub enum ValueWriteError {
     /// I/O error while writing marker.
