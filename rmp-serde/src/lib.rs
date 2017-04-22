@@ -132,7 +132,7 @@ impl Raw {
 
 struct RawVisitor;
 
-impl de::Visitor for RawVisitor {
+impl<'de> de::Visitor<'de> for RawVisitor {
     type Value = Raw;
 
     fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
@@ -179,12 +179,12 @@ impl de::Visitor for RawVisitor {
     }
 }
 
-impl Deserialize for Raw {
+impl<'de> Deserialize<'de> for Raw {
     #[inline]
     fn deserialize<D>(de: D) -> Result<Self, D::Error>
-        where D: de::Deserializer
+        where D: de::Deserializer<'de>
     {
-        de.deserialize(RawVisitor)
+        de.deserialize_any(RawVisitor)
     }
 }
 
@@ -198,8 +198,8 @@ pub fn to_vec<T>(value: &T) -> Result<Vec<u8>, encode::Error>
 }
 
 /// Deserializes a byte slice into the desired type.
-pub fn from_slice<T>(input: &[u8]) -> Result<T, decode::Error>
-    where T: serde::Deserialize
+pub fn from_slice<'de, T>(input: &[u8]) -> Result<T, decode::Error>
+    where T: serde::Deserialize<'de>
 {
     let mut de = Deserializer::from_slice(input);
     serde::Deserialize::deserialize(&mut de)

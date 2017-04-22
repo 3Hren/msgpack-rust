@@ -26,6 +26,8 @@ env:
 matrix:
   exclude:
     - rust: 1.13.0
+      env: CRATE=rmp-serde
+    - rust: 1.13.0
       env: CRATE=rmp-serde-tests
     - rust: 1.13.0
       env: CRATE=rmpv-tests

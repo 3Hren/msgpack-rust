@@ -1,5 +1,5 @@
-#[macro_use]
 extern crate serde;
+extern crate serde_bytes;
 extern crate rmp;
 extern crate rmp_serde as rmps;
 
@@ -292,11 +292,11 @@ fn pass_encoding_struct_into_vec() {
 
 #[test]
 fn pass_bin() {
-    use serde::bytes::Bytes;
+    use serde_bytes::Bytes;
 
     let mut buf = Vec::new();
     let vec = vec![0xcc, 0x80];
-    let val = Bytes::from(&vec);
+    let val = Bytes::from(&vec[..]);
 
     val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
 

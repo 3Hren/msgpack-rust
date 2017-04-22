@@ -86,7 +86,7 @@ fn pass_struct_from_map() {
 
 #[test]
 fn pass_unit_variant() {
-    // We expect enums to be endoded as [id, [...]]
+    // We expect enums to be encoded as [id, [...]]
 
     let buf = [0x92, 0x01, 0x90];
     let cur = Cursor::new(&buf[..]);
@@ -106,7 +106,7 @@ fn pass_unit_variant() {
 
 #[test]
 fn pass_tuple_enum_with_arg() {
-    // The encoded bytearray is: [1, [42]].
+    // The encoded byte-array is: [1, [42]].
     let buf = [0x92, 0x01, 0x91, 0x2a];
     let cur = Cursor::new(&buf[..]);
 

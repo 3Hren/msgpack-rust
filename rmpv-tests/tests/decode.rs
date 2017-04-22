@@ -1,18 +1,20 @@
 extern crate serde;
-#[macro_use] extern crate serde_derive;
+extern crate serde_bytes;
+#[macro_use]
+extern crate serde_derive;
 extern crate rmp_serde as rmps;
 extern crate rmpv;
 
 use std::collections::BTreeMap;
 
-use serde::bytes::ByteBuf;
+use serde_bytes::ByteBuf;
 
 use rmpv::Value;
 use rmpv::decode;
 use rmpv::ext::from_value;
 
 /// Tests that a `Value` is properly decoded from bytes using two different mechanisms: direct
-/// derialization using `rmp::decode::read_value` and using `serde`.
+/// deserialization using `rmp::decode::read_value` and using `serde`.
 fn test_decode(buf: &[u8], v: Value) {
     let val0: Value = decode::read_value(&mut &buf[..]).unwrap();
     assert_eq!(v, val0);

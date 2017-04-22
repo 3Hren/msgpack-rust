@@ -8,6 +8,8 @@
 #[cfg(feature = "with-serde")]
 #[macro_use]
 extern crate serde;
+#[cfg(feature = "with-serde")]
+extern crate serde_bytes;
 extern crate rmp;
 extern crate num_traits;
 
