@@ -198,8 +198,8 @@ pub fn to_vec<T>(value: &T) -> Result<Vec<u8>, encode::Error>
 }
 
 /// Deserializes a byte slice into the desired type.
-pub fn from_slice<'de, T>(input: &[u8]) -> Result<T, decode::Error>
-    where T: serde::Deserialize<'de>
+pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, decode::Error>
+    where T: serde::Deserialize<'a>
 {
     let mut de = Deserializer::from_slice(input);
     serde::Deserialize::deserialize(&mut de)

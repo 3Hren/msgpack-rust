@@ -173,58 +173,82 @@ impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
     }
 }
 
-impl<R: Read> Deserializer<R> {
+impl<'de, R: Read<'de>> Deserializer<R> {
     /// Changes the maximum nesting depth that is allowed
     pub fn set_max_depth(&mut self, depth: usize) {
         self.depth = depth;
     }
 
-    fn read_str_data<'de, V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
+    fn read_str_data<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
-        let buf = self.read_bin_data(len as u32)?;
-        match str::from_utf8(buf) {
-            Ok(s) => visitor.visit_str(s),
-            Err(err)=> {
-                // Allow to unpack invalid UTF-8 bytes into a byte array.
-                match visitor.visit_bytes::<Error>(buf) {
-                    Ok(buf) => Ok(buf),
-                    Err(..) => Err(Error::Utf8Error(err)),
+        match self.read_bin_data(len as u32)? {
+            Reference::Borrowed(buf) => {
+                match str::from_utf8(buf) {
+                    Ok(s) => visitor.visit_borrowed_str(s),
+                    Err(err) => {
+                        // Allow to unpack invalid UTF-8 bytes into a byte array.
+                        match visitor.visit_borrowed_bytes::<Error>(buf) {
+                            Ok(buf) => Ok(buf),
+                            Err(..) => Err(Error::Utf8Error(err)),
+                        }
+                    }
+                }
+            }
+            Reference::Copied(buf) => {
+                match str::from_utf8(buf) {
+                    Ok(s) => visitor.visit_str(s),
+                    Err(err) => {
+                        // Allow to unpack invalid UTF-8 bytes into a byte array.
+                        match visitor.visit_bytes::<Error>(buf) {
+                            Ok(buf) => Ok(buf),
+                            Err(..) => Err(Error::Utf8Error(err)),
+                        }
+                    }
                 }
             }
         }
     }
 
-    fn read_bin_data(&mut self, len: u32) -> Result<&[u8], Error> {
+    fn read_bin_data<'a>(&'a mut self, len: u32) -> Result<Reference<'de,'a, [u8]>, Error> {
         self.rd.read_slice(len as usize).map_err(Error::InvalidDataRead)
     }
 
-    fn read_array<'de, V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
+    fn read_array<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
         visitor.visit_seq(SeqAccess::new(self, len as usize))
     }
 
-    fn read_map<'de, V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
+    fn read_map<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
         visitor.visit_map(MapAccess::new(self, len as usize))
     }
+
+    fn read_bytes<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
+        where V: Visitor<'de>
+    {
+        match self.read_bin_data(len)? {
+            Reference::Borrowed(buf) => visitor.visit_borrowed_bytes(buf),
+            Reference::Copied(buf) => visitor.visit_bytes(buf),
+        }
+    }
 }
 
-fn read_u8<R: Read>(rd: &mut R) -> Result<u8, Error> {
+fn read_u8<'de, R: Read<'de>>(rd: &mut R) -> Result<u8, Error> {
     rd.read_u8().map_err(Error::InvalidDataRead)
 }
 
-fn read_u16<R: Read>(rd: &mut R) -> Result<u16, Error> {
+fn read_u16<'de, R: Read<'de>>(rd: &mut R) -> Result<u16, Error> {
     rd.read_u16::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
 }
 
-fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
+fn read_u32<'de, R: Read<'de>>(rd: &mut R) -> Result<u32, Error> {
     rd.read_u32::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
 }
 
-impl<'a, 'de, R: Read> serde::Deserializer<'de> for &'a mut Deserializer<R> {
+impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R> {
     type Error = Error;
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -290,15 +314,15 @@ impl<'a, 'de, R: Read> serde::Deserializer<'de> for &'a mut Deserializer<R> {
             }
             Marker::Bin8 => {
                 let len = read_u8(&mut self.rd)?;
-                visitor.visit_bytes(self.read_bin_data(len as u32)?)
+                self.read_bytes(len as u32, visitor)
             }
             Marker::Bin16 => {
                 let len = read_u16(&mut self.rd)?;
-                visitor.visit_bytes(self.read_bin_data(len as u32)?)
+                self.read_bytes(len as u32, visitor)
             }
             Marker::Bin32 => {
                 let len = read_u32(&mut self.rd)?;
-                visitor.visit_bytes(self.read_bin_data(len)?)
+                self.read_bytes(len, visitor)
             }
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
             // TODO: Make something with exts.
@@ -345,12 +369,12 @@ impl<'a, 'de, R: Read> serde::Deserializer<'de> for &'a mut Deserializer<R> {
     }
 }
 
-struct SeqAccess<'a, R: Read + 'a> {
+struct SeqAccess<'a, R: 'a> {
     de: &'a mut Deserializer<R>,
     left: usize,
 }
 
-impl<'a, R: Read + 'a> SeqAccess<'a, R> {
+impl<'a, R: 'a> SeqAccess<'a, R> {
     fn new(de: &'a mut Deserializer<R>, len: usize) -> Self {
         SeqAccess {
             de: de,
@@ -359,7 +383,7 @@ impl<'a, R: Read + 'a> SeqAccess<'a, R> {
     }
 }
 
-impl<'a, 'de, R: Read + 'a> de::SeqAccess<'de> for SeqAccess<'a, R> {
+impl<'de, 'a, R: Read<'de> + 'a> de::SeqAccess<'de> for SeqAccess<'a, R> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -378,12 +402,12 @@ impl<'a, 'de, R: Read + 'a> de::SeqAccess<'de> for SeqAccess<'a, R> {
     }
 }
 
-struct MapAccess<'a, R: Read + 'a> {
+struct MapAccess<'a, R: 'a> {
     de: &'a mut Deserializer<R>,
     left: usize,
 }
 
-impl<'a, R: Read + 'a> MapAccess<'a, R> {
+impl<'a, R: 'a> MapAccess<'a, R> {
     fn new(de: &'a mut Deserializer<R>, len: usize) -> Self {
         MapAccess {
             de: de,
@@ -392,7 +416,7 @@ impl<'a, R: Read + 'a> MapAccess<'a, R> {
     }
 }
 
-impl<'a, 'de, R: Read + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
+impl<'de, 'a, R: Read<'de> + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
@@ -422,11 +446,11 @@ impl<'a, 'de, R: Read + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
 /// # Note
 ///
 /// We use default behaviour for new type, which decodes enums with a single value as a tuple.
-pub struct VariantAccess<'a, R: Read + 'a> {
+pub struct VariantAccess<'a, R: 'a> {
     de: &'a mut Deserializer<R>,
 }
 
-impl<'a, R: Read + 'a> VariantAccess<'a, R> {
+impl<'a, R: 'a> VariantAccess<'a, R> {
     pub fn new(de: &'a mut Deserializer<R>) -> Self {
         VariantAccess {
             de: de,
@@ -434,7 +458,7 @@ impl<'a, R: Read + 'a> VariantAccess<'a, R> {
     }
 }
 
-impl<'a, 'de, R: Read> de::EnumAccess<'de> for VariantAccess<'a, R> {
+impl<'de, 'a, R: Read<'de>> de::EnumAccess<'de> for VariantAccess<'a, R> {
     type Error = Error;
     type Variant = Self;
 
@@ -449,7 +473,7 @@ impl<'a, 'de, R: Read> de::EnumAccess<'de> for VariantAccess<'a, R> {
     }
 }
 
-impl<'a, 'de, R: Read> de::VariantAccess<'de> for VariantAccess<'a, R> {
+impl<'de, 'a, R: Read<'de>> de::VariantAccess<'de> for VariantAccess<'a, R> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Error> {
@@ -477,8 +501,14 @@ impl<'a, 'de, R: Read> de::VariantAccess<'de> for VariantAccess<'a, R> {
     }
 }
 
-pub trait Read: io::Read {
-    fn read_slice<'r>(&'r mut self, len: usize) -> io::Result<&'r [u8]>;
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Reference<'b, 'c, T: ?Sized + 'static> {
+    Borrowed(&'b T),
+    Copied(&'c T),
+}
+
+pub trait Read<'de>: io::Read {
+    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error>;
 }
 
 struct SliceReader<'a> {
@@ -493,19 +523,19 @@ impl<'a> SliceReader<'a> {
     }
 }
 
-impl<'a> Read for SliceReader<'a> {
+impl<'de> Read<'de> for SliceReader<'de> {
     #[inline]
-    fn read_slice<'r>(&'r mut self, len: usize) -> io::Result<&'r [u8]> {
+    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         if len > self.inner.len() {
-            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "Unexpected EOF"))
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "unexpected EOF"))
         }
         let (a, b) = self.inner.split_at(len);
         self.inner = b;
-        Ok(a)
+        Ok(Reference::Borrowed(a))
     }
 }
 
-impl<'r> io::Read for SliceReader<'r> {
+impl<'a> io::Read for SliceReader<'a> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.read(buf)
@@ -531,14 +561,14 @@ impl<R: io::Read> ReadReader<R> {
     }
 }
 
-impl<R: io::Read> Read for ReadReader<R> {
+impl<'de, R: io::Read> Read<'de> for ReadReader<R> {
     #[inline]
-    fn read_slice<'r>(&'r mut self, len: usize) -> io::Result<&'r [u8]> {
+    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         self.buf.resize(len, 0u8);
 
         self.inner.read_exact(&mut self.buf[..])?;
 
-        Ok(&self.buf[..])
+        Ok(Reference::Copied(&self.buf[..]))
     }
 }
 
@@ -557,11 +587,12 @@ impl<R: io::Read> io::Read for ReadReader<R> {
 #[test]
 fn test_slice_read() {
     let buf = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    let mut slice_reader = SliceReader::new(&buf[..]);
-    assert_eq!(slice_reader.read_slice(1).unwrap(), &[0]);
-    assert_eq!(slice_reader.read_slice(6).unwrap(), &[1, 2, 3, 4, 5, 6]);
-    assert!(slice_reader.read_slice(5).is_err());
-    assert_eq!(slice_reader.read_slice(4).unwrap(), &[7, 8, 9, 10]);
+    let mut rd = SliceReader::new(&buf[..]);
+
+    assert_eq!(rd.read_slice(1).unwrap(), Reference::Borrowed(&[0][..]));
+    assert_eq!(rd.read_slice(6).unwrap(), Reference::Borrowed(&[1, 2, 3, 4, 5, 6][..]));
+    assert!(rd.read_slice(5).is_err());
+    assert_eq!(rd.read_slice(4).unwrap(), Reference::Borrowed(&[7, 8, 9, 10][..]));
 }
 
 /// Deserialize an instance of type `T` from an I/O stream of MessagePack.

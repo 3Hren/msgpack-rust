@@ -7,19 +7,20 @@ extern crate rmpv;
 
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use serde_bytes::ByteBuf;
 
 use rmpv::Value;
 
-/// Tests that the following round-trip contidions are met:
+/// Tests that the following round-trip conditions are met:
 /// - `T`     -> `[u8]`  == `Value` -> `[u8]`.
 /// - `T`     -> `Value` == `Value`.
 /// - `[u8]`  -> `T`     == `T`.
 /// - `[u8]`  -> `Value` == `Value`.
 /// - `Value` -> `T`     == `T`.
 fn test_round<'de, T>(var: T, val: Value)
-    where T: Debug + PartialEq + Serialize + Deserialize<'de>
+    where T: Debug + PartialEq + Serialize + DeserializeOwned
 {
     // Serialize part.
     // Test that `T` -> `[u8]` equals with serialization from `Value` -> `[u8]`.
@@ -33,11 +34,11 @@ fn test_round<'de, T>(var: T, val: Value)
 
     // Deserialize part.
     // Test that `[u8]` -> `T` equals with the given `T`.
-    let var_from_buf: T = rmps::from_slice(&buf_from_var[..]).unwrap();
+    let var_from_buf: T = rmps::from_slice(buf_from_var.as_slice()).unwrap();
     assert_eq!(var, var_from_buf);
 
     // Test that `[u8]` -> `Value` equals with the given `Value`.
-    let val_from_buf: Value = rmps::from_slice(&buf_from_var[..]).unwrap();
+    let val_from_buf: Value = rmps::from_slice(buf_from_var.as_slice()).unwrap();
     assert_eq!(val, val_from_buf);
 
     // Test that `Value` -> `T` equals with the given `T`.
