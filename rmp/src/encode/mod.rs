@@ -37,7 +37,9 @@ impl From<Error> for MarkerWriteError {
 
 impl From<MarkerWriteError> for Error {
     fn from(err: MarkerWriteError) -> Error {
-        err.0
+        match err {
+            MarkerWriteError(err) => err
+        }
     }
 }
 
@@ -79,7 +81,7 @@ impl From<DataWriteError> for Error {
 /// assert_eq!(vec![0xc0], buf);
 /// ```
 pub fn write_nil<W: Write>(wr: &mut W) -> Result<(), Error> {
-    write_marker(wr, Marker::Null).map_err(|err| err.0)
+    write_marker(wr, Marker::Null).map_err(From::from)
 }
 
 /// Encodes and attempts to write a bool value into the given write.
