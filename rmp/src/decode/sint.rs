@@ -35,7 +35,7 @@ pub fn read_nfix<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
@@ -58,7 +58,7 @@ pub fn read_i8<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
@@ -81,7 +81,7 @@ pub fn read_i16<R: Read>(rd: &mut R) -> Result<i16, ValueReadError> {
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
@@ -104,7 +104,7 @@ pub fn read_i32<R: Read>(rd: &mut R) -> Result<i32, ValueReadError> {
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.

@@ -14,7 +14,7 @@ use super::{read_marker, read_data_i8, read_data_u8, read_data_u16, read_data_u3
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 ///
 /// # Note
 ///
@@ -66,7 +66,7 @@ pub fn read_fixext2<R: Read>(rd: &mut R) -> Result<(i8, [u8; 2]), ValueReadError
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 pub fn read_fixext4<R: Read>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError> {
     match try!(read_marker(rd)) {
         Marker::FixExt4 => {
@@ -89,7 +89,7 @@ pub fn read_fixext4<R: Read>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 pub fn read_fixext8<R: Read>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError> {
     match try!(read_marker(rd)) {
         Marker::FixExt8 => {
@@ -112,7 +112,7 @@ pub fn read_fixext8<R: Read>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 pub fn read_fixext16<R: Read>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError> {
     match try!(read_marker(rd)) {
         Marker::FixExt16 => {

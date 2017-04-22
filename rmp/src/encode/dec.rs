@@ -11,7 +11,7 @@ use super::{write_marker, write_data_f32, write_data_f64};
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_f32<W: Write>(wr: &mut W, val: f32) -> Result<(), ValueWriteError> {
     try!(write_marker(wr, Marker::F32));
     try!(write_data_f32(wr, val));
@@ -25,7 +25,7 @@ pub fn write_f32<W: Write>(wr: &mut W, val: f32) -> Result<(), ValueWriteError> 
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_f64<W: Write>(wr: &mut W, val: f64) -> Result<(), ValueWriteError> {
     try!(write_marker(wr, Marker::F64));
     try!(write_data_f64(wr, val));

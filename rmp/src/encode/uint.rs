@@ -43,7 +43,7 @@ pub fn write_pfix<W: Write>(wr: &mut W, val: u8) -> Result<(), Error> {
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 ///
 /// # Examples
 /// ```
@@ -75,7 +75,7 @@ pub fn write_u8<W: Write>(wr: &mut W, val: u8) -> Result<(), ValueWriteError> {
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_u16<W: Write>(wr: &mut W, val: u16) -> Result<(), ValueWriteError> {
     try!(write_marker(wr, Marker::U16));
     try!(write_data_u16(wr, val));
@@ -95,7 +95,7 @@ pub fn write_u16<W: Write>(wr: &mut W, val: u16) -> Result<(), ValueWriteError> 
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_u32<W: Write>(wr: &mut W, val: u32) -> Result<(), ValueWriteError> {
     try!(write_marker(wr, Marker::U32));
     try!(write_data_u32(wr, val));
@@ -115,7 +115,7 @@ pub fn write_u32<W: Write>(wr: &mut W, val: u32) -> Result<(), ValueWriteError> 
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_u64<W: Write>(wr: &mut W, val: u64) -> Result<(), ValueWriteError> {
     try!(write_marker(wr, Marker::U64));
     try!(write_data_u64(wr, val));
@@ -134,7 +134,7 @@ pub fn write_u64<W: Write>(wr: &mut W, val: u64) -> Result<(), ValueWriteError> 
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_uint<W: Write>(wr: &mut W, val: u64) -> Result<Marker, ValueWriteError> {
     if val < 128 {
         write_pfix(wr, val as u8)

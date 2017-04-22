@@ -10,7 +10,7 @@ use super::{read_marker, read_data_f32, read_data_f64, ValueReadError};
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
@@ -33,7 +33,7 @@ pub fn read_f32<R: Read>(rd: &mut R) -> Result<f32, ValueReadError> {
 /// # Errors
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
-/// the data, except the EINTR, which is handled internally.
+/// the data.
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.

@@ -179,7 +179,7 @@ impl From<ValueWriteError> for Error {
 
 impl error::Error for ValueWriteError {
     fn description(&self) -> &str {
-        "error while writing multibyte MessagePack value"
+        "error while writing multi-byte MessagePack value"
     }
 
     fn cause(&self) -> Option<&error::Error> {
@@ -202,7 +202,7 @@ impl Display for ValueWriteError {
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_array_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> {
     let marker = if len < 16 {
         try!(write_marker(wr, Marker::FixArray(len as u8)));
@@ -226,7 +226,7 @@ pub fn write_array_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWr
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_map_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> {
     let marker = if len < 16 {
         try!(write_marker(wr, Marker::FixMap(len as u8)));
@@ -250,7 +250,7 @@ pub fn write_map_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWrit
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 ///
 /// # Panics
 ///

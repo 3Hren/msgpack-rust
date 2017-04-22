@@ -265,7 +265,7 @@ pub fn read_data_f64<R: Read>(rd: &mut R) -> Result<f64, ValueReadError> {
 /// # Errors
 ///
 /// This function will return `NumValueReadError` on any I/O error while reading either the marker
-/// or the data, except the EINTR, which is handled internally.
+/// or the data.
 ///
 /// It also returns `NumValueReadError::OutOfRange` if the actual type is not an integer or it does
 /// not fit in the given numeric range.

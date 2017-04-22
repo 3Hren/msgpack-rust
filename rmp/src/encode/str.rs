@@ -10,7 +10,7 @@ use super::{write_marker, write_data_u8, write_data_u16, write_data_u32};
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 pub fn write_str_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> {
     if len < 32 {
         try!(write_marker(wr, Marker::FixStr(len as u8)));
@@ -36,7 +36,7 @@ pub fn write_str_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWrit
 /// # Errors
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
-/// marker or the data, except the EINTR, which is handled internally.
+/// marker or the data.
 // TODO: Docs, range check, example, visibility.
 pub fn write_str<W: Write>(wr: &mut W, data: &str) -> Result<(), ValueWriteError> {
     try!(write_str_len(wr, data.len() as u32));
