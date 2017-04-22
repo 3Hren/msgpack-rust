@@ -2,12 +2,12 @@ use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::vec::IntoIter;
 
-use serde::{self, Serialize, Deserialize};
+use serde::{self, Serialize, Deserialize, Deserializer};
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
 use serde::ser::{self, SerializeSeq, SerializeTuple, SerializeTupleStruct, SerializeMap, SerializeStruct};
 use serde_bytes::Bytes;
 
-use {Integer, IntPriv, Utf8String, Value};
+use {Integer, IntPriv, Utf8String, Utf8StringRef, Value, ValueRef};
 
 impl Serialize for Value {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
@@ -201,9 +201,7 @@ impl ser::Error for Error {
     }
 }
 
-pub struct Deserializer;
-
-impl<'de> de::Deserializer<'de> for Value {
+impl<'de> Deserializer<'de> for Value {
     type Error = Error;
 
     #[inline]
@@ -240,7 +238,7 @@ impl<'de> de::Deserializer<'de> for Value {
             }
             Value::Map(v) => {
                 let len = v.len();
-                let mut de = MapDeserializer::new(v);
+                let mut de = MapAccess::new(v);
                 let map = visitor.visit_map(&mut de)?;
                 if de.iter.len() == 0 {
                     Ok(map)
@@ -263,74 +261,28 @@ impl<'de> de::Deserializer<'de> for Value {
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        if let Value::Nil = self {
-            visitor.visit_none()
-        } else {
-            visitor.visit_some(self)
-        }
+        ValueBase::deserialize_option(self, visitor)
     }
 
     #[inline]
     fn deserialize_enum<V>(self, _name: &str, _variants: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        match self {
-            Value::Array(v) => {
-                let mut iter = v.into_iter();
-
-                if !(iter.len() == 1 || iter.len() == 2) {
-                    return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one or two elements"));
-                }
-
-                let id = match iter.next() {
-                    Some(id) => from_value(id)?,
-                    None => {
-                        return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one or two elements"));
-                    }
-                };
-
-                visitor.visit_enum(EnumDeserializer {
-                    id: id,
-                    value: iter.next(),
-                })
-            }
-            other => {
-                Err(de::Error::invalid_type(other.unexpected(), &"array, map or int"))
-            }
-        }
+        ValueBase::deserialize_enum(self, visitor)
     }
 
     #[inline]
     fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        match self {
-            Value::Array(v) => {
-                let iter = v.into_iter();
-                if iter.len() != 1 {
-                    return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element"));
-                }
-
-                visitor.visit_seq(SeqDeserializer {
-                    iter: iter,
-                })
-            }
-            other => Err(de::Error::invalid_type(other.unexpected(), &"array")),
-        }
+        ValueBase::deserialize_newtype_struct(self, visitor)
     }
+
+    #[inline]
     fn deserialize_unit_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        match self {
-            Value::Array(v) => {
-                if v.is_empty() {
-                    visitor.visit_unit()
-                } else {
-                    Err(de::Error::invalid_type(Unexpected::Seq, &"empty array"))
-                }
-            }
-            other => Err(de::Error::invalid_type(other.unexpected(), &"empty array")),
-        }
+        ValueBase::deserialize_unit_struct(self, visitor)
     }
 
     forward_to_deserialize_any! {
@@ -340,19 +292,19 @@ impl<'de> de::Deserializer<'de> for Value {
     }
 }
 
-struct SeqDeserializer {
-    iter: IntoIter<Value>,
+struct SeqDeserializer<V> {
+    iter: IntoIter<V>,
 }
 
-impl SeqDeserializer {
-    fn new(vec: Vec<Value>) -> Self {
+impl<V> SeqDeserializer<V> {
+    fn new(vec: Vec<V>) -> Self {
         SeqDeserializer {
             iter: vec.into_iter(),
         }
     }
 }
 
-impl<'de> SeqAccess<'de> for SeqDeserializer {
+impl<'de, V: Deserializer<'de, Error = Error>> SeqAccess<'de> for SeqDeserializer<V> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -365,12 +317,11 @@ impl<'de> SeqAccess<'de> for SeqDeserializer {
     }
 
     fn size_hint(&self) -> Option<usize> {
-//        self.iter.size_hint()
         None
     }
 }
 
-impl<'de> de::Deserializer<'de> for SeqDeserializer {
+impl<'de, U: Deserializer<'de, Error = Error>> Deserializer<'de> for SeqDeserializer<U> {
     type Error = Error;
 
     #[inline]
@@ -398,21 +349,21 @@ impl<'de> de::Deserializer<'de> for SeqDeserializer {
     }
 }
 
-struct MapDeserializer {
-    val: Option<Value>,
-    iter: IntoIter<(Value, Value)>,
+struct MapAccess<U> {
+    val: Option<U>,
+    iter: IntoIter<(U, U)>,
 }
 
-impl MapDeserializer {
-    fn new(map: Vec<(Value, Value)>) -> Self {
-        MapDeserializer {
+impl<V> MapAccess<V> {
+    fn new(map: Vec<(V, V)>) -> Self {
+        MapAccess {
             val: None,
             iter: map.into_iter(),
         }
     }
 }
 
-impl<'de> de::MapAccess<'de> for MapDeserializer {
+impl<'de, U: Deserializer<'de, Error = Error>> de::MapAccess<'de> for MapAccess<U> {
     type Error = Error;
 
     fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -441,7 +392,7 @@ impl<'de> de::MapAccess<'de> for MapDeserializer {
     }
 }
 
-impl<'de> de::Deserializer<'de> for MapDeserializer {
+impl<'de, U: Deserializer<'de, Error = Error>> Deserializer<'de> for MapAccess<U> {
     type Error = Error;
 
     #[inline]
@@ -459,13 +410,13 @@ impl<'de> de::Deserializer<'de> for MapDeserializer {
 }
 
 #[derive(Debug)]
-pub struct EnumDeserializer {
+pub struct EnumDeserializer<U> {
     id: u32,
-    value: Option<Value>,
+    value: Option<U>,
 }
 
-impl EnumDeserializer {
-    pub fn new(id: u32, value: Option<Value>) -> Self {
+impl<U> EnumDeserializer<U> {
+    pub fn new(id: u32, value: Option<U>) -> Self {
         Self {
             id: id,
             value: value,
@@ -473,9 +424,9 @@ impl EnumDeserializer {
     }
 }
 
-impl<'de> de::EnumAccess<'de> for EnumDeserializer {
+impl<'de, U: ValueBase<'de> + ValueExt> de::EnumAccess<'de> for EnumDeserializer<U> {
     type Error = Error;
-    type Variant = VariantDeserializer;
+    type Variant = VariantDeserializer<U>;
 
     fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
         where V: de::DeserializeSeed<'de>
@@ -487,18 +438,23 @@ impl<'de> de::EnumAccess<'de> for EnumDeserializer {
 }
 
 #[derive(Debug)]
-pub struct VariantDeserializer {
-    value: Option<Value>,
+pub struct VariantDeserializer<U> {
+    value: Option<U>,
 }
 
-impl<'de> de::VariantAccess<'de> for VariantDeserializer {
+impl<'de, U: ValueBase<'de> + ValueExt> de::VariantAccess<'de> for VariantDeserializer<U> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Error> {
         // Can accept only [u32].
         match self.value {
-            Some(Value::Array(ref v)) if v.is_empty() => Ok(()),
-            Some(..) => Err(de::Error::invalid_value(Unexpected::Seq, &"empty array")),
+            Some(v) => {
+                match v.as_array() {
+                    Ok(ref v) if v.is_empty() => Ok(()),
+                    Ok(..) => Err(de::Error::invalid_value(Unexpected::Seq, &"empty array")),
+                    Err(unexpected) => Err(de::Error::invalid_value(unexpected, &"empty array")),
+                }
+            }
             None => Ok(()),
         }
     }
@@ -508,24 +464,28 @@ impl<'de> de::VariantAccess<'de> for VariantDeserializer {
     {
         // Can accept both [u32, T...] and [u32, [T]] cases.
         match self.value {
-            Some(Value::Array(v)) => {
-                if v.len() > 1 {
-                    seed.deserialize(SeqDeserializer::new(v))
-                } else {
-                    let mut iter = v.into_iter();
-                    let val = match iter.next() {
-                        Some(val) => seed.deserialize(val),
-                        None => return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element")),
-                    };
+            Some(v) => {
+                match v.into_array() {
+                    Ok(v) => {
+                        if v.len() > 1 {
+                            seed.deserialize(SeqDeserializer::new(v))
+                        } else {
+                            let mut iter = v.into_iter();
+                            let val = match iter.next() {
+                                Some(val) => seed.deserialize(val),
+                                None => return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element")),
+                            };
 
-                    if iter.next().is_some() {
-                        Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element"))
-                    } else {
-                        val
+                            if iter.next().is_some() {
+                                Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element"))
+                            } else {
+                                val
+                            }
+                        }
                     }
+                    Err(v) => seed.deserialize(v),
                 }
             }
-            Some(value) => seed.deserialize(value),
             None => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"newtype variant")),
         }
     }
@@ -535,10 +495,12 @@ impl<'de> de::VariantAccess<'de> for VariantDeserializer {
     {
         // Can accept [u32, [T...]].
         match self.value {
-            Some(Value::Array(v)) => {
-                de::Deserializer::deserialize_any(SeqDeserializer::new(v), visitor)
+            Some(v) => {
+                match v.into_array() {
+                    Ok(v) => Deserializer::deserialize_any(SeqDeserializer::new(v), visitor),
+                    Err(v) => Err(de::Error::invalid_type(v.unexpected(), &"tuple variant")),
+                }
             }
-            Some(other) => Err(de::Error::invalid_type(other.unexpected(), &"tuple variant")),
             None => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"tuple variant"))
         }
     }
@@ -547,19 +509,23 @@ impl<'de> de::VariantAccess<'de> for VariantDeserializer {
         where V: Visitor<'de>,
     {
         match self.value {
-            Some(Value::Array(v)) => {
-                de::Deserializer::deserialize_any(SeqDeserializer::new(v), visitor)
+            Some(v) => {
+                match v.into_array() {
+                    Ok(v) => Deserializer::deserialize_any(SeqDeserializer::new(v), visitor),
+                    Err(v) => {
+                        match v.into_map() {
+                            Ok(v) => Deserializer::deserialize_any(MapAccess::new(v), visitor),
+                            Err(v) => Err(de::Error::invalid_type(v.unexpected(), &"struct variant")),
+                        }
+                    }
+                }
             }
-            Some(Value::Map(v)) => {
-                de::Deserializer::deserialize_any(MapDeserializer::new(v), visitor)
-            }
-            Some(other) => Err(de::Error::invalid_type(other.unexpected(), &"struct variant")),
-            _ => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"struct variant"))
+            None => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"struct variant"))
         }
     }
 }
 
-trait ValueExt {
+pub trait ValueExt {
     fn unexpected(&self) -> Unexpected;
 }
 
@@ -590,8 +556,35 @@ impl ValueExt for Value {
     }
 }
 
-pub fn from_value<'de, T>(val: Value) -> Result<T, Error>
-    where T: Deserialize<'de>
+impl<'a> ValueExt for ValueRef<'a> {
+    fn unexpected(&self) -> Unexpected {
+        match *self {
+            ValueRef::Nil => Unexpected::Unit,
+            ValueRef::Boolean(v) => Unexpected::Bool(v),
+            ValueRef::Integer(Integer { n }) => {
+                match n {
+                    IntPriv::PosInt(v) => Unexpected::Unsigned(v),
+                    IntPriv::NegInt(v) => Unexpected::Signed(v),
+                }
+            }
+            ValueRef::F32(v) => Unexpected::Float(v as f64),
+            ValueRef::F64(v) => Unexpected::Float(v),
+            ValueRef::String(ref v) => {
+                match v.s {
+                    Ok(ref v) => Unexpected::Str(v),
+                    Err(ref v) => Unexpected::Bytes(&v.0[..]),
+                }
+            }
+            ValueRef::Binary(ref v) => Unexpected::Bytes(v),
+            ValueRef::Array(..) => Unexpected::Seq,
+            ValueRef::Map(..) => Unexpected::Map,
+            ValueRef::Ext(..) => Unexpected::Seq,
+        }
+    }
+}
+
+pub fn from_value<T>(val: Value) -> Result<T, Error>
+    where T: for<'de> Deserialize<'de>
 {
     Deserialize::deserialize(val)
 }
@@ -931,5 +924,362 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
 
     fn end(self) -> Result<Value, Error> {
         Ok(Value::Array(vec![Value::from(self.idx), Value::Array(self.vec)]))
+    }
+}
+
+impl<'de> Deserialize<'de> for ValueRef<'de> {
+    #[inline]
+    fn deserialize<D>(de: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct ValueVisitor;
+
+        impl<'de> de::Visitor<'de> for ValueVisitor {
+            type Value = ValueRef<'de>;
+
+            fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+                "any valid MessagePack value".fmt(fmt)
+            }
+
+            #[inline]
+            fn visit_some<D>(self, de: D) -> Result<Self::Value, D::Error>
+                where D: Deserializer<'de>
+            {
+                Deserialize::deserialize(de)
+            }
+
+            #[inline]
+            fn visit_none<E>(self) -> Result<Self::Value, E> {
+//                Ok(ValueRef::Nil)
+                unimplemented!();
+            }
+
+            #[inline]
+            fn visit_unit<E>(self) -> Result<Self::Value, E> {
+                Ok(ValueRef::Nil)
+            }
+
+            #[inline]
+            fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E> {
+                Ok(ValueRef::Boolean(value))
+            }
+
+            #[inline]
+            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E> {
+                Ok(ValueRef::from(value))
+            }
+
+            #[inline]
+            fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E> {
+                Ok(ValueRef::from(value))
+            }
+
+            #[inline]
+            fn visit_f32<E>(self, value: f32) -> Result<Self::Value, E> {
+                Ok(ValueRef::F32(value))
+            }
+
+            #[inline]
+            fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E> {
+                Ok(ValueRef::F64(value))
+            }
+
+            #[inline]
+            fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+                where E: de::Error
+            {
+                Ok(ValueRef::String(Utf8StringRef::from(value)))
+            }
+
+            #[inline]
+            fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+                where V: SeqAccess<'de>
+            {
+                let mut vec = Vec::new();
+
+                while let Some(elem) = visitor.next_element()? {
+                    vec.push(elem);
+                }
+
+                Ok(ValueRef::Array(vec))
+            }
+
+            #[inline]
+            fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
+                where E: de::Error
+            {
+                Ok(ValueRef::Binary(v))
+            }
+
+            #[inline]
+            fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+                where V: de::MapAccess<'de>
+            {
+                let mut vec = Vec::new();
+
+                while let Some(key) = visitor.next_key()? {
+                    let val = visitor.next_value()?;
+                    vec.push((key, val));
+                }
+
+                Ok(ValueRef::Map(vec))
+            }
+        }
+
+        de.deserialize_any(ValueVisitor)
+    }
+}
+
+pub fn deserialize_from<'de, T, D>(val: D) -> Result<T, Error>
+    where T: Deserialize<'de>,
+          D: Deserializer<'de, Error = Error>
+{
+    Deserialize::deserialize(val)
+}
+
+pub trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
+    fn is_nil(&self) -> bool;
+
+    fn as_array(&self) -> Result<&Vec<Self>, Unexpected>;
+
+    fn into_array(self) -> Result<Vec<Self>, Self>;
+
+    fn into_map(self) -> Result<Vec<(Self, Self)>, Self>;
+
+    #[inline]
+    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        if self.is_nil() {
+            visitor.visit_none()
+        } else {
+            visitor.visit_some(self)
+        }
+    }
+
+    #[inline]
+    fn deserialize_enum<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        match self.into_array() {
+            Ok(v) => {
+                let mut iter = v.into_iter();
+
+                if !(iter.len() == 1 || iter.len() == 2) {
+                    return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one or two elements"));
+                }
+
+                let id = match iter.next() {
+                    Some(id) => deserialize_from(id)?,
+                    None => {
+                        return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one or two elements"));
+                    }
+                };
+
+                visitor.visit_enum(EnumDeserializer {
+                    id: id,
+                    value: iter.next(),
+                })
+            }
+            Err(other) => {
+                Err(de::Error::invalid_type(other.unexpected(), &"array, map or int"))
+            }
+        }
+    }
+
+    #[inline]
+    fn deserialize_newtype_struct<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        match self.into_array() {
+            Ok(v) => {
+                let iter = v.into_iter();
+                if iter.len() != 1 {
+                    return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element"));
+                }
+
+                visitor.visit_seq(SeqDeserializer {
+                    iter: iter,
+                })
+            }
+            Err(other) => Err(de::Error::invalid_type(other.unexpected(), &"array")),
+        }
+    }
+
+    #[inline]
+    fn deserialize_unit_struct<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        match self.into_array() {
+            Ok(v) => {
+                if v.is_empty() {
+                    visitor.visit_unit()
+                } else {
+                    Err(de::Error::invalid_type(Unexpected::Seq, &"empty array"))
+                }
+            }
+            Err(other) => Err(de::Error::invalid_type(other.unexpected(), &"empty array")),
+        }
+    }
+}
+
+impl<'de> ValueBase<'de> for Value {
+    #[inline]
+    fn is_nil(&self) -> bool {
+        if let &Value::Nil = self {
+            true
+        } else {
+            false
+        }
+    }
+
+    #[inline]
+    fn as_array(&self) -> Result<&Vec<Self>, Unexpected> {
+        match self {
+            &Value::Array(ref v) => Ok(v),
+            other => Err(other.unexpected())
+        }
+    }
+
+    #[inline]
+    fn into_array(self) -> Result<Vec<Self>, Self> {
+        match self {
+            Value::Array(v) => Ok(v),
+            other => Err(other)
+        }
+    }
+
+    #[inline]
+    fn into_map(self) -> Result<Vec<(Self, Self)>, Self> {
+        match self {
+            Value::Map(v) => Ok(v),
+            other => Err(other)
+        }
+    }
+}
+
+impl<'de> ValueBase<'de> for ValueRef<'de> {
+    #[inline]
+    fn is_nil(&self) -> bool {
+        if let &ValueRef::Nil = self {
+            true
+        } else {
+            false
+        }
+    }
+
+    #[inline]
+    fn as_array(&self) -> Result<&Vec<Self>, Unexpected> {
+        match self {
+            &ValueRef::Array(ref v) => Ok(v),
+            other => Err(other.unexpected())
+        }
+    }
+
+    #[inline]
+    fn into_array(self) -> Result<Vec<Self>, Self> {
+        match self {
+            ValueRef::Array(v) => Ok(v),
+            other => Err(other)
+        }
+    }
+
+    #[inline]
+    fn into_map(self) -> Result<Vec<(Self, Self)>, Self> {
+        match self {
+            ValueRef::Map(v) => Ok(v),
+            other => Err(other)
+        }
+    }
+}
+
+impl<'de> Deserializer<'de> for ValueRef<'de> {
+    type Error = Error;
+
+    #[inline]
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        match self {
+            ValueRef::Nil => visitor.visit_unit(),
+            ValueRef::Boolean(v) => visitor.visit_bool(v),
+            ValueRef::Integer(Integer { n }) => {
+                match n {
+                    IntPriv::PosInt(v) => visitor.visit_u64(v),
+                    IntPriv::NegInt(v) => visitor.visit_i64(v)
+                }
+            }
+            ValueRef::F32(v) => visitor.visit_f32(v),
+            ValueRef::F64(v) => visitor.visit_f64(v),
+            ValueRef::String(v) => {
+                match v.s {
+                    Ok(v) => visitor.visit_borrowed_str(v),
+                    Err(v) => visitor.visit_borrowed_bytes(v.0),
+                }
+            }
+            ValueRef::Binary(v) => visitor.visit_borrowed_bytes(v),
+            ValueRef::Array(v) => {
+                let len = v.len();
+                let mut de = SeqDeserializer::new(v);
+                let seq = visitor.visit_seq(&mut de)?;
+                if de.iter.len() == 0 {
+                    Ok(seq)
+                } else {
+                    Err(de::Error::invalid_length(len, &"fewer elements in array"))
+                }
+            }
+            ValueRef::Map(v) => {
+                let len = v.len();
+                let mut de = MapAccess::new(v);
+                let map = visitor.visit_map(&mut de)?;
+                if de.iter.len() == 0 {
+                    Ok(map)
+                } else {
+                    Err(de::Error::invalid_length(len, &"fewer elements in map"))
+                }
+            }
+            ValueRef::Ext(..) => {
+                // TODO: [i8, [u8]] can be represented as:
+                //      - (0i8, Vec<u8>),
+                //      - struct F(i8, Vec<u8>),
+                //      - struct F {ty: i8, val: Vec<u8>}
+                //      - enum F{ A(Vec<u8>), B { name: Vec<u8> } }
+                unimplemented!();
+            }
+        }
+    }
+
+    #[inline]
+    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        ValueBase::deserialize_option(self, visitor)
+    }
+
+    #[inline]
+    fn deserialize_enum<V>(self, _name: &str, _variants: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        ValueBase::deserialize_enum(self, visitor)
+    }
+
+    #[inline]
+    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        ValueBase::deserialize_newtype_struct(self, visitor)
+    }
+
+    #[inline]
+    fn deserialize_unit_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        ValueBase::deserialize_unit_struct(self, visitor)
+    }
+
+    forward_to_deserialize_any! {
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit seq
+        bytes byte_buf map tuple_struct struct
+        identifier tuple ignored_any
     }
 }
