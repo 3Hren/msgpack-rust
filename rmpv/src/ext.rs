@@ -1,6 +1,6 @@
 use std::error;
 use std::fmt::{self, Display, Formatter};
-use std::vec::IntoIter;
+use std::iter::ExactSizeIterator;
 
 use serde::{self, Serialize, Deserialize, Deserializer};
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
@@ -228,7 +228,7 @@ impl<'de> Deserializer<'de> for Value {
             Value::Binary(v) => visitor.visit_byte_buf(v),
             Value::Array(v) => {
                 let len = v.len();
-                let mut de = SeqDeserializer::new(v);
+                let mut de = SeqDeserializer::new(v.into_iter());
                 let seq = visitor.visit_seq(&mut de)?;
                 if de.iter.len() == 0 {
                     Ok(seq)
@@ -238,7 +238,7 @@ impl<'de> Deserializer<'de> for Value {
             }
             Value::Map(v) => {
                 let len = v.len();
-                let mut de = MapAccess::new(v);
+                let mut de = MapDeserializer::new(v.into_iter());
                 let map = visitor.visit_map(&mut de)?;
                 if de.iter.len() == 0 {
                     Ok(map)
@@ -292,19 +292,20 @@ impl<'de> Deserializer<'de> for Value {
     }
 }
 
-struct SeqDeserializer<V> {
-    iter: IntoIter<V>,
+struct SeqDeserializer<I> {
+    iter: I,
 }
 
-impl<V> SeqDeserializer<V> {
-    fn new(vec: Vec<V>) -> Self {
-        SeqDeserializer {
-            iter: vec.into_iter(),
-        }
+impl<I> SeqDeserializer<I> {
+    fn new(iter: I) -> Self {
+        Self { iter: iter }
     }
 }
 
-impl<'de, V: Deserializer<'de, Error = Error>> SeqAccess<'de> for SeqDeserializer<V> {
+impl<'de, I, U> SeqAccess<'de> for SeqDeserializer<I>
+    where I: Iterator<Item = U>,
+          U: Deserializer<'de, Error = Error>
+{
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -315,13 +316,12 @@ impl<'de, V: Deserializer<'de, Error = Error>> SeqAccess<'de> for SeqDeserialize
             None => Ok(None),
         }
     }
-
-    fn size_hint(&self) -> Option<usize> {
-        None
-    }
 }
 
-impl<'de, U: Deserializer<'de, Error = Error>> Deserializer<'de> for SeqDeserializer<U> {
+impl<'de, I, U> Deserializer<'de> for SeqDeserializer<I>
+    where I: ExactSizeIterator<Item = U>,
+          U: Deserializer<'de, Error = Error>
+{
     type Error = Error;
 
     #[inline]
@@ -349,21 +349,24 @@ impl<'de, U: Deserializer<'de, Error = Error>> Deserializer<'de> for SeqDeserial
     }
 }
 
-struct MapAccess<U> {
+struct MapDeserializer<I, U> {
     val: Option<U>,
-    iter: IntoIter<(U, U)>,
+    iter: I,
 }
 
-impl<V> MapAccess<V> {
-    fn new(map: Vec<(V, V)>) -> Self {
-        MapAccess {
+impl<I, U> MapDeserializer<I, U> {
+    fn new(iter: I) -> Self {
+        Self {
             val: None,
-            iter: map.into_iter(),
+            iter: iter,
         }
     }
 }
 
-impl<'de, U: Deserializer<'de, Error = Error>> de::MapAccess<'de> for MapAccess<U> {
+impl<'de, I, U> de::MapAccess<'de> for MapDeserializer<I, U>
+    where I: Iterator<Item = (U, U)>,
+          U: Deserializer<'de, Error = Error>
+{
     type Error = Error;
 
     fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -386,13 +389,12 @@ impl<'de, U: Deserializer<'de, Error = Error>> de::MapAccess<'de> for MapAccess<
             None => Err(de::Error::custom("value is missing")),
         }
     }
-
-    fn size_hint(&self) -> Option<usize> {
-        None
-    }
 }
 
-impl<'de, U: Deserializer<'de, Error = Error>> Deserializer<'de> for MapAccess<U> {
+impl<'de, I, U> Deserializer<'de> for MapDeserializer<I, U>
+    where I: Iterator<Item = (U, U)>,
+          U: Deserializer<'de, Error = Error>
+{
     type Error = Error;
 
     #[inline]
@@ -468,7 +470,7 @@ impl<'de, U: ValueBase<'de> + ValueExt> de::VariantAccess<'de> for VariantDeseri
                 match v.into_array() {
                     Ok(v) => {
                         if v.len() > 1 {
-                            seed.deserialize(SeqDeserializer::new(v))
+                            seed.deserialize(SeqDeserializer::new(v.into_iter()))
                         } else {
                             let mut iter = v.into_iter();
                             let val = match iter.next() {
@@ -497,7 +499,7 @@ impl<'de, U: ValueBase<'de> + ValueExt> de::VariantAccess<'de> for VariantDeseri
         match self.value {
             Some(v) => {
                 match v.into_array() {
-                    Ok(v) => Deserializer::deserialize_any(SeqDeserializer::new(v), visitor),
+                    Ok(v) => Deserializer::deserialize_any(SeqDeserializer::new(v.into_iter()), visitor),
                     Err(v) => Err(de::Error::invalid_type(v.unexpected(), &"tuple variant")),
                 }
             }
@@ -511,10 +513,10 @@ impl<'de, U: ValueBase<'de> + ValueExt> de::VariantAccess<'de> for VariantDeseri
         match self.value {
             Some(v) => {
                 match v.into_array() {
-                    Ok(v) => Deserializer::deserialize_any(SeqDeserializer::new(v), visitor),
+                    Ok(v) => Deserializer::deserialize_any(SeqDeserializer::new(v.into_iter()), visitor),
                     Err(v) => {
                         match v.into_map() {
-                            Ok(v) => Deserializer::deserialize_any(MapAccess::new(v), visitor),
+                            Ok(v) => Deserializer::deserialize_any(MapDeserializer::new(v.into_iter()), visitor),
                             Err(v) => Err(de::Error::invalid_type(v.unexpected(), &"struct variant")),
                         }
                     }
@@ -1223,7 +1225,7 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
             ValueRef::Binary(v) => visitor.visit_borrowed_bytes(v),
             ValueRef::Array(v) => {
                 let len = v.len();
-                let mut de = SeqDeserializer::new(v);
+                let mut de = SeqDeserializer::new(v.into_iter());
                 let seq = visitor.visit_seq(&mut de)?;
                 if de.iter.len() == 0 {
                     Ok(seq)
@@ -1233,7 +1235,7 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
             }
             ValueRef::Map(v) => {
                 let len = v.len();
-                let mut de = MapAccess::new(v);
+                let mut de = MapDeserializer::new(v.into_iter());
                 let map = visitor.visit_map(&mut de)?;
                 if de.iter.len() == 0 {
                     Ok(map)
