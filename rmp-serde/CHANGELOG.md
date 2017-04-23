@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+### Added
+- Zero-copy deserialization from `&[u8]`.
+
+### Changed
+- Adapt with serde 1.0.
+
 ## 0.12.4 - 2017-03-26
 ### Fixed
 - Fix compilation on rustc 1.13.

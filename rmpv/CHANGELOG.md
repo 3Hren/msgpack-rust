@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+### Added
+- Implement `Deserialize` for `ValueRef`.
+- Implement `Deserializer` for `ValueRef`.
+- Zero-copy deserialization from `ValueRef`.
+
+### Changed
+- Adapt with serde 1.0.
+
 ## 0.3.4 - 2017-03-26
 ### Fixed
 - Fix compilation on rustc 1.13.
