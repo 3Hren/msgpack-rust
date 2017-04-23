@@ -525,6 +525,7 @@ impl<'de, U: ValueBase<'de> + ValueExt> de::VariantAccess<'de> for VariantDeseri
     }
 }
 
+// TODO: Pub to satisfy module visibility system. Should not be public.
 pub trait ValueExt {
     fn unexpected(&self) -> Unexpected;
 }
@@ -1037,6 +1038,7 @@ pub fn deserialize_from<'de, T, D>(val: D) -> Result<T, Error>
     Deserialize::deserialize(val)
 }
 
+// TODO: Ugly hack. Needed for avoiding copy-pasting similar code, but I don't like it.
 pub trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
     fn is_nil(&self) -> bool;
 
@@ -1066,6 +1068,7 @@ pub trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
                 let mut iter = v.into_iter();
 
                 if !(iter.len() == 1 || iter.len() == 2) {
+                    // TODO: Use `invalid_length`.
                     return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one or two elements"));
                 }
 
