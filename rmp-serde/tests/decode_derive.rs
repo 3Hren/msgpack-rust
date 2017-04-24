@@ -311,3 +311,17 @@ fn pass_enum_with_one_arg() {
     assert_eq!(Enum::V1(vec![1, 2]), actual);
     assert_eq!(buf.len() as u64, de.get_ref().position())
 }
+
+#[test]
+fn pass_from_slice() {
+    let buf = [0x93, 0xa4, 0x4a, 0x6f, 0x68, 0x6e, 0xa5, 0x53, 0x6d, 0x69, 0x74, 0x68, 0x2a];
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Person<'a> {
+        name: &'a str,
+        surname: &'a str,
+        age: u8,
+    }
+
+    assert_eq!(Person { name: "John", surname: "Smith", age: 42 }, rmps::from_slice(&buf[..]).unwrap());
+}
