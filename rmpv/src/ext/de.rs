@@ -161,8 +161,7 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
 
             #[inline]
             fn visit_none<E>(self) -> Result<Self::Value, E> {
-                //                Ok(ValueRef::Nil)
-                unimplemented!();
+                Ok(ValueRef::Nil)
             }
 
             #[inline]
