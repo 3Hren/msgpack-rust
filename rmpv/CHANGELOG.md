@@ -4,8 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 ### Added
-- Implement `Deserialize` for `ValueRef`.
-- Implement `Deserializer` for `ValueRef`.
+- Implement `Deserialize` for `ValueRef<'de>`.
+- Implement `Deserializer` for `ValueRef<'de>`.
+- Implement `Deserializer` for `&'de ValueRef<'de>`.
 - Zero-copy deserialization from `ValueRef`.
 
 ### Changed
