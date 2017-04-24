@@ -607,10 +607,6 @@ struct MapDeserializer<I, U> {
 }
 
 impl<I, U> MapDeserializer<I, U> {
-    // TODO:
-    //    fn new<T>(v: T) -> Self
-    //        where T: IntoIterator<Item=(U, U), IntoIter=I>,
-    //              I: Iterator<Item=(U, U)>
     fn new(iter: I) -> Self {
         Self {
             val: None,
