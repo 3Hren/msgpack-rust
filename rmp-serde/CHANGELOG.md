@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+- Add helper `RawRef` struct that allows to deserialize borrowed strings even if they contain invalid UTF-8. This can be when deserializing frames from older MessagePack spec.
+
 ## 0.13.0 - 2017-04-24
 ### Added
 - Zero-copy deserialization from `&[u8]`.
