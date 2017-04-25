@@ -99,7 +99,7 @@ impl Raw {
         }
     }
 
-    /// Returns the underlying `Utf8Error` if the raw contains invalud UTF-8 sequence, or
+    /// Returns the underlying `Utf8Error` if the raw contains invalid UTF-8 sequence, or
     /// else `None`.
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
