@@ -153,7 +153,7 @@ impl<'de> de::Visitor<'de> for RawVisitor {
 
     #[inline]
     fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
-        where E: serde::de::Error
+        where E: de::Error
     {
         let s = match str::from_utf8(v) {
             Ok(s) => Ok(s.into()),
@@ -165,7 +165,7 @@ impl<'de> de::Visitor<'de> for RawVisitor {
 
     #[inline]
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
-        where E: serde::de::Error
+        where E: de::Error
     {
         let s = match String::from_utf8(v) {
             Ok(s) => Ok(s),
