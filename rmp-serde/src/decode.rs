@@ -6,7 +6,7 @@ use std::str::{self, Utf8Error};
 use byteorder::{self, ReadBytesExt};
 
 use serde;
-use serde::de::{self, Deserialize, DeserializeSeed, Visitor};
+use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Visitor};
 
 use rmp;
 use rmp::Marker;
@@ -600,9 +600,9 @@ fn test_slice_read() {
 /// This conversion can fail if the structure of the Value does not match the structure expected
 /// by `T`. It can also fail if the structure is correct but `T`'s implementation of `Deserialize`
 /// decides that something is wrong with the data, for example required struct fields are missing.
-pub fn from_read<'de, R, T>(rd: R) -> Result<T, Error>
+pub fn from_read<R, T>(rd: R) -> Result<T, Error>
     where R: io::Read,
-          T: Deserialize<'de>
+          T: DeserializeOwned
 {
     Deserialize::deserialize(&mut Deserializer::new(rd))
 }
