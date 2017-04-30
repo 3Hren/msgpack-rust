@@ -2,7 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased][unreleased]
+## [Unreleased][unreleased
+## 0.13.2 - 2017-04-30
+### Changed
+- Fixed `rmps::decode::from_read` signature by marking that it can only deserialize into `DeserializeOwned`. The previous signature let try to deserialize, for example `&str` and other borrow types and it failed at runtime instead of catching it at compile time.
+
+## 0.13.1 - 2017-04-25
+### Added
 - Add helper `RawRef` struct that allows to deserialize borrowed strings even if they contain invalid UTF-8. This can be when deserializing frames from older MessagePack spec.
 
 ## 0.13.0 - 2017-04-24
