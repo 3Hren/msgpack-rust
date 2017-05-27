@@ -511,7 +511,7 @@ pub trait Read<'de>: io::Read {
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error>;
 }
 
-struct SliceReader<'a> {
+pub struct SliceReader<'a> {
     inner: &'a [u8],
 }
 
