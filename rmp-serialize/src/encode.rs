@@ -97,9 +97,9 @@ impl<'a> rustc_serialize::Encoder for Encoder<'a> {
 
     // TODO: The implementation involves heap allocation and is unstable.
     fn emit_char(&mut self, val: char) -> Result<(), Error> {
-        let mut buf = String::new();
-        buf.push(val);
-        self.emit_str(&buf)
+        // A char encoded as UTF-8 takes 4 bytes at most.
+        let mut buf = [0; 4];
+        self.emit_str(val.encode_utf8(&mut buf))
     }
 
     fn emit_str(&mut self, val: &str) -> Result<(), Error> {
