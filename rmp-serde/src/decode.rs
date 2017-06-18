@@ -78,9 +78,9 @@ impl From<Utf8Error> for Error {
 impl From<ValueReadError> for Error {
     fn from(err: ValueReadError) -> Error {
         match err {
-            ValueReadError::TypeMismatch(marker)   => Error::TypeMismatch(marker),
+            ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
             ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
         }
     }
 }
@@ -88,9 +88,9 @@ impl From<ValueReadError> for Error {
 impl From<NumValueReadError> for Error {
     fn from(err: NumValueReadError) -> Error {
         match err {
-            NumValueReadError::TypeMismatch(marker)   => Error::TypeMismatch(marker),
+            NumValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
             NumValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            NumValueReadError::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+            NumValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
             NumValueReadError::OutOfRange => Error::OutOfRange,
         }
     }
@@ -100,9 +100,13 @@ impl<'a> From<DecodeStringError<'a>> for Error {
     fn from(err: DecodeStringError) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            DecodeStringError::InvalidDataRead(..) => Error::Uncategorized("InvalidDataRead".to_string()),
+            DecodeStringError::InvalidDataRead(..) => {
+                Error::Uncategorized("InvalidDataRead".to_string())
+            }
             DecodeStringError::TypeMismatch(..) => Error::Uncategorized("TypeMismatch".to_string()),
-            DecodeStringError::BufferSizeTooSmall(..) => Error::Uncategorized("BufferSizeTooSmall".to_string()),
+            DecodeStringError::BufferSizeTooSmall(..) => {
+                Error::Uncategorized("BufferSizeTooSmall".to_string())
+            }
             DecodeStringError::InvalidUtf8(..) => Error::Uncategorized("InvalidUtf8".to_string()),
         }
     }
@@ -210,7 +214,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
         }
     }
 
-    fn read_bin_data<'a>(&'a mut self, len: u32) -> Result<Reference<'de,'a, [u8]>, Error> {
+    fn read_bin_data<'a>(&'a mut self, len: u32) -> Result<Reference<'de, 'a, [u8]>, Error> {
         self.rd.read_slice(len as usize).map_err(Error::InvalidDataRead)
     }
 
@@ -275,9 +279,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
             Marker::I64 => visitor.visit_i64(rmp::decode::read_data_i64(&mut self.rd)?),
             Marker::F32 => visitor.visit_f32(rmp::decode::read_data_f32(&mut self.rd)?),
             Marker::F64 => visitor.visit_f64(rmp::decode::read_data_f64(&mut self.rd)?),
-            Marker::FixStr(len) => {
-                self.read_str_data(len as u32, visitor)
-            }
+            Marker::FixStr(len) => self.read_str_data(len as u32, visitor),
             Marker::Str8 => {
                 let len = read_u8(&mut self.rd)?;
                 self.read_str_data(len as u32, visitor)
@@ -290,9 +292,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
                 let len = read_u32(&mut self.rd)?;
                 self.read_str_data(len as u32, visitor)
             }
-            Marker::FixArray(len) => {
-                self.read_array(len as u32, visitor)
-            }
+            Marker::FixArray(len) => self.read_array(len as u32, visitor),
             Marker::Array16 => {
                 let len = read_u16(&mut self.rd)?;
                 self.read_array(len as u32, visitor)
@@ -301,9 +301,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
                 let len = read_u32(&mut self.rd)?;
                 self.read_array(len, visitor)
             }
-            Marker::FixMap(len) => {
-                self.read_map(len as u32, visitor)
-            }
+            Marker::FixMap(len) => self.read_map(len as u32, visitor),
             Marker::Map16 => {
                 let len = read_u16(&mut self.rd)?;
                 self.read_map(len as u32, visitor)
@@ -343,7 +341,11 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
         }
     }
 
-    fn deserialize_enum<V>(self, _name: &str, _variants: &[&str], visitor: V) -> Result<V::Value, Error>
+    fn deserialize_enum<V>(self,
+                           _name: &str,
+                           _variants: &[&str],
+                           visitor: V)
+                           -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
         match read_array_len(&mut self.rd)? {
@@ -352,7 +354,10 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
         }
     }
 
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Error>
+    fn deserialize_newtype_struct<V>(self,
+                                     _name: &'static str,
+                                     visitor: V)
+                                     -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
         match read_array_len(&mut self.rd)? {
@@ -452,9 +457,7 @@ pub struct VariantAccess<'a, R: 'a> {
 
 impl<'a, R: 'a> VariantAccess<'a, R> {
     pub fn new(de: &'a mut Deserializer<R>) -> Self {
-        VariantAccess {
-            de: de,
-        }
+        VariantAccess { de: de }
     }
 }
 
@@ -463,7 +466,7 @@ impl<'de, 'a, R: Read<'de>> de::EnumAccess<'de> for VariantAccess<'a, R> {
     type Variant = Self;
 
     fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self), Error>
-        where V: de::DeserializeSeed<'de>,
+        where V: de::DeserializeSeed<'de>
     {
         use serde::de::IntoDeserializer;
 
@@ -494,7 +497,10 @@ impl<'de, 'a, R: Read<'de>> de::VariantAccess<'de> for VariantAccess<'a, R> {
         de::Deserializer::deserialize_tuple(self.de, len, visitor)
     }
 
-    fn struct_variant<V>(self, fields: &'static [&'static str], visitor: V) -> Result<V::Value, Error>
+    fn struct_variant<V>(self,
+                         fields: &'static [&'static str],
+                         visitor: V)
+                         -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
         de::Deserializer::deserialize_tuple(self.de, fields.len(), visitor)
@@ -517,9 +523,7 @@ pub struct SliceReader<'a> {
 
 impl<'a> SliceReader<'a> {
     fn new(slice: &'a [u8]) -> Self {
-        SliceReader {
-            inner: slice,
-        }
+        SliceReader { inner: slice }
     }
 }
 
@@ -527,7 +531,7 @@ impl<'de> Read<'de> for SliceReader<'de> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         if len > self.inner.len() {
-            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "unexpected EOF"))
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "unexpected EOF"));
         }
         let (a, b) = self.inner.split_at(len);
         self.inner = b;
@@ -549,7 +553,7 @@ impl<'a> io::Read for SliceReader<'a> {
 
 struct ReadReader<R: io::Read> {
     inner: R,
-    buf: Vec<u8>
+    buf: Vec<u8>,
 }
 
 impl<R: io::Read> ReadReader<R> {
@@ -590,9 +594,11 @@ fn test_slice_read() {
     let mut rd = SliceReader::new(&buf[..]);
 
     assert_eq!(rd.read_slice(1).unwrap(), Reference::Borrowed(&[0][..]));
-    assert_eq!(rd.read_slice(6).unwrap(), Reference::Borrowed(&[1, 2, 3, 4, 5, 6][..]));
+    assert_eq!(rd.read_slice(6).unwrap(),
+               Reference::Borrowed(&[1, 2, 3, 4, 5, 6][..]));
     assert!(rd.read_slice(5).is_err());
-    assert_eq!(rd.read_slice(4).unwrap(), Reference::Borrowed(&[7, 8, 9, 10][..]));
+    assert_eq!(rd.read_slice(4).unwrap(),
+               Reference::Borrowed(&[7, 8, 9, 10][..]));
 }
 
 /// Deserialize an instance of type `T` from an I/O stream of MessagePack.
@@ -605,4 +611,12 @@ pub fn from_read<R, T>(rd: R) -> Result<T, Error>
           T: DeserializeOwned
 {
     Deserialize::deserialize(&mut Deserializer::new(rd))
+}
+
+/// Deserializes a byte slice into the desired type.
+pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
+    where T: serde::Deserialize<'a>
+{
+    let mut de = Deserializer::from_slice(input);
+    serde::Deserialize::deserialize(&mut de)
 }

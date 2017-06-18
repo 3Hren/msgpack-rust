@@ -269,19 +269,8 @@ impl<'de> Deserialize<'de> for RawRef<'de> {
     }
 }
 
-/// Serializes a value to a byte vector.
-pub fn to_vec<T>(value: &T) -> Result<Vec<u8>, encode::Error>
-    where T: serde::Serialize
-{
-    let mut buf = Vec::with_capacity(64);
-    value.serialize(&mut Serializer::new(&mut buf))?;
-    Ok(buf)
-}
+// Reexport common functions from encode module
+pub use encode::{write, write_named, to_vec, to_vec_named};
+// Reexport common functions from decode module
+pub use decode::{from_slice,from_read};
 
-/// Deserializes a byte slice into the desired type.
-pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, decode::Error>
-    where T: serde::Deserialize<'a>
-{
-    let mut de = Deserializer::from_slice(input);
-    serde::Deserialize::deserialize(&mut de)
-}
