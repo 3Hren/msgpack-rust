@@ -158,12 +158,7 @@ impl<W: Write> Serializer<W, StructArrayWriter> {
     pub fn compact(wr: W) -> Self {
         Serializer::with(wr, StructArrayWriter)
     }
-}
 
-impl<W: Write> Serializer<W, StructMapWriter> {
-    pub fn named(wr: W) -> Self {
-        Serializer::with(wr, StructMapWriter)
-    }
 }
 
 impl<W: Write, V> Serializer<W, V> {
@@ -515,7 +510,7 @@ pub fn write_named<W: ?Sized, T: ?Sized>(wr: &mut W, val: &T) -> Result<(), Erro
     where W: Write,
           T: Serialize
 {
-    val.serialize(&mut Serializer::named(wr))
+    val.serialize(&mut Serializer::new_named(wr))
 }
 
 
@@ -545,6 +540,6 @@ pub fn to_vec_named<T>(value: &T) -> Result<Vec<u8>, Error>
     where T: serde::Serialize
 {
     let mut buf = Vec::with_capacity(64);
-    value.serialize(&mut Serializer::named(&mut buf))?;
+    value.serialize(&mut Serializer::new_named(&mut buf))?;
     Ok(buf)
 }
