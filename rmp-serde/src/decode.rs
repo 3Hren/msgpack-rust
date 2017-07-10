@@ -547,7 +547,7 @@ impl<'a> io::Read for SliceReader<'a> {
     }
 }
 
-struct ReadReader<R: io::Read> {
+pub struct ReadReader<R: io::Read> {
     inner: R,
     buf: Vec<u8>
 }
