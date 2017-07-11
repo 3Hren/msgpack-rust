@@ -2,7 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased][unreleased
+## [Unreleased][unreleased]
+
+## 0.13.4 - 2017-07-11
+### Fixed
+- Fixed build on nightly rustc (#135).
+
 ## 0.13.3 - 2017-05-27
 ### Fixed
 - Fixed build on nightly rustc (#131).
