@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased
+## 0.13.3 - 2017-05-27
+### Fixed
+- Fixed build on nightly rustc (#131).
+
 ## 0.13.2 - 2017-04-30
 ### Changed
 - Fixed `rmps::decode::from_read` signature by marking that it can only deserialize into `DeserializeOwned`. The previous signature let try to deserialize, for example `&str` and other borrow types and it failed at runtime instead of catching it at compile time.
