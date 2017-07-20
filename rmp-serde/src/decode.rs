@@ -370,10 +370,7 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
     fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
-        match read_array_len(&mut self.rd)? {
-            1 => visitor.visit_newtype_struct(self),
-            n => Err(Error::LengthMismatch(n as u32)),
-        }
+        visitor.visit_newtype_struct(self)
     }
 
     forward_to_deserialize_any! {
