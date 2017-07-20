@@ -13,7 +13,7 @@ use rmps::decode::Error;
 
 #[test]
 fn pass_newtype() {
-    let buf = [0x91, 0x2a];
+    let buf = [0x2a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -37,6 +37,22 @@ fn pass_tuple_struct() {
     let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Decoded(42, 100500), actual);
+}
+
+#[test]
+fn pass_single_field_struct() {
+    let buf = [0x91, 0x2a];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Struct {
+        inner: u32
+    };
+
+    let mut de = Deserializer::new(cur);
+    let actual: Struct = Deserialize::deserialize(&mut de).unwrap();
+
+    assert_eq!(Struct{inner: 42}, actual);
 }
 
 #[test]
