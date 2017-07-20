@@ -184,7 +184,7 @@ impl ser::Serializer for Serializer {
     fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
-        Ok(Value::Array(vec![to_value(value)?]))
+        Ok(to_value(value)?)
     }
 
     fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>

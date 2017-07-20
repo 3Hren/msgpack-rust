@@ -314,7 +314,7 @@ impl<'de> Deserializer<'de> for Value {
     fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        ValueBase::deserialize_newtype_struct(self, visitor)
+        visitor.visit_newtype_struct(self)
     }
 
     #[inline]
@@ -400,7 +400,7 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
     fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        ValueBase::deserialize_newtype_struct(self, visitor)
+        visitor.visit_newtype_struct(self)
     }
 
     #[inline]
@@ -508,17 +508,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
     fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        match self {
-            &ValueRef::Array(ref v) => {
-                let iter = v.into_iter();
-                if iter.len() != 1 {
-                    return Err(de::Error::invalid_length(iter.len(), &"array with one element"));
-                }
-
-                visitor.visit_seq(SeqDeserializer::new(iter))
-            }
-            other => Err(de::Error::invalid_type(other.unexpected(), &"array")),
-        }
+        visitor.visit_newtype_struct(self)
     }
 
     #[inline]
@@ -990,18 +980,7 @@ trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
     fn deserialize_newtype_struct<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        match self.into_iter() {
-            Ok(iter) => {
-                if iter.len() != 1 {
-                    return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one element"));
-                }
-
-                visitor.visit_seq(SeqDeserializer {
-                    iter: iter,
-                })
-            }
-            Err(other) => Err(de::Error::invalid_type(other.unexpected(), &"array")),
-        }
+        visitor.visit_newtype_struct(self)
     }
 
     #[inline]
