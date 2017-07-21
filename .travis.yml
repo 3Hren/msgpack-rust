@@ -26,13 +26,7 @@ before_script:
 
 script:
   - |
-      if [ "$TRAVIS_RUST_VERSION" == "1.13.0" ]; then
-        for crate in rmp rmp-serialize rmpv; do
-          (cd $crate && cargo test --verbose);
-        done;
-      else
-        cargo test --all --verbose;
-      fi
+      cargo test --all --verbose;
 
 after_success:
   - |
