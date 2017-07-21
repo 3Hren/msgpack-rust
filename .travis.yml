@@ -16,7 +16,6 @@ rust:
   - nightly
   - stable
   - 1.16.0
-  - 1.17.0
 
 before_script:
   - |
