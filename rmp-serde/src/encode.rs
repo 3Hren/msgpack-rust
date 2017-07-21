@@ -327,10 +327,9 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
-        // TODO: The implementation involves heap allocation and is unstable.
-        let mut buf = String::new();
-        buf.push(v);
-        self.serialize_str(&buf)
+        // A char encoded as UTF-8 takes 4 bytes at most.
+        let mut buf = [0; 4];
+        self.serialize_str(v.encode_utf8(&mut buf))
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
