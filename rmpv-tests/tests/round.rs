@@ -110,5 +110,5 @@ fn pass_newtype_struct() {
     #[derive(Debug, PartialEq, Serialize, Deserialize)]
     struct Newtype(String);
 
-    test_round(Newtype("John".into()), Value::Array(vec![Value::from("John")]));
+    test_round(Newtype("John".into()), Value::from("John"));
 }

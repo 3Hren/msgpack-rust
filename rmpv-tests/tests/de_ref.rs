@@ -205,7 +205,7 @@ fn pass_newtype_struct_from_value() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Newtype<'a>(&'a str);
 
-    assert_eq!(Newtype("John"), deserialize_from(ValueRef::Array(vec![ValueRef::from("John")])).unwrap());
+    assert_eq!(Newtype("John"), deserialize_from(ValueRef::from("John")).unwrap());
 }
 
 #[test]
