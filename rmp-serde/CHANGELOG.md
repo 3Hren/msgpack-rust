@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 
+## 0.13.5 - 2017-07-21
+### Changed
+- Switch to using `char::encode_utf8`.
+  In Rust 1.15, the function `char::encode_utf8` was stabilized. Assuming that `rmp` follows the `serde` standard of supporting the last 3 stable releases, this function is now safe to use. I believe this removes the last allocation required on the serialization path.
+
 ## 0.13.4 - 2017-07-11
 ### Fixed
 - Fixed build on nightly rustc (#135).
