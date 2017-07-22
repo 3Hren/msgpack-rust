@@ -160,7 +160,6 @@ impl<W: Write> Serializer<W, StructArrayWriter> {
     pub fn compact(wr: W) -> Self {
         Serializer::with(wr, StructArrayWriter)
     }
-
 }
 
 impl<W: Write, V> Serializer<W, V> {
