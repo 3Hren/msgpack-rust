@@ -92,6 +92,33 @@ impl VariantWriter for StructArrayWriter {
     }
 }
 
+pub struct StructMapWriter;
+
+impl VariantWriter for StructMapWriter {
+    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
+        where W: Write
+    {
+        write_map_len(wr, len)
+    }
+
+    fn write_field_name<W>(&self, wr: &mut W, key: &str) -> Result<(), ValueWriteError>
+        where W: Write
+    {
+        write_str(wr, key)
+    }
+}
+impl<W: Write> Serializer<W, StructMapWriter> {
+    /// Constructs a new `MessagePack` serializer whose output will be written to the writer
+    /// specified.
+    ///
+    /// # Note
+    ///
+    /// This is the default constructor, which returns a serializer that will serialize structs
+    /// using large named representation.
+    pub fn new_named(wr: W) -> Self {
+        Serializer::with(wr, StructMapWriter)
+    }
+}
 /// Represents MessagePack serialization implementation.
 ///
 /// # Note
@@ -128,6 +155,10 @@ impl<W: Write> Serializer<W, StructArrayWriter> {
     pub fn new(wr: W) -> Self {
         Serializer::with(wr, StructArrayWriter)
     }
+    pub fn compact(wr: W) -> Self {
+        Serializer::with(wr, StructArrayWriter)
+    }
+
 }
 
 impl<W: Write, V> Serializer<W, V> {
@@ -238,9 +269,10 @@ impl<'a, W: Write + 'a, V: VariantWriter + 'a> SerializeStruct for Compound<'a, 
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
+    fn serialize_field<T: ?Sized + Serialize>(&mut self,
+                                              key: &'static str,
+                                              value: &T)
+                                              -> Result<(), Self::Error> {
         self.se.vw.write_field_name(&mut self.se.wr, key)?;
         value.serialize(&mut *self.se)
     }
@@ -254,9 +286,10 @@ impl<'a, W: Write + 'a, V: VariantWriter + 'a> SerializeStructVariant for Compou
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, _key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
+    fn serialize_field<T: ?Sized + Serialize>(&mut self,
+                                              _key: &'static str,
+                                              value: &T)
+                                              -> Result<(), Self::Error> {
         value.serialize(&mut *self.se)
     }
 
@@ -362,21 +395,31 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         Ok(())
     }
 
-    fn serialize_unit_variant(self, _name: &str, idx: u32, _variant: &str) ->
-        Result<Self::Ok, Self::Error>
-    {
+    fn serialize_unit_variant(self,
+                              _name: &str,
+                              idx: u32,
+                              _variant: &str)
+                              -> Result<Self::Ok, Self::Error> {
         write_array_len(&mut self.wr, 2)?;
         self.serialize_u32(idx)?;
         write_array_len(&mut self.wr, 0)?;
         Ok(())
     }
 
-    fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(self, name: &'static str, value: &T) -> Result<(), Self::Error> {
+    fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(self,
+                                                              name: &'static str,
+                                                              value: &T)
+                                                              -> Result<(), Self::Error> {
         self.serialize_tuple_struct(name, 1)?;
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, name: &'static str, variant_index: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self,
+                                                               name: &'static str,
+                                                               variant_index: u32,
+                                                               variant: &'static str,
+                                                               value: &T)
+                                                               -> Result<Self::Ok, Self::Error> {
         self.serialize_tuple_variant(name, variant_index, variant, 1)?;
         value.serialize(self)
     }
@@ -396,15 +439,19 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         self.serialize_seq(Some(len))
     }
 
-    fn serialize_tuple_struct(self, _name: &'static str, len: usize) ->
-        Result<Self::SerializeTupleStruct, Self::Error>
-    {
+    fn serialize_tuple_struct(self,
+                              _name: &'static str,
+                              len: usize)
+                              -> Result<Self::SerializeTupleStruct, Self::Error> {
         self.serialize_tuple(len)
     }
 
-    fn serialize_tuple_variant(self,  name: &'static str,  idx: u32,  _variant: &'static str,  len: usize) ->
-        Result<Self::SerializeTupleVariant, Error>
-    {
+    fn serialize_tuple_variant(self,
+                               name: &'static str,
+                               idx: u32,
+                               _variant: &'static str,
+                               len: usize)
+                               -> Result<Self::SerializeTupleVariant, Error> {
         // We encode variant types as a tuple of id with array of args, like: [id, [args...]].
         rmp::encode::write_array_len(&mut self.wr, 2)?;
         self.serialize_u32(idx)?;
@@ -421,16 +468,20 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         }
     }
 
-    fn serialize_struct(self, _name: &'static str, len: usize) ->
-        Result<Self::SerializeStruct, Self::Error>
-    {
+    fn serialize_struct(self,
+                        _name: &'static str,
+                        len: usize)
+                        -> Result<Self::SerializeStruct, Self::Error> {
         self.vw.write_struct_len(&mut self.wr, len as u32)?;
         Ok(Compound { se: self })
     }
 
-    fn serialize_struct_variant(self, name: &'static str, id: u32, _variant: &'static str, len: usize) ->
-        Result<Self::SerializeStructVariant, Error>
-    {
+    fn serialize_struct_variant(self,
+                                name: &'static str,
+                                id: u32,
+                                _variant: &'static str,
+                                len: usize)
+                                -> Result<Self::SerializeStructVariant, Error> {
         write_array_len(&mut self.wr, 2)?;
         self.serialize_u32(id)?;
         self.serialize_struct(name, len)
@@ -438,6 +489,7 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
 }
 
 /// Serialize the given data structure as MessagePack into the I/O stream.
+/// This fyunction uses compact representation - structures as arrays
 ///
 /// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
 #[inline]
@@ -445,11 +497,28 @@ pub fn write<W: ?Sized, T: ?Sized>(wr: &mut W, val: &T) -> Result<(), Error>
     where W: Write,
           T: Serialize
 {
-    val.serialize(&mut Serializer::new(wr))
+    val.serialize(&mut Serializer::compact(wr))
+}
+
+/// Serialize the given data structure as MessagePack into the I/O stream.
+/// This function serializes structures as maps
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
+#[inline]
+pub fn write_named<W: ?Sized, T: ?Sized>(wr: &mut W, val: &T) -> Result<(), Error>
+    where W: Write,
+          T: Serialize
+{
+    val.serialize(&mut Serializer::new_named(wr))
 }
 
 
+
+
+
+
 /// Serialize the given data structure as a MessagePack byte vector.
+/// This method uses compact representation, structs are serialized as arrays
 ///
 /// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
 #[inline]
@@ -458,5 +527,18 @@ pub fn to_vec<T: ?Sized>(val: &T) -> Result<Vec<u8>, Error>
 {
     let mut buf = Vec::with_capacity(128);
     write(&mut buf, val)?;
+    Ok(buf)
+}
+
+/// Serializes data structure into byte vector as a map
+/// Resulting MessagePack message will contain field names
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
+#[inline]
+pub fn to_vec_named<T>(value: &T) -> Result<Vec<u8>, Error>
+    where T: serde::Serialize
+{
+    let mut buf = Vec::with_capacity(64);
+    value.serialize(&mut Serializer::new_named(&mut buf))?;
     Ok(buf)
 }
