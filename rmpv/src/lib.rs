@@ -249,6 +249,13 @@ impl Utf8String {
             Err(err) => err.0,
         }
     }
+
+    pub fn as_ref(&self) -> Utf8StringRef {
+        match self.s {
+            Ok(ref s) => Utf8StringRef { s: Ok(s.as_str()) },
+            Err((ref buf, err)) => Utf8StringRef { s: Err((&buf[..], err)) },
+        }
+    }
 }
 
 impl Display for Utf8String {
@@ -410,6 +417,53 @@ pub enum Value {
 }
 
 impl Value {
+    /// Converts the current owned Value to a ValueRef.
+    ///
+    /// # Panics
+    ///
+    /// Panics in unable to allocate memory to keep all internal structures and buffers.
+    ///
+    /// # Examples
+    /// ```
+    /// use rmpv::{Value, ValueRef};
+    ///
+    /// let val = Value::Array(vec![
+    ///     Value::Nil,
+    ///     Value::from(42),
+    ///     Value::Array(vec![
+    ///         Value::String("le message".into())
+    ///     ])
+    /// ]);
+    ///
+    /// let expected = ValueRef::Array(vec![
+    ///    ValueRef::Nil,
+    ///    ValueRef::from(42),
+    ///    ValueRef::Array(vec![
+    ///        ValueRef::from("le message"),
+    ///    ])
+    /// ]);
+    ///
+    /// assert_eq!(expected, val.as_ref());
+    /// ```
+    pub fn as_ref(&self) -> ValueRef {
+        match self {
+            &Value::Nil => ValueRef::Nil,
+            &Value::Boolean(val) => ValueRef::Boolean(val),
+            &Value::Integer(val) => ValueRef::Integer(val),
+            &Value::F32(val) => ValueRef::F32(val),
+            &Value::F64(val) => ValueRef::F64(val),
+            &Value::String(ref val) => ValueRef::String(val.as_ref()),
+            &Value::Binary(ref val) => ValueRef::Binary(val.as_slice()),
+            &Value::Array(ref val) => {
+                ValueRef::Array(val.iter().map(|v| v.as_ref()).collect())
+            }
+            &Value::Map(ref val) => {
+                ValueRef::Map(val.iter().map(|&(ref k, ref v)| (k.as_ref(), v.as_ref())).collect())
+            }
+            &Value::Ext(ty, ref buf) => ValueRef::Ext(ty, buf.as_slice()),
+        }
+    }
+
     /// Returns true if the `Value` is a Null. Returns false otherwise.
     ///
     /// # Examples
