@@ -687,4 +687,5 @@ fn into_owned() {
     ]);
 
     assert_eq!(expected, val.to_owned());
+    assert_eq!(expected.as_ref(), val);
 }
