@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+## 0.4.1 - 2017-06-27
+### Added
+- Add `as_ref()` to `Value` and `Utf8String` (#139).
+
 ## 0.4.0 - 2017-04-24
 ### Added
 - Implement `Deserialize` for `ValueRef<'de>`.
