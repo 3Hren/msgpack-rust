@@ -92,6 +92,35 @@ impl VariantWriter for StructArrayWriter {
     }
 }
 
+pub struct StructMapWriter;
+
+impl VariantWriter for StructMapWriter {
+    fn write_struct_len<W>(&self, wr: &mut W, len: u32) -> Result<Marker, ValueWriteError>
+    where
+        W: Write,
+    {
+        write_map_len(wr, len)
+    }
+
+    fn write_field_name<W>(&self, wr: &mut W, key: &str) -> Result<(), ValueWriteError>
+    where
+        W: Write,
+    {
+        write_str(wr, key)
+    }
+}
+impl<W: Write> Serializer<W, StructMapWriter> {
+    /// Constructs a new `MessagePack` serializer whose output will be written to the writer
+    /// specified.
+    ///
+    /// # Note
+    ///
+    /// This is the default constructor, which returns a serializer that will serialize structs
+    /// using large named representation.
+    pub fn new_named(wr: W) -> Self {
+        Serializer::with(wr, StructMapWriter)
+    }
+}
 /// Represents MessagePack serialization implementation.
 ///
 /// # Note
@@ -126,6 +155,9 @@ impl<W: Write> Serializer<W, StructArrayWriter> {
     /// This is the default constructor, which returns a serializer that will serialize structs
     /// using compact tuple representation, without field names.
     pub fn new(wr: W) -> Self {
+        Serializer::with(wr, StructArrayWriter)
+    }
+    pub fn compact(wr: W) -> Self {
         Serializer::with(wr, StructArrayWriter)
     }
 }
@@ -438,6 +470,7 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
 }
 
 /// Serialize the given data structure as MessagePack into the I/O stream.
+/// This fyunction uses compact representation - structures as arrays
 ///
 /// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
 #[inline]
@@ -445,11 +478,24 @@ pub fn write<W: ?Sized, T: ?Sized>(wr: &mut W, val: &T) -> Result<(), Error>
     where W: Write,
           T: Serialize
 {
-    val.serialize(&mut Serializer::new(wr))
+    val.serialize(&mut Serializer::compact(wr))
 }
 
+/// Serialize the given data structure as MessagePack into the I/O stream.
+/// This function serializes structures as maps
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
+#[inline]
+pub fn write_named<W: ?Sized, T: ?Sized>(wr: &mut W, val: &T) -> Result<(), Error>
+where
+    W: Write,
+    T: Serialize,
+{
+    val.serialize(&mut Serializer::new_named(wr))
+}
 
 /// Serialize the given data structure as a MessagePack byte vector.
+/// This method uses compact representation, structs are serialized as arrays
 ///
 /// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
 #[inline]
@@ -460,3 +506,18 @@ pub fn to_vec<T: ?Sized>(val: &T) -> Result<Vec<u8>, Error>
     write(&mut buf, val)?;
     Ok(buf)
 }
+
+/// Serializes data structure into byte vector as a map
+/// Resulting MessagePack message will contain field names
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
+#[inline]
+pub fn to_vec_named<T>(value: &T) -> Result<Vec<u8>, Error>
+where
+    T: serde::Serialize,
+{
+    let mut buf = Vec::with_capacity(64);
+    value.serialize(&mut Serializer::new_named(&mut buf))?;
+    Ok(buf)
+}
+

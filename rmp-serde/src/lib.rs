@@ -68,8 +68,8 @@ use std::str::{self, Utf8Error};
 
 use serde::de::{self, Deserialize};
 
-pub use decode::Deserializer;
-pub use encode::Serializer;
+pub use decode::{Deserializer, from_slice, from_read};
+pub use encode::{Serializer, to_vec, to_vec_named};
 
 pub mod decode;
 pub mod encode;
@@ -267,21 +267,4 @@ impl<'de> Deserialize<'de> for RawRef<'de> {
     {
         de.deserialize_any(RawRefVisitor)
     }
-}
-
-/// Serializes a value to a byte vector.
-pub fn to_vec<T>(value: &T) -> Result<Vec<u8>, encode::Error>
-    where T: serde::Serialize
-{
-    let mut buf = Vec::with_capacity(64);
-    value.serialize(&mut Serializer::new(&mut buf))?;
-    Ok(buf)
-}
-
-/// Deserializes a byte slice into the desired type.
-pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, decode::Error>
-    where T: serde::Deserialize<'a>
-{
-    let mut de = Deserializer::from_slice(input);
-    serde::Deserialize::deserialize(&mut de)
 }
