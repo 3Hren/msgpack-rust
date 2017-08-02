@@ -606,3 +606,11 @@ pub fn from_read<R, T>(rd: R) -> Result<T, Error>
 {
     Deserialize::deserialize(&mut Deserializer::new(rd))
 }
+
+/// Deserializes a byte slice into the desired type.
+pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
+    where T: serde::Deserialize<'a>
+{
+    let mut de = Deserializer::from_slice(input);
+    serde::Deserialize::deserialize(&mut de)
+}

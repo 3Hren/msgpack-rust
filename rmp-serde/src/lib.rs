@@ -68,8 +68,8 @@ use std::str::{self, Utf8Error};
 
 use serde::de::{self, Deserialize};
 
-pub use decode::Deserializer;
-pub use encode::Serializer;
+pub use decode::{Deserializer, from_slice, from_read};
+pub use encode::{Serializer, to_vec, to_vec_named};
 
 pub mod decode;
 pub mod encode;
@@ -268,8 +268,3 @@ impl<'de> Deserialize<'de> for RawRef<'de> {
         de.deserialize_any(RawRefVisitor)
     }
 }
-
-// Reexport common functions from encode module
-pub use encode::{write, write_named, to_vec, to_vec_named};
-// Reexport common functions from decode module
-pub use decode::{from_slice, from_read};
