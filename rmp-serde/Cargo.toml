@@ -8,6 +8,7 @@ repository = "https://github.com/3Hren/msgpack-rust"
 documentation = "https://docs.rs/rmp-serde"
 readme = "../README.md"
 keywords = ["msgpack", "MessagePack", "serde", "serialization"]
+categories = ["encoding"]
 
 [dependencies]
 byteorder = "1"
