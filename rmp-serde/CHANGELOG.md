@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 
+## 0.13.6 - 2017-08-04
+### Added:
+- Serialize struct as a map (#140).
+
 ## 0.13.5 - 2017-07-21
 ### Changed
 - Switch to using `char::encode_utf8`.
