@@ -13,21 +13,30 @@ use rmp::Marker;
 use rmp::decode::{MarkerReadError, DecodeStringError, ValueReadError, NumValueReadError,
                   read_array_len};
 
-///
-// TODO: Write docs.
+/// Enum representing errors that can occur while decoding MessagePack data.
 #[derive(Debug)]
 pub enum Error {
+    /// The enclosed I/O error occured while trying to read a MessagePack
+    /// marker.
     InvalidMarkerRead(io::Error),
+    /// The enclosed I/O error occured while trying to read the encoded
+    /// MessagePack data.
     InvalidDataRead(io::Error),
-    /// The actual value type isn't equal with the expected one.
+    /// A mismatch occured between the decoded and expected value types.
     TypeMismatch(Marker),
-    /// Numeric cast failed due to out of range error.
+    /// A numeric cast failed due to an out-of-range error.
     OutOfRange,
+    /// A decoded array did not have the enclosed expected length.
     LengthMismatch(u32),
-    /// Uncategorized error.
+    /// An otherwise uncategorized error occured. See the enclosed `String` for
+    /// details.
     Uncategorized(String),
+    /// A general error occured while deserializing the expected type. See the
+    /// enclosed `String` for details.
     Syntax(String),
+    /// An encoded string could not be parsed as UTF-8.
     Utf8Error(Utf8Error),
+    /// The depth limit was exceeded; not currently used.
     DepthLimitExceeded,
 }
 
