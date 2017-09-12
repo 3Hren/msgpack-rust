@@ -7,7 +7,7 @@ use std::io::Cursor;
 
 use serde::Serialize;
 
-use rmps::Serializer;
+use rmps::{Raw, RawRef, Serializer};
 use rmps::encode::{self, Error};
 
 #[test]
@@ -319,4 +319,49 @@ fn get_mut() {
 
     se.get_mut().push(42);
     assert_eq!(vec![0xc3, 42], se.into_inner());
+}
+
+#[test]
+fn pass_raw_valid_utf8() {
+    let raw = Raw::new("key".into());
+
+    let mut buf = Vec::new();
+    raw.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    assert_eq!(vec![0xa3, 0x6b, 0x65, 0x79], buf);
+}
+
+#[test]
+fn pass_raw_invalid_utf8() {
+    // >>> msgpack.dumps(msgpack.dumps([200, []]))
+    // '\xa4\x92\xcc\xc8\x90'
+    let raw = Raw::from_utf8(vec![0x92, 0xcc, 0xc8, 0x90]);
+
+    let mut buf = Vec::new();
+    raw.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    assert_eq!(vec![0xa4, 0x92, 0xcc, 0xc8, 0x90], buf);
+}
+
+#[test]
+fn pass_raw_ref_valid_utf8() {
+    let raw = RawRef::new("key");
+
+    let mut buf = Vec::new();
+    raw.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    assert_eq!(vec![0xa3, 0x6b, 0x65, 0x79], buf);
+}
+
+#[test]
+fn pass_raw_ref_invalid_utf8() {
+    // >>> msgpack.dumps(msgpack.dumps([200, []]))
+    // '\xa4\x92\xcc\xc8\x90'
+    let b = &[0x92, 0xcc, 0xc8, 0x90];
+    let raw = RawRef::from_utf8(b);
+
+    let mut buf = Vec::new();
+    raw.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    assert_eq!(vec![0xa4, 0x92, 0xcc, 0xc8, 0x90], buf);
 }

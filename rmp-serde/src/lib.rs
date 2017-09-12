@@ -64,8 +64,10 @@ extern crate byteorder;
 extern crate serde;
 
 use std::fmt::{self, Display, Formatter};
+use std::mem;
 use std::str::{self, Utf8Error};
 
+use serde::Serialize;
 use serde::de::{self, Deserialize};
 
 pub use decode::{Deserializer, from_slice, from_read};
@@ -74,13 +76,34 @@ pub use encode::{Serializer, to_vec, to_vec_named};
 pub mod decode;
 pub mod encode;
 
-/// Helper that allows to decode strings no matter whether they contain valid or invalid UTF-8.
+/// Helper that allows both to encode and decode strings no matter whether they contain valid or
+/// invalid UTF-8.
+///
+/// Regardless of validity the UTF-8 content this type will always be serialized as a string.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Raw {
     s: Result<String, (Vec<u8>, Utf8Error)>,
 }
 
 impl Raw {
+    /// Constructs a new `Raw` from the UTF-8 string.
+    pub fn new(v: String) -> Self {
+        Self { s: Ok(v) }
+    }
+
+    /// Converts a vector of bytes to a `Raw`.
+    pub fn from_utf8(v: Vec<u8>) -> Self {
+        match String::from_utf8(v) {
+            Ok(v) => Raw::new(v),
+            Err(err) => {
+                let e = err.utf8_error();
+                Self {
+                    s: Err((err.into_bytes(), e))
+                }
+            }
+        }
+    }
+
     /// Returns `true` if the raw is valid UTF-8.
     pub fn is_str(&self) -> bool {
         self.s.is_ok()
@@ -127,6 +150,20 @@ impl Raw {
             Ok(s) => s.into_bytes(),
             Err(err) => err.0,
         }
+    }
+}
+
+impl Serialize for Raw {
+    fn serialize<S>(&self, se: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer
+    {
+        let s = match self.s {
+            Ok(ref s) => s.as_str(),
+            Err((ref b, ..)) => unsafe { mem::transmute(&b[..]) },
+        };
+
+        se.serialize_str(s)
     }
 }
 
@@ -195,6 +232,23 @@ pub struct RawRef<'a> {
 }
 
 impl<'a> RawRef<'a> {
+    /// Constructs a new `RawRef` from the UTF-8 string.
+    pub fn new(v: &'a str) -> Self {
+        Self { s: Ok(v) }
+    }
+
+    /// Converts a vector of bytes to a `RawRef`.
+    pub fn from_utf8(v: &'a[u8]) -> Self {
+        match str::from_utf8(v) {
+            Ok(v) => RawRef::new(v),
+            Err(err) => {
+                Self {
+                    s: Err((v, err))
+                }
+            }
+        }
+    }
+
     /// Returns `true` if the raw is valid UTF-8.
     pub fn is_str(&self) -> bool {
         self.s.is_ok()
@@ -228,6 +282,20 @@ impl<'a> RawRef<'a> {
             Ok(ref s) => s.as_bytes(),
             Err(ref err) => &err.0[..],
         }
+    }
+}
+
+impl<'a> Serialize for RawRef<'a> {
+    fn serialize<S>(&self, se: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer
+    {
+        let s = match self.s {
+            Ok(ref s) => s,
+            Err((ref b, ..)) => unsafe { mem::transmute(b) },
+        };
+
+        se.serialize_str(s)
     }
 }
 
