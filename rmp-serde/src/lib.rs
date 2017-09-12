@@ -225,7 +225,10 @@ impl<'de> Deserialize<'de> for Raw {
     }
 }
 
-/// Helper that allows to decode strings no matter whether they contain valid or invalid UTF-8.
+/// Helper that allows both to encode and decode strings no matter whether they contain valid or
+/// invalid UTF-8.
+///
+/// Regardless of validity the UTF-8 content this type will always be serialized as a string.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RawRef<'a> {
     s: Result<&'a str, (&'a [u8], Utf8Error)>,
@@ -238,7 +241,7 @@ impl<'a> RawRef<'a> {
     }
 
     /// Converts a vector of bytes to a `RawRef`.
-    pub fn from_utf8(v: &'a[u8]) -> Self {
+    pub fn from_utf8(v: &'a [u8]) -> Self {
         match str::from_utf8(v) {
             Ok(v) => RawRef::new(v),
             Err(err) => {
