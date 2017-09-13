@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+## 0.13.7 - 2017-09-13
+### Changed:
+- `Raw` and `RawRef` are now serializable.
+- Allow to construct `Raw` and `RawRef` from string or from a byte array.
 
 ## 0.13.6 - 2017-08-04
 ### Added:
