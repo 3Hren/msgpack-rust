@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
+### Changed:
+- `encode::to_vec_named` now accepts unsized values.
+
 ## 0.13.7 - 2017-09-13
 ### Changed:
 - `Raw` and `RawRef` are now serializable.

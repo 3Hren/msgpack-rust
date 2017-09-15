@@ -75,6 +75,7 @@ pub use encode::{Serializer, to_vec, to_vec_named};
 
 pub mod decode;
 pub mod encode;
+pub mod ext;
 
 /// Helper that allows both to encode and decode strings no matter whether they contain valid or
 /// invalid UTF-8.
