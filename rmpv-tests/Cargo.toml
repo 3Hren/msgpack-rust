@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 serde = "1"
 serde_derive = "1"
-rmp-serde = { version = "0.13", path = "../rmp-serde" }
+rmp-serde = { version = "0.14", path = "../rmp-serde" }
 rmpv = { features = ["with-serde"], path = "../rmpv" }
 
 [dev-dependencies]
