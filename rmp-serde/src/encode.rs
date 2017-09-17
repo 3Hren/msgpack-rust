@@ -1,7 +1,6 @@
 use std::error;
 use std::fmt::{self, Display};
 use std::io::Write;
-use std::mem;
 
 use serde;
 use serde::Serialize;
@@ -158,14 +157,6 @@ impl<W: Write> Serializer<W> {
             depth: 1024,
         }
     }
-
-    pub fn with_struct_map(self) -> StructMapSerializer<Self> {
-        StructMapSerializer::new(self)
-    }
-
-//    pub fn with_struct_tuple(self) -> StructTupleSerializer<Self> {
-//        StructTupleSerializer::new(self)
-//    }
 }
 
 impl<'a, W: Write + 'a> Serializer<W> {
