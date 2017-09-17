@@ -403,8 +403,8 @@ impl<'a, W: Write, V: VariantWriter> serde::Serializer for &'a mut Serializer<W,
         Ok(())
     }
 
-    fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(self, name: &'static str, value: &T) -> Result<(), Self::Error> {
-        self.serialize_tuple_struct(name, 1)?;
+    fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(self, _name: &'static str, value: &T) -> Result<(), Self::Error> {
+        // Encode as if it's inner type.
         value.serialize(self)
     }
 

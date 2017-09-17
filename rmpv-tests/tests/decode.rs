@@ -197,7 +197,7 @@ fn pass_newtype_struct_from_value() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Newtype(String);
 
-    assert_eq!(Newtype("John".into()), from_value(Value::Array(vec![Value::from("John")])).unwrap());
+    assert_eq!(Newtype("John".into()), from_value(Value::from("John")).unwrap());
 }
 
 #[test]

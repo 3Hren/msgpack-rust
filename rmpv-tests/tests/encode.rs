@@ -206,7 +206,7 @@ fn pass_newtype_struct_to_value() {
     #[derive(Debug, PartialEq, Serialize)]
     struct Newtype(String);
 
-    assert_eq!(Value::Array(vec![Value::from("John")]), to_value(Newtype("John".into())).unwrap());
+    assert_eq!(Value::from("John"), to_value(Newtype("John".into())).unwrap());
 }
 
 #[test]
