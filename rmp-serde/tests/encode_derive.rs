@@ -8,17 +8,17 @@ use serde::Serialize;
 use rmps::Serializer;
 use rmps::encode::{Ext, UnderlyingWrite};
 
-//#[test]
-//fn pass_unit_struct() {
-//    #[derive(Serialize)]
-//    struct Unit;
-//
-//    let mut buf = Vec::new();
-//    Unit.serialize(&mut Serializer::new(&mut buf)).unwrap();
-//
-//    // Expect: `[]`.
-//    assert_eq!(vec![0x90], buf);
-//}
+#[test]
+fn pass_unit_struct() {
+    #[derive(Serialize)]
+    struct Unit;
+
+    let mut buf = Vec::new();
+    Unit.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    // Expect: `[]`.
+    assert_eq!(vec![0x90], buf);
+}
 
 #[test]
 fn pass_unit_variant() {
