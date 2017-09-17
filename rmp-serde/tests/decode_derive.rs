@@ -294,6 +294,66 @@ fn pass_struct_variant() {
 }
 
 #[test]
+fn pass_adjacently_tagged_enum() {
+    // ["Foo", 123]
+    let buf = [146, 163, 70, 111, 111, 123];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    #[serde(tag = "t", content = "c")]
+    enum Enum {
+        Foo(i32),
+        Bar(u32),
+    }
+
+    let mut de = Deserializer::new(cur);
+    let actual = Deserialize::deserialize(&mut de);
+
+    assert!(actual.is_ok());
+    assert_eq!(Enum::Foo(123), actual.unwrap());
+}
+
+#[test]
+#[should_panic(expected = "assertion failed")]
+fn fail_internally_tagged_enum_tuple() {
+    // ["Foo", 123]
+    let buf = [146, 163, 70, 111, 111, 123];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    #[serde(tag = "t")]
+    enum Enum {
+        Foo(i32),
+        Bar(u32),
+    }
+
+    let mut de = Deserializer::new(cur);
+    let actual: Result<Enum, Error> = Deserialize::deserialize(&mut de);
+
+    assert!(actual.is_ok())
+}
+
+#[test]
+fn pass_internally_tagged_enum_struct() {
+    let buf = [130, 161, 116, 163, 70, 111, 111, 165, 118, 97, 108, 117, 101, 123];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    #[serde(tag = "t")]
+    enum Enum {
+        Foo { value: i32 },
+        Bar { value: u32 },
+    }
+
+    let mut de = Deserializer::new(cur);
+    let actual: Result<Enum, Error> = Deserialize::deserialize(&mut de);
+
+    assert!(actual.is_ok());
+    assert_eq!(Enum::Foo{ value: 123 }, actual.unwrap())
+
+}
+
+#[test]
 fn pass_enum_with_one_arg() {
     // The encoded bytearray is: [0, [[1, 2]]].
     let buf = [0x92, 0x0, 0x91, 0x92, 0x01, 0x02];
