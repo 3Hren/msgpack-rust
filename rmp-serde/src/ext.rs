@@ -1,5 +1,4 @@
 use std::io::Write;
-use std::marker::PhantomData;
 
 use rmp::encode;
 use serde::{Serialize, Serializer};
@@ -230,7 +229,7 @@ where
     }
 
     #[inline]
-    fn serialize_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeStruct, Self::Error> {
+    fn serialize_struct(self, _name: &'static str, len: usize) -> Result<Self::SerializeStruct, Self::Error> {
         encode::write_map_len(self.se.get_mut(), len as u32)?;
         Ok(self)
     }

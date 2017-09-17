@@ -467,7 +467,7 @@ where
         }
     }
 
-    fn serialize_struct(self, name: &'static str, len: usize) ->
+    fn serialize_struct(self, _name: &'static str, len: usize) ->
         Result<Self::SerializeStruct, Self::Error>
     {
         encode::write_array_len(&mut self.wr, len as u32)?;
