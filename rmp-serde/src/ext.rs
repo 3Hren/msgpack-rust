@@ -37,15 +37,15 @@ where
 {
     type Write = W;
 
-    fn get_ref(&self) -> &S::Write {
+    fn get_ref(&self) -> &Self::Write {
         self.se.get_ref()
     }
 
-    fn get_mut(&mut self) -> &mut S::Write {
+    fn get_mut(&mut self) -> &mut Self::Write {
         self.se.get_mut()
     }
 
-    fn into_inner(self) -> S::Write {
+    fn into_inner(self) -> Self::Write {
         self.se.into_inner()
     }
 }
@@ -264,15 +264,15 @@ where
 {
     type Write = W;
 
-    fn get_ref(&self) -> &S::Write {
+    fn get_ref(&self) -> &Self::Write {
         self.se.get_ref()
     }
 
-    fn get_mut(&mut self) -> &mut S::Write {
+    fn get_mut(&mut self) -> &mut Self::Write {
         self.se.get_mut()
     }
 
-    fn into_inner(self) -> S::Write {
+    fn into_inner(self) -> Self::Write {
         self.se.into_inner()
     }
 }
