@@ -49,26 +49,6 @@ where
     }
 }
 
-impl<'a, S> SerializeStruct for &'a mut StructMapSerializer<S>
-where
-    S: UnderlyingWrite,
-    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
-{
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
-        encode::write_str(self.se.get_mut(), key)?;
-        value.serialize(&mut **self)
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(())
-    }
-}
-
 impl<'a, S> Serializer for &'a mut StructMapSerializer<S>
 where
     S: UnderlyingWrite,
@@ -233,6 +213,26 @@ where
     #[inline]
     fn serialize_struct_variant(self, name: &'static str, variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
         unimplemented!()
+    }
+}
+
+impl<'a, S> SerializeStruct for &'a mut StructMapSerializer<S>
+    where
+        S: UnderlyingWrite,
+        for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
+{
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
+    Result<(), Self::Error>
+    {
+        encode::write_str(self.se.get_mut(), key)?;
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        Ok(())
     }
 }
 
