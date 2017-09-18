@@ -24,7 +24,7 @@ impl<S> StructMapSerializer<S> {
     /// Wraps a serializer overriding its struct serialization methods to be able to serialize
     /// structs as a map with field names.
     pub fn new(se: S) -> Self {
-        Self { se }
+        Self { se: se }
     }
 }
 
@@ -274,7 +274,7 @@ where
     /// Wraps a serializer overriding its struct serialization methods to be able to serialize
     /// structs as an array without field names.
     pub fn new(se: S) -> Self {
-        Self { se }
+        Self { se: se }
     }
 }
 
