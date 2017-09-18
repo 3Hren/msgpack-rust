@@ -52,16 +52,14 @@ fn pass_newtype_struct() {
 fn pass_newtype_variant() {
     #[derive(Serialize)]
     enum Enum {
-        V1,
         V2(u64),
     }
 
     let mut buf = Vec::new();
-    Enum::V1.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2(42).serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: [0, []] [1, [42]].
-    assert_eq!(vec![0x92, 0x00, 0x90, 0x92, 0x01, 0x91, 0x2a], buf);
+    // Expect: [0, 42].
+    assert_eq!(vec![0x92, 0x00, 0x2a], buf);
 }
 
 #[test]

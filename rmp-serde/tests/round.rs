@@ -66,7 +66,7 @@ fn round_trip_option_cow() {
 }
 
 #[test]
-fn round_enum_with_nested_struct() {
+fn round_enum_with_newtype_struct() {
     use serde::Serialize;
 
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -75,7 +75,6 @@ fn round_enum_with_nested_struct() {
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     enum Enum {
         A(Newtype),
-        B,
     }
 
     let expected = Enum::A(Newtype("le message".into()));

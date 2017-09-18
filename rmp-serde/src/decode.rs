@@ -340,7 +340,6 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
                 self.read_bytes(len, visitor)
             }
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
-            // TODO: Make something with exts.
             marker => Err(Error::TypeMismatch(marker)),
         }
     }
@@ -496,7 +495,7 @@ impl<'de, 'a, R: ReadSlice<'de>> de::VariantAccess<'de> for VariantAccess<'a, R>
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
         where T: DeserializeSeed<'de>
     {
-        read_array_len(&mut self.de.rd)?;
+//        read_array_len(&mut self.de.rd)?;
         seed.deserialize(self.de)
     }
 
