@@ -1,3 +1,5 @@
+//! Generic MessagePack deserialization.
+
 use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::io::{self, Cursor};
@@ -16,22 +18,22 @@ use rmp::decode::{MarkerReadError, DecodeStringError, ValueReadError, NumValueRe
 /// Enum representing errors that can occur while decoding MessagePack data.
 #[derive(Debug)]
 pub enum Error {
-    /// The enclosed I/O error occured while trying to read a MessagePack
+    /// The enclosed I/O error occurred while trying to read a MessagePack
     /// marker.
     InvalidMarkerRead(io::Error),
-    /// The enclosed I/O error occured while trying to read the encoded
+    /// The enclosed I/O error occurred while trying to read the encoded
     /// MessagePack data.
     InvalidDataRead(io::Error),
-    /// A mismatch occured between the decoded and expected value types.
+    /// A mismatch occurred between the decoded and expected value types.
     TypeMismatch(Marker),
     /// A numeric cast failed due to an out-of-range error.
     OutOfRange,
     /// A decoded array did not have the enclosed expected length.
     LengthMismatch(u32),
-    /// An otherwise uncategorized error occured. See the enclosed `String` for
+    /// An otherwise uncategorized error occurred. See the enclosed `String` for
     /// details.
     Uncategorized(String),
-    /// A general error occured while deserializing the expected type. See the
+    /// A general error occurred while deserializing the expected type. See the
     /// enclosed `String` for details.
     Syntax(String),
     /// An encoded string could not be parsed as UTF-8.
