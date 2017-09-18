@@ -133,48 +133,6 @@ fn serialize_struct_variant() {
     assert_eq!(vec![0x92, 0x00, 0x91, 0x2a, 0x92, 0x01, 0x91, 0x2b], buf);
 }
 
-//#[test]
-//fn pass_struct_as_map() {
-//    use std::io::Write;
-//    use rmp::Marker;
-//    use rmp::encode::{ValueWriteError, write_map_len, write_str};
-//    use rmps::encode::VariantWriter;
-//
-//    #[derive(Serialize)]
-//    struct Dog {
-//        name: String,
-//        age: u16,
-//    }
-//
-//    let dog = Dog {
-//        name: "Bobby".into(),
-//        age: 8,
-//    };
-//
-//    struct StructMapWriter;
-//
-//    impl VariantWriter for StructMapWriter {
-//        fn write_struct_len<W: Write>(&self, wr: &mut W, len: u32) ->
-//            Result<Marker, ValueWriteError>
-//        {
-//            write_map_len(wr, len)
-//        }
-//
-//        fn write_field_name<W: Write>(&self, wr: &mut W, key: &str) ->
-//            Result<(), ValueWriteError>
-//        {
-//            write_str(wr, key)
-//        }
-//    }
-//
-//    let mut se = Serializer::with(Vec::new(), StructMapWriter);
-//    dog.serialize(&mut se).unwrap();
-//
-//    // Expect: {"name": "Bobby", "age": 8}.
-//    assert_eq!(vec![0x82, 0xa4, 0x6e, 0x61, 0x6d, 0x65, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0xa3, 0x61, 0x67, 0x65, 0x08],
-//        se.into_inner());
-//}
-
 #[test]
 fn pass_struct_as_map_using_ext() {
     #[derive(Serialize)]
