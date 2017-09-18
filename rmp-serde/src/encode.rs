@@ -434,7 +434,7 @@ where
 
         encode::write_array_len(&mut self.wr, len as u32)?;
 
-        Ok(Compound { se: self })
+        self.compound()
     }
 
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
@@ -460,7 +460,7 @@ where
         match len {
             Some(len) => {
                 encode::write_map_len(&mut self.wr, len as u32)?;
-                Ok(Compound { se: self })
+                self.compound()
             }
             None => Err(Error::UnknownLength),
         }
