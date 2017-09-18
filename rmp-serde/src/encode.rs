@@ -159,6 +159,7 @@ impl<W: Write> Serializer<W> {
 }
 
 impl<'a, W: Write + 'a> Serializer<W> {
+    #[inline]
     fn compound(&'a mut self) -> Result<Compound<'a, W>, Error> {
         let c = Compound { se: self };
         Ok(c)
