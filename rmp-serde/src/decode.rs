@@ -2,7 +2,7 @@
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
-use std::io::{self, Cursor, Read};
+use std::io::{self, Cursor, ErrorKind, Read};
 use std::str::{self, Utf8Error};
 
 use byteorder::{self, ReadBytesExt};
@@ -536,7 +536,7 @@ pub struct SliceReader<'a> {
 
 impl<'a> SliceReader<'a> {
     fn new(slice: &'a [u8]) -> Self {
-        SliceReader {
+        Self {
             inner: slice,
         }
     }
@@ -546,7 +546,7 @@ impl<'de> ReadSlice<'de> for SliceReader<'de> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         if len > self.inner.len() {
-            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "unexpected EOF"))
+            return Err(ErrorKind::UnexpectedEof.into());
         }
         let (a, b) = self.inner.split_at(len);
         self.inner = b;
