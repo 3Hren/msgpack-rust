@@ -566,6 +566,7 @@ impl<'a> Read for SliceReader<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct ReadReader<R: Read> {
     inner: R,
     buf: Vec<u8>

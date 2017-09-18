@@ -94,6 +94,7 @@ pub trait UnderlyingWrite {
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
 // TODO: Docs. Examples.
+#[derive(Debug)]
 pub struct Serializer<W> {
     wr: W,
     depth: usize,
@@ -205,6 +206,7 @@ impl<W: Write> UnderlyingWrite for Serializer<W> {
 }
 
 /// Part of serde serialization API.
+#[derive(Debug)]
 pub struct Compound<'a, W: 'a> {
     se: &'a mut Serializer<W>,
 }
