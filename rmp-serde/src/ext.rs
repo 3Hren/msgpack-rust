@@ -1,3 +1,5 @@
+//! Extend MessagePack serialization using wrappers.
+
 use std::io::Write;
 
 use rmp::encode;
@@ -5,7 +7,6 @@ use serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
 
 use encode::{Error, Ext, UnderlyingWrite};
-
 
 /// Serializer wrapper, that overrides struct serialization by packing as a map with field names.
 ///
