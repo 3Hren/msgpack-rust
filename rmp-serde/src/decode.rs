@@ -125,6 +125,7 @@ impl<'a> From<DecodeStringError<'a>> for Error {
 ///
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
+#[derive(Debug)]
 pub struct Deserializer<R> {
     rd: R,
     marker: Option<Marker>,
