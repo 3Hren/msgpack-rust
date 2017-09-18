@@ -58,6 +58,8 @@
 //! }
 //! ```
 
+#![warn(missing_debug_implementations, missing_docs)]
+
 extern crate rmp;
 extern crate byteorder;
 #[macro_use]
