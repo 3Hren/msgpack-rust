@@ -16,7 +16,7 @@ fn pass_unit_struct() {
     let mut buf = Vec::new();
     Unit.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: `[]`.
+    // Expect: [].
     assert_eq!(vec![0x90], buf);
 }
 

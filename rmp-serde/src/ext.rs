@@ -19,8 +19,7 @@ pub struct StructMapSerializer<S> {
     se: S,
 }
 
-impl<S> StructMapSerializer<S>
-{
+impl<S> StructMapSerializer<S> {
     /// Wraps a serializer overriding its struct serialization methods to be able to serialize
     /// structs as a map with field names.
     pub fn new(se: S) -> Self {
@@ -28,10 +27,7 @@ impl<S> StructMapSerializer<S>
     }
 }
 
-impl<S> Ext for StructMapSerializer<S>
-where
-    S: UnderlyingWrite
-{}
+impl<S: UnderlyingWrite> Ext for StructMapSerializer<S> {}
 
 impl<S, W> UnderlyingWrite for StructMapSerializer<S>
 where
@@ -256,16 +252,9 @@ where
     pub fn new(se: S) -> Self {
         Self { se }
     }
-
-        pub fn into_inner(self) -> S::Write {
-            self.se.into_inner()
-        }
 }
 
-impl<S> Ext for StructTupleSerializer<S>
-where
-    S: UnderlyingWrite
-{}
+impl<S: UnderlyingWrite> Ext for StructTupleSerializer<S> {}
 
 impl<S, W> UnderlyingWrite for StructTupleSerializer<S>
 where
