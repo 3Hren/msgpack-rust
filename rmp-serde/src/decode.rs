@@ -458,7 +458,7 @@ impl<'de, 'a, R: Read<'de> + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
 /// # Note
 ///
 /// We use default behaviour for new type, which decodes enums with a single value as a tuple.
-pub struct VariantAccess<'a, R: 'a> {
+struct VariantAccess<'a, R: 'a> {
     de: &'a mut Deserializer<R>,
 }
 
