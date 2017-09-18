@@ -76,7 +76,9 @@ impl Display for Error {
 
 impl From<MarkerReadError> for Error {
     fn from(err: MarkerReadError) -> Error {
-        Error::InvalidMarkerRead(err.0)
+        match err {
+            MarkerReadError(err) => Error::InvalidMarkerRead(err),
+        }
     }
 }
 
@@ -89,9 +91,9 @@ impl From<Utf8Error> for Error {
 impl From<ValueReadError> for Error {
     fn from(err: ValueReadError) -> Error {
         match err {
-            ValueReadError::TypeMismatch(marker)   => Error::TypeMismatch(marker),
+            ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
             ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
         }
     }
 }
@@ -99,9 +101,9 @@ impl From<ValueReadError> for Error {
 impl From<NumValueReadError> for Error {
     fn from(err: NumValueReadError) -> Error {
         match err {
-            NumValueReadError::TypeMismatch(marker)   => Error::TypeMismatch(marker),
+            NumValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
             NumValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            NumValueReadError::InvalidDataRead(err)   => Error::InvalidDataRead(err),
+            NumValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
             NumValueReadError::OutOfRange => Error::OutOfRange,
         }
     }
@@ -111,8 +113,8 @@ impl<'a> From<DecodeStringError<'a>> for Error {
     fn from(err: DecodeStringError) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            DecodeStringError::InvalidDataRead(..) => Error::Uncategorized("InvalidDataRead".to_string()),
-            DecodeStringError::TypeMismatch(..) => Error::Uncategorized("TypeMismatch".to_string()),
+            DecodeStringError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+            DecodeStringError::TypeMismatch(marker) => Error::TypeMismatch(marker),
             DecodeStringError::BufferSizeTooSmall(..) => Error::Uncategorized("BufferSizeTooSmall".to_string()),
             DecodeStringError::InvalidUtf8(..) => Error::Uncategorized("InvalidUtf8".to_string()),
         }
