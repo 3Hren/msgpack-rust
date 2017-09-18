@@ -2,7 +2,7 @@
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
-use std::io::{self, Cursor};
+use std::io::{self, Cursor, Read};
 use std::str::{self, Utf8Error};
 
 use byteorder::{self, ReadBytesExt};
@@ -148,7 +148,7 @@ impl<'de> Deserializer<SliceReader<'de>> {
     }
 }
 
-impl<R: io::Read> Deserializer<ReadReader<R>> {
+impl<R: Read> Deserializer<ReadReader<R>> {
     #[doc(hidden)]
     #[deprecated(note="use `Deserializer::new` instead")]
     pub fn from_read(rd: R) -> Self {
@@ -188,7 +188,7 @@ impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
     }
 }
 
-impl<'de, R: Read<'de>> Deserializer<R> {
+impl<'de, R: ReadSlice<'de>> Deserializer<R> {
     /// Changes the maximum nesting depth that is allowed
     pub fn set_max_depth(&mut self, depth: usize) {
         self.depth = depth;
@@ -251,19 +251,19 @@ impl<'de, R: Read<'de>> Deserializer<R> {
     }
 }
 
-fn read_u8<'de, R: Read<'de>>(rd: &mut R) -> Result<u8, Error> {
+fn read_u8<'de, R: ReadSlice<'de>>(rd: &mut R) -> Result<u8, Error> {
     rd.read_u8().map_err(Error::InvalidDataRead)
 }
 
-fn read_u16<'de, R: Read<'de>>(rd: &mut R) -> Result<u16, Error> {
+fn read_u16<'de, R: ReadSlice<'de>>(rd: &mut R) -> Result<u16, Error> {
     rd.read_u16::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
 }
 
-fn read_u32<'de, R: Read<'de>>(rd: &mut R) -> Result<u32, Error> {
+fn read_u32<'de, R: ReadSlice<'de>>(rd: &mut R) -> Result<u32, Error> {
     rd.read_u32::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
 }
 
-impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R> {
+impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R> {
     type Error = Error;
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -398,7 +398,7 @@ impl<'a, R: 'a> SeqAccess<'a, R> {
     }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a> de::SeqAccess<'de> for SeqAccess<'a, R> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a> de::SeqAccess<'de> for SeqAccess<'a, R> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -431,7 +431,7 @@ impl<'a, R: 'a> MapAccess<'a, R> {
     }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
@@ -473,7 +473,7 @@ impl<'a, R: 'a> VariantAccess<'a, R> {
     }
 }
 
-impl<'de, 'a, R: Read<'de>> de::EnumAccess<'de> for VariantAccess<'a, R> {
+impl<'de, 'a, R: ReadSlice<'de>> de::EnumAccess<'de> for VariantAccess<'a, R> {
     type Error = Error;
     type Variant = Self;
 
@@ -488,7 +488,7 @@ impl<'de, 'a, R: Read<'de>> de::EnumAccess<'de> for VariantAccess<'a, R> {
     }
 }
 
-impl<'de, 'a, R: Read<'de>> de::VariantAccess<'de> for VariantAccess<'a, R> {
+impl<'de, 'a, R: ReadSlice<'de>> de::VariantAccess<'de> for VariantAccess<'a, R> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Error> {
@@ -522,7 +522,10 @@ pub enum Reference<'b, 'c, T: ?Sized + 'static> {
     Copied(&'c T),
 }
 
-pub trait Read<'de>: io::Read {
+/// Extends the `Read` trait by <...>.
+///
+/// Used to allow zero-copy reading.
+pub trait ReadSlice<'de>: Read {
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error>;
 }
 
@@ -538,7 +541,7 @@ impl<'a> SliceReader<'a> {
     }
 }
 
-impl<'de> Read<'de> for SliceReader<'de> {
+impl<'de> ReadSlice<'de> for SliceReader<'de> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         if len > self.inner.len() {
@@ -550,24 +553,24 @@ impl<'de> Read<'de> for SliceReader<'de> {
     }
 }
 
-impl<'a> io::Read for SliceReader<'a> {
+impl<'a> Read for SliceReader<'a> {
     #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
         self.inner.read(buf)
     }
 
     #[inline]
-    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
+    fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), io::Error> {
         self.inner.read_exact(buf)
     }
 }
 
-pub struct ReadReader<R: io::Read> {
+pub struct ReadReader<R: Read> {
     inner: R,
     buf: Vec<u8>
 }
 
-impl<R: io::Read> ReadReader<R> {
+impl<R: Read> ReadReader<R> {
     fn new(rd: R) -> Self {
         ReadReader {
             inner: rd,
@@ -576,7 +579,7 @@ impl<R: io::Read> ReadReader<R> {
     }
 }
 
-impl<'de, R: io::Read> Read<'de> for ReadReader<R> {
+impl<'de, R: Read> ReadSlice<'de> for ReadReader<R> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         self.buf.resize(len, 0u8);
@@ -587,7 +590,7 @@ impl<'de, R: io::Read> Read<'de> for ReadReader<R> {
     }
 }
 
-impl<R: io::Read> io::Read for ReadReader<R> {
+impl<R: Read> Read for ReadReader<R> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.read(buf)
@@ -616,7 +619,7 @@ fn test_slice_read() {
 /// by `T`. It can also fail if the structure is correct but `T`'s implementation of `Deserialize`
 /// decides that something is wrong with the data, for example required struct fields are missing.
 pub fn from_read<R, T>(rd: R) -> Result<T, Error>
-    where R: io::Read,
+    where R: Read,
           T: DeserializeOwned
 {
     Deserialize::deserialize(&mut Deserializer::new(rd))
