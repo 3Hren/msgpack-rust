@@ -425,7 +425,9 @@ where
     }
 
     fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, name: &'static str, variant_index: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
-        self.serialize_tuple_variant(name, variant_index, variant, 1)?;
+//        self.serialize_tuple_variant(name, variant_index, variant, 1)?;
+        encode::write_array_len(&mut self.wr, 2)?;
+        self.serialize_u32(variant_index)?;
         value.serialize(self)
     }
 

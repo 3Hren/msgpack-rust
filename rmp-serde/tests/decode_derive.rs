@@ -122,8 +122,8 @@ fn pass_unit_variant() {
 
 #[test]
 fn pass_tuple_enum_with_arg() {
-    // The encoded byte-array is: [1, [42]].
-    let buf = [0x92, 0x01, 0x91, 0x2a];
+    // The encoded byte-array is: [1, 42].
+    let buf = [0x92, 0x01, 0x2a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -136,7 +136,7 @@ fn pass_tuple_enum_with_arg() {
     let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Enum::B(42), actual);
-    assert_eq!(4, de.get_ref().position())
+    assert_eq!(3, de.get_ref().position())
 }
 
 #[test]
@@ -221,23 +221,22 @@ fn pass_struct_enum_with_arg() {
 
 #[test]
 fn pass_newtype_variant() {
-    // The encoded bytearray is: [0, ['le message']].
-    let buf = [0x92, 0x0, 0x91, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    // The encoded bytearray is: [0, 'le message'].
+    let buf = [0x92, 0x0, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
-    struct Nested(String);
+    struct Newtype(String);
 
     #[derive(Debug, PartialEq, Deserialize)]
     enum Enum {
-        A(Nested),
-        B,
+        A(Newtype),
     }
 
     let mut de = Deserializer::new(cur);
     let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
 
-    assert_eq!(Enum::A(Nested("le message".into())), actual);
+    assert_eq!(Enum::A(Newtype("le message".into())), actual);
     assert_eq!(buf.len() as u64, de.get_ref().position())
 }
 
@@ -371,14 +370,13 @@ fn pass_internally_tagged_enum_struct() {
 
 #[test]
 fn pass_enum_with_one_arg() {
-    // The encoded bytearray is: [0, [[1, 2]]].
-    let buf = [0x92, 0x0, 0x91, 0x92, 0x01, 0x02];
+    // The encoded bytearray is: [0, [1, 2]].
+    let buf = [0x92, 0x0, 0x92, 0x01, 0x02];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
     enum Enum {
         V1(Vec<u32>),
-        V2,
     }
 
     let mut de = Deserializer::new(cur);
