@@ -9,8 +9,7 @@ use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVar
 
 use rmp;
 use rmp::encode;
-use rmp::encode::{write_nil, write_bool, write_uint, write_sint, write_f32, write_f64,
-                  write_map_len, write_bin_len, ValueWriteError};
+use rmp::encode::ValueWriteError;
 
 use ext::{StructMapSerializer, StructTupleSerializer};
 
@@ -324,7 +323,7 @@ where
     type SerializeStructVariant = Compound<'a, W>;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-        write_bool(&mut self.wr, v)
+        encode::write_bool(&mut self.wr, v)
             .map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidMarkerWrite(err)))
     }
 
@@ -341,7 +340,7 @@ where
     }
 
     fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
-        write_sint(&mut self.wr, v)?;
+        encode::write_sint(&mut self.wr, v)?;
         Ok(())
     }
 
@@ -358,17 +357,17 @@ where
     }
 
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
-        write_uint(&mut self.wr, v)?;
+        encode::write_uint(&mut self.wr, v)?;
         Ok(())
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-        write_f32(&mut self.wr, v)?;
+        encode::write_f32(&mut self.wr, v)?;
         Ok(())
     }
 
     fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-        write_f64(&mut self.wr, v)?;
+        encode::write_f64(&mut self.wr, v)?;
         Ok(())
     }
 
@@ -379,12 +378,12 @@ where
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
-        rmp::encode::write_str(&mut self.wr, v)?;
+        encode::write_str(&mut self.wr, v)?;
         Ok(())
     }
 
     fn serialize_bytes(self, value: &[u8]) -> Result<Self::Ok, Self::Error> {
-        write_bin_len(&mut self.wr, value.len() as u32)?;
+        encode::write_bin_len(&mut self.wr, value.len() as u32)?;
         self.wr
             .write_all(value)
             .map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidDataWrite(err)))
@@ -399,7 +398,7 @@ where
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
-        write_nil(&mut self.wr)
+        encode::write_nil(&mut self.wr)
             .map_err(|err| Error::InvalidValueWrite(ValueWriteError::InvalidMarkerWrite(err)))
     }
 
@@ -460,7 +459,7 @@ where
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Error> {
         match len {
             Some(len) => {
-                write_map_len(&mut self.wr, len as u32)?;
+                encode::write_map_len(&mut self.wr, len as u32)?;
                 Ok(Compound { se: self })
             }
             None => Err(Error::UnknownLength),
