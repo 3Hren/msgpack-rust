@@ -133,6 +133,7 @@ pub struct Deserializer<R> {
 }
 
 impl<'de> Deserializer<SliceReader<'de>> {
+    /// Constructs a new `Deserializer` from the given byte slice.
     pub fn from_slice(slice: &'de [u8]) -> Self {
         Deserializer {
             rd: SliceReader::new(slice),
