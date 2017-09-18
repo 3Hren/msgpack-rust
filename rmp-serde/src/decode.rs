@@ -148,18 +148,20 @@ impl<'de> Deserializer<SliceReader<'de>> {
 }
 
 impl<R: io::Read> Deserializer<ReadReader<R>> {
+    #[doc(hidden)]
+    #[deprecated(note="use `Deserializer::new` instead")]
     pub fn from_read(rd: R) -> Self {
-        Deserializer {
+        Self::new(rd)
+    }
+
+    /// Constructs a new `Deserializer` by consuming the given reader.
+    pub fn new(rd: R) -> Self {
+        Self {
             rd: ReadReader::new(rd),
             // Cached marker in case of deserializing options.
             marker: None,
             depth: 1024,
         }
-    }
-
-    /// Constructs a new deserializer by consuming the given reader.
-    pub fn new(rd: R) -> Self {
-        Self::from_read(rd)
     }
 
     /// Gets a reference to the underlying reader in this decoder.
