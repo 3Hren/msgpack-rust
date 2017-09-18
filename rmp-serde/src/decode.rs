@@ -620,15 +620,16 @@ fn test_slice_read() {
 /// by `T`. It can also fail if the structure is correct but `T`'s implementation of `Deserialize`
 /// decides that something is wrong with the data, for example required struct fields are missing.
 pub fn from_read<R, T>(rd: R) -> Result<T, Error>
-    where R: Read,
-          T: DeserializeOwned
+where R: Read,
+      T: DeserializeOwned
 {
     Deserialize::deserialize(&mut Deserializer::new(rd))
 }
 
 /// Deserializes a byte slice into the desired type.
 pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
-    where T: serde::Deserialize<'a>
+where
+    T: Deserialize<'a>
 {
     let mut de = Deserializer::from_slice(input);
     serde::Deserialize::deserialize(&mut de)
