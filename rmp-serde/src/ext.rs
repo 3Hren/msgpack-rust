@@ -4,7 +4,7 @@ use std::io::Write;
 
 use rmp::encode;
 use serde::{Serialize, Serializer};
-use serde::ser::SerializeStruct;
+use serde::ser::{SerializeStruct, SerializeStructVariant};
 
 use encode::{Error, Ext, UnderlyingWrite};
 
@@ -64,7 +64,7 @@ where
     type SerializeTupleVariant = <&'a mut S as Serializer>::SerializeTupleVariant;
     type SerializeMap = <&'a mut S as Serializer>::SerializeMap;
     type SerializeStruct = Self;
-    type SerializeStructVariant = <&'a mut S as Serializer>::SerializeStructVariant;
+    type SerializeStructVariant = Self;
 
     #[inline]
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
@@ -213,20 +213,43 @@ where
 
     #[inline]
     fn serialize_struct_variant(self, name: &'static str, variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
-        unimplemented!()
+        encode::write_array_len(self.se.get_mut(), 2)?;
+        self.se.serialize_u32(variant_index)?;
+        encode::write_map_len(self.se.get_mut(), len as u32)?;
+        Ok(self)
     }
 }
 
 impl<'a, S> SerializeStruct for &'a mut StructMapSerializer<S>
-    where
-        S: UnderlyingWrite,
-        for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
+where
+    S: UnderlyingWrite,
+    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>
 {
     type Ok = ();
     type Error = Error;
 
     fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
-    Result<(), Self::Error>
+        Result<(), Self::Error>
+    {
+        encode::write_str(self.se.get_mut(), key)?;
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        Ok(())
+    }
+}
+
+impl<'a, S> SerializeStructVariant for &'a mut StructMapSerializer<S>
+where
+    S: UnderlyingWrite,
+    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>
+{
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
+        Result<(), Self::Error>
     {
         encode::write_str(self.se.get_mut(), key)?;
         value.serialize(&mut **self)
