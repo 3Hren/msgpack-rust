@@ -45,7 +45,6 @@ fn pass_newtype_struct() {
     let mut buf = Vec::new();
     val.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: [42].
     assert_eq!(vec![0x2a], buf);
 }
 
