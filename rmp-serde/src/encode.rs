@@ -488,9 +488,10 @@ where
 ///
 /// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
 #[inline]
-pub fn write<W: ?Sized, T: ?Sized>(wr: &mut W, val: &T) -> Result<(), Error>
-where W: Write,
-      T: Serialize
+pub fn write<W, T>(wr: &mut W, val: &T) -> Result<(), Error>
+where
+    W: Write + ?Sized,
+    T: Serialize + ?Sized
 {
     val.serialize(&mut Serializer::new(wr))
 }
@@ -531,7 +532,7 @@ where
 #[inline]
 pub fn to_vec_named<T>(val: &T) -> Result<Vec<u8>, Error>
 where
-    T: serde::Serialize + ?Sized
+    T: Serialize + ?Sized
 {
     let mut wr = Vec::with_capacity(128);
     write_named(&mut wr, val)?;
