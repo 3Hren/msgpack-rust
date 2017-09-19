@@ -1,3 +1,5 @@
+//! Serialize a Rust data structure into MessagePack data.
+
 use std::error;
 use std::fmt::{self, Display};
 use std::io::Write;
@@ -12,6 +14,8 @@ use rmp::encode::ValueWriteError;
 
 use ext::{StructMapSerializer, StructTupleSerializer};
 
+/// This type represents all possible errors that can occur when serializing or
+/// deserializing MessagePack data.
 #[derive(Debug)]
 pub enum Error {
     /// Failed to write a MessagePack value.
@@ -20,7 +24,7 @@ pub enum Error {
     UnknownLength,
     /// Depth limit exceeded
     DepthLimitExceeded,
-    /// Other syntax error.
+    /// Catchall for syntax error messages.
     Syntax(String),
 }
 
@@ -67,6 +71,7 @@ impl serde::ser::Error for Error {
 
 /// Obtain the underlying writer.
 pub trait UnderlyingWrite {
+    /// Underlying writer type.
     type Write: Write;
 
     /// Gets a reference to the underlying writer.
@@ -423,10 +428,9 @@ where
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, name: &'static str, variant_index: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
-//        self.serialize_tuple_variant(name, variant_index, variant, 1)?;
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
         encode::write_array_len(&mut self.wr, 2)?;
-        self.serialize_u32(variant_index)?;
+        self.serialize_u32(idx)?;
         value.serialize(self)
     }
 
