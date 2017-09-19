@@ -669,7 +669,7 @@ where
     T: Deserialize<'a>
 {
     let mut de = Deserializer::from_slice(input);
-    serde::Deserialize::deserialize(&mut de)
+    Deserialize::deserialize(&mut de)
 }
 
 /// Deserialize an instance of type `T` from a reference I/O reader of MessagePack.
@@ -709,5 +709,5 @@ where
     T: Deserialize<'a>,
 {
     let mut de = Deserializer::from_slice(rd.as_ref());
-    serde::Deserialize::deserialize(&mut de)
+    Deserialize::deserialize(&mut de)
 }
