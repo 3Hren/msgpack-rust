@@ -63,7 +63,7 @@ impl error::Error for Error {
 
 impl de::Error for Error {
     fn custom<T: Display>(msg: T) -> Self {
-        Error::Syntax(format!("{}", msg))
+        Error::Syntax(msg.to_string())
     }
 }
 
@@ -518,7 +518,7 @@ pub enum Reference<'b, 'c, T: ?Sized + 'static> {
     Copied(&'c T),
 }
 
-/// Extends the `Read` trait by <...>.
+/// Extends the `Read` trait by allowing to read slices directly by borrowing bytes.
 ///
 /// Used to allow zero-copy reading.
 pub trait ReadSlice<'de>: Read {
