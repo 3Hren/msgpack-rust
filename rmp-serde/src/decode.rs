@@ -252,15 +252,15 @@ impl<'de, R: ReadSlice<'de>> Deserializer<R> {
     }
 }
 
-fn read_u8<'de, R: ReadSlice<'de>>(rd: &mut R) -> Result<u8, Error> {
+fn read_u8<R: Read>(rd: &mut R) -> Result<u8, Error> {
     rd.read_u8().map_err(Error::InvalidDataRead)
 }
 
-fn read_u16<'de, R: ReadSlice<'de>>(rd: &mut R) -> Result<u16, Error> {
+fn read_u16<R: Read>(rd: &mut R) -> Result<u16, Error> {
     rd.read_u16::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
 }
 
-fn read_u32<'de, R: ReadSlice<'de>>(rd: &mut R) -> Result<u32, Error> {
+fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
     rd.read_u32::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
 }
 
@@ -650,6 +650,8 @@ fn test_slice_read() {
 }
 
 /// Deserialize an instance of type `T` from an I/O stream of MessagePack.
+///
+/// # Errors
 ///
 /// This conversion can fail if the structure of the Value does not match the structure expected
 /// by `T`. It can also fail if the structure is correct but `T`'s implementation of `Deserialize`
