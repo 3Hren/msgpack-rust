@@ -535,6 +535,8 @@ where
 /// Serializes data structure into byte vector as a map
 /// Resulting MessagePack message will contain field names
 ///
+/// # Errors
+///
 /// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
 #[inline]
 pub fn to_vec_named<T>(val: &T) -> Result<Vec<u8>, Error>
@@ -545,4 +547,3 @@ where
     write_named(&mut wr, val)?;
     Ok(wr)
 }
-
