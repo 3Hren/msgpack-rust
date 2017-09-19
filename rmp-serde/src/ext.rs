@@ -260,8 +260,8 @@ where
     }
 }
 
-////////////////////////////
-
+/// Serializer wrapper, that overrides struct serialization by packing as a tuple without field
+/// names.
 #[derive(Debug)]
 pub struct StructTupleSerializer<S> {
     se: S,

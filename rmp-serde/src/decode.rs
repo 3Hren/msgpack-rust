@@ -133,19 +133,22 @@ pub struct Deserializer<R> {
     depth: usize,
 }
 
-impl<'de> Deserializer<SliceReader<'de>> {
+impl<'de, R> Deserializer<AsRefReader<'de, R>>
+where
+    R: AsRef<[u8]> + ?Sized
+{
     /// Constructs a new `Deserializer` from the given byte slice.
-    pub fn from_slice(slice: &'de [u8]) -> Self {
+    pub fn from_read_ref(rd: &'de R) -> Self {
         Deserializer {
-            rd: SliceReader::new(slice),
+            rd: AsRefReader::new(rd),
             marker: None,
             depth: 1024,
         }
     }
 
     /// Gets a reference to the underlying reader in this decoder.
-    pub fn get_ref(&self) -> &[u8] {
-        self.rd.buf
+    pub fn get_ref(&self) -> &R {
+        self.rd.rd
     }
 }
 
@@ -176,7 +179,7 @@ impl<R: Read> Deserializer<ReadReader<R>> {
         &mut self.rd.rd
     }
 
-    /// Consumes this decoder returning the underlying reader.
+    /// Consumes this deserializer returning the underlying reader.
     pub fn into_inner(self) -> R {
         self.rd.rd
     }
@@ -453,11 +456,6 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
     }
 }
 
-/// Default variant visitor.
-///
-/// # Note
-///
-/// We use default behaviour for new type, which decodes enums with a single value as a tuple.
 struct VariantAccess<'a, R: 'a> {
     de: &'a mut Deserializer<R>,
 }
@@ -512,9 +510,12 @@ impl<'de, 'a, R: ReadSlice<'de>> de::VariantAccess<'de> for VariantAccess<'a, R>
     }
 }
 
+/// Unification of both borrowed and non-borrowed reference types.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Reference<'b, 'c, T: ?Sized + 'static> {
+    /// The reference is pointed at data that was borrowed.
     Borrowed(&'b T),
+    /// The reference is pointed at data that was copied.
     Copied(&'c T),
 }
 
@@ -522,85 +523,11 @@ pub enum Reference<'b, 'c, T: ?Sized + 'static> {
 ///
 /// Used to allow zero-copy reading.
 pub trait ReadSlice<'de>: Read {
+    /// Reads the exact number of bytes from the underlying byte-array.
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error>;
 }
 
-#[derive(Debug)]
-pub struct AsRefReader<'a, T: 'a> {
-    rd: &'a T,
-    buf: &'a [u8],
-}
-
-impl<'a, T: AsRef<[u8]>> AsRefReader<'a, T> {
-    fn new(rd: &'a T) -> Self {
-        Self {
-            rd: rd,
-            buf: rd.as_ref()
-        }
-    }
-}
-
-impl<'a, T: AsRef<[u8]>> Read for AsRefReader<'a, T> {
-    #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
-        self.buf.read(buf)
-    }
-
-    #[inline]
-    fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), io::Error> {
-        self.buf.read_exact(buf)
-    }
-}
-
-impl<'de, T: AsRef<[u8]>> ReadSlice<'de> for AsRefReader<'de, T> {
-    #[inline]
-    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
-        if len > self.buf.len() {
-            return Err(ErrorKind::UnexpectedEof.into());
-        }
-        let (a, b) = self.buf.split_at(len);
-        self.buf = b;
-        Ok(Reference::Borrowed(a))
-    }
-}
-
-#[derive(Debug)]
-pub struct SliceReader<'a> {
-    buf: &'a [u8],
-}
-
-impl<'a> SliceReader<'a> {
-    fn new(slice: &'a [u8]) -> Self {
-        Self {
-            buf: slice,
-        }
-    }
-}
-
-impl<'de> ReadSlice<'de> for SliceReader<'de> {
-    #[inline]
-    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
-        if len > self.buf.len() {
-            return Err(ErrorKind::UnexpectedEof.into());
-        }
-        let (a, b) = self.buf.split_at(len);
-        self.buf = b;
-        Ok(Reference::Borrowed(a))
-    }
-}
-
-impl<'a> Read for SliceReader<'a> {
-    #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
-        self.buf.read(buf)
-    }
-
-    #[inline]
-    fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), io::Error> {
-        self.buf.read_exact(buf)
-    }
-}
-
+/// Owned reader wrapper.
 #[derive(Debug)]
 pub struct ReadReader<R: Read> {
     rd: R,
@@ -638,10 +565,50 @@ impl<R: Read> Read for ReadReader<R> {
     }
 }
 
+/// Borrowed reader wrapper.
+#[derive(Debug)]
+pub struct AsRefReader<'a, R: ?Sized + 'a> {
+    rd: &'a R,
+    buf: &'a [u8],
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> AsRefReader<'a, T> {
+    fn new(rd: &'a T) -> Self {
+        Self {
+            rd: rd,
+            buf: rd.as_ref()
+        }
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Read for AsRefReader<'a, T> {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
+        self.buf.read(buf)
+    }
+
+    #[inline]
+    fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), io::Error> {
+        self.buf.read_exact(buf)
+    }
+}
+
+impl<'de, T: AsRef<[u8]> + ?Sized> ReadSlice<'de> for AsRefReader<'de, T> {
+    #[inline]
+    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
+        if len > self.buf.len() {
+            return Err(ErrorKind::UnexpectedEof.into());
+        }
+        let (a, b) = self.buf.split_at(len);
+        self.buf = b;
+        Ok(Reference::Borrowed(a))
+    }
+}
+
 #[test]
-fn test_slice_read() {
+fn test_as_ref_reader() {
     let buf = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    let mut rd = SliceReader::new(&buf[..]);
+    let mut rd = AsRefReader::new(&buf);
 
     assert_eq!(rd.read_slice(1).unwrap(), Reference::Borrowed(&[0][..]));
     assert_eq!(rd.read_slice(6).unwrap(), Reference::Borrowed(&[1, 2, 3, 4, 5, 6][..]));
@@ -671,8 +638,7 @@ pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
 where
     T: Deserialize<'a>
 {
-    let mut de = Deserializer::from_slice(input);
-    Deserialize::deserialize(&mut de)
+    from_read_ref(input)
 }
 
 /// Deserialize an instance of type `T` from a reference I/O reader of MessagePack.
@@ -711,6 +677,6 @@ where
     R: AsRef<[u8]> + ?Sized,
     T: Deserialize<'a>,
 {
-    let mut de = Deserializer::from_slice(rd.as_ref());
+    let mut de = Deserializer::from_read_ref(rd);
     Deserialize::deserialize(&mut de)
 }
