@@ -1,35 +1,36 @@
-//! # Type-based Serialization and Deserialization
+//! This crate connects Rust MessagePack library with [`serde`][serde] providing an ability to
+//! easily serialize and deserialize both Rust built-in types, the standard library and custom data
+//! structures.
 //!
-//! Serde provides a mechanism for low boilerplate serialization & deserialization of values to and
-//! from MessagePack via the serialization API. To be able to serialize a piece of data, it must
-//! implement the `serde::Serialize` trait. To be able to deserialize a piece of data, it must
-//! implement the `serde::Deserialize` trait. Serde provides provides an annotation to
-//! automatically generate the code for these traits: `#[derive(Serialize, Deserialize)]`.
-//!
-//! # Examples
-//!
-//! Let's try to encode and decode some built-in types.
+//! ## Motivating example
 //!
 //! ```
 //! extern crate serde;
 //! extern crate rmp_serde as rmps;
 //!
-//! use serde::{Deserialize, Serialize};
-//! use rmps::{Deserializer, Serializer};
+//! # fn main() {
+//! let buf = rmps::to_vec(&(42, "the Answer")).unwrap();
 //!
-//! fn main() {
-//!     let mut buf = Vec::new();
-//!     let val = (42u8, "the Answer");
-//!     val.serialize(&mut Serializer::new(&mut buf)).unwrap();
+//! assert_eq!(
+//!     vec![0x92, 0x2a, 0xaa, 0x74, 0x68, 0x65, 0x20, 0x41, 0x6e, 0x73, 0x77, 0x65, 0x72],
+//!     buf
+//! );
 //!
-//!     assert_eq!(vec![0x92, 0x2a, 0xaa, 0x74, 0x68, 0x65, 0x20, 0x41, 0x6e, 0x73, 0x77, 0x65, 0x72], buf);
-//!
-//!     let mut de = Deserializer::new(&buf[..]);
-//!     assert_eq!((42, "the Answer".to_owned()), Deserialize::deserialize(&mut de).unwrap());
-//! }
+//! assert_eq!((42, "the Answer"), rmps::from_read_ref(&buf).unwrap());
+//! # }
 //! ```
 //!
-//! No one gonna hurt if we add some reflection magic.
+//! # Type-based Serialization and Deserialization
+//!
+//! Serde provides a mechanism for low boilerplate serialization & deserialization of values to and
+//! from MessagePack via the serialization API.
+//!
+//! To be able to serialize a piece of data, it must implement the `serde::Serialize` trait. To be
+//! able to deserialize a piece of data, it must implement the `serde::Deserialize` trait. Serde
+//! provides provides an annotation to automatically generate the code for these
+//! traits: `#[derive(Serialize, Deserialize)]`.
+//!
+//! # Examples
 //!
 //! ```
 //! extern crate serde;
@@ -57,6 +58,8 @@
 //!     val.serialize(&mut Serializer::new(&mut buf)).unwrap();
 //! }
 //! ```
+//!
+//! [serde]: https://serde.rs/
 
 #![warn(missing_debug_implementations, missing_docs)]
 
