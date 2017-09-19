@@ -399,3 +399,16 @@ fn pass_from_slice() {
 
     assert_eq!(Person { name: "John", surname: "Smith", age: 42 }, rmps::from_slice(&buf[..]).unwrap());
 }
+
+#[test]
+fn pass_from_ref() {
+    let buf = [0x92, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0x8];
+
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct Dog<'a> {
+        name: &'a str,
+        age: u8,
+    }
+
+    assert_eq!(Dog { name: "Bobby", age: 8 }, rmps::from_read_ref(&buf).unwrap());
+}

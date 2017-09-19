@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add `Ext` trait for `Serializer` that allows to wrap a serializer with another one, that overrides exactly one serialization policy. For example using `with_struct_map` method it is possible to serialize structs as a MessagePack map with field names, overriding default serialization policy, which emits structs as a tuple.
 - Add `UnderlyingWrite` trait for `Serializer` and its wrappers to be able to obtain the underlying writer.
 - Add missing `Debug` implementations.
+- More `decode::Error` conversions.
 
 ### Changed:
 - Serialize newtype structs by serializing its inner type without wrapping into a tuple.

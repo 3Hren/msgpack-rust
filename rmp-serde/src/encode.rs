@@ -7,7 +7,6 @@ use serde::Serialize;
 use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
                  SerializeTuple, SerializeTupleStruct, SerializeTupleVariant};
 
-use rmp;
 use rmp::encode;
 use rmp::encode::ValueWriteError;
 
