@@ -72,7 +72,7 @@ use std::str::{self, Utf8Error};
 use serde::Serialize;
 use serde::de::{self, Deserialize};
 
-pub use decode::{Deserializer, from_slice, from_read};
+pub use decode::{Deserializer, from_read, from_read_ref, from_slice};
 pub use encode::{Serializer, to_vec, to_vec_named};
 
 pub mod decode;

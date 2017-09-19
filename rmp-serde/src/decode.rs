@@ -527,6 +527,41 @@ pub trait ReadSlice<'de>: Read {
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error>;
 }
 
+//#[derive(Debug)]
+//pub struct AsRefReader<'a, T: 'a> {
+//    rd: &'a T,
+//}
+//
+//impl<'a, T: AsRef<[u8]>> AsRefReader<'a, T> {
+//    fn new(rd: &'a T) -> Self {
+//        Self { rd: rd }
+//    }
+//}
+//
+//impl<'a, T: AsRef<[u8]>> Read for AsRefReader<'a, T> {
+//    #[inline]
+//    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
+//        self.rd.as_ref().read(buf)
+//    }
+//
+//    #[inline]
+//    fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), io::Error> {
+//        self.rd.as_ref().read_exact(buf)
+//    }
+//}
+//
+//impl<'de, T: AsRef<[u8]>> ReadSlice<'de> for AsRefReader<'de, T> {
+//    #[inline]
+//    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
+//        if len > self.rd.as_ref().len() {
+//            return Err(ErrorKind::UnexpectedEof.into());
+//        }
+//        let (a, b) = self.rd.as_ref().split_at(len);
+//        self.rd = b;
+//        Ok(Reference::Borrowed(a))
+//    }
+//}
+
 #[derive(Debug)]
 pub struct SliceReader<'a> {
     inner: &'a [u8],
@@ -626,10 +661,53 @@ where R: Read,
 }
 
 /// Deserializes a byte slice into the desired type.
+///
+/// Currently deprecated, use more generic `from_read_ref` instead.
+#[doc(hidden)]
 pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
 where
     T: Deserialize<'a>
 {
     let mut de = Deserializer::from_slice(input);
+    serde::Deserialize::deserialize(&mut de)
+}
+
+/// Deserialize an instance of type `T` from a reference I/O reader of MessagePack.
+///
+/// Deserialization will be performed in zero-copy manner whenever it is possible, borrowing the
+/// data from the reader itself. For example, strings and byte-arrays won't be not copied.
+///
+/// # Errors
+///
+/// This conversion can fail if the structure of the Value does not match the structure expected
+/// by `T`. It can also fail if the structure is correct but `T`'s implementation of `Deserialize`
+/// decides that something is wrong with the data, for example required struct fields are missing.
+///
+/// # Examples
+///
+/// ```
+/// extern crate rmp_serde as rmps;
+/// # #[macro_use] extern crate serde_derive;
+///
+/// # fn main() {
+/// // Encoded `["Bobby", 8]`.
+/// let buf = [0x92, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0x8];
+///
+/// #[derive(Debug, Deserialize, PartialEq)]
+/// struct Dog<'a> {
+///    name: &'a str,
+///    age: u8,
+/// }
+///
+/// assert_eq!(Dog { name: "Bobby", age: 8 }, rmps::from_read_ref(&buf).unwrap());
+/// # }
+/// ```
+#[inline]
+pub fn from_read_ref<'a, R, T>(rd: &'a R) -> Result<T, Error>
+where
+    R: AsRef<[u8]> + ?Sized,
+    T: Deserialize<'a>,
+{
+    let mut de = Deserializer::from_slice(rd.as_ref());
     serde::Deserialize::deserialize(&mut de)
 }
