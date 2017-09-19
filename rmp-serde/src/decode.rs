@@ -145,7 +145,7 @@ impl<'de> Deserializer<SliceReader<'de>> {
 
     /// Gets a reference to the underlying reader in this decoder.
     pub fn get_ref(&self) -> &[u8] {
-        self.rd.inner
+        self.rd.buf
     }
 }
 
@@ -160,7 +160,7 @@ impl<R: Read> Deserializer<ReadReader<R>> {
     pub fn new(rd: R) -> Self {
         Self {
             rd: ReadReader::new(rd),
-            // Cached marker in case of deserializing options.
+            // Cached marker in case of deserializing optional values.
             marker: None,
             depth: 1024,
         }
@@ -168,24 +168,24 @@ impl<R: Read> Deserializer<ReadReader<R>> {
 
     /// Gets a reference to the underlying reader in this decoder.
     pub fn get_ref(&self) -> &R {
-        &self.rd.inner
+        &self.rd.rd
     }
 
     /// Gets a mutable reference to the underlying reader in this decoder.
     pub fn get_mut(&mut self) -> &mut R {
-        &mut self.rd.inner
+        &mut self.rd.rd
     }
 
     /// Consumes this decoder returning the underlying reader.
     pub fn into_inner(self) -> R {
-        self.rd.inner
+        self.rd.rd
     }
 }
 
 impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
     /// Returns the current position of this deserializer, i.e. how many bytes were read.
     pub fn position(&self) -> u64 {
-        self.rd.inner.position()
+        self.rd.rd.position()
     }
 }
 
@@ -525,50 +525,54 @@ pub trait ReadSlice<'de>: Read {
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error>;
 }
 
-//#[derive(Debug)]
-//pub struct AsRefReader<'a, T: 'a> {
-//    rd: &'a T,
-//}
-//
-//impl<'a, T: AsRef<[u8]>> AsRefReader<'a, T> {
-//    fn new(rd: &'a T) -> Self {
-//        Self { rd: rd }
-//    }
-//}
-//
-//impl<'a, T: AsRef<[u8]>> Read for AsRefReader<'a, T> {
-//    #[inline]
-//    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
-//        self.rd.as_ref().read(buf)
-//    }
-//
-//    #[inline]
-//    fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), io::Error> {
-//        self.rd.as_ref().read_exact(buf)
-//    }
-//}
-//
-//impl<'de, T: AsRef<[u8]>> ReadSlice<'de> for AsRefReader<'de, T> {
-//    #[inline]
-//    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
-//        if len > self.rd.as_ref().len() {
-//            return Err(ErrorKind::UnexpectedEof.into());
-//        }
-//        let (a, b) = self.rd.as_ref().split_at(len);
-//        self.rd = b;
-//        Ok(Reference::Borrowed(a))
-//    }
-//}
+#[derive(Debug)]
+pub struct AsRefReader<'a, T: 'a> {
+    rd: &'a T,
+    buf: &'a [u8],
+}
+
+impl<'a, T: AsRef<[u8]>> AsRefReader<'a, T> {
+    fn new(rd: &'a T) -> Self {
+        Self {
+            rd: rd,
+            buf: rd.as_ref()
+        }
+    }
+}
+
+impl<'a, T: AsRef<[u8]>> Read for AsRefReader<'a, T> {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
+        self.buf.read(buf)
+    }
+
+    #[inline]
+    fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), io::Error> {
+        self.buf.read_exact(buf)
+    }
+}
+
+impl<'de, T: AsRef<[u8]>> ReadSlice<'de> for AsRefReader<'de, T> {
+    #[inline]
+    fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
+        if len > self.buf.len() {
+            return Err(ErrorKind::UnexpectedEof.into());
+        }
+        let (a, b) = self.buf.split_at(len);
+        self.buf = b;
+        Ok(Reference::Borrowed(a))
+    }
+}
 
 #[derive(Debug)]
 pub struct SliceReader<'a> {
-    inner: &'a [u8],
+    buf: &'a [u8],
 }
 
 impl<'a> SliceReader<'a> {
     fn new(slice: &'a [u8]) -> Self {
         Self {
-            inner: slice,
+            buf: slice,
         }
     }
 }
@@ -576,11 +580,11 @@ impl<'a> SliceReader<'a> {
 impl<'de> ReadSlice<'de> for SliceReader<'de> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
-        if len > self.inner.len() {
+        if len > self.buf.len() {
             return Err(ErrorKind::UnexpectedEof.into());
         }
-        let (a, b) = self.inner.split_at(len);
-        self.inner = b;
+        let (a, b) = self.buf.split_at(len);
+        self.buf = b;
         Ok(Reference::Borrowed(a))
     }
 }
@@ -588,25 +592,25 @@ impl<'de> ReadSlice<'de> for SliceReader<'de> {
 impl<'a> Read for SliceReader<'a> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
-        self.inner.read(buf)
+        self.buf.read(buf)
     }
 
     #[inline]
     fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), io::Error> {
-        self.inner.read_exact(buf)
+        self.buf.read_exact(buf)
     }
 }
 
 #[derive(Debug)]
 pub struct ReadReader<R: Read> {
-    inner: R,
-    buf: Vec<u8>
+    rd: R,
+    buf: Vec<u8>,
 }
 
 impl<R: Read> ReadReader<R> {
     fn new(rd: R) -> Self {
         ReadReader {
-            inner: rd,
+            rd: rd,
             buf: Vec::with_capacity(128),
         }
     }
@@ -616,8 +620,7 @@ impl<'de, R: Read> ReadSlice<'de> for ReadReader<R> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         self.buf.resize(len, 0u8);
-
-        self.inner.read_exact(&mut self.buf[..])?;
+        self.rd.read_exact(&mut self.buf[..])?;
 
         Ok(Reference::Copied(&self.buf[..]))
     }
@@ -626,12 +629,12 @@ impl<'de, R: Read> ReadSlice<'de> for ReadReader<R> {
 impl<R: Read> Read for ReadReader<R> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.inner.read(buf)
+        self.rd.read(buf)
     }
 
     #[inline]
     fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
-        self.inner.read_exact(buf)
+        self.rd.read_exact(buf)
     }
 }
 
