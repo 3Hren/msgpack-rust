@@ -12,8 +12,7 @@ use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Visitor};
 
 use rmp;
 use rmp::Marker;
-use rmp::decode::{MarkerReadError, DecodeStringError, ValueReadError, NumValueReadError,
-                  read_array_len};
+use rmp::decode::{self, MarkerReadError, DecodeStringError, ValueReadError, NumValueReadError};
 
 /// Enum representing errors that can occur while decoding MessagePack data.
 #[derive(Debug)]
@@ -362,7 +361,7 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
     fn deserialize_enum<V>(self, _name: &str, _variants: &[&str], visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
-        match read_array_len(&mut self.rd)? {
+        match decode::read_array_len(&mut self.rd)? {
             2 => visitor.visit_enum(VariantAccess::new(self)),
             n => Err(Error::LengthMismatch(n as u32)),
         }
@@ -490,14 +489,13 @@ impl<'de, 'a, R: ReadSlice<'de>> de::VariantAccess<'de> for VariantAccess<'a, R>
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Error> {
-        read_array_len(&mut self.de.rd)?;
+        decode::read_array_len(&mut self.de.rd)?;
         Ok(())
     }
 
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
         where T: DeserializeSeed<'de>
     {
-//        read_array_len(&mut self.de.rd)?;
         seed.deserialize(self.de)
     }
 
