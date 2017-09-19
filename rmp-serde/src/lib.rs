@@ -5,7 +5,6 @@
 //! ## Motivating example
 //!
 //! ```
-//! extern crate serde;
 //! extern crate rmp_serde as rmps;
 //!
 //! # fn main() {
