@@ -133,25 +133,6 @@ pub struct Deserializer<R> {
     depth: usize,
 }
 
-impl<'de, R> Deserializer<AsRefReader<'de, R>>
-where
-    R: AsRef<[u8]> + ?Sized
-{
-    /// Constructs a new `Deserializer` from the given byte slice.
-    pub fn from_read_ref(rd: &'de R) -> Self {
-        Deserializer {
-            rd: AsRefReader::new(rd),
-            marker: None,
-            depth: 1024,
-        }
-    }
-
-    /// Gets a reference to the underlying reader in this decoder.
-    pub fn get_ref(&self) -> &R {
-        self.rd.rd
-    }
-}
-
 impl<R: Read> Deserializer<ReadReader<R>> {
     #[doc(hidden)]
     #[deprecated(note="use `Deserializer::new` instead")]
@@ -189,6 +170,25 @@ impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
     /// Returns the current position of this deserializer, i.e. how many bytes were read.
     pub fn position(&self) -> u64 {
         self.rd.rd.position()
+    }
+}
+
+impl<'de, R> Deserializer<AsRefReader<'de, R>>
+    where
+        R: AsRef<[u8]> + ?Sized
+{
+    /// Constructs a new `Deserializer` from the given byte slice.
+    pub fn from_read_ref(rd: &'de R) -> Self {
+        Deserializer {
+            rd: AsRefReader::new(rd),
+            marker: None,
+            depth: 1024,
+        }
+    }
+
+    /// Gets a reference to the underlying reader in this decoder.
+    pub fn get_ref(&self) -> &R {
+        self.rd.rd
     }
 }
 
