@@ -10,7 +10,7 @@
 //!
 //! Let's try to encode and decode some built-in types.
 //!
-//! ```rust
+//! ```
 //! extern crate serde;
 //! extern crate rmp_serde as rmps;
 //!
@@ -31,7 +31,7 @@
 //!
 //! No one gonna hurt if we add some reflection magic.
 //!
-//! ```ignore
+//! ```
 //! extern crate serde;
 //! #[macro_use]
 //! extern crate serde_derive;
