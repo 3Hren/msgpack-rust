@@ -173,14 +173,14 @@ impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
     }
 }
 
-impl<'de, R> Deserializer<AsRefReader<'de, R>>
+impl<'de, R> Deserializer<ReadRefReader<'de, R>>
     where
         R: AsRef<[u8]> + ?Sized
 {
     /// Constructs a new `Deserializer` from the given byte slice.
     pub fn from_read_ref(rd: &'de R) -> Self {
         Deserializer {
-            rd: AsRefReader::new(rd),
+            rd: ReadRefReader::new(rd),
             marker: None,
             depth: 1024,
         }
@@ -567,12 +567,12 @@ impl<R: Read> Read for ReadReader<R> {
 
 /// Borrowed reader wrapper.
 #[derive(Debug)]
-pub struct AsRefReader<'a, R: ?Sized + 'a> {
+pub struct ReadRefReader<'a, R: ?Sized + 'a> {
     rd: &'a R,
     buf: &'a [u8],
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> AsRefReader<'a, T> {
+impl<'a, T: AsRef<[u8]> + ?Sized> ReadRefReader<'a, T> {
     fn new(rd: &'a T) -> Self {
         Self {
             rd: rd,
@@ -581,7 +581,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> AsRefReader<'a, T> {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Read for AsRefReader<'a, T> {
+impl<'a, T: AsRef<[u8]> + ?Sized> Read for ReadRefReader<'a, T> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
         self.buf.read(buf)
@@ -593,7 +593,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Read for AsRefReader<'a, T> {
     }
 }
 
-impl<'de, T: AsRef<[u8]> + ?Sized> ReadSlice<'de> for AsRefReader<'de, T> {
+impl<'de, T: AsRef<[u8]> + ?Sized> ReadSlice<'de> for ReadRefReader<'de, T> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         if len > self.buf.len() {
@@ -608,7 +608,7 @@ impl<'de, T: AsRef<[u8]> + ?Sized> ReadSlice<'de> for AsRefReader<'de, T> {
 #[test]
 fn test_as_ref_reader() {
     let buf = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    let mut rd = AsRefReader::new(&buf);
+    let mut rd = ReadRefReader::new(&buf);
 
     assert_eq!(rd.read_slice(1).unwrap(), Reference::Borrowed(&[0][..]));
     assert_eq!(rd.read_slice(6).unwrap(), Reference::Borrowed(&[1, 2, 3, 4, 5, 6][..]));
