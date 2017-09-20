@@ -65,7 +65,7 @@ impl From<ValueWriteError> for Error {
 impl serde::ser::Error for Error {
     /// Raised when there is general error when deserializing a type.
     fn custom<T: Display>(msg: T) -> Error {
-        Error::Syntax(format!("{}", msg))
+        Error::Syntax(msg.to_string())
     }
 }
 

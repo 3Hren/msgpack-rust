@@ -71,8 +71,8 @@ use std::fmt::{self, Display, Formatter};
 use std::mem;
 use std::str::{self, Utf8Error};
 
-use serde::Serialize;
-use serde::de::{self, Deserialize};
+use serde::{Deserialize, Serialize};
+use serde::de;
 
 pub use decode::{Deserializer, from_read, from_read_ref, from_slice};
 pub use encode::{Serializer, to_vec, to_vec_named};
