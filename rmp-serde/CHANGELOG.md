@@ -11,7 +11,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - More `decode::Error` conversions.
 
 ### Changed:
-- Serialize newtype structs by serializing its inner type without wrapping into a tuple.
+- (Breaking) Serialize newtype structs by serializing its inner type without wrapping into a tuple.
 - Function `encode::to_vec_named` now accepts unsized values.
 - Renamed `decode::Read` trait to `decode::ReadSlice` to avoid clashing with `std::io::Read` and to specify more precisely what it does.
 
