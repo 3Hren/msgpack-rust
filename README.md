@@ -12,7 +12,7 @@ deserializing Rust structs.
 |-------------------|-------------------------------------------|---------------------------------|
 | **rmp**           | [![][crates-rmp-img]][crates-rmp-url]     | [RMP][rmp-docs-url]             |
 | **rmp-serialize** | [![][crates-rmpsd-img]][crates-rmpsd-url] | [RMP Serialize][rmpsd-docs-url] |
-| **rmps**          | [![][crates-rmps-img]][crates-rmps-url]   | [RMP Serde][rmps-docs-url]      |
+| **rmp-serde**     | [![][crates-rmps-img]][crates-rmps-url]   | [RMP Serde][rmps-docs-url]      |
 | **rmpv**          | [![][crates-rmpv-img]][crates-rmpv-url]   | [RMP Value][rmpv-docs-url]      |
 
 ## Features
