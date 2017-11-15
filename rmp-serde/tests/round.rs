@@ -99,10 +99,10 @@ fn round_trip_untagged_enum_with_enum_associated_data() {
 
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     enum Bar {
-        B{f1: String},
+        B(String),
     }
 
-    let data1 = Zeb(Foo::A(Bar::B{f1: "Hello".into()}));
+    let data1 = Zeb(Foo::A(Bar::B("Hello".into())));
     let bytes = rmps::to_vec(&data1).unwrap();
     let data2 = rmps::from_slice(&bytes).unwrap();
     assert_eq!(data1, data2);
