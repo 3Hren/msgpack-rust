@@ -102,9 +102,9 @@ fn pass_struct_from_map() {
 
 #[test]
 fn pass_unit_variant() {
-    // We expect enums to be encoded as [id, [...]]
+    // We expect enums to be encoded as their variant idx
 
-    let buf = [0x92, 0x01, 0x90];
+    let buf = [0x81, 0x0, 0x90, 0x81, 0x1, 0x90];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -114,16 +114,18 @@ fn pass_unit_variant() {
     }
 
     let mut de = Deserializer::new(cur);
-    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
+    let enum_a = Enum::deserialize(&mut de).unwrap();
+    let enum_b = Enum::deserialize(&mut de).unwrap();
 
-    assert_eq!(Enum::B, actual);
-    assert_eq!(3, de.get_ref().position());
+    assert_eq!(enum_a , Enum::A);
+    assert_eq!(enum_b , Enum::B);
+    assert_eq!(6, de.get_ref().position());
 }
 
 #[test]
 fn pass_tuple_enum_with_arg() {
-    // The encoded byte-array is: [1, 42].
-    let buf = [0x92, 0x01, 0x2a];
+    // The encoded byte-array is: {1 => 42}.
+    let buf = [0x81, 0x01, 0x2a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -141,8 +143,8 @@ fn pass_tuple_enum_with_arg() {
 
 #[test]
 fn pass_tuple_enum_with_args() {
-    // The encoded bytearray is: [1, [42, 58]].
-    let buf = [0x92, 0x01, 0x92, 0x2a, 0x3a];
+    // The encoded bytearray is: {1 => [42, 58]}.
+    let buf = [0x81, 0x01, 0x92, 0x2a, 0x3a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -159,30 +161,26 @@ fn pass_tuple_enum_with_args() {
 }
 
 #[test]
-fn fail_enum_sequence_mismatch() {
-    // The encoded bytearray is: [1, 2, 100500].
-    let buf = [0x93, 0x1, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94];
-    let cur = Cursor::new(&buf[..]);
+fn fail_enum_map_mismatch() {
+    let buf = [0x82, 0x0, 0x24, 0x1, 0x25];
 
     #[derive(Debug, PartialEq, Deserialize)]
     enum Enum {
-        A,
-        B,
+        A(i32),
     }
 
-    let mut de = Deserializer::new(cur);
-    let actual: Result<Enum, Error> = Deserialize::deserialize(&mut de);
+    let err: Result<Enum, _> = rmps::from_slice(&buf);
 
-    match actual.err().unwrap() {
-        Error::LengthMismatch(3) => (),
+    match err.unwrap_err() {
+        Error::LengthMismatch(2) => (),
         other => panic!("unexpected result: {:?}", other)
     }
 }
 
 #[test]
 fn fail_enum_overflow() {
-    // The encoded bytearray is: [1, [42]].
-    let buf = [0x92, 0x01, 0x2a];
+    // The encoded bytearray is: {1 => [42]}.
+    let buf = [0x81, 0x01, 0x2a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -202,8 +200,8 @@ fn fail_enum_overflow() {
 
 #[test]
 fn pass_struct_enum_with_arg() {
-    // The encoded bytearray is: [1, [42]].
-    let buf = [0x92, 0x01, 0x91, 0x2a];
+    // The encoded bytearray is: {1 => [42]}.
+    let buf = [0x81, 0x01, 0x91, 0x2a];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -221,8 +219,8 @@ fn pass_struct_enum_with_arg() {
 
 #[test]
 fn pass_newtype_variant() {
-    // The encoded bytearray is: [0, 'le message'].
-    let buf = [0x92, 0x0, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    // The encoded bytearray is: {0 => 'le message'}.
+    let buf = [0x81, 0x0, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -298,8 +296,8 @@ fn pass_struct_variant() {
         First { data: u32 },
         Second { data: u32 },
     }
-    let out_first = vec![0x92, 0x00, 0x91, 0x2a];
-    let out_second = vec![0x92, 0x01, 0x91, 0x2a];
+    let out_first = vec![0x81, 0x00, 0x91, 0x2a];
+    let out_second = vec![0x81, 0x01, 0x91, 0x2a];
 
     for (expected, out) in vec![(Custom::First{ data: 42 }, out_first), (Custom::Second { data: 42 }, out_second)] {
         let mut de = Deserializer::new(Cursor::new(&out[..]));
@@ -370,8 +368,8 @@ fn pass_internally_tagged_enum_struct() {
 
 #[test]
 fn pass_enum_with_one_arg() {
-    // The encoded bytearray is: [0, [1, 2]].
-    let buf = [0x92, 0x0, 0x92, 0x01, 0x02];
+    // The encoded bytearray is: {0 => [1, 2]}.
+    let buf = [0x81, 0x0, 0x92, 0x01, 0x02];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]

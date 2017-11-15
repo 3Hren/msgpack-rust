@@ -86,6 +86,49 @@ fn round_enum_with_newtype_struct() {
     assert_eq!(expected, Deserialize::deserialize(&mut de).unwrap());
 }
 
+#[test]
+fn round_trip_untagged() {
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    struct Zeb(Foo);
+
+    #[derive(Serialize, Debug, PartialEq)]
+    #[serde(untagged)]
+    enum Foo {
+        A(Bar),
+    }
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    enum Bar {
+        B{f1: String},
+    }
+
+    impl<'de> ::serde::Deserialize<'de> for Foo {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: ::serde::Deserializer<'de> {
+            use ::serde::de::Error;
+            use ::serde::private::de::{Content, ContentRefDeserializer};
+
+            let content = Content::deserialize(deserializer)?;
+
+            println!("B");
+            println!("{:?}", content);
+
+            let state = Bar::deserialize(ContentRefDeserializer::<D::Error>::new(&content));
+            println!("C");
+            println!("{:?}", state);
+            if let Ok(state) = state {
+                return Ok(Foo::A(state))
+            }
+            println!("D");
+            Err(D::Error::custom("data did not match any variant of untagged enum Foo"))
+        }
+    }
+
+    let data1 = Zeb(Foo::A(Bar::B{f1: "Hello".into()}));
+    let bytes = rmps::to_vec(&data1).unwrap();
+    let data2 = rmps::from_slice(&bytes).unwrap();
+    assert_eq!(data1, data2);
+}
+
 // Checks whether deserialization and serialization can both work with structs as maps
 #[test]
 fn round_struct_as_map() {
