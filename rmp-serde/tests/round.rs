@@ -87,11 +87,11 @@ fn round_enum_with_newtype_struct() {
 }
 
 #[test]
-fn round_trip_untagged() {
+fn round_trip_untagged_enum_with_enum_associated_data() {
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     struct Zeb(Foo);
 
-    #[derive(Serialize, Debug, PartialEq)]
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
     #[serde(untagged)]
     enum Foo {
         A(Bar),
@@ -100,27 +100,6 @@ fn round_trip_untagged() {
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     enum Bar {
         B{f1: String},
-    }
-
-    impl<'de> ::serde::Deserialize<'de> for Foo {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: ::serde::Deserializer<'de> {
-            use ::serde::de::Error;
-            use ::serde::private::de::{Content, ContentRefDeserializer};
-
-            let content = Content::deserialize(deserializer)?;
-
-            println!("B");
-            println!("{:?}", content);
-
-            let state = Bar::deserialize(ContentRefDeserializer::<D::Error>::new(&content));
-            println!("C");
-            println!("{:?}", state);
-            if let Ok(state) = state {
-                return Ok(Foo::A(state))
-            }
-            println!("D");
-            Err(D::Error::custom("data did not match any variant of untagged enum Foo"))
-        }
     }
 
     let data1 = Zeb(Foo::A(Bar::B{f1: "Hello".into()}));
