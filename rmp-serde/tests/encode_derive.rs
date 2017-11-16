@@ -32,8 +32,8 @@ fn pass_unit_variant() {
     Enum::V1.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: {0 => []} {1 => []}.
-    assert_eq!(vec![0x81, 0x00, 0x90, 0x81, 0x01, 0x90], buf);
+    // Expect: {0 => nil} {1 => nil}.
+    assert_eq!(vec![0x81, 0x00, 0xC0, 0x81, 0x01, 0xC0], buf);
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn pass_untagged_newtype_variant() {
     let buf2 = rmps::to_vec(&Enum1::B(Enum2::C)).unwrap();
 
     assert_eq!(buf1, [123]);
-    assert_eq!(buf2, [0x81, 0x0, 0x90]);
+    assert_eq!(buf2, [0x81, 0x0, 0xC0]);
 }
 
 #[test]
@@ -108,8 +108,8 @@ fn pass_tuple_variant() {
     Enum::V1.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2(42, 100500).serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: {0 => []} {1 => [42, 100500]}
-    assert_eq!(vec![0x81, 0x00, 0x90, 0x81, 0x01, 0x92, 0x2a, 0xce, 0x00, 0x01, 0x88, 0x94], buf);
+    // Expect: {0 => nil} {1 => [42, 100500]}
+    assert_eq!(vec![0x81, 0x00, 0xC0, 0x81, 0x01, 0x92, 0x2a, 0xce, 0x00, 0x01, 0x88, 0x94], buf);
 }
 
 #[test]
