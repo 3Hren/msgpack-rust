@@ -139,6 +139,8 @@ fn round_trip_untagged_enum_with_enum_associated_data() {
     let data3_2 = rmps::from_slice(&bytes_3).unwrap();
     assert_eq!(data3_1, data3_2);
 
+    // TODO: struct variants do not work yet because of a
+    // serde issue. A fix is pending (github.com/serde-rs/serde/pull/1093).
     // let data4_1 = Foo::A(Bar::E{f1: "Hello".into()});
     // let bytes_4 = rmps::to_vec(&data4_1).unwrap();
     // let data4_2 = rmps::from_slice(&bytes_4).unwrap();
