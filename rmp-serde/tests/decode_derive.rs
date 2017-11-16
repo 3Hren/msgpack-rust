@@ -104,7 +104,7 @@ fn pass_struct_from_map() {
 fn pass_unit_variant() {
     // We expect enums to be encoded as a map {variant_idx => nil}
 
-    let buf = [0x81, 0x0, 0x90, 0x81, 0x1, 0x90];
+    let buf = [0x81, 0x0, 0xC0, 0x81, 0x1, 0xC0];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]

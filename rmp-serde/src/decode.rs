@@ -487,7 +487,7 @@ impl<'de, 'a, R: ReadSlice<'de>> de::VariantAccess<'de> for VariantAccess<'a, R>
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Error> {
-        decode::read_array_len(&mut self.de.rd)?;
+        decode::read_nil(&mut self.de.rd)?;
         Ok(())
     }
 
