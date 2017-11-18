@@ -27,7 +27,7 @@ deserializing Rust structs.
 - **Zero-copy value decoding**
 
   RMP allows to decode bytes from a buffer in a zero-copy manner easily and blazingly fast, while Rust
-  static checks guarantees that the data will be valid until buffer lives.
+  static checks guarantees that the data will be valid as long as the buffer lives.
 
 - **Clear error handling**
 
