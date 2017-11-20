@@ -93,7 +93,9 @@ pub trait UnderlyingWrite {
 /// MessagePack has no specification about how to encode enum types. Thus we are free to do
 /// whatever we want, so the given chose may be not ideal for you.
 ///
-/// Every Rust enum value can be represented as a tuple of index with a value.
+/// An enum value is represented as a single-entry map whose key is the variant
+/// id and whose value is a sequence containing all associated data. If the enum
+/// does not have associated data, the sequence is empty.
 ///
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
@@ -417,9 +419,10 @@ where
     fn serialize_unit_variant(self, _name: &str, idx: u32, _variant: &str) ->
         Result<Self::Ok, Self::Error>
     {
-        encode::write_array_len(&mut self.wr, 2)?;
+        // encode as a map from variant idx to nil, like: {idx => nil}
+        encode::write_map_len(&mut self.wr, 1)?;
         self.serialize_u32(idx)?;
-        encode::write_array_len(&mut self.wr, 0)?;
+        encode::write_nil(&mut self.wr).map_err(|e| Error::InvalidValueWrite(ValueWriteError::InvalidMarkerWrite(e)))?;
         Ok(())
     }
 
@@ -429,7 +432,8 @@ where
     }
 
     fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
-        encode::write_array_len(&mut self.wr, 2)?;
+        // encode as a map from variant idx to its attributed data, like: {idx => value}
+        encode::write_map_len(&mut self.wr, 1)?;
         self.serialize_u32(idx)?;
         value.serialize(self)
     }
@@ -458,8 +462,8 @@ where
     fn serialize_tuple_variant(self,  name: &'static str,  idx: u32,  _variant: &'static str,  len: usize) ->
         Result<Self::SerializeTupleVariant, Error>
     {
-        // We encode variant types as a tuple of id with array of args, like: [id, [args...]].
-        encode::write_array_len(&mut self.wr, 2)?;
+        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+        encode::write_map_len(&mut self.wr, 1)?;
         self.serialize_u32(idx)?;
         self.serialize_tuple_struct(name, len)
     }
@@ -484,7 +488,8 @@ where
     fn serialize_struct_variant(self, name: &'static str, id: u32, _variant: &'static str, len: usize) ->
         Result<Self::SerializeStructVariant, Error>
     {
-        encode::write_array_len(&mut self.wr, 2)?;
+        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+        encode::write_map_len(&mut self.wr, 1)?;
         self.serialize_u32(id)?;
         self.serialize_struct(name, len)
     }

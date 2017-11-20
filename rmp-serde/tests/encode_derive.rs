@@ -32,8 +32,8 @@ fn pass_unit_variant() {
     Enum::V1.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: [0, []] [1, []].
-    assert_eq!(vec![0x92, 0x00, 0x90, 0x92, 0x01, 0x90], buf);
+    // Expect: {0 => nil} {1 => nil}.
+    assert_eq!(vec![0x81, 0x00, 0xC0, 0x81, 0x01, 0xC0], buf);
 }
 
 #[test]
@@ -58,8 +58,29 @@ fn pass_newtype_variant() {
     let mut buf = Vec::new();
     Enum::V2(42).serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: [0, 42].
-    assert_eq!(vec![0x92, 0x00, 0x2a], buf);
+    // Expect: {0 => 42}.
+    assert_eq!(vec![0x81, 0x00, 0x2a], buf);
+}
+
+#[test]
+fn pass_untagged_newtype_variant() {
+    #[derive(Serialize)]
+    #[serde(untagged)]
+    enum Enum1 {
+        A(u64),
+        B(Enum2),
+    }
+
+    #[derive(Serialize)]
+    enum Enum2 {
+        C,
+    }
+
+    let buf1 = rmps::to_vec(&Enum1::A(123)).unwrap();
+    let buf2 = rmps::to_vec(&Enum1::B(Enum2::C)).unwrap();
+
+    assert_eq!(buf1, [123]);
+    assert_eq!(buf2, [0x81, 0x0, 0xC0]);
 }
 
 #[test]
@@ -87,8 +108,8 @@ fn pass_tuple_variant() {
     Enum::V1.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2(42, 100500).serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: [0, []] [2, [42, 100500]].
-    assert_eq!(vec![0x92, 0x00, 0x90, 0x92, 0x01, 0x92, 0x2a, 0xce, 0x00, 0x01, 0x88, 0x94], buf);
+    // Expect: {0 => nil} {1 => [42, 100500]}
+    assert_eq!(vec![0x81, 0x00, 0xC0, 0x81, 0x01, 0x92, 0x2a, 0xce, 0x00, 0x01, 0x88, 0x94], buf);
 }
 
 #[test]
@@ -126,8 +147,8 @@ fn serialize_struct_variant() {
     Enum::V1 { f1: 42 }.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2 { f1: 43 }.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: [0, [42]] [1, [43]].
-    assert_eq!(vec![0x92, 0x00, 0x91, 0x2a, 0x92, 0x01, 0x91, 0x2b], buf);
+    // Expect: {0 => [42]} {1 => [43]}.
+    assert_eq!(vec![0x81, 0x00, 0x91, 0x2a, 0x81, 0x01, 0x91, 0x2b], buf);
 }
 
 #[test]
