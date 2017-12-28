@@ -212,9 +212,9 @@ where
     }
 
     #[inline]
-    fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
-        encode::write_array_len(self.se.get_mut(), 2)?;
-        self.se.serialize_u32(variant_index)?;
+    fn serialize_struct_variant(self, _name: &'static str, _variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
+        encode::write_map_len(self.se.get_mut(), 1)?;
+        self.se.serialize_str(variant)?;
         encode::write_map_len(self.se.get_mut(), len as u32)?;
         Ok(self)
     }

@@ -155,3 +155,34 @@ fn round_struct_as_map() {
 
     assert_eq!(dog1, check);
 }
+
+#[test]
+fn round_enum_as_map() {
+
+    use rmps::to_vec_named;
+
+    use rmps::decode::from_slice;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    enum Dog {
+        A{
+            name: String,
+            age: u16,
+        },
+        B{
+            name: String,
+            age:u32,
+        }
+    }
+
+    let dog = Dog::A {
+        name: "Frankie".into(),
+        age: 42,
+    };
+    println!("1");
+    let serialized: Vec<u8> = to_vec_named(&dog).unwrap();
+    println!("serialized:{:?}",serialized);
+    let deserialized: Dog = from_slice(&serialized).unwrap();
+    println!("{:?}",deserialized);
+    assert_eq!(dog, deserialized);
+}

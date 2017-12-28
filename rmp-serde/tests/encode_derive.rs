@@ -165,7 +165,7 @@ fn serialize_struct_variant_as_map() {
     Enum::V1 { f1: 42 }.serialize(&mut se).unwrap();
 
     // Expect: [0, {"f1": 42}].
-    assert_eq!(vec![0x92, 0x00, 0x81, 0xa2, 0x66, 0x31, 0x2a], se.into_inner());
+    assert_eq!(vec![0x81, 0xa2, 0x56, 0x31, 0x81, 0xa2, 0x66, 0x31, 0x2a], se.into_inner());
 }
 
 #[test]
