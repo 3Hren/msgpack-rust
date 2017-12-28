@@ -179,10 +179,10 @@ fn round_enum_as_map() {
         name: "Frankie".into(),
         age: 42,
     };
-    println!("1");
+
     let serialized: Vec<u8> = to_vec_named(&dog).unwrap();
-    println!("serialized:{:?}",serialized);
+
     let deserialized: Dog = from_slice(&serialized).unwrap();
-    println!("{:?}",deserialized);
+
     assert_eq!(dog, deserialized);
 }
