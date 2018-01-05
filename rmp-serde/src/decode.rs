@@ -131,6 +131,7 @@ pub struct Deserializer<R> {
     rd: R,
     marker: Option<Marker>,
     depth: usize,
+    use_unsafe_utf8 : bool
 }
 
 impl<R: Read> Deserializer<ReadReader<R>> {
@@ -147,6 +148,17 @@ impl<R: Read> Deserializer<ReadReader<R>> {
             // Cached marker in case of deserializing optional values.
             marker: None,
             depth: 1024,
+            use_unsafe_utf8 : false
+        }
+    }
+
+    pub fn new_with_flag(rd: R, use_unsafe_utf8: bool) -> Self {
+        Self {
+            rd: ReadReader::new(rd),
+            // Cached marker in case of deserializing optional values.
+            marker: None,
+            depth: 1024,
+            use_unsafe_utf8 : use_unsafe_utf8
         }
     }
 
@@ -183,6 +195,7 @@ impl<'de, R> Deserializer<ReadRefReader<'de, R>>
             rd: ReadRefReader::new(rd),
             marker: None,
             depth: 1024,
+            use_unsafe_utf8 : false,
         }
     }
 
@@ -201,9 +214,11 @@ impl<'de, R: ReadSlice<'de>> Deserializer<R> {
     fn read_str_data<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
+        let unsafe_utf8 = self.use_unsafe_utf8;
         match self.read_bin_data(len as u32)? {
             Reference::Borrowed(buf) => {
-                match str::from_utf8(buf) {
+                let res = if unsafe_utf8 {Ok(unsafe{str::from_utf8_unchecked(buf)})} else {str::from_utf8(buf)};
+                match res {
                     Ok(s) => visitor.visit_borrowed_str(s),
                     Err(err) => {
                         // Allow to unpack invalid UTF-8 bytes into a byte array.
@@ -214,8 +229,10 @@ impl<'de, R: ReadSlice<'de>> Deserializer<R> {
                     }
                 }
             }
+
             Reference::Copied(buf) => {
-                match str::from_utf8(buf) {
+                let res = if unsafe_utf8 {Ok(unsafe{str::from_utf8_unchecked(buf)})} else {str::from_utf8(buf)};
+                match res {
                     Ok(s) => visitor.visit_str(s),
                     Err(err) => {
                         // Allow to unpack invalid UTF-8 bytes into a byte array.
@@ -236,13 +253,13 @@ impl<'de, R: ReadSlice<'de>> Deserializer<R> {
     fn read_array<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
-        visitor.visit_seq(SeqAccess::new(self, len as usize))
+         visitor.visit_seq(SeqAccess::new(self, len as usize))
     }
 
     fn read_map<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
-        visitor.visit_map(MapAccess::new(self, len as usize))
+         visitor.visit_map(MapAccess::new(self, len as usize))
     }
 
     fn read_bytes<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
@@ -273,7 +290,7 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        let marker = match self.marker.take() {
+         let marker = match self.marker.take() {
             Some(marker) => marker,
             None => rmp::decode::read_marker(&mut self.rd)?,
         };
@@ -295,7 +312,7 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
             Marker::F32 => visitor.visit_f32(rmp::decode::read_data_f32(&mut self.rd)?),
             Marker::F64 => visitor.visit_f64(rmp::decode::read_data_f64(&mut self.rd)?),
             Marker::FixStr(len) => {
-                self.read_str_data(len as u32, visitor)
+                 self.read_str_data(len as u32, visitor)
             }
             Marker::Str8 => {
                 let len = read_u8(&mut self.rd)?;
@@ -448,7 +465,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
         where V: DeserializeSeed<'de>
     {
-        Ok(seed.deserialize(&mut *self.de)?)
+         Ok(seed.deserialize(&mut *self.de)?)
     }
 
     fn size_hint(&self) -> Option<usize> {
