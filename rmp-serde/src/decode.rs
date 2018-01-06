@@ -217,9 +217,13 @@ impl<'de, R: ReadSlice<'de>> Deserializer<R> {
         let unsafe_utf8 = self.use_unsafe_utf8;
         match self.read_bin_data(len as u32)? {
             Reference::Borrowed(buf) => {
+                //println!("Reference::Borrowed(buf):{:?}", buf);
                 let res = if unsafe_utf8 {Ok(unsafe{str::from_utf8_unchecked(buf)})} else {str::from_utf8(buf)};
                 match res {
-                    Ok(s) => visitor.visit_borrowed_str(s),
+                    Ok(s) => {
+                         //println!("Reference::Borrowed(s):{:?}", s);
+                        visitor.visit_borrowed_str(s)
+                    },
                     Err(err) => {
                         // Allow to unpack invalid UTF-8 bytes into a byte array.
                         match visitor.visit_borrowed_bytes::<Error>(buf) {
@@ -231,9 +235,13 @@ impl<'de, R: ReadSlice<'de>> Deserializer<R> {
             }
 
             Reference::Copied(buf) => {
+                //println!("Reference::Borrowed(buf):{:?}", buf);
                 let res = if unsafe_utf8 {Ok(unsafe{str::from_utf8_unchecked(buf)})} else {str::from_utf8(buf)};
                 match res {
-                    Ok(s) => visitor.visit_str(s),
+                    Ok(s) =>{
+                        //println!("Reference::Borrowed(s):{:?}", s);
+                         visitor.visit_str(s)
+                    },
                     Err(err) => {
                         // Allow to unpack invalid UTF-8 bytes into a byte array.
                         match visitor.visit_bytes::<Error>(buf) {
