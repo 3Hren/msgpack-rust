@@ -107,7 +107,7 @@ fn read_str_len_with_nread<R>(rd: &mut R) -> Result<(u32, usize), ValueReadError
 ///
 /// This function is **unstable**, because it needs review.
 // TODO: Stabilize. Mark error values for each error case (in docs).
-pub fn read_str<'r, R>(rd: &mut R, mut buf: &'r mut [u8]) -> Result<&'r str, DecodeStringError<'r>>
+pub fn read_str<'r, R>(rd: &mut R, buf: &'r mut [u8]) -> Result<&'r str, DecodeStringError<'r>>
     where R: Read
 {
     let len = try!(read_str_len(rd));
