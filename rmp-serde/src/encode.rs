@@ -12,7 +12,9 @@ use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVar
 use rmp::encode;
 use rmp::encode::ValueWriteError;
 
-use ext::{StructMapSerializer, StructTupleSerializer};
+use ext::{
+    StructMapSerializer, StructTupleSerializer, VariantIntegerSerializer, VariantStringSerializer,
+};
 
 /// This type represents all possible errors that can occur when serializing or
 /// deserializing MessagePack data.
@@ -197,6 +199,23 @@ pub trait Ext: UnderlyingWrite + Sized {
     /// representation.
     fn with_struct_tuple(self) -> StructTupleSerializer<Self> {
         StructTupleSerializer::new(self)
+    }
+
+    /// Consumes this serializer returning the new one which will serialize enum variants as strings.
+    ///
+    /// This is used when you the default variant serialization as integers does not fit your
+    /// requirements.
+    fn with_string_variants(self) -> VariantStringSerializer<Self> {
+        VariantStringSerializer::new(self)
+    }
+
+    /// Consumes this serializer returning the new one which will serialize enum variants as their
+    /// integer indices.
+    ///
+    /// This is the default MessagePack serialization mechanism emitting the most compact
+    /// representation.
+    fn with_integer_variants(self) -> VariantIntegerSerializer<Self> {
+        VariantIntegerSerializer::new(self)
     }
 }
 
