@@ -519,6 +519,49 @@ where
 ///
 /// Default `Serializer` implementation writes enum variants as integers, because it is the most compact
 /// representation.
+///
+/// Example using this serializer and `StructMapSerializer` to write a messagepack message using both
+/// field names and enum variant names rather than indices.
+///
+/// ```
+/// extern crate serde;
+/// #[macro_use]
+/// extern crate serde_derive;
+/// extern crate rmp_serde;
+///
+/// use std::collections::HashMap;
+///
+/// use rmp_serde::{encode::Ext, Deserializer, Serializer};
+/// use serde::{Deserialize, Serialize};
+///
+/// #[derive(Debug, PartialEq, Deserialize, Serialize)]
+/// enum Employment {
+///     Intern,
+///     FullTime,
+/// }
+///
+/// #[derive(Debug, PartialEq, Deserialize, Serialize)]
+/// struct Human {
+///     age: u32,
+///     name: String,
+///     employment: Employment,
+/// }
+///
+/// fn main() {
+///     let mut buf = Vec::new();
+///     let val = Human {
+///         age: 42,
+///         name: "John".into(),
+///         employment: Employment::Intern,
+///     };
+///     val.serialize(
+///        &mut Serializer::new(&mut buf)
+///            .with_struct_map()
+///            .with_string_variants(),
+///    )
+///    .unwrap();
+/// }
+/// ```
 #[derive(Debug)]
 pub struct VariantStringSerializer<S> {
     se: S,

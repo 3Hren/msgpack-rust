@@ -300,3 +300,42 @@ fn round_trip_unit_struct_untagged_enum() {
         assert_eq!(deserialized, msga);
     }
 }
+
+// Checks whether deserialization and serialization can both work with enum variants as strings
+#[test]
+fn round_variant_string() {
+    use rmps::decode::from_slice;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    enum Animal1 {
+        Dog { breed: String },
+        Cat,
+        Emu,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    enum Animal2 {
+        Emu,
+        Dog { breed: String },
+        Cat,
+    }
+
+    let animal1 = Animal1::Dog {
+        breed: "Pitbull".into()
+    };
+
+    let serialized: Vec<u8> = {
+        let mut buf = Vec::new();
+        (animal1).serialize(&mut Serializer::new(&mut buf).with_string_variants()).unwrap();
+        buf
+    };
+    let deserialized: Animal2  = from_slice(&serialized).unwrap();
+
+    let check = match deserialized {
+        Animal2::Emu => Animal1::Emu,
+        Animal2::Dog { breed } => Animal1::Dog { breed },
+        Animal2::Cat => Animal1::Cat,
+    };
+
+    assert_eq!(animal1, check);
+}
