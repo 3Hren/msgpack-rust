@@ -4,7 +4,9 @@ use std::io::Write;
 
 use rmp::encode;
 use serde::{Serialize, Serializer};
-use serde::ser::{SerializeStruct, SerializeStructVariant};
+use serde::ser::{
+    SerializeStruct, SerializeStructVariant, SerializeTupleStruct, SerializeTupleVariant,
+};
 
 use encode::{Error, Ext, UnderlyingWrite};
 
@@ -507,5 +509,559 @@ where
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
+    }
+}
+
+/// Serializer wrapper that overrides enum variant serialization by storing variant by string name.
+///
+/// MessagePack specification does not tell how to serialize enums. This trait allows you to
+/// extend serialization to match your app's requirements.
+///
+/// Default `Serializer` implementation writes enum variants as integers, because it is the most compact
+/// representation.
+#[derive(Debug)]
+pub struct VariantStringSerializer<S> {
+    se: S,
+}
+
+impl<S> VariantStringSerializer<S> {
+    /// Wraps a serializer overriding its enum variant serialization methods to be able to serialize
+    /// enum variants as name strings.
+    pub fn new(se: S) -> Self {
+        Self { se: se }
+    }
+}
+
+impl<S: UnderlyingWrite> Ext for VariantStringSerializer<S> {}
+
+impl<S> UnderlyingWrite for VariantStringSerializer<S>
+where
+    S: UnderlyingWrite,
+{
+    type Write = S::Write;
+
+    fn get_ref(&self) -> &Self::Write {
+        self.se.get_ref()
+    }
+
+    fn get_mut(&mut self) -> &mut Self::Write {
+        self.se.get_mut()
+    }
+
+    fn into_inner(self) -> Self::Write {
+        self.se.into_inner()
+    }
+}
+
+impl<'a, S> Serializer for &'a mut VariantStringSerializer<S>
+where
+    S: UnderlyingWrite,
+    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
+{
+    type Ok = ();
+    type Error = Error;
+
+    type SerializeSeq = <&'a mut S as Serializer>::SerializeSeq;
+    type SerializeTuple = <&'a mut S as Serializer>::SerializeTuple;
+    type SerializeTupleStruct = <&'a mut S as Serializer>::SerializeTupleStruct;
+    type SerializeTupleVariant =
+        VariantForwardSerializer<<&'a mut S as Serializer>::SerializeTupleStruct>;
+    type SerializeMap = <&'a mut S as Serializer>::SerializeMap;
+    type SerializeStruct = <&'a mut S as Serializer>::SerializeStruct;
+    type SerializeStructVariant =
+        VariantForwardSerializer<<&'a mut S as Serializer>::SerializeStruct>;
+
+    #[inline]
+    fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_bool(v)
+    }
+
+    #[inline]
+    fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_i8(v)
+    }
+
+    #[inline]
+    fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_i16(v)
+    }
+
+    #[inline]
+    fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_i32(v)
+    }
+
+    #[inline]
+    fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_i64(v)
+    }
+
+    #[inline]
+    fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_u8(v)
+    }
+
+    #[inline]
+    fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_u16(v)
+    }
+
+    #[inline]
+    fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_u32(v)
+    }
+
+    #[inline]
+    fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_u64(v)
+    }
+
+    #[inline]
+    fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_f32(v)
+    }
+
+    #[inline]
+    fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_f64(v)
+    }
+
+    #[inline]
+    fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_char(v)
+    }
+
+    #[inline]
+    fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_str(v)
+    }
+
+    #[inline]
+    fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_bytes(v)
+    }
+
+    #[inline]
+    fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_none()
+    }
+
+    #[inline]
+    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
+    {
+        self.se.serialize_some(value)
+    }
+
+    #[inline]
+    fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_unit()
+    }
+
+    #[inline]
+    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_unit_struct(name)
+    }
+
+    #[inline]
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        variant: &'static str,
+    ) -> Result<Self::Ok, Self::Error> {
+        encode::write_map_len(self.se.get_mut(), 1)?;
+        self.serialize_str(variant)?;
+        self.serialize_unit()
+    }
+
+    #[inline]
+    fn serialize_newtype_struct<T: ?Sized>(
+        self,
+        name: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
+    {
+        self.se.serialize_newtype_struct(name, value)
+    }
+
+    #[inline]
+    fn serialize_newtype_variant<T: ?Sized>(
+        self,
+        name: &'static str,
+        _variant_index: u32,
+        variant: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
+    {
+        encode::write_map_len(self.se.get_mut(), 1)?;
+        self.serialize_str(variant)?;
+        self.serialize_newtype_struct(name, value)
+    }
+
+    #[inline]
+    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+        self.se.serialize_seq(len)
+    }
+
+    #[inline]
+    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
+        self.se.serialize_tuple(len)
+    }
+
+    #[inline]
+    fn serialize_tuple_struct(
+        self,
+        name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeTupleStruct, Self::Error> {
+        self.se.serialize_tuple_struct(name, len)
+    }
+
+    #[inline]
+    fn serialize_tuple_variant(
+        self,
+        name: &'static str,
+        _variant_index: u32,
+        variant: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeTupleVariant, Self::Error> {
+        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+        encode::write_map_len(self.se.get_mut(), 1)?;
+        self.serialize_str(variant)?;
+        self.serialize_tuple_struct(name, len)
+            .map(VariantForwardSerializer)
+    }
+
+    #[inline]
+    fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+        self.se.serialize_map(len)
+    }
+
+    #[inline]
+    fn serialize_struct(
+        self,
+        name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStruct, Self::Error> {
+        self.se.serialize_struct(name, len)
+    }
+
+    #[inline]
+    fn serialize_struct_variant(
+        self,
+        name: &'static str,
+        _variant_index: u32,
+        variant: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStructVariant, Self::Error> {
+        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+        encode::write_map_len(self.se.get_mut(), 1)?;
+        self.serialize_str(variant)?;
+        self.serialize_struct(name, len)
+            .map(VariantForwardSerializer)
+    }
+}
+
+/// Serializer wrapper that overrides enum variant serialization by writing variants as the integer index
+/// rather than the variant name. This is the default behavior of an unmodified serializer.
+#[derive(Debug)]
+pub struct VariantIntegerSerializer<S> {
+    se: S,
+}
+
+impl<'a, S> VariantIntegerSerializer<S>
+where
+    S: UnderlyingWrite,
+{
+    /// Wraps a serializer overriding its enum variant serialization methods to be able to serialize
+    /// enum variants as integers.
+    pub fn new(se: S) -> Self {
+        Self { se: se }
+    }
+}
+
+impl<S: UnderlyingWrite> Ext for VariantIntegerSerializer<S> {}
+
+impl<S> UnderlyingWrite for VariantIntegerSerializer<S>
+where
+    S: UnderlyingWrite,
+{
+    type Write = S::Write;
+
+    fn get_ref(&self) -> &Self::Write {
+        self.se.get_ref()
+    }
+
+    fn get_mut(&mut self) -> &mut Self::Write {
+        self.se.get_mut()
+    }
+
+    fn into_inner(self) -> Self::Write {
+        self.se.into_inner()
+    }
+}
+
+impl<'a, S> Serializer for &'a mut VariantIntegerSerializer<S>
+where
+    S: UnderlyingWrite,
+    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
+{
+    type Ok = ();
+    type Error = Error;
+
+    type SerializeSeq = <&'a mut S as Serializer>::SerializeSeq;
+    type SerializeTuple = <&'a mut S as Serializer>::SerializeTuple;
+    type SerializeTupleStruct = <&'a mut S as Serializer>::SerializeTupleStruct;
+    type SerializeTupleVariant =
+        VariantForwardSerializer<<&'a mut S as Serializer>::SerializeTupleStruct>;
+    type SerializeMap = <&'a mut S as Serializer>::SerializeMap;
+    type SerializeStruct = <&'a mut S as Serializer>::SerializeStruct;
+    type SerializeStructVariant =
+        VariantForwardSerializer<<&'a mut S as Serializer>::SerializeStruct>;
+
+    #[inline]
+    fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_bool(v)
+    }
+
+    #[inline]
+    fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_i8(v)
+    }
+
+    #[inline]
+    fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_i16(v)
+    }
+
+    #[inline]
+    fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_i32(v)
+    }
+
+    #[inline]
+    fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_i64(v)
+    }
+
+    #[inline]
+    fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_u8(v)
+    }
+
+    #[inline]
+    fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_u16(v)
+    }
+
+    #[inline]
+    fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_u32(v)
+    }
+
+    #[inline]
+    fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_u64(v)
+    }
+
+    #[inline]
+    fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_f32(v)
+    }
+
+    #[inline]
+    fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_f64(v)
+    }
+
+    #[inline]
+    fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_char(v)
+    }
+
+    #[inline]
+    fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_str(v)
+    }
+
+    #[inline]
+    fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_bytes(v)
+    }
+
+    #[inline]
+    fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_none()
+    }
+
+    #[inline]
+    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
+    {
+        self.se.serialize_some(value)
+    }
+
+    #[inline]
+    fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_unit()
+    }
+
+    #[inline]
+    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
+        self.se.serialize_unit_struct(name)
+    }
+
+    #[inline]
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        variant_index: u32,
+        _variant: &'static str,
+    ) -> Result<Self::Ok, Self::Error> {
+        encode::write_map_len(self.se.get_mut(), 1)?;
+        self.serialize_u32(variant_index)?;
+        self.serialize_unit()
+    }
+
+    #[inline]
+    fn serialize_newtype_struct<T: ?Sized>(
+        self,
+        name: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
+    {
+        self.se.serialize_newtype_struct(name, value)
+    }
+
+    #[inline]
+    fn serialize_newtype_variant<T: ?Sized>(
+        self,
+        name: &'static str,
+        variant_index: u32,
+        variant: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
+    {
+        self.se
+            .serialize_newtype_variant(name, variant_index, variant, value)
+    }
+
+    #[inline]
+    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+        self.se.serialize_seq(len)
+    }
+
+    #[inline]
+    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
+        self.se.serialize_tuple(len)
+    }
+
+    #[inline]
+    fn serialize_tuple_struct(
+        self,
+        name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeTupleStruct, Self::Error> {
+        self.se.serialize_tuple_struct(name, len)
+    }
+
+    #[inline]
+    fn serialize_tuple_variant(
+        self,
+        name: &'static str,
+        variant_index: u32,
+        _variant: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeTupleVariant, Self::Error> {
+        encode::write_map_len(self.se.get_mut(), 1)?;
+        self.serialize_u32(variant_index)?;
+        self.serialize_tuple_struct(name, len)
+            .map(VariantForwardSerializer)
+    }
+
+    #[inline]
+    fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+        self.se.serialize_map(len)
+    }
+
+    #[inline]
+    fn serialize_struct(
+        self,
+        name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStruct, Self::Error> {
+        self.se.serialize_struct(name, len)
+    }
+
+    #[inline]
+    fn serialize_struct_variant(
+        self,
+        name: &'static str,
+        variant_index: u32,
+        _variant: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStructVariant, Self::Error> {
+        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+        encode::write_map_len(self.se.get_mut(), 1)?;
+        self.serialize_u32(variant_index)?;
+        self.serialize_struct(name, len)
+            .map(VariantForwardSerializer)
+    }
+}
+
+/// Utility to `VariantIntegerSerializer` and `VariantStringSerializer` which allows forwarding serializing a struct or tuple
+#[derive(Debug)]
+pub struct VariantForwardSerializer<S>(S);
+
+impl<S> SerializeTupleVariant for VariantForwardSerializer<S>
+where
+    S: SerializeTupleStruct,
+{
+    type Ok = S::Ok;
+    type Error = S::Error;
+
+    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    where
+        T: Serialize,
+    {
+        self.0.serialize_field(value)
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        self.0.end()
+    }
+}
+
+impl<S> SerializeStructVariant for VariantForwardSerializer<S>
+where
+    S: SerializeStruct,
+{
+    type Ok = S::Ok;
+    type Error = S::Error;
+
+    fn serialize_field<T: ?Sized>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error>
+    where
+        T: Serialize,
+    {
+        self.0.serialize_field(key, value)
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        self.0.end()
     }
 }
