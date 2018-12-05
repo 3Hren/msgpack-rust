@@ -186,6 +186,9 @@ impl<'a, W: Write + 'a> Serializer<W> {
 pub trait Ext: UnderlyingWrite + Sized {
     /// Consumes this serializer returning the new one, which will serialize structs as a map.
     ///
+    /// Note that this should always be applied before `with_string_variants` or `with_integer_variants`.
+    /// If this is applied after, it will clobber some of the modifications those make.
+    ///
     /// This is used, when you the default struct serialization as a tuple does not fit your
     /// requirements.
     fn with_struct_map(self) -> StructMapSerializer<Self> {
@@ -195,6 +198,9 @@ pub trait Ext: UnderlyingWrite + Sized {
     /// Consumes this serializer returning the new one, which will serialize structs as a tuple
     /// without field names.
     ///
+    /// Note that this should always be applied before `with_string_variants` or `with_integer_variants`.
+    /// If this is applied after, it will clobber some of the modifications those make.
+    ///
     /// This is the default MessagePack serialization mechanism, emitting the most compact
     /// representation.
     fn with_struct_tuple(self) -> StructTupleSerializer<Self> {
@@ -202,6 +208,10 @@ pub trait Ext: UnderlyingWrite + Sized {
     }
 
     /// Consumes this serializer returning the new one which will serialize enum variants as strings.
+    ///
+    /// Note this must be used after `with_struct_map` or `with_struct_tuple`. This plays nicely and
+    /// will correctly forward to `struct_map` modifications, but `struct_map` will clobber this method's
+    /// behavior if applied afterwards.
     ///
     /// This is used when you the default variant serialization as integers does not fit your
     /// requirements.
