@@ -12,7 +12,10 @@ use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVar
 use rmp::encode;
 use rmp::encode::ValueWriteError;
 
-use ext::{StructMapSerializer, StructTupleSerializer};
+use encode_config::{
+    EnumVariantEncoding, StructFieldEncoding, StructMapEncoding, StructTupleEncoding,
+    VariantIntegerEncoding, VariantStringEncoding,
+};
 
 /// This type represents all possible errors that can occur when serializing or
 /// deserializing MessagePack data.
@@ -97,16 +100,24 @@ pub trait UnderlyingWrite {
 /// id and whose value is a sequence containing all associated data. If the enum
 /// does not have associated data, the sequence is empty.
 ///
+/// There are some ways to customize this, however. By default `Serializer` uses
+/// `StructTupleEncoding` and `VariantIntegerEncoding`, which encode structs as tuples with
+/// indices and enum variants as their variant id respectively. By using `Serializer::with_struct_map`
+/// and `Serializer::with_variant_string_encoding`, `Serializer` can be configured to encode structs as maps
+/// with field names as the key, and to use the enum variant name rather than index to encode enums.
+///
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
 // TODO: Docs. Examples.
 #[derive(Debug)]
-pub struct Serializer<W> {
+pub struct Serializer<W, FE = StructTupleEncoding, VE = VariantIntegerEncoding> {
     wr: W,
     depth: usize,
+    struct_field_encoding: FE,
+    enum_variant_encoding: VE,
 }
 
-impl<W: Write> Serializer<W> {
+impl<W: Write, FE, VE> Serializer<W, FE, VE> {
     /// Gets a reference to the underlying writer.
     pub fn get_ref(&self) -> &W {
         &self.wr
@@ -131,7 +142,9 @@ impl<W: Write> Serializer<W> {
     pub fn set_max_depth(&mut self, depth: usize) {
         self.depth = depth;
     }
+}
 
+impl<W> Serializer<W, StructTupleEncoding, VariantIntegerEncoding> {
     /// Constructs a new `MessagePack` serializer whose output will be written to the writer
     /// specified.
     ///
@@ -143,44 +156,41 @@ impl<W: Write> Serializer<W> {
         Serializer {
             wr: wr,
             depth: 1024,
+            struct_field_encoding: StructTupleEncoding,
+            enum_variant_encoding: VariantIntegerEncoding,
         }
     }
 
     #[deprecated(note = "use `Serializer::new` instead")]
     #[doc(hidden)]
     pub fn compact(wr: W) -> Self {
-        Serializer {
-            wr: wr,
-            depth: 1024,
-        }
-    }
-
-    #[deprecated(note = "use `Serializer::with_struct_map()` instead")]
-    #[doc(hidden)]
-    pub fn new_named(wr: W) -> Self {
-        Serializer {
-            wr: wr,
-            depth: 1024,
-        }
+        Serializer::new(wr)
     }
 }
 
-impl<'a, W: Write + 'a> Serializer<W> {
+impl<W> Serializer<W, StructMapEncoding, VariantIntegerEncoding> {
+    #[deprecated(note = "use `Serializer::with_struct_map()` instead")]
+    #[doc(hidden)]
+    pub fn new_named(wr: W) -> Self {
+        Serializer::new(wr).with_struct_map()
+    }
+}
+
+impl<'a, W: Write + 'a, FE, VE> Serializer<W, FE, VE> {
     #[inline]
-    fn compound(&'a mut self) -> Result<Compound<'a, W>, Error> {
+    fn compound(&'a mut self) -> Result<Compound<'a, W, FE, VE>, Error> {
         let c = Compound { se: self };
         Ok(c)
     }
 }
 
-/// Extends the serializer by allowing to generate extension wrappers.
-pub trait Ext: UnderlyingWrite + Sized {
+impl<W, FE, VE> Serializer<W, FE, VE> {
     /// Consumes this serializer returning the new one, which will serialize structs as a map.
     ///
     /// This is used, when you the default struct serialization as a tuple does not fit your
     /// requirements.
-    fn with_struct_map(self) -> StructMapSerializer<Self> {
-        StructMapSerializer::new(self)
+    pub fn with_struct_map(self) -> Serializer<W, StructMapEncoding, VE> {
+        self.with_field_encoding(StructMapEncoding)
     }
 
     /// Consumes this serializer returning the new one, which will serialize structs as a tuple
@@ -188,14 +198,90 @@ pub trait Ext: UnderlyingWrite + Sized {
     ///
     /// This is the default MessagePack serialization mechanism, emitting the most compact
     /// representation.
-    fn with_struct_tuple(self) -> StructTupleSerializer<Self> {
-        StructTupleSerializer::new(self)
+    pub fn with_struct_tuple(self) -> Serializer<W, StructTupleEncoding, VE> {
+        self.with_field_encoding(StructTupleEncoding)
+    }
+
+    /// Consumes this serializer returning a new one which will either serialize structs as tuples
+    /// or as maps depending on the input.
+    ///
+    /// This allows for configuration at runtime rather than at compile time if necessary. If
+    /// using with const parameters, prefer `Serializer::with_struct_tuple` and `Serializer::with_struct_map`.
+    ///
+    /// Example usage:
+    ///
+    /// ```rust
+    /// use rmp_serde::{Serializer, RuntimeDecidedFieldEncoding};
+    ///
+    /// let calculated_encoding = RuntimeDecidedFieldEncoding::Map;
+    /// let mut buf = Vec::<u8>::new();
+    /// let mut ser = Serializer::new(&mut buf).with_field_encoding(calculated_encoding);
+    /// ```
+    pub fn with_field_encoding<T>(self, encoding: T) -> Serializer<W, T, VE> {
+        let Serializer {
+            wr,
+            depth,
+            struct_field_encoding: _,
+            enum_variant_encoding,
+        } = self;
+        Serializer {
+            wr: wr,
+            depth: depth,
+            struct_field_encoding: encoding,
+            enum_variant_encoding: enum_variant_encoding,
+        }
+    }
+
+    /// Consumes this serializer returning the new one which will serialize enum variants as strings.
+    ///
+    /// This is used when you the default variant serialization as integers does not fit your
+    /// requirements.
+    pub fn with_variant_string_encoding(self) -> Serializer<W, FE, VariantStringEncoding> {
+        self.with_variant_encoding(VariantStringEncoding)
+    }
+
+    /// Consumes this serializer returning the new one which will serialize enum variants as their
+    /// integer indices.
+    ///
+    /// This is the default MessagePack serialization mechanism emitting the most compact
+    /// representation.
+    pub fn with_variant_integer_encoding(self) -> Serializer<W, FE, VariantIntegerEncoding> {
+        self.with_variant_encoding(VariantIntegerEncoding)
+    }
+
+    /// Consumes this serializer returning a new one which will either serialize enum identifiers as integres
+    /// or as strings depending on the input.
+    ///
+    /// This allows for configuration at runtime rather than at compile time if necessary. If
+    /// using with const parameters, prefer `Serializer::with_variant_integer_encoding` and
+    /// `Serializer::with_variant_string_encoding`.
+    ///
+    /// Example usage:
+    ///
+    /// ```rust
+    /// use rmp_serde::{Serializer, RuntimeDecidedVariantEncoding};
+    ///
+    /// let calculated_encoding = RuntimeDecidedVariantEncoding::String;
+    /// let mut buf = Vec::<u8>::new();
+    /// let mut ser = Serializer::new(&mut buf).with_variant_encoding(calculated_encoding);
+    /// ```
+    pub fn with_variant_encoding<T>(self, encoding: T) -> Serializer<W, FE, T> {
+        let Serializer {
+            wr,
+            depth,
+            struct_field_encoding,
+            enum_variant_encoding: _,
+        } = self;
+        Serializer {
+            wr: wr,
+            depth: depth,
+            struct_field_encoding: struct_field_encoding,
+            enum_variant_encoding: encoding,
+        }
     }
 }
 
-impl<W: Write> Ext for Serializer<W> {}
-
-impl<W: Write> UnderlyingWrite for Serializer<W> {
+impl<W: Write, FE, VE> UnderlyingWrite for Serializer<W, FE, VE> {
     type Write = W;
 
     fn get_ref(&self) -> &Self::Write {
@@ -213,11 +299,16 @@ impl<W: Write> UnderlyingWrite for Serializer<W> {
 
 /// Part of serde serialization API.
 #[derive(Debug)]
-pub struct Compound<'a, W: 'a> {
-    se: &'a mut Serializer<W>,
+pub struct Compound<'a, W: 'a, FE: 'a, VE: 'a> {
+    se: &'a mut Serializer<W, FE, VE>,
 }
 
-impl<'a, W: Write + 'a> SerializeSeq for Compound<'a, W> {
+impl<'a, W: 'a, FE, VE> SerializeSeq for Compound<'a, W, FE, VE>
+where
+    W: Write,
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+{
     type Ok = ();
     type Error = Error;
 
@@ -230,7 +321,12 @@ impl<'a, W: Write + 'a> SerializeSeq for Compound<'a, W> {
     }
 }
 
-impl<'a, W: Write + 'a> SerializeTuple for Compound<'a, W> {
+impl<'a, W: 'a, FE, VE> SerializeTuple for Compound<'a, W, FE, VE>
+where
+    W: Write,
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+{
     type Ok = ();
     type Error = Error;
 
@@ -243,7 +339,12 @@ impl<'a, W: Write + 'a> SerializeTuple for Compound<'a, W> {
     }
 }
 
-impl<'a, W: Write + 'a> SerializeTupleStruct for Compound<'a, W> {
+impl<'a, W: 'a, FE, VE> SerializeTupleStruct for Compound<'a, W, FE, VE>
+where
+    W: Write,
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+{
     type Ok = ();
     type Error = Error;
 
@@ -256,7 +357,12 @@ impl<'a, W: Write + 'a> SerializeTupleStruct for Compound<'a, W> {
     }
 }
 
-impl<'a, W: Write + 'a> SerializeTupleVariant for Compound<'a, W> {
+impl<'a, W: 'a, FE, VE> SerializeTupleVariant for Compound<'a, W, FE, VE>
+where
+    W: Write,
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+{
     type Ok = ();
     type Error = Error;
 
@@ -269,7 +375,12 @@ impl<'a, W: Write + 'a> SerializeTupleVariant for Compound<'a, W> {
     }
 }
 
-impl<'a, W: Write + 'a> SerializeMap for Compound<'a, W> {
+impl<'a, W: 'a, FE, VE> SerializeMap for Compound<'a, W, FE, VE>
+where
+    W: Write,
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+{
     type Ok = ();
     type Error = Error;
 
@@ -286,50 +397,70 @@ impl<'a, W: Write + 'a> SerializeMap for Compound<'a, W> {
     }
 }
 
-impl<'a, W: Write + 'a> SerializeStruct for Compound<'a, W> {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, _key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
-        value.serialize(&mut *self.se)
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(())
-    }
-}
-
-impl<'a, W: Write + 'a> SerializeStructVariant for Compound<'a, W> {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, _key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
-        value.serialize(&mut *self.se)
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(())
-    }
-}
-
-impl<'a, W> serde::Serializer for &'a mut Serializer<W>
+impl<'a, W: 'a, FE, VE> SerializeStruct for Compound<'a, W, FE, VE>
 where
-    W: Write
+    W: Write,
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
 {
     type Ok = ();
     type Error = Error;
 
-    type SerializeSeq = Compound<'a, W>;
-    type SerializeTuple = Compound<'a, W>;
-    type SerializeTupleStruct = Compound<'a, W>;
-    type SerializeTupleVariant = Compound<'a, W>;
-    type SerializeMap = Compound<'a, W>;
-    type SerializeStruct = Compound<'a, W>;
-    type SerializeStructVariant = Compound<'a, W>;
+    fn serialize_field<T: ?Sized + Serialize>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error> {
+        self.se
+            .struct_field_encoding
+            .write_field(self.se, key, value)
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        Ok(())
+    }
+}
+
+impl<'a, W: 'a, FE, VE> SerializeStructVariant for Compound<'a, W, FE, VE>
+where
+    W: Write,
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+{
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T: ?Sized + Serialize>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error> {
+        self.se
+            .struct_field_encoding
+            .write_field(self.se, key, value)
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        Ok(())
+    }
+}
+
+impl<'a, W, FE, VE> serde::Serializer for &'a mut Serializer<W, FE, VE>
+where
+    W: Write,
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+{
+    type Ok = ();
+    type Error = Error;
+
+    type SerializeSeq = Compound<'a, W, FE, VE>;
+    type SerializeTuple = Compound<'a, W, FE, VE>;
+    type SerializeTupleStruct = Compound<'a, W, FE, VE>;
+    type SerializeTupleVariant = Compound<'a, W, FE, VE>;
+    type SerializeMap = Compound<'a, W, FE, VE>;
+    type SerializeStruct = Compound<'a, W, FE, VE>;
+    type SerializeStructVariant = Compound<'a, W, FE, VE>;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
         encode::write_bool(&mut self.wr, v)
@@ -416,12 +547,15 @@ where
         Ok(())
     }
 
-    fn serialize_unit_variant(self, _name: &str, idx: u32, _variant: &str) ->
-        Result<Self::Ok, Self::Error>
-    {
-        // encode as a map from variant idx to nil, like: {idx => nil}
+    fn serialize_unit_variant(
+        self,
+        _name: &str,
+        variant_index: u32,
+        variant: &'static str,
+    ) -> Result<Self::Ok, Self::Error> {
+        // encode as a map from variant idx (or name) to nil, like: {idx => nil}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
+        self.enum_variant_encoding.write_variant_identifier(self, variant_index, variant)?;
         self.serialize_unit()
     }
 
@@ -430,11 +564,17 @@ where
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
-        // encode as a map from variant idx to its attributed data, like: {idx => value}
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(
+        self,
+        name: &'static str,
+        variant_index: u32,
+        variant: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error> {
+        // encode as a map from variant idx (or name) to its attributed data, like: {idx => value}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
-        value.serialize(self)
+        self.enum_variant_encoding.write_variant_identifier(self, variant_index, variant)?;
+        self.serialize_newtype_struct(name, value)
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Error> {
@@ -458,12 +598,16 @@ where
         self.serialize_tuple(len)
     }
 
-    fn serialize_tuple_variant(self,  name: &'static str,  idx: u32,  _variant: &'static str,  len: usize) ->
-        Result<Self::SerializeTupleVariant, Error>
-    {
-        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+    fn serialize_tuple_variant(
+        self,
+        name: &'static str,
+        variant_index: u32,
+        variant: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeTupleVariant, Error> {
+        // encode as a map from variant idx (or name) to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
+        self.enum_variant_encoding.write_variant_identifier(self, variant_index, variant)?;
         self.serialize_tuple_struct(name, len)
     }
 
@@ -477,19 +621,27 @@ where
         }
     }
 
-    fn serialize_struct(self, _name: &'static str, len: usize) ->
-        Result<Self::SerializeStruct, Self::Error>
-    {
-        encode::write_array_len(&mut self.wr, len as u32)?;
+    fn serialize_struct(
+        self,
+        name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStruct, Self::Error> {
+        self.struct_field_encoding.write_struct_header(self, name, len)?;
         self.compound()
     }
 
-    fn serialize_struct_variant(self, name: &'static str, id: u32, _variant: &'static str, len: usize) ->
-        Result<Self::SerializeStructVariant, Error>
-    {
-        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+    fn serialize_struct_variant(
+        self,
+        name: &'static str,
+        variant_index: u32,
+        variant: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStructVariant, Error> {
+        // encode as a map from variant idx (or name) to it's value.
+        // value can either be a sequence of its attributed data, like: {idx => [v1,...,vN]},
+        // or a map from field names to values, like: {idx => {field => value, field2 => value2}}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(id)?;
+        self.enum_variant_encoding.write_variant_identifier(self, variant_index, variant)?;
         self.serialize_struct(name, len)
     }
 }
