@@ -75,7 +75,11 @@ use serde::{Deserialize, Serialize};
 use serde::de;
 
 pub use decode::{Deserializer, from_read, from_read_ref, from_slice};
-pub use encode::{Serializer, to_vec, to_vec_named};
+pub use encode::{Serializer, to_vec, to_vec_named, to_vec_custom};
+pub use encode_config::{
+    RuntimeDecidedFieldEncoding, RuntimeDecidedVariantEncoding, StructMapEncoding,
+    StructTupleEncoding, VariantIntegerEncoding, VariantStringEncoding,
+};
 
 pub mod decode;
 pub mod encode;

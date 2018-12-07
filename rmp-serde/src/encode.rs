@@ -703,3 +703,100 @@ where
     write_named(&mut wr, val)?;
     Ok(wr)
 }
+
+/// Serialize the given data structure as MessagePack into the I/O stream.
+///
+/// This serializes structs as either maps or tuples and enum identifiers as
+/// variant names or indices depending on the configuration.
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
+///
+/// See [`to_vec_custom`] documentation for more information.
+#[inline]
+pub fn write_custom<FE, VE, W, T>(
+    struct_field_encoding: FE,
+    enum_variant_encoding: VE,
+    wr: &mut W,
+    val: &T,
+) -> Result<(), Error>
+where
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+    W: Write + ?Sized,
+    T: Serialize + ?Sized,
+{
+    let mut se = Serializer::new(wr)
+        .with_field_encoding(struct_field_encoding)
+        .with_variant_encoding(enum_variant_encoding);
+    val.serialize(&mut se)
+}
+
+/// Serializes the data into a byte vector, using given configuration rather than any preset.
+///
+/// See documentation for `StructMapEncoding`, `StructTupleEncoding`, `VariantIntegerEncoding`,
+/// and `VariantStringEncoding` for the various options you can use.
+///
+/// # Errors
+///
+/// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate serde_derive;
+/// # extern crate rmp_serde;
+/// # fn main() {
+/// # fn sub_func_for_question_mark_operator() -> Result<(), Box<::std::error::Error>> {
+/// use rmp_serde::{VariantStringEncoding, StructMapEncoding};
+///
+/// #[derive(Serialize)]
+/// enum Color { Red, Blue }
+/// #[derive(Serialize)]
+/// struct MyStruct {
+///     color1: Color,
+///     color2: Color,
+/// }
+///
+/// let struct1 = MyStruct {
+///     color1: Color::Red,
+///     color2: Color::Blue,
+/// };
+///
+/// let serialized = rmp_serde::to_vec_custom(StructMapEncoding, VariantStringEncoding, &struct1)?;
+///
+/// // The configuration causes rmp_serde to use enum and field names to serialize, rather than
+/// // indices. Thus you can deserialize into different structs with the same names, but different
+/// // field or variant orders.
+///
+/// #[derive(Deserialize, PartialEq, Debug)]
+/// enum ColorV2 { Green, Purple, Blue, Red }
+/// #[derive(Deserialize, PartialEq, Debug)]
+/// struct SecondStruct {
+///     color2: ColorV2,
+///     color1: ColorV2,
+/// }
+///
+/// let deserialized: SecondStruct = rmp_serde::from_slice(&serialized)?;
+///
+/// assert_eq!(deserialized, SecondStruct { color2: ColorV2::Blue, color1: ColorV2::Red });
+/// # Ok(())
+/// # }
+/// # sub_func_for_question_mark_operator().unwrap();
+/// # }
+/// ```
+#[inline]
+pub fn to_vec_custom<FE, VE, T>(
+    struct_field_encoding: FE,
+    enum_variant_encoding: VE,
+    val: &T,
+) -> Result<Vec<u8>, Error>
+where
+    FE: StructFieldEncoding,
+    VE: EnumVariantEncoding,
+    T: Serialize + ?Sized,
+{
+    let mut wr = Vec::with_capacity(128);
+
+    write_custom(struct_field_encoding, enum_variant_encoding, &mut wr, val)?;
+    Ok(wr)
+}
