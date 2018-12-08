@@ -412,8 +412,7 @@ where
     }
 
     fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
-        encode::write_array_len(&mut self.wr, 0)?;
-        Ok(())
+        self.serialize_unit()
     }
 
     fn serialize_unit_variant(self, _name: &str, idx: u32, _variant: &str) ->
@@ -422,8 +421,7 @@ where
         // encode as a map from variant idx to nil, like: {idx => nil}
         encode::write_map_len(&mut self.wr, 1)?;
         self.serialize_u32(idx)?;
-        encode::write_nil(&mut self.wr).map_err(|e| Error::InvalidValueWrite(ValueWriteError::InvalidMarkerWrite(e)))?;
-        Ok(())
+        self.serialize_unit()
     }
 
     fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(self, _name: &'static str, value: &T) -> Result<(), Self::Error> {
