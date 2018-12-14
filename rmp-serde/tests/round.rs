@@ -190,6 +190,7 @@ fn round_trip_unit_struct() {
 }
 
 #[test]
+#[ignore]
 fn round_trip_unit_struct_untagged_enum() {
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct UnitStruct;

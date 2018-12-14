@@ -412,7 +412,8 @@ where
     }
 
     fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
-        self.serialize_unit()
+        encode::write_array_len(&mut self.wr, 0)?;
+        Ok(())
     }
 
     fn serialize_unit_variant(self, _name: &str, idx: u32, _variant: &str) ->
