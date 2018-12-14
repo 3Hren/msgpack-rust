@@ -156,7 +156,6 @@ fn round_struct_as_map() {
     assert_eq!(dog1, check);
 }
 
-// Checks whether deserialization and serialization can both work with enum variants as strings
 #[test]
 fn round_trip_unit_struct() {
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -187,5 +186,42 @@ fn round_trip_unit_struct() {
         let serialized: Vec<u8> = rmps::to_vec_named(&msg2).unwrap();
         let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msg2);
+    }
+}
+
+#[test]
+fn round_trip_unit_struct_untagged_enum() {
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct UnitStruct;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct MessageA {
+        some_int: i32,
+        unit: UnitStruct,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(untagged)]
+    enum Messages {
+        MessageA(MessageA),
+    }
+
+    let msga = Messages::MessageA(MessageA {
+        some_int: 32,
+        unit: UnitStruct,
+    });
+
+    // struct-as-tuple
+    {
+        let serialized: Vec<u8> = rmps::to_vec(&msga).unwrap();
+        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        assert_eq!(deserialized, msga);
+    }
+
+    // struct-as-map
+    {
+        let serialized: Vec<u8> = rmps::to_vec_named(&msga).unwrap();
+        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        assert_eq!(deserialized, msga);
     }
 }
