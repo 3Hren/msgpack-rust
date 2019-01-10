@@ -13,7 +13,7 @@ categories = ["encoding"]
 [dependencies]
 byteorder = "1"
 serde = "1"
-rmp = "0.8"
+rmp = { version = "0.8", path = "../rmp" }
 
 [dev-dependencies]
 serde_bytes = "0.10"
