@@ -19,7 +19,11 @@ use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::io::Write;
 
-use byteorder::{self, WriteBytesExt};
+use byteorder;
+#[cfg(feature = "std")]
+use byteorder::WriteBytesExt;
+#[cfg(not(feature = "std"))]
+use nostd::io_ext::WriteBytesExt;
 
 use Marker;
 

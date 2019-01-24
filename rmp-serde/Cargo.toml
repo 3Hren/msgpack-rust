@@ -11,10 +11,16 @@ keywords = ["msgpack", "MessagePack", "serde", "serialization"]
 categories = ["encoding"]
 
 [dependencies]
-byteorder = "1"
-serde = "1"
-rmp = { version = "0.8", path = "../rmp" }
+nostd = { path = "../nostd", optional = true }
+byteorder = { version = "1", default-features = false }
+serde = { version = "1", default-features = false }
+rmp = { version = "0.8", path = "../rmp", default-features = false }
 
 [dev-dependencies]
 serde_bytes = "0.10"
 serde_derive = "1"
+
+[features]
+default = ["std"]
+std = [ "byteorder/std", "serde/std", "rmp/std" ]
+alloc = [ "nostd", "serde/alloc", "rmp/alloc" ]

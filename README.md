@@ -38,6 +38,13 @@ deserializing Rust structs.
   This project is developed using TDD and CI, so any found bugs will be fixed without breaking
   existing functionality.
 
+- **`no_std` support**
+
+  This crate uses the same `no_std` portability pattern as `serde`. That is, there is a `std`
+  feature which is on by default, and an `alloc` feature which cannot be combined with the `std`
+  feature and requires the nightly compiler to use.
+  The crate then depends on the unstable `alloc` crate instead of `std`.
+
 ## Requirements
 
 - Rust 1.16

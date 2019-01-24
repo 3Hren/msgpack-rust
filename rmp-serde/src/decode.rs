@@ -5,7 +5,15 @@ use std::fmt::{self, Display, Formatter};
 use std::io::{self, Cursor, ErrorKind, Read};
 use std::str::{self, Utf8Error};
 
-use byteorder::{self, ReadBytesExt};
+use super::String;
+use super::Vec;
+use super::ToString;
+
+use byteorder;
+#[cfg(feature = "std")]
+use byteorder::ReadBytesExt;
+#[cfg(not(feature = "std"))]
+use nostd::io_ext::ReadBytesExt;
 
 use serde;
 use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Visitor};

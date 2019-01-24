@@ -1,0 +1,12 @@
+[package]
+name = "nostd"
+version = "0.1.0"
+authors = ["Vadzim Dambrouski <pftbest@gmail.com>"]
+
+[dependencies.byteorder]
+version = "1"
+default-features = false
+
+[dependencies.arrayvec]
+version = "0.4"
+default-features = false

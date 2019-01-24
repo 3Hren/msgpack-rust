@@ -62,6 +62,18 @@
 
 #![warn(missing_debug_implementations, missing_docs)]
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#![feature(alloc)]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+extern crate nostd;
+#[cfg(not(feature = "std"))]
+mod std {
+    pub use core::*;
+    pub use nostd::*;
+}
 extern crate rmp;
 extern crate byteorder;
 #[macro_use]
@@ -70,6 +82,10 @@ extern crate serde;
 use std::fmt::{self, Display, Formatter};
 use std::mem;
 use std::str::{self, Utf8Error};
+
+use alloc::vec::Vec;
+use alloc::string::String;
+use alloc::prelude::ToString;
 
 use serde::{Deserialize, Serialize};
 use serde::de;

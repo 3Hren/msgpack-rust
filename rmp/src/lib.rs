@@ -148,8 +148,18 @@
 //!
 //! [read_int]: decode/fn.read_int.html
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 extern crate byteorder;
 extern crate num_traits;
+
+#[cfg(not(feature = "std"))]
+extern crate nostd;
+#[cfg(not(feature = "std"))]
+mod std {
+    pub use core::*;
+    pub use nostd::*;
+}
 
 mod marker;
 pub mod encode;

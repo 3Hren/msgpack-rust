@@ -26,7 +26,11 @@ use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::io::Read;
 
-use byteorder::{self, ReadBytesExt};
+use byteorder;
+#[cfg(feature = "std")]
+use byteorder::ReadBytesExt;
+#[cfg(not(feature = "std"))]
+use nostd::io_ext::ReadBytesExt;
 
 use num_traits::cast::FromPrimitive;
 

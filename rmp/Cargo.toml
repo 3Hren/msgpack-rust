@@ -11,8 +11,14 @@ keywords = ["msgpack", "MessagePack"]
 categories = ["encoding"]
 
 [dependencies]
-byteorder = "1"
-num-traits = "0.1"
+nostd = { path = "../nostd", optional = true }
+num-traits = { version = "0", default-features = false }
+byteorder = { version = "1", default-features = false }
 
 [dev-dependencies]
 quickcheck = "0.3"
+
+[features]
+default = ["std"]
+std = ["byteorder/std"]
+alloc = ["nostd"]
