@@ -364,7 +364,12 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
     fn deserialize_enum<V>(self, _name: &str, _variants: &[&str], visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
-        match decode::read_map_len(&mut self.rd)? {
+        let marker = match self.marker.take() {
+            Some(marker) => marker,
+            None => rmp::decode::read_marker(&mut self.rd)?,
+        };
+
+        match rmp::decode::marker_to_len(&mut self.rd, marker)? {
             1 => visitor.visit_enum(VariantAccess::new(self)),
             n => Err(Error::LengthMismatch(n as u32)),
         }
