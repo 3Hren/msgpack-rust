@@ -28,6 +28,21 @@ fn round_trip_option() {
 }
 
 #[test]
+fn round_trip_optional_enum() {
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    pub enum SimpleEnum {
+        Variant,
+    }
+    let expected = Some(SimpleEnum::Variant);
+
+    let mut buf = Vec::new();
+    expected.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    let mut de = Deserializer::new(Cursor::new(&buf[..]));
+    assert_eq!(expected, Deserialize::deserialize(&mut de).unwrap());
+}
+
+#[test]
 fn round_trip_cow() {
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     struct Foo<'a> {

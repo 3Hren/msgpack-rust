@@ -337,7 +337,12 @@ pub fn read_array_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
 /// successful read.
 // TODO: Docs.
 pub fn read_map_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
-    match try!(read_marker(rd)) {
+    let marker = read_marker(rd)?;
+    marker_to_len(rd, marker)
+}
+
+pub fn marker_to_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, ValueReadError> {
+    match marker {
         Marker::FixMap(size) => Ok(size as u32),
         Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
         Marker::Map32 => Ok(try!(read_data_u32(rd))),
