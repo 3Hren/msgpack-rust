@@ -170,3 +170,74 @@ fn round_struct_as_map() {
 
     assert_eq!(dog1, check);
 }
+
+#[test]
+fn round_trip_unit_struct() {
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct Message1 {
+        data: u8,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct Message2;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    enum Messages {
+        Message1(Message1),
+        Message2(Message2),
+    }
+
+    let msg2 = Messages::Message2(Message2);
+
+    // struct-as-tuple
+    {
+        let serialized: Vec<u8> = rmps::to_vec(&msg2).unwrap();
+        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        assert_eq!(deserialized, msg2);
+    }
+
+    // struct-as-map
+    {
+        let serialized: Vec<u8> = rmps::to_vec_named(&msg2).unwrap();
+        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        assert_eq!(deserialized, msg2);
+    }
+}
+
+#[test]
+#[ignore]
+fn round_trip_unit_struct_untagged_enum() {
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct UnitStruct;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct MessageA {
+        some_int: i32,
+        unit: UnitStruct,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(untagged)]
+    enum Messages {
+        MessageA(MessageA),
+    }
+
+    let msga = Messages::MessageA(MessageA {
+        some_int: 32,
+        unit: UnitStruct,
+    });
+
+    // struct-as-tuple
+    {
+        let serialized: Vec<u8> = rmps::to_vec(&msga).unwrap();
+        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        assert_eq!(deserialized, msga);
+    }
+
+    // struct-as-map
+    {
+        let serialized: Vec<u8> = rmps::to_vec_named(&msga).unwrap();
+        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        assert_eq!(deserialized, msga);
+    }
+}

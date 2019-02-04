@@ -381,9 +381,28 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
         visitor.visit_newtype_struct(self)
     }
 
+    fn deserialize_unit_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        // We need to special case this so that [] is treated as a unit struct when asked for,
+        // but as a sequence otherwise. This is because we serialize unit structs as [] rather
+        // than as 'nil'.
+        let marker = match self.marker.take() {
+            Some(marker) => marker,
+            None => rmp::decode::read_marker(&mut self.rd)?,
+        };
+        match marker {
+            Marker::Null | Marker::FixArray(0) => visitor.visit_unit(),
+            marker => {
+                self.marker = Some(marker);
+                self.deserialize_any(visitor)
+            }
+        }
+    }
+
     forward_to_deserialize_any! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char
-        str string bytes byte_buf unit unit_struct seq map
+        str string bytes byte_buf unit seq map
         tuple_struct struct identifier tuple
         ignored_any
     }
