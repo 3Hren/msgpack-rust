@@ -15,4 +15,4 @@ byteorder = "1"
 num-traits = "0.1"
 
 [dev-dependencies]
-quickcheck = "0.3"
+quickcheck = "0.8"
