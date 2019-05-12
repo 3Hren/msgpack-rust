@@ -331,9 +331,8 @@ fn pass_bin8_into_bytebuf() {
 
     let mut de = Deserializer::new(cur);
     let actual: ByteBuf = Deserialize::deserialize(&mut de).unwrap();
-    let actual: Vec<u8> = actual.into_vec();
 
-    assert_eq!(vec![0xcc, 0x80], actual);
+    assert_eq!([0xcc, 0x80], actual[..]);
 }
 
 #[test]
@@ -345,9 +344,8 @@ fn pass_bin16_into_bytebuf() {
 
     let mut de = Deserializer::new(cur);
     let actual: ByteBuf = Deserialize::deserialize(&mut de).unwrap();
-    let actual: Vec<u8> = actual.into_vec();
 
-    assert_eq!(vec![0xcc, 0x80], actual);
+    assert_eq!([0xcc, 0x80], actual[..]);
 }
 
 #[test]
@@ -359,9 +357,8 @@ fn pass_bin32_into_bytebuf() {
 
     let mut de = Deserializer::new(cur);
     let actual: ByteBuf = Deserialize::deserialize(&mut de).unwrap();
-    let actual: Vec<u8> = actual.into_vec();
 
-    assert_eq!(vec![0xcc, 0x80], actual);
+    assert_eq!([0xcc, 0x80], actual[..]);
 }
 
 #[test]
