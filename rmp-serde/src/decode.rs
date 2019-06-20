@@ -69,10 +69,10 @@ impl de::Error for Error {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        match self {
-            Error::InvalidMarkerRead(err) => write!(fmt, "IO error while reading marker: {}", err),
-            Error::InvalidDataRead(err) => write!(fmt, "IO error while reading data: {}", err),
-            Error::TypeMismatch(actual_marker) => {
+        match *self {
+            Error::InvalidMarkerRead(ref err) => write!(fmt, "IO error while reading marker: {}", err),
+            Error::InvalidDataRead(ref err) => write!(fmt, "IO error while reading data: {}", err),
+            Error::TypeMismatch(ref actual_marker) => {
                 write!(fmt, "wrong msgpack marker {:?}", actual_marker)
             }
             Error::OutOfRange => fmt.write_str("numeric cast found out of range"),
