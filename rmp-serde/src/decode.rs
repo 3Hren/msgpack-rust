@@ -565,11 +565,7 @@ impl<'de, 'a, R: ReadSlice<'de>> de::EnumAccess<'de> for VariantAccess<'a, R> {
     fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self), Error>
         where V: de::DeserializeSeed<'de>,
     {
-        use serde::de::IntoDeserializer;
-
-        let idx: u32 = serde::Deserialize::deserialize(&mut *self.de)?;
-        let val: Result<_, Error> = seed.deserialize(idx.into_deserializer());
-        Ok((val?, self))
+        Ok((seed.deserialize(&mut *self.de)?, self))
     }
 }
 
