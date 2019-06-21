@@ -320,22 +320,33 @@ fn round_variant_string() {
         Cat,
     }
 
-    let animal1 = Animal1::Dog {
-        breed: "Pitbull".into()
-    };
+    // use helper macro so that we can test many combinations at once
+    macro_rules! do_test {
+        ($ser:expr) => {
+            {
+                let animal1 = Animal1::Dog { breed: "Pitbull".to_owned() };
+                let expected = Animal2::Dog { breed: "Pitbull".to_owned() };
+                let mut buf = Vec::new();
+                animal1.serialize(&mut $ser(&mut buf)).unwrap();
 
-    let serialized: Vec<u8> = {
-        let mut buf = Vec::new();
-        (animal1).serialize(&mut Serializer::new(&mut buf).with_string_variants()).unwrap();
-        buf
-    };
-    let deserialized: Animal2 = from_slice(&serialized).unwrap();
+                let deserialized: Animal2 = from_slice(&buf).unwrap();
+                assert_eq!(deserialized, expected);
+            }
+        }
+    }
 
-    let check = match deserialized {
-        Animal2::Emu => Animal1::Emu,
-        Animal2::Dog { breed } => Animal1::Dog { breed: breed },
-        Animal2::Cat => Animal1::Cat,
-    };
-
-    assert_eq!(animal1, check);
+    do_test!(|b| Serializer::new(b).with_string_variants());
+    do_test!(|b| Serializer::new(b).with_struct_map().with_string_variants());
+    do_test!(|b| Serializer::new(b).with_struct_tuple().with_string_variants());
+    do_test!(|b| Serializer::new(b).with_string_variants().with_struct_map());
+    do_test!(|b| Serializer::new(b).with_string_variants().with_struct_tuple());
+    do_test!(|b| {
+        Serializer::new(b)
+            .with_string_variants()
+            .with_struct_tuple()
+            .with_struct_map()
+            .with_struct_tuple()
+            .with_struct_map()
+    });
+    do_test!(|b| Serializer::new(b).with_integer_variants().with_string_variants());
 }

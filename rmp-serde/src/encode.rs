@@ -93,6 +93,18 @@ pub trait UnderlyingWrite {
 
     /// Unwraps this `Serializer`, returning the underlying writer.
     fn into_inner(self) -> Self::Write;
+
+}
+
+/// Trait allowing access to writing incomplete parts of serialized data, useful for mixing chained Serializer
+/// configuration which both affect the same [`Serialize`][serde::Serialize] method.
+///
+/// Not intended to be implemented by user crates.
+pub trait SerializeParts {
+    /// Encodes an enum variant ident (id or name) according to underlying writer.
+    ///
+    /// Should be used by wrapping writers in `Serialize::serialize_*_variant` methods.
+    fn serialize_enum_variant_ident(&mut self, variant_index: u32, variant: &'static str) -> Result<(), Error>;
 }
 
 /// Represents MessagePack serialization implementation.
@@ -452,12 +464,12 @@ where
         Ok(())
     }
 
-    fn serialize_unit_variant(self, _name: &str, idx: u32, _variant: &str) ->
+    fn serialize_unit_variant(self, _name: &str, idx: u32, variant: &'static str) ->
         Result<Self::Ok, Self::Error>
     {
         // encode as a map from variant idx to nil, like: {idx => nil}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
+        self.serialize_enum_variant_ident(idx, variant)?;
         self.serialize_unit()
     }
 
@@ -466,10 +478,10 @@ where
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
         // encode as a map from variant idx to its attributed data, like: {idx => value}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
+        self.serialize_enum_variant_ident(idx, variant)?;
         value.serialize(self)
     }
 
@@ -494,12 +506,12 @@ where
         self.serialize_tuple(len)
     }
 
-    fn serialize_tuple_variant(self,  name: &'static str,  idx: u32,  _variant: &'static str,  len: usize) ->
+    fn serialize_tuple_variant(self,  name: &'static str,  idx: u32,  variant: &'static str,  len: usize) ->
         Result<Self::SerializeTupleVariant, Error>
     {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
+        self.serialize_enum_variant_ident(idx, variant)?;
         self.serialize_tuple_struct(name, len)
     }
 
@@ -520,13 +532,21 @@ where
         self.compound()
     }
 
-    fn serialize_struct_variant(self, name: &'static str, id: u32, _variant: &'static str, len: usize) ->
+    fn serialize_struct_variant(self, name: &'static str, id: u32, variant: &'static str, len: usize) ->
         Result<Self::SerializeStructVariant, Error>
     {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(id)?;
+        self.serialize_enum_variant_ident(id, variant)?;
         self.serialize_struct(name, len)
+    }
+}
+
+impl<W: Write> SerializeParts for Serializer<W> {
+    fn serialize_enum_variant_ident(&mut self, variant_index: u32, _variant: &'static str) -> Result<(), Error> {
+        use serde::Serializer;
+
+        self.serialize_u32(variant_index)
     }
 }
 

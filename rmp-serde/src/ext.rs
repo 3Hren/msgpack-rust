@@ -8,7 +8,7 @@ use serde::ser::{
     SerializeStruct, SerializeStructVariant, SerializeTupleStruct, SerializeTupleVariant,
 };
 
-use encode::{Error, Ext, UnderlyingWrite};
+use encode::{Error, Ext, SerializeParts, UnderlyingWrite};
 
 /// Serializer wrapper, that overrides struct serialization by packing as a map with field names.
 ///
@@ -52,9 +52,19 @@ where
     }
 }
 
+impl<S> SerializeParts for StructMapSerializer<S>
+where
+    S: UnderlyingWrite + SerializeParts,
+    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
+{
+    fn serialize_enum_variant_ident(&mut self, variant_index: u32, variant: &'static str) -> Result<(), Error> {
+        self.se.serialize_enum_variant_ident(variant_index, variant)
+    }
+}
+
 impl<'a, S> Serializer for &'a mut StructMapSerializer<S>
 where
-    S: UnderlyingWrite,
+    S: UnderlyingWrite + SerializeParts,
     for<'b> &'b mut S: Serializer<Ok = (), Error = Error>
 {
     type Ok = ();
@@ -214,10 +224,10 @@ where
     }
 
     #[inline]
-    fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
+    fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.se.get_mut(), 1)?;
-        self.se.serialize_u32(variant_index)?;
+        self.se.serialize_enum_variant_ident(variant_index, variant)?;
         encode::write_map_len(self.se.get_mut(), len as u32)?;
         Ok(self)
     }
@@ -225,7 +235,7 @@ where
 
 impl<'a, S> SerializeStruct for &'a mut StructMapSerializer<S>
 where
-    S: UnderlyingWrite,
+    S: UnderlyingWrite + SerializeParts,
     for<'b> &'b mut S: Serializer<Ok = (), Error = Error>
 {
     type Ok = ();
@@ -245,7 +255,7 @@ where
 
 impl<'a, S> SerializeStructVariant for &'a mut StructMapSerializer<S>
 where
-    S: UnderlyingWrite,
+    S: UnderlyingWrite + SerializeParts,
     for<'b> &'b mut S: Serializer<Ok = (), Error = Error>
 {
     type Ok = ();
@@ -303,9 +313,19 @@ where
     }
 }
 
+impl<S> SerializeParts for StructTupleSerializer<S>
+where
+    S: UnderlyingWrite + SerializeParts,
+    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
+{
+    fn serialize_enum_variant_ident(&mut self, variant_index: u32, variant: &'static str) -> Result<(), Error> {
+        self.se.serialize_enum_variant_ident(variant_index, variant)
+    }
+}
+
 impl<'a, S> Serializer for &'a mut StructTupleSerializer<S>
 where
-    S: UnderlyingWrite,
+    S: UnderlyingWrite + SerializeParts,
     for<'b> &'b mut S: Serializer<Ok = (), Error = Error>
 {
     type Ok = ();
@@ -465,10 +485,10 @@ where
     }
 
     #[inline]
-    fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
+    fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.se.get_mut(), 1)?;
-        self.se.serialize_u32(variant_index)?;
+        self.serialize_enum_variant_ident(variant_index, variant)?;
         encode::write_array_len(self.se.get_mut(), len as u32)?;
         Ok(self)
     }
@@ -476,7 +496,7 @@ where
 
 impl<'a, S> SerializeStruct for &'a mut StructTupleSerializer<S>
 where
-    S: UnderlyingWrite,
+    S: UnderlyingWrite + SerializeParts,
     for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
 {
     type Ok = ();
@@ -495,7 +515,7 @@ where
 
 impl<'a, S> SerializeStructVariant for &'a mut StructTupleSerializer<S>
 where
-    S: UnderlyingWrite,
+    S: UnderlyingWrite + SerializeParts,
     for<'b> &'b mut S: Serializer<Ok = (), Error = Error>
 {
     type Ok = ();
@@ -597,9 +617,19 @@ where
     }
 }
 
+impl<S> SerializeParts for VariantStringSerializer<S>
+where
+    S: UnderlyingWrite + SerializeParts,
+    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
+{
+    fn serialize_enum_variant_ident(&mut self, _variant_index: u32, variant: &'static str) -> Result<(), Error> {
+        self.se.serialize_str(variant)
+    }
+}
+
 impl<'a, S> Serializer for &'a mut VariantStringSerializer<S>
 where
-    S: UnderlyingWrite,
+    S: UnderlyingWrite + SerializeParts,
     for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
 {
     type Ok = ();
@@ -849,9 +879,19 @@ where
     }
 }
 
+impl<S> SerializeParts for VariantIntegerSerializer<S>
+where
+    S: UnderlyingWrite + SerializeParts,
+    for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
+{
+    fn serialize_enum_variant_ident(&mut self, variant_index: u32, _variant: &'static str) -> Result<(), Error> {
+        self.se.serialize_u32(variant_index)
+    }
+}
+
 impl<'a, S> Serializer for &'a mut VariantIntegerSerializer<S>
 where
-    S: UnderlyingWrite,
+    S: UnderlyingWrite + SerializeParts,
     for<'b> &'b mut S: Serializer<Ok = (), Error = Error>,
 {
     type Ok = ();
