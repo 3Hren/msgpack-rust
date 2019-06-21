@@ -400,8 +400,58 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
         }
     }
 
+    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        // This special case allows us to decode some integer types as floats when safe, and
+        // asked for.
+        //
+        // This allows interoperability with msgpack-lite, which performs an optimization of
+        // storing rounded floats as integers.
+        let marker = match self.marker.take() {
+            Some(marker) => marker,
+            None => rmp::decode::read_marker(&mut self.rd)?,
+        };
+        match marker {
+            Marker::U8 => visitor.visit_f32(rmp::decode::read_data_u8(&mut self.rd)?.into()),
+            Marker::U16 => visitor.visit_f32(rmp::decode::read_data_u16(&mut self.rd)?.into()),
+            Marker::I8 => visitor.visit_f32(rmp::decode::read_data_i8(&mut self.rd)?.into()),
+            Marker::I16 => visitor.visit_f32(rmp::decode::read_data_i16(&mut self.rd)?.into()),
+            Marker::F32 => visitor.visit_f32(rmp::decode::read_data_f32(&mut self.rd)?),
+            marker => {
+                self.marker = Some(marker);
+                self.deserialize_any(visitor)
+            }
+        }
+    }
+
+    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        // This special case allows us to decode some integer types as floats when safe, and
+        // asked for. This is here to be consistent with 'f32'.
+        let marker = match self.marker.take() {
+            Some(marker) => marker,
+            None => rmp::decode::read_marker(&mut self.rd)?,
+        };
+        match marker {
+            Marker::U8 => visitor.visit_f64(rmp::decode::read_data_u8(&mut self.rd)?.into()),
+            Marker::U16 => visitor.visit_f64(rmp::decode::read_data_u16(&mut self.rd)?.into()),
+            Marker::U32 => visitor.visit_f64(rmp::decode::read_data_u32(&mut self.rd)?.into()),
+            Marker::I8 => visitor.visit_f64(rmp::decode::read_data_i8(&mut self.rd)?.into()),
+            Marker::I16 => visitor.visit_f64(rmp::decode::read_data_i16(&mut self.rd)?.into()),
+            Marker::I32 => visitor.visit_f64(rmp::decode::read_data_i32(&mut self.rd)?.into()),
+            Marker::F32 => visitor.visit_f64(rmp::decode::read_data_f32(&mut self.rd)?.into()),
+            Marker::F64 => visitor.visit_f64(rmp::decode::read_data_f64(&mut self.rd)?),
+            marker => {
+                self.marker = Some(marker);
+                self.deserialize_any(visitor)
+            }
+        }
+    }
+
     forward_to_deserialize_any! {
-        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char
+        bool u8 u16 u32 u64 i8 i16 i32 i64 char
         str string bytes byte_buf unit seq map
         tuple_struct struct identifier tuple
         ignored_any
