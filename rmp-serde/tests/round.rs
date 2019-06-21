@@ -8,6 +8,7 @@ use std::borrow::Cow;
 use std::io::Cursor;
 
 use serde::{Deserialize, Serialize};
+use rmps::encode::Ext;
 use rmps::{Deserializer, Serializer};
 
 #[test]
@@ -76,6 +77,64 @@ fn round_trip_option_cow() {
     expected.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
     let mut de = Deserializer::new(Cursor::new(&buf[..]));
+
+    assert_eq!(expected, Deserialize::deserialize(&mut de).unwrap());
+}
+
+#[test]
+fn round_struct_like_enum() {
+    use serde::Serialize;
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    enum Enum {
+        A { data: u32 },
+    }
+
+    let expected = Enum::A { data: 42 };
+    let mut buf = Vec::new();
+    expected.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    let mut de = Deserializer::new(&buf[..]);
+
+    assert_eq!(expected, Deserialize::deserialize(&mut de).unwrap());
+}
+
+#[test]
+fn round_struct_like_enum_with_struct_map() {
+    use serde::Serialize;
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    enum Enum {
+        A { data: u32 },
+    }
+
+    let expected = Enum::A { data: 42 };
+    let mut buf = Vec::new();
+    expected
+        .serialize(&mut Serializer::new(&mut buf).with_struct_map())
+        .unwrap();
+
+    let mut de = Deserializer::new(&buf[..]);
+
+    assert_eq!(expected, Deserialize::deserialize(&mut de).unwrap());
+}
+
+#[test]
+fn round_struct_like_enum_with_struct_tuple() {
+    use serde::Serialize;
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    enum Enum {
+        A { data: u32 },
+    }
+
+    let expected = Enum::A { data: 42 };
+    let mut buf = Vec::new();
+    expected
+        .serialize(&mut Serializer::new(&mut buf).with_struct_tuple())
+        .unwrap();
+
+    let mut de = Deserializer::new(&buf[..]);
 
     assert_eq!(expected, Deserialize::deserialize(&mut de).unwrap());
 }
