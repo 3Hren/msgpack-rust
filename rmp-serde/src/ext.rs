@@ -531,7 +531,8 @@ where
 ///
 /// use std::collections::HashMap;
 ///
-/// use rmp_serde::{encode::Ext, Deserializer, Serializer};
+/// use rmp_serde::encode::Ext;
+/// use rmp_serde::{Deserializer, Serializer};
 /// use serde::{Deserialize, Serialize};
 ///
 /// #[derive(Debug, PartialEq, Deserialize, Serialize)]
@@ -715,8 +716,8 @@ where
         variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
         encode::write_map_len(self.se.get_mut(), 1)?;
-        self.serialize_str(variant)?;
-        self.serialize_unit()
+        self.se.serialize_str(variant)?;
+        self.se.serialize_unit()
     }
 
     #[inline]
@@ -743,8 +744,8 @@ where
         T: Serialize,
     {
         encode::write_map_len(self.se.get_mut(), 1)?;
-        self.serialize_str(variant)?;
-        self.serialize_newtype_struct(name, value)
+        self.se.serialize_str(variant)?;
+        self.se.serialize_newtype_struct(name, value)
     }
 
     #[inline]
@@ -776,9 +777,8 @@ where
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(self.se.get_mut(), 1)?;
-        self.serialize_str(variant)?;
-        self.serialize_tuple_struct(name, len)
-            .map(VariantForwardSerializer)
+        self.se.serialize_str(variant)?;
+        self.se.serialize_tuple_struct(name, len).map(VariantForwardSerializer)
     }
 
     #[inline]
@@ -805,9 +805,8 @@ where
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(self.se.get_mut(), 1)?;
-        self.serialize_str(variant)?;
-        self.serialize_struct(name, len)
-            .map(VariantForwardSerializer)
+        self.se.serialize_str(variant)?;
+        self.se.serialize_struct(name, len).map(VariantForwardSerializer)
     }
 }
 
@@ -969,8 +968,8 @@ where
         _variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
         encode::write_map_len(self.se.get_mut(), 1)?;
-        self.serialize_u32(variant_index)?;
-        self.serialize_unit()
+        self.se.serialize_u32(variant_index)?;
+        self.se.serialize_unit()
     }
 
     #[inline]
@@ -996,8 +995,7 @@ where
     where
         T: Serialize,
     {
-        self.se
-            .serialize_newtype_variant(name, variant_index, variant, value)
+        self.se.serialize_newtype_variant(name, variant_index, variant, value)
     }
 
     #[inline]
@@ -1028,9 +1026,8 @@ where
         len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
         encode::write_map_len(self.se.get_mut(), 1)?;
-        self.serialize_u32(variant_index)?;
-        self.serialize_tuple_struct(name, len)
-            .map(VariantForwardSerializer)
+        self.se.serialize_u32(variant_index)?;
+        self.se.serialize_tuple_struct(name, len).map(VariantForwardSerializer)
     }
 
     #[inline]
@@ -1057,9 +1054,8 @@ where
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(self.se.get_mut(), 1)?;
-        self.serialize_u32(variant_index)?;
-        self.serialize_struct(name, len)
-            .map(VariantForwardSerializer)
+        self.se.serialize_u32(variant_index)?;
+        self.se.serialize_struct(name, len).map(VariantForwardSerializer)
     }
 }
 
