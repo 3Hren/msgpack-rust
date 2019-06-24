@@ -69,7 +69,23 @@ impl de::Error for Error {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        error::Error::description(self).fmt(fmt)
+        match *self {
+            Error::InvalidMarkerRead(ref err) => write!(fmt, "IO error while reading marker: {}", err),
+            Error::InvalidDataRead(ref err) => write!(fmt, "IO error while reading data: {}", err),
+            Error::TypeMismatch(ref actual_marker) => {
+                write!(fmt, "wrong msgpack marker {:?}", actual_marker)
+            }
+            Error::OutOfRange => fmt.write_str("numeric cast found out of range"),
+            Error::LengthMismatch(expected_length) => write!(
+                fmt,
+                "array had incorrect length, expected {}",
+                expected_length
+            ),
+            Error::Uncategorized(ref msg) => write!(fmt, "uncategorized error: {}", msg),
+            Error::Syntax(ref msg) => fmt.write_str(msg),
+            Error::Utf8Error(ref err) => write!(fmt, "string found to be invalid utf8: {}", err),
+            Error::DepthLimitExceeded => fmt.write_str("depth limit exceeded"),
+        }
     }
 }
 
