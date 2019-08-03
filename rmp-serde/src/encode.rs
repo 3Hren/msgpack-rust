@@ -12,7 +12,10 @@ use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVar
 use rmp::encode;
 use rmp::encode::ValueWriteError;
 
-use config::{DefaultConfig, SerializerConfig, StructMapConfig, StructTupleConfig};
+use config::{
+    DefaultConfig, SerializerConfig, StructMapConfig, StructTupleConfig, VariantIntegerConfig,
+    VariantStringConfig,
+};
 
 /// This type represents all possible errors that can occur when serializing or
 /// deserializing MessagePack data.
@@ -207,6 +210,33 @@ impl<W: Write, C> Serializer<W, C> {
             wr: wr,
             depth: depth,
             config: StructTupleConfig::new(config),
+        }
+    }
+
+    /// Consumes this serializer returning the new one, which will serialize enum variants as strings.
+    ///
+    /// This is used, when you the default struct serialization as integers does not fit your
+    /// requirements.
+    pub fn with_string_variants(self) -> Serializer<W, VariantStringConfig<C>> {
+        let Serializer { wr, depth, config } = self;
+        Serializer {
+            wr: wr,
+            depth: depth,
+            config: VariantStringConfig::new(config),
+        }
+    }
+
+    /// Consumes this serializer returning the new one, which will serialize enum variants as a their
+    /// integer indices.
+    ///
+    /// This is the default MessagePack serialization mechanism, emitting the most compact
+    /// representation.
+    pub fn with_integer_variants(self) -> Serializer<W, VariantIntegerConfig<C>> {
+        let Serializer { wr, depth, config } = self;
+        Serializer {
+            wr: wr,
+            depth: depth,
+            config: VariantIntegerConfig::new(config),
         }
     }
 }
@@ -433,12 +463,12 @@ where
         Ok(())
     }
 
-    fn serialize_unit_variant(self, _name: &str, idx: u32, _variant: &str) ->
+    fn serialize_unit_variant(self, _name: &str, idx: u32, variant: &'static str) ->
         Result<Self::Ok, Self::Error>
     {
         // encode as a map from variant idx to nil, like: {idx => nil}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
+        C::write_variant_ident(self, idx, variant)?;
         self.serialize_unit()
     }
 
@@ -447,10 +477,10 @@ where
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
         // encode as a map from variant idx to its attributed data, like: {idx => value}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
+        C::write_variant_ident(self, idx, variant)?;
         value.serialize(self)
     }
 
@@ -475,12 +505,12 @@ where
         self.serialize_tuple(len)
     }
 
-    fn serialize_tuple_variant(self,  name: &'static str,  idx: u32,  _variant: &'static str,  len: usize) ->
+    fn serialize_tuple_variant(self,  name: &'static str,  idx: u32,  variant: &'static str,  len: usize) ->
         Result<Self::SerializeTupleVariant, Error>
     {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(idx)?;
+        C::write_variant_ident(self, idx, variant)?;
         self.serialize_tuple_struct(name, len)
     }
 
@@ -501,12 +531,12 @@ where
         self.compound()
     }
 
-    fn serialize_struct_variant(self, name: &'static str, id: u32, _variant: &'static str, len: usize) ->
+    fn serialize_struct_variant(self, name: &'static str, id: u32, variant: &'static str, len: usize) ->
         Result<Self::SerializeStructVariant, Error>
     {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
-        self.serialize_u32(id)?;
+        C::write_variant_ident(self, id, variant)?;
         self.serialize_struct(name, len)
     }
 }

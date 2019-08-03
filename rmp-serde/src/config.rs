@@ -32,12 +32,25 @@ mod sealed {
             S: UnderlyingWrite,
             for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
             T: ?Sized + Serialize;
+
+        /// Encodes an enum variant ident (id or name) according to underlying writer.
+        ///
+        /// Used in `Serializer::serialize_*_variant` methods.
+        fn write_variant_ident<S>(
+            ser: &mut S,
+            variant_index: u32,
+            variant: &'static str,
+        ) -> Result<(), Error>
+        where
+            S: UnderlyingWrite,
+            for<'a> &'a mut S: Serializer<Ok = (), Error = Error>;
     }
 }
 
 /// The default serializer configuration.
 ///
-/// This writes structs as a tuple, without field names. This is the most compat representation.
+/// This writes structs as a tuple, without field names, and enum variants as integers.
+/// This is the most compat representation.
 #[derive(Copy, Clone, Debug)]
 pub struct DefaultConfig;
 
@@ -59,6 +72,18 @@ impl sealed::SerializerConfig for DefaultConfig {
         T: ?Sized + Serialize,
     {
         value.serialize(ser)
+    }
+
+    fn write_variant_ident<S>(
+        ser: &mut S,
+        variant_index: u32,
+        _variant: &'static str,
+    ) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        ser.serialize_u32(variant_index)
     }
 }
 
@@ -102,6 +127,18 @@ where
         encode::write_str(ser.get_mut(), key)?;
         value.serialize(ser)
     }
+
+    fn write_variant_ident<S>(
+        ser: &mut S,
+        variant_index: u32,
+        variant: &'static str,
+    ) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        C::write_variant_ident(ser, variant_index, variant)
+    }
 }
 
 /// Config wrapper that overrides struct serlization by packing as a tuple without field
@@ -137,5 +174,110 @@ where
         T: ?Sized + Serialize,
     {
         value.serialize(ser)
+    }
+
+    fn write_variant_ident<S>(
+        ser: &mut S,
+        variant_index: u32,
+        variant: &'static str,
+    ) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        C::write_variant_ident(ser, variant_index, variant)
+    }
+}
+
+/// Config wrapper, that overrides enum serialization by serializing enum variant names as strings.
+///
+/// Default `Serializer` implementation writes enum names as integers, i.e. only indices are encoded,
+/// because it is the most compact representation.
+#[derive(Copy, Clone, Debug)]
+pub struct VariantStringConfig<C>(C);
+
+impl<C> VariantStringConfig<C> {
+    /// Creates a `VariantStringConfig` inheriting unchanged configuration options from the given configuration.
+    pub fn new(inner: C) -> Self {
+        VariantStringConfig(inner)
+    }
+}
+
+impl<C> sealed::SerializerConfig for VariantStringConfig<C>
+where
+    C: sealed::SerializerConfig,
+{
+    fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        C::write_struct_len(ser, len)
+    }
+
+    fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+        T: ?Sized + Serialize,
+    {
+        C::write_struct_field(ser, key, value)
+    }
+
+    fn write_variant_ident<S>(
+        ser: &mut S,
+        _variant_index: u32,
+        variant: &'static str,
+    ) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        ser.serialize_str(variant)
+    }
+}
+
+/// Config wrapper that overrides enum variant serialization by packing enum names as their integer indices.
+#[derive(Copy, Clone, Debug)]
+pub struct VariantIntegerConfig<C>(C);
+
+impl<C> VariantIntegerConfig<C> {
+    /// Creates a `VariantIntegerConfig` inheriting unchanged configuration options from the given configuration.
+    pub fn new(inner: C) -> Self {
+        VariantIntegerConfig(inner)
+    }
+}
+
+impl<C> sealed::SerializerConfig for VariantIntegerConfig<C>
+where
+    C: sealed::SerializerConfig,
+{
+    fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        C::write_struct_len(ser, len)
+    }
+
+    fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+        T: ?Sized + Serialize,
+    {
+        C::write_struct_field(ser, key, value)
+    }
+
+    fn write_variant_ident<S>(
+        ser: &mut S,
+        variant_index: u32,
+        _variant: &'static str,
+    ) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        ser.serialize_u32(variant_index)
     }
 }
