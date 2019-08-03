@@ -332,3 +332,54 @@ fn round_trip_unit_struct_untagged_enum() {
         assert_eq!(deserialized, msga);
     }
 }
+
+// Checks whether deserialization and serialization can both work with enum variants as strings
+#[test]
+fn round_variant_string() {
+    use rmps::decode::from_slice;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    enum Animal1 {
+        Dog { breed: String },
+        Cat,
+        Emu,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    enum Animal2 {
+        Emu,
+        Dog { breed: String },
+        Cat,
+    }
+
+    // use helper macro so that we can test many combinations at once. Needs to be a macro to deal
+    // with the serializer owning a reference to the Vec.
+    macro_rules! do_test {
+        ($ser:expr) => {
+            {
+                let animal1 = Animal1::Dog { breed: "Pitbull".to_owned() };
+                let expected = Animal2::Dog { breed: "Pitbull".to_owned() };
+                let mut buf = Vec::new();
+                animal1.serialize(&mut $ser(&mut buf)).unwrap();
+
+                let deserialized: Animal2 = from_slice(&buf).unwrap();
+                assert_eq!(deserialized, expected);
+            }
+        }
+    }
+
+    do_test!(|b| Serializer::new(b).with_string_variants());
+    do_test!(|b| Serializer::new(b).with_struct_map().with_string_variants());
+    do_test!(|b| Serializer::new(b).with_struct_tuple().with_string_variants());
+    do_test!(|b| Serializer::new(b).with_string_variants().with_struct_map());
+    do_test!(|b| Serializer::new(b).with_string_variants().with_struct_tuple());
+    do_test!(|b| {
+        Serializer::new(b)
+            .with_string_variants()
+            .with_struct_tuple()
+            .with_struct_map()
+            .with_struct_tuple()
+            .with_struct_map()
+    });
+    do_test!(|b| Serializer::new(b).with_integer_variants().with_string_variants());
+}
