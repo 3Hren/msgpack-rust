@@ -8,7 +8,6 @@ use std::borrow::Cow;
 use std::io::Cursor;
 
 use serde::{Deserialize, Serialize};
-use rmps::encode::Ext;
 use rmps::{Deserializer, Serializer};
 
 #[test]
