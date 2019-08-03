@@ -230,6 +230,39 @@ fn round_struct_as_map() {
 }
 
 #[test]
+fn round_struct_as_map_in_vec() {
+    // See: issue #205
+    use rmps::decode::from_slice;
+    use rmps::to_vec_named;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct Dog1 {
+        name: String,
+        age: u16,
+    }
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct Dog2 {
+        age: u16,
+        name: String,
+    }
+
+    let dog1 = Dog1 {
+        name: "Frankie".into(),
+        age: 42,
+    };
+
+    let data = vec![dog1];
+
+    let serialized: Vec<u8> = to_vec_named(&data).unwrap();
+    let deserialized: Vec<Dog2> = from_slice(&serialized).unwrap();
+
+    let dog2 = &deserialized[0];
+
+    assert_eq!(dog2.name, "Frankie");
+    assert_eq!(dog2.age, 42);
+}
+
+#[test]
 fn round_trip_unit_struct() {
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Message1 {
