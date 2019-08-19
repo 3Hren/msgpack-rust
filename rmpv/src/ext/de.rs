@@ -285,13 +285,12 @@ impl<'de> Deserializer<'de> for Value {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
             }
-            Value::Ext(..) => {
-                // TODO: [i8, [u8]] can be represented as:
-                //      - (0i8, Vec<u8>),
-                //      - struct F(i8, Vec<u8>),
-                //      - struct F {ty: i8, val: Vec<u8>}
-                //      - enum F{ A(Vec<u8>), B { name: Vec<u8> } }
-                unimplemented!();
+            Value::Ext(tag, data) => {
+                let mut de = ExtDeserializer::new(tag, data);
+                let ext = visitor.visit_seq(&mut de)?;
+                de.end()?;
+
+                Ok(ext)
             }
         }
     }
@@ -531,6 +530,73 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit seq
         bytes byte_buf map tuple_struct struct
         identifier tuple ignored_any
+    }
+}
+
+struct ExtDeserializer {
+    tag: Option<i8>,
+    data: Option<Vec<u8>>,
+}
+
+impl ExtDeserializer {
+    fn new(tag: i8, data: Vec<u8>) -> Self {
+        ExtDeserializer {
+            tag: Some(tag),
+            data: Some(data),
+        }
+    }
+
+    fn end(self) -> Result<(), Error> {
+        if self.tag.is_none() && self.data.is_none() {
+            Ok(())
+        } else {
+            Err(de::Error::invalid_length(2, &"fewer elements in ext"))
+        }
+    }
+
+}
+
+impl<'de> SeqAccess<'de> for ExtDeserializer {
+    type Error = Error;
+
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Error>
+    where
+        T: DeserializeSeed<'de>,
+    {
+        if self.tag.is_some() {
+            return Ok(Some(seed.deserialize(self)?));
+        }
+
+        if self.data.is_some() {
+            return Ok(Some(seed.deserialize(self)?));
+        }
+
+        Ok(None)
+    }
+}
+
+impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtDeserializer {
+    type Error = Error;
+
+    #[inline]
+    fn deserialize_any<V>(mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        if self.tag.is_some() {
+            let tag = self.tag.take().unwrap();
+            visitor.visit_i8(tag)
+        } else if self.data.is_some() {
+            let data = self.data.take().unwrap();
+            visitor.visit_byte_buf(data)
+        } else {
+            visitor.visit_unit()
+        }
+    }
+
+    forward_to_deserialize_any! {
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
+        seq bytes byte_buf map unit_struct newtype_struct
+        tuple_struct struct identifier tuple enum ignored_any
     }
 }
 
