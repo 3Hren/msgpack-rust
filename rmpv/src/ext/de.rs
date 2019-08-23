@@ -116,6 +116,13 @@ impl<'de> Deserialize<'de> for Value {
             }
 
             #[inline]
+            fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
+                where E: de::Error
+            {
+                Ok(Value::Binary(v))
+            }
+
+            #[inline]
             fn visit_map<V>(self, mut visitor: V) -> Result<Value, V::Error>
                 where V: de::MapAccess<'de>
             {
@@ -375,8 +382,12 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
             }
-            ValueRef::Ext(..) => {
-                unimplemented!();
+            ValueRef::Ext(tag, data) => {
+                let mut de = ExtRefDeserializer::new(tag, data);
+                let ext = visitor.visit_seq(&mut de)?;
+                de.end()?;
+
+                Ok(ext)
             }
         }
     }
@@ -461,8 +472,12 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
             }
-            ValueRef::Ext(..) => {
-                unimplemented!();
+            ValueRef::Ext(tag, data) => {
+                let mut de = ExtRefDeserializer::new(tag, data);
+                let ext = visitor.visit_seq(&mut de)?;
+                de.end()?;
+
+                Ok(ext)
             }
         }
     }
@@ -553,7 +568,6 @@ impl ExtDeserializer {
             Err(de::Error::invalid_length(2, &"fewer elements in ext"))
         }
     }
-
 }
 
 impl<'de> SeqAccess<'de> for ExtDeserializer {
@@ -579,7 +593,74 @@ impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtDeserializer {
     type Error = Error;
 
     #[inline]
-    fn deserialize_any<V>(mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        if self.tag.is_some() {
+            let tag = self.tag.take().unwrap();
+            visitor.visit_i8(tag)
+        } else if self.data.is_some() {
+            println!("Deserialize data");
+            let data = self.data.take().unwrap();
+            visitor.visit_byte_buf(data)
+        } else {
+            visitor.visit_unit()
+        }
+    }
+
+    forward_to_deserialize_any! {
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
+        seq bytes byte_buf map unit_struct newtype_struct
+        tuple_struct struct identifier tuple enum ignored_any
+    }
+}
+
+struct ExtRefDeserializer<'de> {
+    tag: Option<i8>,
+    data: Option<&'de [u8]>,
+}
+
+impl<'de> ExtRefDeserializer<'de> {
+    fn new(tag: i8, data: &'de [u8]) -> Self {
+        ExtRefDeserializer {
+            tag: Some(tag),
+            data: Some(data),
+        }
+    }
+
+    fn end(self) -> Result<(), Error> {
+        if self.tag.is_none() && self.data.is_none() {
+            Ok(())
+        } else {
+            Err(de::Error::invalid_length(2, &"fewer elements in ext"))
+        }
+    }
+}
+
+impl<'de> SeqAccess<'de> for ExtRefDeserializer<'de> {
+    type Error = Error;
+
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Error>
+    where
+        T: DeserializeSeed<'de>,
+    {
+        if self.tag.is_some() {
+            return Ok(Some(seed.deserialize(self)?));
+        }
+
+        if self.data.is_some() {
+            return Ok(Some(seed.deserialize(self)?));
+        }
+
+        Ok(None)
+    }
+}
+
+impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtRefDeserializer<'de> {
+    type Error = Error;
+
+    #[inline]
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
         if self.tag.is_some() {
@@ -587,7 +668,7 @@ impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtDeserializer {
             visitor.visit_i8(tag)
         } else if self.data.is_some() {
             let data = self.data.take().unwrap();
-            visitor.visit_byte_buf(data)
+            visitor.visit_borrowed_bytes(data)
         } else {
             visitor.visit_unit()
         }

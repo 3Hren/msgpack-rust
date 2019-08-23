@@ -240,3 +240,38 @@ fn pass_enum_from_value() {
     assert_eq!(Enum::Struct { name: "John".into(), age: 42 },
         from_value(Value::Array(vec![Value::from(3), Value::Array(vec![Value::from("John"), Value::from(42)])])).unwrap());
 }
+
+#[test]
+fn pass_tuple_struct_from_ext() {
+    #[derive(Debug, PartialEq)]
+    struct ByteBuf(Vec<u8>);
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct ExtStruct(i8, ByteBuf);
+
+    struct ByteBufVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for ByteBufVisitor {
+        type Value = ByteBuf;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("expecting byte buffer")
+        }
+
+        fn visit_byte_buf<E>(self, buf: Vec<u8>) -> Result<Self::Value, E>
+        {
+            Ok(ByteBuf(buf))
+        }
+    }
+
+    impl<'de> serde::de::Deserialize<'de> for ByteBuf {
+        fn deserialize<D>(deserializer: D) -> Result<ByteBuf, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            deserializer.deserialize_byte_buf(ByteBufVisitor)
+        }
+    }
+
+    assert_eq!(ExtStruct(42, ByteBuf(vec![255])),
+        from_value(Value::Ext(42, vec![255])).unwrap());
+}

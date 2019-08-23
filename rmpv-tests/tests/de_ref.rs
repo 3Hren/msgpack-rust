@@ -256,3 +256,12 @@ fn pass_from_slice() {
     assert_eq!(ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from("Smith"), ValueRef::from(42)]),
         rmps::from_slice(&buf[..]).unwrap());
 }
+
+#[test]
+fn pass_from_ext() {
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct ExtRefStruct<'a>(i8, &'a [u8]);
+
+    assert_eq!(ExtRefStruct(42, &[255]),
+        deserialize_from(ValueRef::Ext(42, &[255])).unwrap());
+}
