@@ -331,7 +331,7 @@ fn pass_bin8_into_bytebuf() {
 
     let mut de = Deserializer::new(cur);
     let actual: ByteBuf = Deserialize::deserialize(&mut de).unwrap();
-    let actual: Vec<u8> = actual.into();
+    let actual: Vec<u8> = actual.into_vec();
 
     assert_eq!(vec![0xcc, 0x80], actual);
 }
@@ -345,7 +345,7 @@ fn pass_bin16_into_bytebuf() {
 
     let mut de = Deserializer::new(cur);
     let actual: ByteBuf = Deserialize::deserialize(&mut de).unwrap();
-    let actual: Vec<u8> = actual.into();
+    let actual: Vec<u8> = actual.into_vec();
 
     assert_eq!(vec![0xcc, 0x80], actual);
 }
@@ -359,7 +359,7 @@ fn pass_bin32_into_bytebuf() {
 
     let mut de = Deserializer::new(cur);
     let actual: ByteBuf = Deserialize::deserialize(&mut de).unwrap();
-    let actual: Vec<u8> = actual.into();
+    let actual: Vec<u8> = actual.into_vec();
 
     assert_eq!(vec![0xcc, 0x80], actual);
 }
@@ -374,7 +374,7 @@ fn pass_bin8_into_bytebuf_regression_growing_buffer() {
 
     let mut de = Deserializer::new(cur);
     let (large, small): (ByteBuf, ByteBuf) = Deserialize::deserialize(&mut de).unwrap();
-    let (large, small): (Vec<u8>, Vec<u8>) = (large.into(), small.into());
+    let (large, small): (Vec<u8>, Vec<u8>) = (large.into_vec(), small.into_vec());
 
     assert_eq!((b"quux".to_vec(), b"bar".to_vec()), (large, small));
 }

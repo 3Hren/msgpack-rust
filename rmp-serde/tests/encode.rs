@@ -296,7 +296,7 @@ fn pass_bin() {
 
     let mut buf = Vec::new();
     let vec = vec![0xcc, 0x80];
-    let val = Bytes::from(&vec[..]);
+    let val = Bytes::new(&vec[..]);
 
     val.serialize(&mut Serializer::new(&mut buf)).ok().unwrap();
 
