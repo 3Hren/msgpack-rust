@@ -15,7 +15,7 @@ addons:
 rust:
   - nightly
   - stable
-  - 1.30.1
+  - 1.34.2
 
 before_script:
   - |
@@ -34,10 +34,3 @@ after_success:
         cargo coveralls --all;
       fi
 
-# tests require a higher rust version, but build should still function on 1.16.0
-matrix:
-  include:
-    - rust: 1.16.0
-      script:
-        - |
-            cargo build --all --verbose
