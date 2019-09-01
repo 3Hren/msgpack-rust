@@ -52,7 +52,14 @@ impl error::Error for Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        error::Error::description(self).fmt(f)
+        match *self {
+            Error::InvalidValueWrite(ref err) => write!(f, "invalid value write: {}", err),
+            Error::UnknownLength => {
+                f.write_str("attempt to serialize struct, sequence or map with unknown length")
+            }
+            Error::DepthLimitExceeded => f.write_str("depth limit exceeded"),
+            Error::Syntax(ref msg) => f.write_str(msg),
+        }
     }
 }
 

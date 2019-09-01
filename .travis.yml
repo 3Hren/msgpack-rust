@@ -15,7 +15,7 @@ addons:
 rust:
   - nightly
   - stable
-  - 1.16.0
+  - 1.34.2
 
 before_script:
   - |
@@ -33,3 +33,4 @@ after_success:
       if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
         cargo coveralls --all;
       fi
+

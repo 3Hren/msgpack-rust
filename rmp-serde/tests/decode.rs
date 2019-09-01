@@ -199,6 +199,28 @@ fn pass_f64() {
     assert_eq!(42f64, Deserialize::deserialize(&mut de).unwrap());
 }
 
+// spot check tests for general integers -> float conversions
+
+#[test]
+fn pass_i8_as_f32() {
+    let buf = [0xd0, 0x7f];
+    let cur = Cursor::new(&buf[..]);
+
+    let mut de = Deserializer::new(cur);
+
+    assert_eq!(127f32, Deserialize::deserialize(&mut de).unwrap());
+}
+
+#[test]
+fn pass_u32_as_f64() {
+    let buf = [0xce, 0xff, 0xff, 0xff, 0xff];
+    let cur = Cursor::new(&buf[..]);
+
+    let mut de = Deserializer::new(cur);
+
+    assert_eq!(4294967295f64, Deserialize::deserialize(&mut de).unwrap());
+}
+
 #[test]
 fn pass_string() {
     let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];

@@ -213,7 +213,8 @@ where
 
     #[inline]
     fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
-        encode::write_array_len(self.se.get_mut(), 2)?;
+        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+        encode::write_map_len(&mut self.se.get_mut(), 1)?;
         self.se.serialize_u32(variant_index)?;
         encode::write_map_len(self.se.get_mut(), len as u32)?;
         Ok(self)
@@ -463,7 +464,8 @@ where
 
     #[inline]
     fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
-        encode::write_array_len(&mut self.se.get_mut(), 2)?;
+        // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
+        encode::write_map_len(&mut self.se.get_mut(), 1)?;
         self.se.serialize_u32(variant_index)?;
         encode::write_array_len(self.se.get_mut(), len as u32)?;
         Ok(self)
