@@ -12,11 +12,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed:
 - (Breaking) Serialize newtype structs by serializing its inner type without wrapping into a tuple.
+- (Breaking) Enums are now encoded as a map `{tag: data}` rather than as a list `[tag, data]`. (#149)
 - Function `encode::to_vec_named` now accepts unsized values.
 - Renamed `decode::Read` trait to `decode::ReadSlice` to avoid clashing with `std::io::Read` and to specify more precisely what it does.
+- Support reading encoded integers as floats when safe (#204)
 
 ### Removed:
 - Type parameter `VariantWriter` is no longer a type member of `Serializer`. Instead a `Serializer` can be wrapped by another serializer using `with_struct_map`, `with_struct_tuple` etc. methods.
+
+### Fixed:
+- Fix error decoding `Some(enum)` (#185)
+- Fix error decoding unit structs which were encoded as `[]` (#181)
+- Fix `Display` implementations for errors not including all relevant information (#199)
 
 ## 0.13.7 - 2017-09-13
 ### Changed:
