@@ -14,10 +14,10 @@ categories = ["encoding"]
 with-serde = ["serde", "serde_bytes"]
 
 [dependencies]
-serde_bytes = { version = "0.10", optional = true }
+serde_bytes = { version = "0.11.2", optional = true }
 rmp = "0.8.7"
 num-traits = "0.2.8"
 serde = { version = "1.0.99", optional = true }
 
 [dev-dependencies]
-quickcheck = "0.8"
+quickcheck = "0.9"

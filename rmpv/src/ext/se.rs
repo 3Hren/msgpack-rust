@@ -26,10 +26,10 @@ impl Serialize for Value {
             Value::String(ref v) => {
                 match v.s {
                     Ok(ref v) => s.serialize_str(v),
-                    Err(ref v) => Bytes::from(&v.0[..]).serialize(s),
+                    Err(ref v) => Bytes::new(&v.0[..]).serialize(s),
                 }
             }
-            Value::Binary(ref v) => Bytes::from(&v[..]).serialize(s),
+            Value::Binary(ref v) => Bytes::new(&v[..]).serialize(s),
             Value::Array(ref array) => {
                 let mut state = s.serialize_seq(Some(array.len()))?;
                 for item in array {

@@ -11,4 +11,4 @@ rmp-serde = { version = "0.14", path = "../rmp-serde" }
 rmpv = { features = ["with-serde"], path = "../rmpv" }
 
 [dev-dependencies]
-serde_bytes = "0.10"
+serde_bytes = "0.11.2"
