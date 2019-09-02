@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Add `as_ref()` to `Value` and `Utf8String` (#139).
 
+### Changed
+- (Breaking) Serialize newtype structs by serializing its inner type without wrapping into a tuple. (#146).
+
 ## 0.4.0 - 2017-04-24
 ### Added
 - Implement `Deserialize` for `ValueRef<'de>`.

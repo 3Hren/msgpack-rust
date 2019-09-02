@@ -11,7 +11,6 @@ deserializing Rust structs.
 |                   | crates.io                                 | API Documentation               |
 |-------------------|-------------------------------------------|---------------------------------|
 | **rmp**           | [![][crates-rmp-img]][crates-rmp-url]     | [RMP][rmp-docs-url]             |
-| **rmp-serialize** | [![][crates-rmpsd-img]][crates-rmpsd-url] | [RMP Serialize][rmpsd-docs-url] |
 | **rmps**          | [![][crates-rmps-img]][crates-rmps-url]   | [RMP Serde][rmps-docs-url]      |
 | **rmpv**          | [![][crates-rmpv-img]][crates-rmpv-url]   | [RMP Value][rmpv-docs-url]      |
 
@@ -59,15 +58,11 @@ will be the following rules:
 [coveralls-url]: https://coveralls.io/github/3Hren/msgpack-rust?branch=master
 
 [rmp-docs-url]: https://docs.rs/rmp
-[rmpsd-docs-url]: https://docs.rs/rmp-serialize
 [rmps-docs-url]: https://docs.rs/rmp-serde
 [rmpv-docs-url]: https://docs.rs/rmpv
 
 [crates-rmp-img]: http://meritbadge.herokuapp.com/rmp
 [crates-rmp-url]: https://crates.io/crates/rmp
-
-[crates-rmpsd-img]: http://meritbadge.herokuapp.com/rmp-serialize
-[crates-rmpsd-url]: https://crates.io/crates/rmp-serialize
 
 [crates-rmps-img]: http://meritbadge.herokuapp.com/rmp-serde
 [crates-rmps-url]: https://crates.io/crates/rmp-serde

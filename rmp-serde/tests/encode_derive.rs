@@ -6,7 +6,7 @@ extern crate rmp_serde as rmps;
 
 use serde::Serialize;
 use rmps::Serializer;
-use rmps::encode::{Ext, UnderlyingWrite};
+use rmps::encode::UnderlyingWrite;
 
 #[test]
 fn pass_unit_struct() {

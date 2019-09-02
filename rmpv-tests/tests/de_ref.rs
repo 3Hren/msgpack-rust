@@ -146,7 +146,10 @@ fn pass_bin_from_value() {
     let v: &[u8] = deserialize_from(ValueRef::from(&buf[..])).unwrap();
     assert_eq!(&[0, 1, 2][..], v);
 
-    assert_eq!(ByteBuf::from(&[0, 1, 2][..]), deserialize_from(ValueRef::from(&[0, 1, 2][..])).unwrap());
+    assert_eq!(
+        ByteBuf::from(&[0, 1, 2][..]),
+        deserialize_from::<ByteBuf, _>(ValueRef::from(&[0, 1, 2][..])).unwrap()
+    );
 }
 
 #[test]

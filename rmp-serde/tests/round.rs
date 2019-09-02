@@ -8,7 +8,6 @@ use std::borrow::Cow;
 use std::io::Cursor;
 
 use serde::{Deserialize, Serialize};
-use rmps::encode::Ext;
 use rmps::{Deserializer, Serializer};
 
 #[test]
@@ -231,6 +230,39 @@ fn round_struct_as_map() {
 }
 
 #[test]
+fn round_struct_as_map_in_vec() {
+    // See: issue #205
+    use rmps::decode::from_slice;
+    use rmps::to_vec_named;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct Dog1 {
+        name: String,
+        age: u16,
+    }
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct Dog2 {
+        age: u16,
+        name: String,
+    }
+
+    let dog1 = Dog1 {
+        name: "Frankie".into(),
+        age: 42,
+    };
+
+    let data = vec![dog1];
+
+    let serialized: Vec<u8> = to_vec_named(&data).unwrap();
+    let deserialized: Vec<Dog2> = from_slice(&serialized).unwrap();
+
+    let dog2 = &deserialized[0];
+
+    assert_eq!(dog2.name, "Frankie");
+    assert_eq!(dog2.age, 42);
+}
+
+#[test]
 fn round_trip_unit_struct() {
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Message1 {
@@ -299,4 +331,55 @@ fn round_trip_unit_struct_untagged_enum() {
         let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msga);
     }
+}
+
+// Checks whether deserialization and serialization can both work with enum variants as strings
+#[test]
+fn round_variant_string() {
+    use rmps::decode::from_slice;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    enum Animal1 {
+        Dog { breed: String },
+        Cat,
+        Emu,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    enum Animal2 {
+        Emu,
+        Dog { breed: String },
+        Cat,
+    }
+
+    // use helper macro so that we can test many combinations at once. Needs to be a macro to deal
+    // with the serializer owning a reference to the Vec.
+    macro_rules! do_test {
+        ($ser:expr) => {
+            {
+                let animal1 = Animal1::Dog { breed: "Pitbull".to_owned() };
+                let expected = Animal2::Dog { breed: "Pitbull".to_owned() };
+                let mut buf = Vec::new();
+                animal1.serialize(&mut $ser(&mut buf)).unwrap();
+
+                let deserialized: Animal2 = from_slice(&buf).unwrap();
+                assert_eq!(deserialized, expected);
+            }
+        }
+    }
+
+    do_test!(|b| Serializer::new(b).with_string_variants());
+    do_test!(|b| Serializer::new(b).with_struct_map().with_string_variants());
+    do_test!(|b| Serializer::new(b).with_struct_tuple().with_string_variants());
+    do_test!(|b| Serializer::new(b).with_string_variants().with_struct_map());
+    do_test!(|b| Serializer::new(b).with_string_variants().with_struct_tuple());
+    do_test!(|b| {
+        Serializer::new(b)
+            .with_string_variants()
+            .with_struct_tuple()
+            .with_struct_map()
+            .with_struct_tuple()
+            .with_struct_map()
+    });
+    do_test!(|b| Serializer::new(b).with_integer_variants().with_string_variants());
 }
