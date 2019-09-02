@@ -2,7 +2,7 @@
 use rmp::encode;
 use serde::{Serialize, Serializer};
 
-use encode::{Error, UnderlyingWrite};
+use crate::encode::{Error, UnderlyingWrite};
 
 /// Represents configuration that dicatates what the serializer does.
 ///
@@ -15,7 +15,7 @@ impl<T: sealed::SerializerConfig> SerializerConfig for T {}
 mod sealed {
     use serde::{Serialize, Serializer};
 
-    use encode::{Error, UnderlyingWrite};
+    use crate::encode::{Error, UnderlyingWrite};
 
     /// This is the inner trait - the real SerializerConfig.
     ///

@@ -1,5 +1,3 @@
-extern crate rmpv;
-
 use rmpv::ValueRef;
 use rmpv::encode::write_value_ref;
 
@@ -59,7 +57,7 @@ fn pass_pack_i64() {
     assert_eq!([0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }
 
-fn check_packed_eq(expected: &Vec<u8>, actual: &ValueRef) {
+fn check_packed_eq(expected: &Vec<u8>, actual: &ValueRef<'_>) {
     let mut buf = Vec::new();
 
     write_value_ref(&mut buf, actual).unwrap();

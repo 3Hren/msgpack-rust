@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use msgpack::decode::*;
+use crate::msgpack::decode::*;
 
 #[test]
 fn pass() {

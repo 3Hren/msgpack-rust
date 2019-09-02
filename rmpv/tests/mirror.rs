@@ -1,4 +1,3 @@
-extern crate rmpv;
 #[macro_use]
 extern crate quickcheck;
 

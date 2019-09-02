@@ -48,11 +48,11 @@ impl Marker {
     /// Construct a msgpack marker from a single byte.
     pub fn from_u8(n: u8) -> Marker {
         match n {
-            0x00 ... 0x7f => Marker::FixPos(n),
-            0xe0 ... 0xff => Marker::FixNeg(n as i8),
-            0x80 ... 0x8f => Marker::FixMap(n & FIXMAP_SIZE),
-            0x90 ... 0x9f => Marker::FixArray(n & FIXARRAY_SIZE),
-            0xa0 ... 0xbf => Marker::FixStr(n & FIXSTR_SIZE),
+            0x00 ..= 0x7f => Marker::FixPos(n),
+            0xe0 ..= 0xff => Marker::FixNeg(n as i8),
+            0x80 ..= 0x8f => Marker::FixMap(n & FIXMAP_SIZE),
+            0x90 ..= 0x9f => Marker::FixArray(n & FIXARRAY_SIZE),
+            0xa0 ..= 0xbf => Marker::FixStr(n & FIXSTR_SIZE),
             0xc0 => Marker::Null,
             // Marked in MessagePack spec as never used.
             0xc1 => Marker::Reserved,

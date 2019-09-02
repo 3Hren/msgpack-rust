@@ -1,5 +1,3 @@
-extern crate rmpv;
-
 use rmpv::ValueRef;
 use rmpv::decode::{read_value_ref, Error};
 

@@ -1,6 +1,5 @@
 #![feature(test)]
 
-extern crate rmp;
 extern crate test;
 
 use test::Bencher;

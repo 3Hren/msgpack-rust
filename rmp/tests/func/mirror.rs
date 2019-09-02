@@ -1,4 +1,4 @@
-use msgpack::{decode, encode};
+use crate::msgpack::{decode, encode};
 
 quickcheck! {
     fn mirror_uint(xs: u64) -> bool {

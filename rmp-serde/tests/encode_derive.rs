@@ -1,12 +1,10 @@
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate rmp;
+
 extern crate rmp_serde as rmps;
 
 use serde::Serialize;
-use rmps::Serializer;
-use rmps::encode::UnderlyingWrite;
+use crate::rmps::Serializer;
 
 #[test]
 fn pass_unit_struct() {

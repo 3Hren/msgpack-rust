@@ -1,14 +1,13 @@
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate rmp;
+
 extern crate rmp_serde as rmps;
 
 use std::borrow::Cow;
 use std::io::Cursor;
 
 use serde::{Deserialize, Serialize};
-use rmps::{Deserializer, Serializer};
+use crate::rmps::{Deserializer, Serializer};
 
 #[test]
 fn round_trip_option() {
@@ -199,8 +198,8 @@ fn round_trip_untagged_enum_with_enum_associated_data() {
 // Checks whether deserialization and serialization can both work with structs as maps
 #[test]
 fn round_struct_as_map() {
-    use rmps::to_vec_named;
-    use rmps::decode::from_slice;
+    use crate::rmps::to_vec_named;
+    use crate::rmps::decode::from_slice;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Dog1 {
@@ -232,8 +231,8 @@ fn round_struct_as_map() {
 #[test]
 fn round_struct_as_map_in_vec() {
     // See: issue #205
-    use rmps::decode::from_slice;
-    use rmps::to_vec_named;
+    use crate::rmps::decode::from_slice;
+    use crate::rmps::to_vec_named;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Dog1 {
@@ -336,7 +335,7 @@ fn round_trip_unit_struct_untagged_enum() {
 // Checks whether deserialization and serialization can both work with enum variants as strings
 #[test]
 fn round_variant_string() {
-    use rmps::decode::from_slice;
+    use crate::rmps::decode::from_slice;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     enum Animal1 {

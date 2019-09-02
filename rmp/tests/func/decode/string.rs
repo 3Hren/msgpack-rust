@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
-use msgpack::Marker;
-use msgpack::decode::*;
+use crate::msgpack::Marker;
+use crate::msgpack::decode::*;
 
 #[test]
 fn from_fixstr_min_read_str_len() {

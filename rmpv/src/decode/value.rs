@@ -5,7 +5,7 @@ use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_
                   read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
                   read_data_f64};
 
-use {Utf8String, Value};
+use crate::{Utf8String, Value};
 use super::Error;
 
 fn read_array_data<R: Read>(rd: &mut R, mut len: usize) -> Result<Vec<Value>, Error> {

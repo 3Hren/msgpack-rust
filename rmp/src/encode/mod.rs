@@ -1,13 +1,13 @@
 //! Provides various functions and structs for MessagePack encoding.
 
-mod sint;
-mod uint;
-mod dec;
-mod str;
 mod bin;
-mod vec;
-mod map;
+mod dec;
 mod ext;
+mod map;
+mod sint;
+mod str;
+mod uint;
+mod vec;
 
 pub use self::sint::{write_nfix, write_i8, write_i16, write_i32, write_i64, write_sint};
 pub use self::uint::{write_pfix, write_u8, write_u16, write_u32, write_u64, write_uint};
@@ -21,7 +21,7 @@ use std::io::Write;
 
 use byteorder::{self, WriteBytesExt};
 
-use Marker;
+use crate::Marker;
 
 /// The error type for I/O operations of the `Write` and associated traits.
 pub type Error = ::std::io::Error;
@@ -182,7 +182,7 @@ impl error::Error for ValueWriteError {
         "error while writing multi-byte MessagePack value"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             ValueWriteError::InvalidMarkerWrite(ref err) |
             ValueWriteError::InvalidDataWrite(ref err) => Some(err),
@@ -191,7 +191,7 @@ impl error::Error for ValueWriteError {
 }
 
 impl Display for ValueWriteError {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         error::Error::description(self).fmt(f)
     }
 }
@@ -205,15 +205,15 @@ impl Display for ValueWriteError {
 /// marker or the data.
 pub fn write_array_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> {
     let marker = if len < 16 {
-        try!(write_marker(wr, Marker::FixArray(len as u8)));
+        r#try!(write_marker(wr, Marker::FixArray(len as u8)));
         Marker::FixArray(len as u8)
     } else if len < 65536 {
-        try!(write_marker(wr, Marker::Array16));
-        try!(write_data_u16(wr, len as u16));
+        write_marker(wr, Marker::Array16)?;
+        write_data_u16(wr, len as u16)?;
         Marker::Array16
     } else {
-        try!(write_marker(wr, Marker::Array32));
-        try!(write_data_u32(wr, len));
+        write_marker(wr, Marker::Array32)?;
+        write_data_u32(wr, len)?;
         Marker::Array32
     };
 
@@ -229,15 +229,15 @@ pub fn write_array_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWr
 /// marker or the data.
 pub fn write_map_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> {
     let marker = if len < 16 {
-        try!(write_marker(wr, Marker::FixMap(len as u8)));
+        r#try!(write_marker(wr, Marker::FixMap(len as u8)));
         Marker::FixMap(len as u8)
     } else if len < 65536 {
-        try!(write_marker(wr, Marker::Map16));
-        try!(write_data_u16(wr, len as u16));
+        write_marker(wr, Marker::Map16)?;
+        write_data_u16(wr, len as u16)?;
         Marker::Map16
     } else {
-        try!(write_marker(wr, Marker::Map32));
-        try!(write_data_u32(wr, len));
+        write_marker(wr, Marker::Map32)?;
+        write_data_u32(wr, len)?;
         Marker::Map32
     };
 
@@ -261,43 +261,43 @@ pub fn write_ext_meta<W: Write>(wr: &mut W, len: u32, ty: i8) -> Result<Marker, 
 
     let marker = match len {
         1 => {
-            try!(write_marker(wr, Marker::FixExt1));
+            write_marker(wr, Marker::FixExt1)?;
             Marker::FixExt1
         }
         2 => {
-            try!(write_marker(wr, Marker::FixExt2));
+            write_marker(wr, Marker::FixExt2)?;
             Marker::FixExt2
         }
         4 => {
-            try!(write_marker(wr, Marker::FixExt4));
+            write_marker(wr, Marker::FixExt4)?;
             Marker::FixExt4
         }
         8 => {
-            try!(write_marker(wr, Marker::FixExt8));
+            write_marker(wr, Marker::FixExt8)?;
             Marker::FixExt8
         }
         16 => {
-            try!(write_marker(wr, Marker::FixExt16));
+            write_marker(wr, Marker::FixExt16)?;
             Marker::FixExt16
         }
         len if len < 256 => {
-            try!(write_marker(wr, Marker::Ext8));
-            try!(write_data_u8(wr, len as u8));
+            write_marker(wr, Marker::Ext8)?;
+            write_data_u8(wr, len as u8)?;
             Marker::Ext8
         }
         len if len < 65536 => {
-            try!(write_marker(wr, Marker::Ext16));
-            try!(write_data_u16(wr, len as u16));
+            write_marker(wr, Marker::Ext16)?;
+            write_data_u16(wr, len as u16)?;
             Marker::Ext16
         }
         len => {
-            try!(write_marker(wr, Marker::Ext32));
-            try!(write_data_u32(wr, len));
+            write_marker(wr, Marker::Ext32)?;
+            write_data_u32(wr, len)?;
             Marker::Ext32
         }
     };
 
-    try!(write_data_i8(wr, ty));
+    write_data_i8(wr, ty)?;
 
     Ok(marker)
 }
