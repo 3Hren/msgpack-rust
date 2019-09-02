@@ -9,13 +9,14 @@ documentation = "https://docs.rs/rmpv"
 readme = "../README.md"
 keywords = ["msgpack", "MessagePack", "serialization"]
 categories = ["encoding"]
+edition = "2018"
 
 [features]
 with-serde = ["serde", "serde_bytes"]
 
 [dependencies]
 serde_bytes = { version = "0.11.2", optional = true }
-rmp = "0.8.7"
+rmp = { version = "0.8.8", path = "../rmp" }
 num-traits = "0.2.8"
 serde = { version = "1.0.99", optional = true }
 

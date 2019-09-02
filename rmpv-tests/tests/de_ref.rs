@@ -1,9 +1,6 @@
-extern crate serde;
-extern crate serde_bytes;
 #[macro_use]
 extern crate serde_derive;
 extern crate rmp_serde as rmps;
-extern crate rmpv;
 
 use std::collections::BTreeMap;
 
@@ -15,11 +12,11 @@ use rmpv::ext::deserialize_from;
 
 /// Tests that a `ValueRef` is properly decoded from bytes using two different mechanisms: direct
 /// deserialization using `rmp::decode::read_value_ref` and using `serde`.
-fn test_decode(buf: &[u8], v: ValueRef) {
-    let val0: ValueRef = decode::read_value_ref(&mut &buf[..]).unwrap();
+fn test_decode(buf: &[u8], v: ValueRef<'_>) {
+    let val0: ValueRef<'_> = decode::read_value_ref(&mut &buf[..]).unwrap();
     assert_eq!(v, val0);
 
-    let val1: ValueRef = rmps::from_slice(buf).unwrap();
+    let val1: ValueRef<'_> = rmps::from_slice(buf).unwrap();
     assert_eq!(v, val1);
 }
 

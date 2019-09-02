@@ -1,15 +1,14 @@
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate rmp;
+
 extern crate rmp_serde as rmps;
 
 use std::io::Cursor;
 
 use serde::Deserialize;
 
-use rmps::Deserializer;
-use rmps::decode::Error;
+use crate::rmps::Deserializer;
+use crate::rmps::decode::Error;
 
 #[test]
 fn pass_newtype() {

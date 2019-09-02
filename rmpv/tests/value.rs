@@ -1,5 +1,3 @@
-extern crate rmpv;
-
 use rmpv::Value;
 
 #[test]

@@ -1,14 +1,11 @@
-extern crate serde;
-extern crate serde_bytes;
-extern crate rmp;
 extern crate rmp_serde as rmps;
 
 use std::io::Cursor;
 
 use serde::Serialize;
 
-use rmps::{Raw, RawRef, Serializer};
-use rmps::encode::{self, Error};
+use crate::rmps::{Raw, RawRef, Serializer};
+use crate::rmps::encode::{self, Error};
 
 #[test]
 fn pass_null() {

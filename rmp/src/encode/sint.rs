@@ -1,7 +1,7 @@
 use std::io::Write;
 
-use Marker;
-use encode::{write_pfix, write_u8, write_u16, write_u32, write_u64, Error, ValueWriteError};
+use crate::Marker;
+use crate::encode::{write_pfix, write_u8, write_u16, write_u32, write_u64, Error, ValueWriteError};
 use super::{write_data_i8, write_data_i16, write_data_i32, write_data_i64, write_marker};
 
 /// Encodes and attempts to write a negative small integer value as a negative fixnum into the
@@ -26,7 +26,7 @@ use super::{write_data_i8, write_data_i16, write_data_i32, write_data_i64, write
 /// Panics if `val` does not fit in `[-32; 0)` range.
 pub fn write_nfix<W: Write>(wr: &mut W, val: i8) -> Result<(), Error> {
     assert!(-32 <= val && val < 0);
-    try!(write_marker(wr, Marker::FixNeg(val)));
+    r#try!(write_marker(wr, Marker::FixNeg(val)));
     Ok(())
 }
 
@@ -59,8 +59,8 @@ pub fn write_nfix<W: Write>(wr: &mut W, val: i8) -> Result<(), Error> {
 /// assert_eq!([0xd0, 0xee], buf);
 /// ```
 pub fn write_i8<W: Write>(wr: &mut W, val: i8) -> Result<(), ValueWriteError> {
-    try!(write_marker(wr, Marker::I8));
-    try!(write_data_i8(wr, val));
+    write_marker(wr, Marker::I8)?;
+    write_data_i8(wr, val)?;
     Ok(())
 }
 
@@ -80,8 +80,8 @@ pub fn write_i8<W: Write>(wr: &mut W, val: i8) -> Result<(), ValueWriteError> {
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
 pub fn write_i16<W: Write>(wr: &mut W, val: i16) -> Result<(), ValueWriteError> {
-    try!(write_marker(wr, Marker::I16));
-    try!(write_data_i16(wr, val));
+    write_marker(wr, Marker::I16)?;
+    write_data_i16(wr, val)?;
     Ok(())
 }
 
@@ -101,8 +101,8 @@ pub fn write_i16<W: Write>(wr: &mut W, val: i16) -> Result<(), ValueWriteError> 
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
 pub fn write_i32<W: Write>(wr: &mut W, val: i32) -> Result<(), ValueWriteError> {
-    try!(write_marker(wr, Marker::I32));
-    try!(write_data_i32(wr, val));
+    write_marker(wr, Marker::I32)?;
+    write_data_i32(wr, val)?;
     Ok(())
 }
 
@@ -122,8 +122,8 @@ pub fn write_i32<W: Write>(wr: &mut W, val: i32) -> Result<(), ValueWriteError> 
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
 pub fn write_i64<W: Write>(wr: &mut W, val: i64) -> Result<(), ValueWriteError> {
-    try!(write_marker(wr, Marker::I64));
-    try!(write_data_i64(wr, val));
+    write_marker(wr, Marker::I64)?;
+    write_data_i64(wr, val)?;
     Ok(())
 }
 

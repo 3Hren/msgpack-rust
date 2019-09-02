@@ -148,14 +148,11 @@
 //!
 //! [read_int]: decode/fn.read_int.html
 
-extern crate byteorder;
-extern crate num_traits;
-
-mod marker;
-pub mod encode;
 pub mod decode;
+pub mod encode;
+mod marker;
 
-pub use marker::Marker;
+pub use crate::marker::Marker;
 
 /// Version of the MessagePack [spec](http://github.com/msgpack/msgpack/blob/master/spec.md).
 pub const MSGPACK_VERSION: u32 = 5;

@@ -12,7 +12,7 @@ use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVar
 use rmp::encode;
 use rmp::encode::ValueWriteError;
 
-use config::{
+use crate::config::{
     DefaultConfig, SerializerConfig, StructMapConfig, StructTupleConfig, VariantIntegerConfig,
     VariantStringConfig,
 };
@@ -43,7 +43,7 @@ impl error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             Error::InvalidValueWrite(ref err) => Some(err),
             Error::UnknownLength => None,
@@ -54,7 +54,7 @@ impl error::Error for Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::InvalidValueWrite(ref err) => write!(f, "invalid value write: {}", err),
             Error::UnknownLength => {

@@ -1,5 +1,5 @@
-use msgpack::Marker;
-use msgpack::encode::*;
+use crate::msgpack::Marker;
+use crate::msgpack::encode::*;
 
 #[test]
 fn pass_pack_meta_fix1() {
@@ -36,7 +36,6 @@ fn pass_pack_meta_fix8() {
 
     assert_eq!([0xd7, 0x10], buf);
 }
-
 
 #[test]
 fn pass_pack_meta_fix16() {

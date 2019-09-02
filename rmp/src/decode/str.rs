@@ -3,7 +3,7 @@ use std::io::{self, Read};
 use std::fmt::{self, Display, Formatter};
 use std::str::{Utf8Error, from_utf8};
 
-use Marker;
+use crate::Marker;
 use super::{read_marker, read_data_u8, read_data_u16, read_data_u32, Error, ValueReadError};
 
 #[derive(Debug)]
@@ -21,7 +21,7 @@ impl<'a> error::Error for DecodeStringError<'a> {
         "error while decoding string"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             DecodeStringError::InvalidMarkerRead(ref err) |
             DecodeStringError::InvalidDataRead(ref err) => Some(err),
@@ -33,7 +33,7 @@ impl<'a> error::Error for DecodeStringError<'a> {
 }
 
 impl<'a> Display for DecodeStringError<'a> {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         error::Error::description(self).fmt(f)
     }
 }
@@ -108,9 +108,10 @@ fn read_str_len_with_nread<R>(rd: &mut R) -> Result<(u32, usize), ValueReadError
 /// This function is **unstable**, because it needs review.
 // TODO: Stabilize. Mark error values for each error case (in docs).
 pub fn read_str<'r, R>(rd: &mut R, buf: &'r mut [u8]) -> Result<&'r str, DecodeStringError<'r>>
-    where R: Read
+where
+    R: Read,
 {
-    let len = try!(read_str_len(rd));
+    let len = read_str_len(rd)?;
     let ulen = len as usize;
 
     if buf.len() < ulen {
@@ -144,9 +145,9 @@ pub fn read_str_data<'r, R>(rd: &mut R,
 ///
 // TODO: Also it's possible to implement all borrowing functions for all `BufRead` implementors.
 #[deprecated(since = "0.8.6", note = "useless, use `read_str_from_slice` instead")]
-pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
+pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError<'_>> {
     let mut cur = io::Cursor::new(rd);
-    let len = try!(read_str_len(&mut cur));
+    let len = read_str_len(&mut cur)?;
     let start = cur.position() as usize;
     Ok(&rd[start..start + len as usize])
 }
@@ -174,7 +175,7 @@ pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError> {
 /// assert_eq!(vec!["Unpacking", "multiple", "strings"], chunks);
 /// ```
 pub fn read_str_from_slice<T: ?Sized + AsRef<[u8]>>(buf: &T) ->
-    Result<(&str, &[u8]), DecodeStringError>
+    Result<(&str, &[u8]), DecodeStringError<'_>>
 {
     let buf = buf.as_ref();
     let (len, nread) = read_str_len_with_nread(&mut &buf[..])?;

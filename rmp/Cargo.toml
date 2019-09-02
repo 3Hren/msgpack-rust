@@ -9,6 +9,7 @@ documentation = "https://docs.rs/rmp"
 readme = "README.md"
 keywords = ["msgpack", "MessagePack"]
 categories = ["encoding"]
+edition = "2018"
 
 [dependencies]
 byteorder = "1.3.2"

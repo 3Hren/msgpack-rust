@@ -1,5 +1,5 @@
-use msgpack::Marker;
-use msgpack::encode::*;
+use crate::msgpack::Marker;
+use crate::msgpack::encode::*;
 
 #[test]
 fn pass_pack_len_fix() {

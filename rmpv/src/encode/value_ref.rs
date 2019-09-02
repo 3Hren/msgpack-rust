@@ -3,7 +3,7 @@ use std::io::Write;
 use rmp::encode::{write_bool, write_nil, write_sint, write_uint, write_f32, write_f64, write_str,
                   write_bin, write_array_len, write_map_len, write_ext_meta};
 
-use {Integer, IntPriv, Utf8StringRef, ValueRef};
+use crate::{Integer, IntPriv, Utf8StringRef, ValueRef};
 use super::Error;
 
 /// Encodes and attempts to write the given non-owning ValueRef into the Write.
@@ -24,7 +24,7 @@ use super::Error;
 /// write_value_ref(&mut buf, &val).unwrap();
 /// assert_eq!(vec![0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65], buf);
 /// ```
-pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef) -> Result<(), Error>
+pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef<'_>) -> Result<(), Error>
     where W: Write
 {
     match *val {
