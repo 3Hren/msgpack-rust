@@ -3,6 +3,7 @@ name = "rmpv-tests"
 version = "0.0.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 publish = false
+edition = "2018"
 
 [dependencies]
 serde = "1"

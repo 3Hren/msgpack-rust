@@ -1,7 +1,7 @@
 #![feature(test)]
 
 extern crate rmp_serde as rmps;
-extern crate rmpv;
+use rmpv;
 extern crate test;
 
 use test::Bencher;
@@ -42,7 +42,7 @@ fn from_complex_read_value_ref(b: &mut Bencher) {
 #[bench]
 fn from_complex_zero_copy_decode(b: &mut Bencher) {
     b.iter(|| {
-        let res: ValueRef = rmps::from_slice(&COMPLEX[..]).unwrap();
+        let res: ValueRef<'_> = rmps::from_slice(&COMPLEX[..]).unwrap();
         test::black_box(res);
     });
     b.bytes = COMPLEX.len() as u64;

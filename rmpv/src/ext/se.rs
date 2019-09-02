@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde::ser::{self, SerializeSeq, SerializeTuple, SerializeTupleStruct, SerializeMap, SerializeStruct};
 use serde_bytes::Bytes;
 
-use {Integer, IntPriv, Value};
+use crate::{Integer, IntPriv, Value};
 
 use super::Error;
 

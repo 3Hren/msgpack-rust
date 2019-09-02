@@ -62,8 +62,6 @@
 
 #![warn(missing_debug_implementations, missing_docs)]
 
-extern crate rmp;
-extern crate byteorder;
 #[macro_use]
 extern crate serde;
 
@@ -74,12 +72,12 @@ use std::str::{self, Utf8Error};
 use serde::{Deserialize, Serialize};
 use serde::de;
 
-pub use decode::{Deserializer, from_read, from_read_ref, from_slice};
-pub use encode::{Serializer, to_vec, to_vec_named};
+pub use crate::decode::{Deserializer, from_read, from_read_ref, from_slice};
+pub use crate::encode::{Serializer, to_vec, to_vec_named};
 
+pub mod config;
 pub mod decode;
 pub mod encode;
-pub mod config;
 
 /// Helper that allows both to encode and decode strings no matter whether they contain valid or
 /// invalid UTF-8.
@@ -177,7 +175,7 @@ struct RawVisitor;
 impl<'de> de::Visitor<'de> for RawVisitor {
     type Value = Raw;
 
-    fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+    fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         "string or bytes".fmt(fmt)
     }
 
@@ -312,7 +310,7 @@ struct RawRefVisitor;
 impl<'de> de::Visitor<'de> for RawRefVisitor {
     type Value = RawRef<'de>;
 
-    fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+    fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         "string or bytes".fmt(fmt)
     }
 

@@ -1,7 +1,7 @@
 use std::io::Write;
 
-use Marker;
-use encode::{write_marker, ValueWriteError};
+use crate::Marker;
+use crate::encode::{write_marker, ValueWriteError};
 use super::{write_data_u8, write_data_u16, write_data_u32};
 
 /// Encodes and attempts to write the most efficient binary array length implementation to the given
@@ -16,16 +16,16 @@ use super::{write_data_u8, write_data_u16, write_data_u32};
 /// marker or the data.
 pub fn write_bin_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> {
     if len < 256 {
-        try!(write_marker(wr, Marker::Bin8));
-        try!(write_data_u8(wr, len as u8));
+        write_marker(wr, Marker::Bin8)?;
+        write_data_u8(wr, len as u8)?;
         Ok(Marker::Bin8)
     } else if len < 65536 {
-        try!(write_marker(wr, Marker::Bin16));
-        try!(write_data_u16(wr, len as u16));
+        write_marker(wr, Marker::Bin16)?;
+        write_data_u16(wr, len as u16)?;
         Ok(Marker::Bin16)
     } else {
-        try!(write_marker(wr, Marker::Bin32));
-        try!(write_data_u32(wr, len));
+        write_marker(wr, Marker::Bin32)?;
+        write_data_u32(wr, len)?;
         Ok(Marker::Bin32)
     }
 }
@@ -38,6 +38,6 @@ pub fn write_bin_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWrit
 /// marker or the data.
 // TODO: Docs, range check, example, visibility.
 pub fn write_bin<W: Write>(wr: &mut W, data: &[u8]) -> Result<(), ValueWriteError> {
-    try!(write_bin_len(wr, data.len() as u32));
+    write_bin_len(wr, data.len() as u32)?;
     wr.write_all(data).map_err(ValueWriteError::InvalidDataWrite)
 }

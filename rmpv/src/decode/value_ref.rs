@@ -7,7 +7,7 @@ use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_
                   read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
                   read_data_f64};
 
-use {Utf8StringRef, ValueRef};
+use crate::{Utf8StringRef, ValueRef};
 use super::Error;
 
 fn read_str_data<'a, R>(rd: &mut R, len: usize) -> Result<Utf8StringRef<'a>, Error>
@@ -153,7 +153,6 @@ impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error>
     where R: BorrowRead<'a>
 {
-    let mut rd = rd;
 
     // Reading the marker involves either 1 byte read or nothing. On success consumes strictly
     // 1 byte from the `rd`.

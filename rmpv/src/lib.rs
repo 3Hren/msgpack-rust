@@ -8,10 +8,6 @@
 #[cfg(feature = "with-serde")]
 #[macro_use]
 extern crate serde;
-#[cfg(feature = "with-serde")]
-extern crate serde_bytes;
-extern crate rmp;
-extern crate num_traits;
 
 use std::borrow::Cow;
 use std::fmt::{self, Debug, Display};
@@ -90,13 +86,13 @@ impl Integer {
 }
 
 impl Debug for Integer {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         Debug::fmt(&self.n, fmt)
     }
 }
 
 impl Display for Integer {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self.n {
             IntPriv::PosInt(v) => Display::fmt(&v, fmt),
             IntPriv::NegInt(v) => Display::fmt(&v, fmt),
@@ -250,7 +246,7 @@ impl Utf8String {
         }
     }
 
-    pub fn as_ref(&self) -> Utf8StringRef {
+    pub fn as_ref(&self) -> Utf8StringRef<'_> {
         match self.s {
             Ok(ref s) => Utf8StringRef { s: Ok(s.as_str()) },
             Err((ref buf, err)) => Utf8StringRef { s: Err((&buf[..], err)) },
@@ -259,7 +255,7 @@ impl Utf8String {
 }
 
 impl Display for Utf8String {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self.s {
             Ok(ref s) => write!(fmt, "\"{}\"", s),
             Err(ref err) => Debug::fmt(&err.0, fmt),
@@ -348,7 +344,7 @@ impl<'a> Utf8StringRef<'a> {
 }
 
 impl<'a> Display for Utf8StringRef<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self.s {
             Ok(ref s) => write!(fmt, "\"{}\"", s),
             Err(ref err) => Debug::fmt(&err.0, fmt),
@@ -445,7 +441,7 @@ impl Value {
     ///
     /// assert_eq!(expected, val.as_ref());
     /// ```
-    pub fn as_ref(&self) -> ValueRef {
+    pub fn as_ref(&self) -> ValueRef<'_> {
         match self {
             &Value::Nil => ValueRef::Nil,
             &Value::Boolean(val) => ValueRef::Boolean(val),
@@ -963,7 +959,7 @@ impl From<Vec<(Value, Value)>> for Value {
 }
 
 impl Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Value::Nil => Display::fmt("nil", f),
             Value::Boolean(val) => write!(f, "{}", val),
@@ -983,19 +979,19 @@ impl Display for Value {
                 write!(f, "[{}]", res)
             }
             Value::Map(ref vec) => {
-                try!(write!(f, "{{"));
+                write!(f, "{{")?;
 
                 match vec.iter().take(1).next() {
                     Some(&(ref k, ref v)) => {
-                        try!(write!(f, "{}: {}", k, v));
+                        write!(f, "{}: {}", k, v)?;
                     }
                     None => {
-                        try!(write!(f, ""));
+                        write!(f, "")?;
                     }
                 }
 
                 for &(ref k, ref v) in vec.iter().skip(1) {
-                    try!(write!(f, ", {}: {}", k, v));
+                    write!(f, ", {}: {}", k, v)?;
                 }
 
                 write!(f, "}}")
@@ -1084,7 +1080,7 @@ impl<'a> ValueRef<'a> {
         }
     }
 
-    pub fn index(&self, index: usize) -> &ValueRef {
+    pub fn index(&self, index: usize) -> &ValueRef<'_> {
         self.as_array().and_then(|v| v.get(index)).unwrap_or(&NIL_REF)
     }
 
@@ -1118,7 +1114,7 @@ impl<'a> ValueRef<'a> {
     /// assert_eq!(Some(&vec![ValueRef::Nil, ValueRef::Boolean(true)]), val.as_array());
     /// assert_eq!(None, ValueRef::Nil.as_array());
     /// ```
-    pub fn as_array(&self) -> Option<&Vec<ValueRef>> {
+    pub fn as_array(&self) -> Option<&Vec<ValueRef<'_>>> {
         if let ValueRef::Array(ref array) = *self {
             Some(&*array)
         } else {
@@ -1232,7 +1228,7 @@ impl<'a> From<Vec<(ValueRef<'a>, ValueRef<'a>)>> for ValueRef<'a> {
 }
 
 impl<'a> Display for ValueRef<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             ValueRef::Nil => write!(f, "nil"),
             ValueRef::Boolean(val) => write!(f, "{}", val),
@@ -1250,19 +1246,19 @@ impl<'a> Display for ValueRef<'a> {
                 write!(f, "[{}]", res)
             }
             ValueRef::Map(ref vec) => {
-                try!(write!(f, "{{"));
+                write!(f, "{{")?;
 
                 match vec.iter().take(1).next() {
                     Some(&(ref k, ref v)) => {
-                        try!(write!(f, "{}: {}", k, v));
+                        write!(f, "{}: {}", k, v)?;
                     }
                     None => {
-                        try!(write!(f, ""));
+                        write!(f, "")?;
                     }
                 }
 
                 for &(ref k, ref v) in vec.iter().skip(1) {
-                    try!(write!(f, ", {}: {}", k, v));
+                    write!(f, ", {}: {}", k, v)?;
                 }
 
                 write!(f, "}}")

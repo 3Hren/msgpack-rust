@@ -6,7 +6,7 @@ use std::vec::IntoIter;
 use serde::{self, Deserialize, Deserializer};
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
 
-use {Integer, IntPriv, Utf8String, Utf8StringRef, Value, ValueRef};
+use crate::{Integer, IntPriv, Utf8String, Utf8StringRef, Value, ValueRef};
 
 use super::{Error, ValueExt};
 
@@ -39,7 +39,7 @@ impl<'de> Deserialize<'de> for Value {
         impl<'de> serde::de::Visitor<'de> for ValueVisitor {
             type Value = Value;
 
-            fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+            fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                 "any valid MessagePack value".fmt(fmt)
             }
 
@@ -155,7 +155,7 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
         impl<'de> de::Visitor<'de> for ValueVisitor {
             type Value = ValueRef<'de>;
 
-            fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+            fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                 "any valid MessagePack value".fmt(fmt)
             }
 

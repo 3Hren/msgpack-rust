@@ -36,7 +36,7 @@ impl error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             Error::InvalidMarkerRead(ref err) => Some(err),
             Error::InvalidDataRead(ref err) => Some(err),
@@ -45,7 +45,7 @@ impl error::Error for Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::InvalidMarkerRead(ref err) => {
                 write!(fmt, "I/O error while reading marker byte: {}", err)

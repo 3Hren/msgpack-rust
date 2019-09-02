@@ -1,3 +1,3 @@
-mod encode;
 mod decode;
+mod encode;
 mod mirror;

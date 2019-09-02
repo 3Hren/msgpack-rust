@@ -46,7 +46,7 @@ impl error::Error for Error {
         "error while decoding value"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             Error::TypeMismatch(..) => None,
             Error::InvalidMarkerRead(ref err) => Some(err),
@@ -68,7 +68,7 @@ impl de::Error for Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::InvalidMarkerRead(ref err) => write!(fmt, "IO error while reading marker: {}", err),
             Error::InvalidDataRead(ref err) => write!(fmt, "IO error while reading data: {}", err),
@@ -125,7 +125,7 @@ impl From<NumValueReadError> for Error {
 }
 
 impl<'a> From<DecodeStringError<'a>> for Error {
-    fn from(err: DecodeStringError) -> Error {
+    fn from(err: DecodeStringError<'_>) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
             DecodeStringError::InvalidDataRead(err) => Error::InvalidDataRead(err),
@@ -474,7 +474,7 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
     }
 }
 
-struct SeqAccess<'a, R: 'a> {
+struct SeqAccess<'a, R> {
     de: &'a mut Deserializer<R>,
     left: usize,
 }
@@ -507,7 +507,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> de::SeqAccess<'de> for SeqAccess<'a, R> {
     }
 }
 
-struct MapAccess<'a, R: 'a> {
+struct MapAccess<'a, R> {
     de: &'a mut Deserializer<R>,
     left: usize,
 }
@@ -546,7 +546,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> de::MapAccess<'de> for MapAccess<'a, R> {
     }
 }
 
-struct VariantAccess<'a, R: 'a> {
+struct VariantAccess<'a, R> {
     de: &'a mut Deserializer<R>,
 }
 
@@ -653,7 +653,7 @@ impl<R: Read> Read for ReadReader<R> {
 
 /// Borrowed reader wrapper.
 #[derive(Debug)]
-pub struct ReadRefReader<'a, R: ?Sized + 'a> {
+pub struct ReadRefReader<'a, R: ?Sized> {
     rd: &'a R,
     buf: &'a [u8],
 }

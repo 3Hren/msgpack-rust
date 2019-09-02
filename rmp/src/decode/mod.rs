@@ -9,18 +9,17 @@
 //! non-blocking socket and it returns EWOULDBLOCK) be sure that you buffer the data externally
 //! to avoid data loss (using `BufRead` readers with manual consuming or some other way).
 
-mod sint;
-mod uint;
 mod dec;
-mod str;
 mod ext;
+mod sint;
+mod str;
+mod uint;
 
 pub use self::sint::{read_nfix, read_i8, read_i16, read_i32, read_i64};
 pub use self::uint::{read_pfix, read_u8, read_u16, read_u32, read_u64};
 pub use self::dec::{read_f32, read_f64};
 pub use self::str::{read_str_len, read_str, read_str_from_slice, read_str_ref, DecodeStringError};
-pub use self::ext::{read_fixext1, read_fixext2, read_fixext4, read_fixext8, read_fixext16,
-                    read_ext_meta, ExtMeta};
+pub use self::ext::{read_fixext1, read_fixext2, read_fixext4, read_fixext8, read_fixext16, read_ext_meta, ExtMeta};
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
@@ -30,7 +29,7 @@ use byteorder::{self, ReadBytesExt};
 
 use num_traits::cast::FromPrimitive;
 
-use Marker;
+use crate::Marker;
 
 /// An error that can occur when attempting to read bytes from the reader.
 pub type Error = ::std::io::Error;
@@ -61,7 +60,7 @@ impl error::Error for ValueReadError {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             ValueReadError::InvalidMarkerRead(ref err) |
             ValueReadError::InvalidDataRead(ref err) => Some(err),
@@ -71,7 +70,7 @@ impl error::Error for ValueReadError {
 }
 
 impl Display for ValueReadError {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         error::Error::description(self).fmt(f)
     }
 }
@@ -92,7 +91,7 @@ impl From<Error> for MarkerReadError {
 
 /// Attempts to read a single byte from the given reader and to decode it as a MessagePack marker.
 pub fn read_marker<R: Read>(rd: &mut R) -> Result<Marker, MarkerReadError> {
-    Ok(Marker::from_u8(try!(rd.read_u8())))
+    Ok(Marker::from_u8(rd.read_u8()?))
 }
 
 /// Attempts to read a single byte from the given reader and to decode it as a nil value.
@@ -112,7 +111,7 @@ pub fn read_marker<R: Read>(rd: &mut R) -> Result<Marker, MarkerReadError> {
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
 pub fn read_nil<R: Read>(rd: &mut R) -> Result<(), ValueReadError> {
-    match try!(read_marker(rd)) {
+    match read_marker(rd)? {
         Marker::Null => Ok(()),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
@@ -136,7 +135,7 @@ pub fn read_nil<R: Read>(rd: &mut R) -> Result<(), ValueReadError> {
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
 pub fn read_bool<R: Read>(rd: &mut R) -> Result<bool, ValueReadError> {
-    match try!(read_marker(rd)) {
+    match read_marker(rd)? {
         Marker::True => Ok(true),
         Marker::False => Ok(false),
         marker => Err(ValueReadError::TypeMismatch(marker)),
@@ -168,7 +167,7 @@ impl error::Error for NumValueReadError {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             NumValueReadError::InvalidMarkerRead(ref err) |
             NumValueReadError::InvalidDataRead(ref err) => Some(err),
@@ -179,7 +178,7 @@ impl error::Error for NumValueReadError {
 }
 
 impl Display for NumValueReadError {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         error::Error::description(self).fmt(f)
     }
 }
@@ -285,17 +284,17 @@ pub fn read_data_f64<R: Read>(rd: &mut R) -> Result<f64, ValueReadError> {
 /// assert_eq!(300isize, rmp::decode::read_int(&mut &buf[..]).unwrap());
 /// ```
 pub fn read_int<T: FromPrimitive, R: Read>(rd: &mut R) -> Result<T, NumValueReadError> {
-    let val = match try!(read_marker(rd)) {
+    let val = match read_marker(rd)? {
         Marker::FixPos(val) => T::from_u8(val),
         Marker::FixNeg(val) => T::from_i8(val),
-        Marker::U8 => T::from_u8(try!(read_data_u8(rd))),
-        Marker::U16 => T::from_u16(try!(read_data_u16(rd))),
-        Marker::U32 => T::from_u32(try!(read_data_u32(rd))),
-        Marker::U64 => T::from_u64(try!(read_data_u64(rd))),
-        Marker::I8 => T::from_i8(try!(read_data_i8(rd))),
-        Marker::I16 => T::from_i16(try!(read_data_i16(rd))),
-        Marker::I32 => T::from_i32(try!(read_data_i32(rd))),
-        Marker::I64 => T::from_i64(try!(read_data_i64(rd))),
+        Marker::U8 => T::from_u8(read_data_u8(rd)?),
+        Marker::U16 => T::from_u16(read_data_u16(rd)?),
+        Marker::U32 => T::from_u32(read_data_u32(rd)?),
+        Marker::U64 => T::from_u64(read_data_u64(rd)?),
+        Marker::I8 => T::from_i8(read_data_i8(rd)?),
+        Marker::I16 => T::from_i16(read_data_i16(rd)?),
+        Marker::I32 => T::from_i32(read_data_i32(rd)?),
+        Marker::I64 => T::from_i64(read_data_i64(rd)?),
         marker => return Err(NumValueReadError::TypeMismatch(marker)),
     };
 
@@ -315,12 +314,13 @@ pub fn read_int<T: FromPrimitive, R: Read>(rd: &mut R) -> Result<T, NumValueRead
 // TODO: Docs.
 // NOTE: EINTR is managed internally.
 pub fn read_array_len<R>(rd: &mut R) -> Result<u32, ValueReadError>
-    where R: Read
+where
+    R: Read,
 {
-    match try!(read_marker(rd)) {
+    match read_marker(rd)? {
         Marker::FixArray(size) => Ok(size as u32),
-        Marker::Array16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Array32 => Ok(try!(read_data_u32(rd))),
+        Marker::Array16 => Ok(read_data_u16(rd)? as u32),
+        Marker::Array32 => Ok(read_data_u32(rd)?),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -344,8 +344,8 @@ pub fn read_map_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
 pub fn marker_to_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, ValueReadError> {
     match marker {
         Marker::FixMap(size) => Ok(size as u32),
-        Marker::Map16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Map32 => Ok(try!(read_data_u32(rd))),
+        Marker::Map16 => Ok(read_data_u16(rd)? as u32),
+        Marker::Map32 => Ok(read_data_u32(rd)?),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -358,10 +358,10 @@ pub fn marker_to_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, ValueRe
 /// successful read.
 // TODO: Docs.
 pub fn read_bin_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
-    match try!(read_marker(rd)) {
-        Marker::Bin8 => Ok(try!(read_data_u8(rd)) as u32),
-        Marker::Bin16 => Ok(try!(read_data_u16(rd)) as u32),
-        Marker::Bin32 => Ok(try!(read_data_u32(rd))),
+    match read_marker(rd)? {
+        Marker::Bin8 => Ok(read_data_u8(rd)? as u32),
+        Marker::Bin16 => Ok(read_data_u16(rd)? as u32),
+        Marker::Bin32 => Ok(read_data_u32(rd)?),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
