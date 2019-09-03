@@ -30,6 +30,8 @@ enum IntPriv {
     NegInt(i64),
 }
 
+pub const MSGPACK_EXT_STRUCT_NAME: &'static str = "_ExtStruct";
+
 /// Represents a MessagePack integer, whether signed or unsigned.
 ///
 /// A `Value` or `ValueRef` that contains integer can be constructed using `From` trait.

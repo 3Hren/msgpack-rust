@@ -109,3 +109,90 @@ fn pass_newtype_struct() {
 
     test_round(Newtype("John".into()), Value::from("John"));
 }
+
+#[test]
+fn pass_ext_struct() {
+    #[derive(Debug, PartialEq)]
+    enum ExtStruct {
+        One(u8),
+        Two(u8)
+    }
+
+    struct ExtStructVisitor;
+
+    use serde::ser::SerializeTupleStruct;
+    use serde::de::Unexpected;
+
+    use serde_bytes::{ByteBuf, Bytes};
+
+    impl Serialize for ExtStruct {
+        fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+            where S: serde::ser::Serializer
+        {
+            let mut tuple = s
+                .serialize_tuple_struct(rmps::MSGPACK_EXT_STRUCT_NAME, 2)
+                .unwrap();
+            match self {
+                ExtStruct::One(data) => {
+                    let tag = 1 as i8;
+                    let byte_buf = ByteBuf::from(vec![*data]);
+
+                    tuple.serialize_field(&tag).unwrap();
+                    tuple.serialize_field(&byte_buf).unwrap();
+                }
+                ExtStruct::Two(data) => {
+                    let tag = 2 as i8;
+                    let byte_buf = ByteBuf::from(vec![*data]);
+
+                    tuple.serialize_field(&tag).unwrap();
+                    tuple.serialize_field(&byte_buf).unwrap();
+                }
+            }
+
+            tuple.end()
+        }
+    }
+
+    impl<'de> serde::de::Visitor<'de> for ExtStructVisitor {
+        type Value = ExtStruct;
+
+        fn expecting(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+            write!(fmt, "a sequence of tag & binary")
+        }
+
+        fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+            where D: serde::de::Deserializer<'de>,
+        {
+            deserializer.deserialize_tuple_struct(rmps::MSGPACK_EXT_STRUCT_NAME, 2, self)
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where A: serde::de::SeqAccess<'de>
+        {
+            let tag: i8 = seq.next_element()?
+                .ok_or_else(|| serde::de::Error::invalid_length(0, &self))?;
+            let data: ByteBuf = seq.next_element()?
+                .ok_or_else(|| serde::de::Error::invalid_length(1, &self))?;
+
+            if tag == 1 {
+                Ok(ExtStruct::One(data[0]))
+            } else if tag == 2 {
+                Ok(ExtStruct::Two(data[0]))
+            } else {
+                let unexp = Unexpected::Signed(tag as i64);
+                Err(serde::de::Error::invalid_value(unexp, &self))
+            }
+        }
+    }
+
+    impl<'de> serde::de::Deserialize<'de> for ExtStruct {
+        fn deserialize<D>(deserializer: D) -> Result<ExtStruct, D::Error>
+            where D: serde::Deserializer<'de>,
+        {
+            let visitor = ExtStructVisitor;
+            deserializer.deserialize_any(visitor)
+        }
+    }
+
+    test_round(ExtStruct::One(5), Value::Ext(1, vec![5]));
+}

@@ -249,6 +249,13 @@ impl<'de, R: ReadSlice<'de>> Deserializer<R> {
         self.rd.read_slice(len as usize).map_err(Error::InvalidDataRead)
     }
 
+    fn read_ext<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
+        where V: Visitor<'de>
+    {
+        let ext_de = ExtDeserializer::new(self, len);
+        visitor.visit_newtype_struct(ext_de)
+    }
+
     fn read_array<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
@@ -281,6 +288,113 @@ fn read_u16<R: Read>(rd: &mut R) -> Result<u16, Error> {
 
 fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
     rd.read_u32::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
+}
+
+#[derive(Debug)]
+struct ExtDeserializer<'a, R: 'a> {
+    rd: &'a mut R,
+    len: u32,
+}
+
+#[derive(Debug)]
+struct ExtSeqDeserializer<'a, R: 'a> {
+    rd: &'a mut R,
+    len: u32,
+    read_tag: bool,
+    read_binary: bool
+}
+
+impl<'de, 'a, R: ReadSlice<'de> + 'a> ExtDeserializer<'a, R> {
+    fn new(d: &'a mut Deserializer<R>, len: u32) -> Self {
+        ExtDeserializer {
+            rd: &mut d.rd,
+            len,
+        }
+    }
+
+    fn into_seq_deserializer(self) -> ExtSeqDeserializer<'a, R> {
+        ExtSeqDeserializer {
+            rd: self.rd,
+            len: self.len,
+            read_tag: false,
+            read_binary: false
+        }
+    }
+}
+
+impl<'de, 'a, R: ReadSlice<'de> + 'a> de::Deserializer<'de> for ExtDeserializer<'a, R> {
+    type Error = Error;
+
+    #[inline]
+    fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        Err(de::Error::invalid_type(de::Unexpected::Other("non tuple struct"), &"Ext tuple struct"))
+    }
+
+    fn deserialize_tuple_struct<V>(self, _name: &'static str, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        // FIXME: assert name and len
+        let ext_seq_de = self.into_seq_deserializer();
+        visitor.visit_seq(ext_seq_de)
+    }
+
+    forward_to_deserialize_any! {
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
+        seq bytes byte_buf map unit_struct newtype_struct
+        struct identifier tuple enum ignored_any
+    }
+}
+
+
+impl<'de, 'a, R: ReadSlice<'de> + 'a> de::SeqAccess<'de> for ExtSeqDeserializer<'a, R> {
+    type Error = Error;
+
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Error>
+    where
+        T: DeserializeSeed<'de>,
+    {
+        if !self.read_tag || !self.read_binary {
+            return Ok(Some(seed.deserialize(self)?));
+        }
+
+        Ok(None)
+    }
+}
+
+impl<'de, 'a, 'b, R: ReadSlice<'de> + 'a> de::Deserializer<'de> for &'b mut ExtSeqDeserializer<'a, R> {
+    type Error = Error;
+
+    #[inline]
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        if !self.read_tag {
+            let tag = rmp::decode::read_data_i8(self.rd)?;
+            self.read_tag = true;
+            visitor.visit_i8(tag)
+        } else if !self.read_binary {
+            let data = self.rd.read_slice(self.len as usize).map_err(Error::InvalidDataRead)?;
+            self.read_binary = true;
+            match data {
+                Reference::Borrowed(bytes) => {
+                    visitor.visit_borrowed_bytes(bytes)
+                }
+                Reference::Copied(bytes) => {
+                    visitor.visit_bytes(bytes)
+                }
+            }
+        } else {
+            unreachable!()
+        }
+    }
+
+    forward_to_deserialize_any! {
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
+        seq bytes byte_buf map unit_struct newtype_struct
+        tuple_struct struct identifier tuple enum ignored_any
+    }
 }
 
 impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R> {
@@ -359,8 +473,39 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
                 let len = read_u32(&mut self.rd)?;
                 self.read_bytes(len, visitor)
             }
+            Marker::FixExt1 => {
+                let len = 1 as usize;
+                self.read_ext(len as u32, visitor)
+            }
+            Marker::FixExt2 => {
+                let len = 2 as usize;
+                self.read_ext(len as u32, visitor)
+            }
+            Marker::FixExt4 => {
+                let len = 4 as usize;
+                self.read_ext(len as u32, visitor)
+            }
+            Marker::FixExt8 => {
+                let len = 8 as usize;
+                self.read_ext(len as u32, visitor)
+            }
+            Marker::FixExt16 => {
+                let len = 16 as usize;
+                self.read_ext(len as u32, visitor)
+            }
+            Marker::Ext8 => {
+                let len = read_u8(&mut self.rd)?;
+                self.read_ext(len as u32, visitor)
+            }
+            Marker::Ext16 => {
+                let len = read_u16(&mut self.rd)?;
+                self.read_ext(len as u32, visitor)
+            }
+            Marker::Ext32 => {
+                let len = read_u32(&mut self.rd)?;
+                self.read_ext(len as u32, visitor)
+            }
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
-            marker => Err(Error::TypeMismatch(marker)),
         }
     }
 
@@ -469,7 +614,7 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
     forward_to_deserialize_any! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 char
         str string bytes byte_buf unit seq map
-        tuple_struct struct identifier tuple
+        struct identifier tuple tuple_struct
         ignored_any
     }
 }

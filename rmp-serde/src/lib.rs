@@ -79,6 +79,8 @@ pub mod config;
 pub mod decode;
 pub mod encode;
 
+pub const MSGPACK_EXT_STRUCT_NAME: &'static str = "_ExtStruct";
+
 /// Helper that allows both to encode and decode strings no matter whether they contain valid or
 /// invalid UTF-8.
 ///
