@@ -2,6 +2,7 @@ use std::fmt::{self, Display, Formatter};
 use std::iter::ExactSizeIterator;
 use std::slice::Iter;
 use std::vec::IntoIter;
+use std::borrow::Cow;
 
 use serde::{self, Deserialize, Deserializer};
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
@@ -166,7 +167,7 @@ impl<'de> Deserialize<'de> for Value {
                     }
                 }
 
-                deserializer.deserialize_tuple_struct(MSGPACK_EXT_STRUCT_NAME, 2, ExtValueVisitor)
+                deserializer.deserialize_tuple(2, ExtValueVisitor)
             }
         }
 
@@ -296,7 +297,7 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
                     }
                 }
 
-                deserializer.deserialize_tuple_struct(MSGPACK_EXT_STRUCT_NAME, 2, ExtValueRefVisitor)
+                deserializer.deserialize_tuple(2, ExtValueRefVisitor)
             }
         }
 
@@ -371,9 +372,21 @@ impl<'de> Deserializer<'de> for Value {
     }
 
     #[inline]
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
+        if name == MSGPACK_EXT_STRUCT_NAME {
+            match self {
+                Value::Ext(tag, data) => {
+                    let ext_de = ExtDeserializer::new_owned(tag, data);
+                    return visitor.visit_newtype_struct(ext_de);
+                }
+                other => {
+                    return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext"))
+                }
+            }
+        }
+
         visitor.visit_newtype_struct(self)
     }
 
@@ -458,9 +471,21 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
     }
 
     #[inline]
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
+        if name == MSGPACK_EXT_STRUCT_NAME {
+            match self {
+                ValueRef::Ext(tag, data) => {
+                    let ext_de = ExtDeserializer::new_ref(tag, data);
+                    return visitor.visit_newtype_struct(ext_de);
+                }
+                other => {
+                    return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext"))
+                }
+            }
+        }
+
         visitor.visit_newtype_struct(self)
     }
 
@@ -567,9 +592,21 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
     }
 
     #[inline]
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
+        if name == MSGPACK_EXT_STRUCT_NAME {
+            match self {
+                ValueRef::Ext(tag, data) => {
+                    let ext_de = ExtDeserializer::new_ref(*tag, data);
+                    return visitor.visit_newtype_struct(ext_de);
+                }
+                other => {
+                    return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext"))
+                }
+            }
+        }
+
         visitor.visit_newtype_struct(self)
     }
 
@@ -596,28 +633,23 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
     }
 }
 
-enum ExtData<'de> {
-    Owned(Vec<u8>),
-    Borrowed(&'de [u8])
-}
-
 struct ExtDeserializer<'de> {
     tag: Option<i8>,
-    data: Option<ExtData<'de>>,
+    data: Option<Cow<'de, [u8]>>,
 }
 
 impl<'de> ExtDeserializer<'de> {
     fn new_owned(tag: i8, data: Vec<u8>) -> Self {
         ExtDeserializer {
             tag: Some(tag),
-            data: Some(ExtData::Owned(data)),
+            data: Some(Cow::Owned(data)),
         }
     }
 
     fn new_ref(tag: i8, data: &'de [u8]) -> Self {
         ExtDeserializer {
             tag: Some(tag),
-            data: Some(ExtData::Borrowed(data)),
+            data: Some(Cow::Borrowed(data)),
         }
     }
 }
@@ -637,17 +669,12 @@ impl<'de> SeqAccess<'de> for ExtDeserializer<'de> {
     }
 }
 
+/// Deserializer for Ext (expecting sequence)
 impl<'a, 'de: 'a> Deserializer<'de> for ExtDeserializer<'de> {
     type Error = Error;
 
     #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
-    {
-        Err(de::Error::invalid_type(de::Unexpected::Other("non tuple struct"), &"Ext tuple struct"))
-    }
-
-    fn deserialize_tuple_struct<V>(self, _name: &'static str, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
         visitor.visit_seq(self)
@@ -656,10 +683,11 @@ impl<'a, 'de: 'a> Deserializer<'de> for ExtDeserializer<'de> {
     forward_to_deserialize_any! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
         seq bytes byte_buf map unit_struct newtype_struct
-        struct identifier tuple enum ignored_any
+        struct identifier tuple enum ignored_any tuple_struct
     }
 }
 
+/// Deserializer for Ext SeqAccess elements
 impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtDeserializer<'de> {
     type Error = Error;
 
@@ -673,8 +701,8 @@ impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtDeserializer<'de> {
         } else if self.data.is_some() {
             let data = self.data.take().unwrap();
             match data {
-                ExtData::Owned(data) => visitor.visit_byte_buf(data),
-                ExtData::Borrowed(data) => visitor.visit_borrowed_bytes(data)
+                Cow::Owned(data) => visitor.visit_byte_buf(data),
+                Cow::Borrowed(data) => visitor.visit_borrowed_bytes(data)
             }
         } else {
             unreachable!("ext seq only has two elements");

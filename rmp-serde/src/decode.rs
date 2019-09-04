@@ -14,6 +14,8 @@ use rmp;
 use rmp::Marker;
 use rmp::decode::{self, MarkerReadError, DecodeStringError, ValueReadError, NumValueReadError};
 
+use crate::MSGPACK_EXT_STRUCT_NAME;
+
 /// Enum representing errors that can occur while decoding MessagePack data.
 #[derive(Debug)]
 pub enum Error {
@@ -294,12 +296,6 @@ fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
 struct ExtDeserializer<'a, R: 'a> {
     rd: &'a mut R,
     len: u32,
-}
-
-#[derive(Debug)]
-struct ExtSeqDeserializer<'a, R: 'a> {
-    rd: &'a mut R,
-    len: u32,
     read_tag: bool,
     read_binary: bool
 }
@@ -309,13 +305,6 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> ExtDeserializer<'a, R> {
         ExtDeserializer {
             rd: &mut d.rd,
             len,
-        }
-    }
-
-    fn into_seq_deserializer(self) -> ExtSeqDeserializer<'a, R> {
-        ExtSeqDeserializer {
-            rd: self.rd,
-            len: self.len,
             read_tag: false,
             read_binary: false
         }
@@ -326,29 +315,20 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> de::Deserializer<'de> for ExtDeserializer<
     type Error = Error;
 
     #[inline]
-    fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        Err(de::Error::invalid_type(de::Unexpected::Other("non tuple struct"), &"Ext tuple struct"))
-    }
-
-    fn deserialize_tuple_struct<V>(self, _name: &'static str, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
-    {
-        // FIXME: assert name and len
-        let ext_seq_de = self.into_seq_deserializer();
-        visitor.visit_seq(ext_seq_de)
+        visitor.visit_seq(self)
     }
 
     forward_to_deserialize_any! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
         seq bytes byte_buf map unit_struct newtype_struct
-        struct identifier tuple enum ignored_any
+        struct identifier tuple enum ignored_any tuple_struct
     }
 }
 
-
-impl<'de, 'a, R: ReadSlice<'de> + 'a> de::SeqAccess<'de> for ExtSeqDeserializer<'a, R> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a> de::SeqAccess<'de> for ExtDeserializer<'a, R> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Error>
@@ -363,7 +343,9 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> de::SeqAccess<'de> for ExtSeqDeserializer<
     }
 }
 
-impl<'de, 'a, 'b, R: ReadSlice<'de> + 'a> de::Deserializer<'de> for &'b mut ExtSeqDeserializer<'a, R> {
+
+/// Deserializer for Ext SeqAccess
+impl<'de, 'a, R: ReadSlice<'de> + 'a> de::Deserializer<'de> for &mut ExtDeserializer<'a, R> {
     type Error = Error;
 
     #[inline]
@@ -536,9 +518,48 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
         }
     }
 
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Error>
+    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
+        if name == MSGPACK_EXT_STRUCT_NAME {
+            let marker = match self.marker.take() {
+                Some(marker) => marker,
+                None => rmp::decode::read_marker(&mut self.rd)?,
+            };
+            let len = match marker {
+                Marker::FixExt1 => {
+                    1 as u32
+                }
+                Marker::FixExt2 => {
+                    2 as u32
+                }
+                Marker::FixExt4 => {
+                    4 as u32
+                }
+                Marker::FixExt8 => {
+                    8 as u32
+                }
+                Marker::FixExt16 => {
+                    16 as u32
+                }
+                Marker::Ext8 => {
+                    read_u8(&mut self.rd)? as u32
+                }
+                Marker::Ext16 => {
+                    read_u16(&mut self.rd)? as u32
+                }
+                Marker::Ext32 => {
+                    read_u32(&mut self.rd)? as u32
+                }
+                _ => {
+                    return Err(Error::TypeMismatch(marker))
+                }
+            };
+
+            let ext_de = ExtDeserializer::new(self, len);
+            return visitor.visit_newtype_struct(ext_de);
+        }
+
         visitor.visit_newtype_struct(self)
     }
 

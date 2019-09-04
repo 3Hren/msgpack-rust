@@ -1,5 +1,4 @@
 use std::fmt::Display;
-use std::marker::PhantomData;
 
 use serde::Serialize;
 use serde::ser::{self, SerializeTupleStruct, SerializeSeq, SerializeTuple, SerializeMap, SerializeStruct};
@@ -47,11 +46,8 @@ impl Serialize for Value {
                 state.end()
             }
             Value::Ext(ty, ref buf) => {
-                let mut state = s.serialize_tuple_struct(MSGPACK_EXT_STRUCT_NAME, 2)?;
-                state.serialize_field(&ty)?;
-                let b = Bytes::new(&buf[..]);
-                state.serialize_field(&b)?;
-                state.end()
+                let value = (ty, Bytes::new(&buf[..]));
+                s.serialize_newtype_struct(MSGPACK_EXT_STRUCT_NAME, &value)
             }
         }
     }
@@ -86,7 +82,7 @@ impl ser::Serializer for Serializer {
 
     type SerializeSeq = SerializeVec;
     type SerializeTuple = SerializeVec;
-    type SerializeTupleStruct = SerializeExtOrTuple;
+    type SerializeTupleStruct = SerializeVec;
     type SerializeTupleVariant = SerializeTupleVariant;
     type SerializeMap = DefaultSerializeMap;
     type SerializeStruct = SerializeVec;
@@ -184,10 +180,17 @@ impl ser::Serializer for Serializer {
     }
 
     #[inline]
-    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_newtype_struct<T: ?Sized>(self, name: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
-        Ok(to_value(value)?)
+        if name == MSGPACK_EXT_STRUCT_NAME {
+            let mut ext_se = ExtSerializer::new();
+            value.serialize(&mut ext_se)?;
+
+            return ext_se.value();
+        }
+
+        to_value(value)
     }
 
     fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
@@ -223,16 +226,8 @@ impl ser::Serializer for Serializer {
         self.serialize_seq(Some(len))
     }
 
-    fn serialize_tuple_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeTupleStruct, Error> {
-        let tuple_struct_serializer = match name {
-            MSGPACK_EXT_STRUCT_NAME => {
-                SerializeExtOrTuple::Ext(ExtSerializer::new())
-            }
-            _ => {
-                SerializeExtOrTuple::Tuple(Vec::with_capacity(len))
-            }
-        };
-        Ok(tuple_struct_serializer)
+    fn serialize_tuple_struct(self, _name: &'static str, len: usize) -> Result<Self::SerializeTupleStruct, Error> {
+        self.serialize_tuple(len)
     }
 
     fn serialize_tuple_variant(self, _name: &'static str, idx: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeTupleVariant, Error> {
@@ -251,8 +246,8 @@ impl ser::Serializer for Serializer {
         Ok(se)
     }
 
-    fn serialize_struct(self, _name: &'static str, len: usize) -> Result<Self::SerializeStruct, Error> {
-        self.serialize_seq(Some(len))
+    fn serialize_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeStruct, Error> {
+        self.serialize_tuple_struct(name, len)
     }
 
     fn serialize_struct_variant(self, _name: &'static str, idx: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Error> {
@@ -265,187 +260,161 @@ impl ser::Serializer for Serializer {
 }
 
 pub struct ExtSerializer {
-    tag: Option<i8>,
-    binary: Option<Vec<u8>>,
+    fields_se: Option<ExtFieldSerializer>
 }
 
 impl ser::Serializer for &mut ExtSerializer {
     type Ok = ();
     type Error = Error;
 
-    type SerializeSeq = Self;
+    type SerializeSeq = ser::Impossible<(), Error>;
     type SerializeTuple = Self;
-    type SerializeTupleStruct = Self;
-    type SerializeTupleVariant = Self;
-    type SerializeMap = Self;
-    type SerializeStruct = Self;
-    type SerializeStructVariant = Self;
+    type SerializeTupleStruct = ser::Impossible<(), Error>;
+    type SerializeTupleVariant = ser::Impossible<(), Error>;
+    type SerializeMap = ser::Impossible<(), Error>;
+    type SerializeStruct = ser::Impossible<(), Error>;
+    type SerializeStructVariant = ser::Impossible<(), Error>;
+
 
     #[inline]
-    fn serialize_i8(self, value: i8) -> Result<Self::Ok, Self::Error> {
-        if self.tag.is_none() {
-            self.tag.replace(value);
-            Ok(())
-        } else {
-            Err(<Error as ser::Error>::custom("Expected bytes"))
-        }
+    fn serialize_bytes(self, _val: &[u8]) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected tuple, received bytes"))
     }
-
-    #[inline]
-    fn serialize_bytes(self, val: &[u8]) -> Result<Self::Ok, Self::Error> {
-        if self.tag.is_some() {
-            if self.binary.is_none() {
-                self.binary.replace(val.to_vec());
-
-                Ok(())
-            } else {
-                Err(<Error as ser::Error>::custom("Unexpected bytes"))
-            }
-        } else {
-            Err(<Error as ser::Error>::custom("Expected i8 tag"))
-        }
-    }
-
 
     #[inline]
     fn serialize_bool(self, _val: bool) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received bool"))
+    }
+
+    #[inline]
+    fn serialize_i8(self, _value: i8) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected tuple, received i8"))
     }
 
     #[inline]
     fn serialize_i16(self, _val: i16) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received i16"))
     }
 
     #[inline]
     fn serialize_i32(self, _val: i32) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received i32"))
     }
 
     #[inline]
     fn serialize_i64(self, _val: i64) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received i64"))
     }
 
     #[inline]
     fn serialize_u8(self, _val: u8) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received u8"))
     }
 
     #[inline]
     fn serialize_u16(self, _val: u16) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received u16"))
     }
 
     #[inline]
     fn serialize_u32(self, _val: u32) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received u32"))
     }
 
     #[inline]
     fn serialize_u64(self, _val: u64) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received u64"))
     }
 
     #[inline]
     fn serialize_f32(self, _val: f32) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received f32"))
     }
 
     #[inline]
     fn serialize_f64(self, _val: f64) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received f64"))
     }
 
     #[inline]
     fn serialize_char(self, _val: char) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received char"))
     }
 
     #[inline]
     fn serialize_str(self, _val: &str) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received str"))
     }
 
     #[inline]
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received unit"))
     }
 
     #[inline]
     fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received unit_struct"))
     }
 
     #[inline]
     fn serialize_unit_variant(self, _name: &'static str, _idx: u32, _variant: &'static str) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received unit_variant"))
     }
 
     #[inline]
     fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received newtype_struct"))
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received newtype_variant"))
     }
 
     #[inline]
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received none"))
     }
 
     #[inline]
-    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received some"))
     }
 
-    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected tuple, received seq"))
     }
 
-    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Error> {
+        // FIXME check len
+        self.fields_se = Some(ExtFieldSerializer::new());
+
+        Ok(self)
     }
 
-    fn serialize_tuple_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeTupleStruct, Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+    fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, Error> {
+        Err(<Error as ser::Error>::custom("expected tuple, received tuple_struct"))
     }
 
     fn serialize_tuple_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received tuple_variant"))
     }
 
-    fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Error> {
+        Err(<Error as ser::Error>::custom("expected tuple, received map"))
     }
 
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
+        Err(<Error as ser::Error>::custom("expected tuple, received struct"))
     }
 
     fn serialize_struct_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, Error> {
-        Err(<Error as ser::Error>::custom("Invalid type"))
-    }
-}
-
-impl SerializeSeq for &mut ExtSerializer {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
-        unreachable!()
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        unreachable!()
+        Err(<Error as ser::Error>::custom("expected tuple, received struct_variant"))
     }
 }
 
@@ -453,85 +422,205 @@ impl SerializeTuple for &mut ExtSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
-        unreachable!()
+    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
+        where T: Serialize
+    {
+        match self.fields_se {
+            Some(ref mut se) => value.serialize(&mut *se),
+            None => unreachable!()
+        }
     }
 
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        unreachable!()
+    fn end(self) -> Result<(), Error> {
+        Ok(())
     }
 }
 
-impl SerializeTupleStruct for &mut ExtSerializer {
+pub struct ExtFieldSerializer {
+    tag: Option<i8>,
+    binary: Option<Vec<u8>>,
+}
+
+impl ser::Serializer for &mut ExtFieldSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
-        unreachable!()
+    type SerializeSeq = ser::Impossible<(), Error>;
+    type SerializeTuple = ser::Impossible<(), Error>;
+    type SerializeTupleStruct = ser::Impossible<(), Error>;
+    type SerializeTupleVariant = ser::Impossible<(), Error>;
+    type SerializeMap = ser::Impossible<(), Error>;
+    type SerializeStruct = ser::Impossible<(), Error>;
+    type SerializeStructVariant = ser::Impossible<(), Error>;
+
+    #[inline]
+    fn serialize_i8(self, value: i8) -> Result<Self::Ok, Self::Error> {
+        if self.tag.is_none() {
+            self.tag.replace(value);
+            Ok(())
+        } else {
+            Err(<Error as ser::Error>::custom("exptected i8 and bytes, received second i8"))
+        }
     }
 
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        unreachable!()
+    #[inline]
+    fn serialize_bytes(self, val: &[u8]) -> Result<Self::Ok, Self::Error> {
+        if self.binary.is_none() {
+            self.binary.replace(val.to_vec());
+
+            Ok(())
+        } else {
+            Err(<Error as ser::Error>::custom("expected i8 and bytes, received second bytes"))
+        }
+    }
+
+
+    #[inline]
+    fn serialize_bool(self, _val: bool) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received bool"))
+    }
+
+    #[inline]
+    fn serialize_i16(self, _val: i16) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received i16"))
+    }
+
+    #[inline]
+    fn serialize_i32(self, _val: i32) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received i32"))
+    }
+
+    #[inline]
+    fn serialize_i64(self, _val: i64) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received i64"))
+    }
+
+    #[inline]
+    fn serialize_u8(self, _val: u8) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received u8"))
+    }
+
+    #[inline]
+    fn serialize_u16(self, _val: u16) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received u16"))
+    }
+
+    #[inline]
+    fn serialize_u32(self, _val: u32) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received u32"))
+    }
+
+    #[inline]
+    fn serialize_u64(self, _val: u64) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received u64"))
+    }
+
+    #[inline]
+    fn serialize_f32(self, _val: f32) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received f32"))
+    }
+
+    #[inline]
+    fn serialize_f64(self, _val: f64) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received f64"))
+    }
+
+    #[inline]
+    fn serialize_char(self, _val: char) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received char"))
+    }
+
+    #[inline]
+    fn serialize_str(self, _val: &str) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received str"))
+    }
+
+    #[inline]
+    fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received unit"))
+    }
+
+    #[inline]
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received unit_struct"))
+    }
+
+    #[inline]
+    fn serialize_unit_variant(self, _name: &'static str, _idx: u32, _variant: &'static str) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received unit_variant"))
+    }
+
+    #[inline]
+    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize
+    {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received newtype_struct"))
+    }
+
+    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize
+    {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received newtype_variant"))
+    }
+
+    #[inline]
+    fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received none"))
+    }
+
+    #[inline]
+    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize
+    {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received some"))
+    }
+
+    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received seq"))
+    }
+
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received tuple"))
+    }
+
+    fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received tuple_struct"))
+    }
+
+    fn serialize_tuple_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received tuple_variant"))
+    }
+
+    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received map"))
+    }
+
+    fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received struct"))
+    }
+
+    fn serialize_struct_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, Error> {
+        Err(<Error as ser::Error>::custom("expected i8 and bytes, received struct_variant"))
     }
 }
 
-impl ser::SerializeTupleVariant for &mut ExtSerializer {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
-        unreachable!()
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        unreachable!()
-    }
-}
-
-impl ser::SerializeMap for &mut ExtSerializer {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_key<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
-        unreachable!()
-    }
-
-    fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
-        unreachable!()
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        unreachable!()
-    }
-}
-
-impl ser::SerializeStruct for &mut ExtSerializer {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Self::Error> {
-        unreachable!()
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        unreachable!()
-    }
-}
-
-impl ser::SerializeStructVariant for &mut ExtSerializer {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Self::Error> {
-        unreachable!()
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        unreachable!()
-    }
-}
 
 impl ExtSerializer {
+    fn new() -> Self {
+        Self {
+            fields_se: None
+        }
+    }
+
+    fn value(self) -> Result<Value, Error> {
+        match self.fields_se {
+            Some(fields_se) => fields_se.value(),
+            None => Err(<Error as ser::Error>::custom("expected tuple, received nothing"))
+        }
+    }
+}
+
+impl ExtFieldSerializer {
     fn new() -> Self {
         Self {
             tag: None,
@@ -542,7 +631,9 @@ impl ExtSerializer {
     fn value(self) -> Result<Value, Error> {
         match (self.tag, self.binary) {
             (Some(tag), Some(binary)) => Ok(Value::Ext(tag, binary)),
-            _ => Err(<Error as ser::Error>::custom("Not enough params for ext"))
+            (Some(_), None) => Err(<Error as ser::Error>::custom("expected i8 and bytes, received i8 only")),
+            (None, Some(_)) => Err(<Error as ser::Error>::custom("expected i8 and bytes, received bytes only")),
+            (None, None) => Err(<Error as ser::Error>::custom("expected i8 and bytes, received nothing")),
         }
     }
 }
@@ -558,12 +649,6 @@ pub struct SerializeVec {
 pub struct SerializeTupleVariant {
     idx: u32,
     vec: Vec<Value>,
-}
-
-#[doc(hidden)]
-pub enum SerializeExtOrTuple {
-    Tuple(Vec<Value>),
-    Ext(ExtSerializer),
 }
 
 #[doc(hidden)]
@@ -609,29 +694,18 @@ impl SerializeTuple for SerializeVec {
     }
 }
 
-impl<'a> SerializeTupleStruct for SerializeExtOrTuple {
+impl SerializeTupleStruct for SerializeVec {
     type Ok = Value;
     type Error = Error;
 
     fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        match self {
-            SerializeExtOrTuple::Tuple(vec) => {
-                vec.push(to_value(&value)?);
-                Ok(())
-            }
-            SerializeExtOrTuple::Ext(ref mut serializer) => {
-                value.serialize(serializer)
-            }
-        }
+        ser::SerializeSeq::serialize_element(self, value)
     }
 
     fn end(self) -> Result<Value, Error> {
-        match self {
-            SerializeExtOrTuple::Tuple(vec) => Ok(Value::Array(vec)),
-            SerializeExtOrTuple::Ext(serializer) => serializer.value(),
-        }
+        ser::SerializeSeq::end(self)
     }
 }
 

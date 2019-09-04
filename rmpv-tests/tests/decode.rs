@@ -258,7 +258,7 @@ fn pass_tuple_struct_from_ext() {
         fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
             where D: serde::de::Deserializer<'de>,
         {
-            deserializer.deserialize_tuple_struct(rmpv::MSGPACK_EXT_STRUCT_NAME, 2, self)
+            deserializer.deserialize_tuple(2, self)
         }
 
         fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>

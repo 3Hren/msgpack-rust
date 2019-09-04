@@ -120,36 +120,28 @@ fn pass_ext_struct() {
 
     struct ExtStructVisitor;
 
-    use serde::ser::SerializeTupleStruct;
     use serde::de::Unexpected;
-
-    use serde_bytes::{ByteBuf, Bytes};
+    use serde_bytes::ByteBuf;
 
     impl Serialize for ExtStruct {
         fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
             where S: serde::ser::Serializer
         {
-            let mut tuple = s
-                .serialize_tuple_struct(rmps::MSGPACK_EXT_STRUCT_NAME, 2)
-                .unwrap();
-            match self {
+            let value = match self {
                 ExtStruct::One(data) => {
                     let tag = 1 as i8;
                     let byte_buf = ByteBuf::from(vec![*data]);
 
-                    tuple.serialize_field(&tag).unwrap();
-                    tuple.serialize_field(&byte_buf).unwrap();
+                    (tag, byte_buf)
                 }
                 ExtStruct::Two(data) => {
                     let tag = 2 as i8;
                     let byte_buf = ByteBuf::from(vec![*data]);
 
-                    tuple.serialize_field(&tag).unwrap();
-                    tuple.serialize_field(&byte_buf).unwrap();
+                    (tag, byte_buf)
                 }
-            }
-
-            tuple.end()
+            };
+            s.serialize_newtype_struct(rmps::MSGPACK_EXT_STRUCT_NAME, &value)
         }
     }
 
@@ -163,7 +155,7 @@ fn pass_ext_struct() {
         fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
             where D: serde::de::Deserializer<'de>,
         {
-            deserializer.deserialize_tuple_struct(rmps::MSGPACK_EXT_STRUCT_NAME, 2, self)
+            deserializer.deserialize_tuple(2, self)
         }
 
         fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -190,9 +182,19 @@ fn pass_ext_struct() {
             where D: serde::Deserializer<'de>,
         {
             let visitor = ExtStructVisitor;
-            deserializer.deserialize_any(visitor)
+            deserializer.deserialize_newtype_struct(rmps::MSGPACK_EXT_STRUCT_NAME, visitor)
         }
     }
 
     test_round(ExtStruct::One(5), Value::Ext(1, vec![5]));
+}
+
+#[test]
+fn pass_derive_serde_ext_struct() {
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(rename = "_ExtStruct")]
+    struct ExtStruct((i8, serde_bytes::ByteBuf));
+
+    test_round(ExtStruct((2, serde_bytes::ByteBuf::from(vec![5]))),
+               Value::Ext(2, vec![5]));
 }

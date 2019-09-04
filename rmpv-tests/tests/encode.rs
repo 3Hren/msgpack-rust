@@ -246,3 +246,15 @@ fn pass_enum_to_value() {
     assert_eq!(Value::Array(vec![Value::from(3), Value::Array(vec![Value::from("John"), Value::from(42)])]),
         to_value(Enum::Struct { name: "John".into(), age: 42 }).unwrap());
 }
+
+#[test]
+fn pass_ext_struct_to_value() {
+    use serde_bytes::ByteBuf;
+
+    #[derive(Debug, PartialEq, Serialize)]
+    #[serde(rename = "_ExtStruct")]
+    struct ExtStruct((i8, ByteBuf));
+
+    assert_eq!(Value::Ext(5, vec![10]),
+        to_value(ExtStruct((5, ByteBuf::from(vec![10])))).unwrap());
+}

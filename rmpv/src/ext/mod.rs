@@ -6,7 +6,7 @@ use serde::de::Unexpected;
 use crate::{Integer, IntPriv, Value, ValueRef};
 
 pub use self::de::{deserialize_from, from_value, EnumRefDeserializer};
-pub use self::se::{to_value};
+pub use self::se::to_value;
 
 mod de;
 mod se;
