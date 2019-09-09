@@ -84,12 +84,14 @@ pub mod encode;
 /// Serde data model: _ExtStruct((tag, binary))
 /// Example Serde impl for custom type:
 ///
+/// ```ignore
 /// #[derive(Debug, PartialEq, Serialize, Deserialize)]
 /// #[serde(rename = "_ExtStruct")]
 /// struct ExtStruct((i8, serde_bytes::ByteBuf));
 ///
 /// test_round(ExtStruct((2, serde_bytes::ByteBuf::from(vec![5]))),
 ///            Value::Ext(2, vec![5]));
+/// ```
 pub const MSGPACK_EXT_STRUCT_NAME: &'static str = "_ExtStruct";
 
 /// Helper that allows both to encode and decode strings no matter whether they contain valid or
