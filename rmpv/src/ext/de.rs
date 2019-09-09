@@ -2,6 +2,7 @@ use std::fmt::{self, Display, Formatter};
 use std::iter::ExactSizeIterator;
 use std::slice::Iter;
 use std::vec::IntoIter;
+use std::borrow::Cow;
 
 use serde::{self, Deserialize, Deserializer};
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
@@ -9,6 +10,7 @@ use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, 
 use crate::{Integer, IntPriv, Utf8String, Utf8StringRef, Value, ValueRef};
 
 use super::{Error, ValueExt};
+use crate::MSGPACK_EXT_STRUCT_NAME;
 
 pub fn from_value<T>(val: Value) -> Result<T, Error>
     where T: for<'de> Deserialize<'de>
@@ -116,6 +118,13 @@ impl<'de> Deserialize<'de> for Value {
             }
 
             #[inline]
+            fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
+                where E: de::Error
+            {
+                Ok(Value::Binary(v))
+            }
+
+            #[inline]
             fn visit_map<V>(self, mut visitor: V) -> Result<Value, V::Error>
                 where V: de::MapAccess<'de>
             {
@@ -131,6 +140,34 @@ impl<'de> Deserialize<'de> for Value {
                 }
 
                 Ok(Value::Map(pairs))
+            }
+
+            #[inline]
+            fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+                where D: Deserializer<'de>,
+            {
+                struct ExtValueVisitor;
+                impl<'de> serde::de::Visitor<'de> for ExtValueVisitor {
+                    type Value = Value;
+
+                    fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+                        "a valid MessagePack Ext".fmt(fmt)
+                    }
+
+                    #[inline]
+                    fn visit_seq<V>(self, mut seq: V) -> Result<Value, V::Error>
+                        where V: SeqAccess<'de>
+                    {
+                        let tag = seq.next_element()?
+                            .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                        let bytes: serde_bytes::ByteBuf = seq.next_element()?
+                            .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+
+                        Ok(Value::Ext(tag, bytes.to_vec()))
+                    }
+                }
+
+                deserializer.deserialize_tuple(2, ExtValueVisitor)
             }
         }
 
@@ -234,6 +271,34 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
 
                 Ok(ValueRef::Map(vec))
             }
+
+            #[inline]
+            fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+                where D: Deserializer<'de>,
+            {
+                struct ExtValueRefVisitor;
+                impl<'de> serde::de::Visitor<'de> for ExtValueRefVisitor {
+                    type Value = ValueRef<'de>;
+
+                    fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+                        "a valid MessagePack Ext".fmt(fmt)
+                    }
+
+                    #[inline]
+                    fn visit_seq<V>(self, mut seq: V) -> Result<ValueRef<'de>, V::Error>
+                        where V: SeqAccess<'de>
+                    {
+                        let tag = seq.next_element()?
+                            .ok_or_else(|| de::Error::invalid_length(0, &"invalid ext sequence"))?;
+                        let bytes: &[u8] = seq.next_element()?
+                            .ok_or_else(|| de::Error::invalid_length(1, &"invalid ext sequence"))?;
+
+                        Ok(ValueRef::Ext(tag, bytes))
+                    }
+                }
+
+                deserializer.deserialize_tuple(2, ExtValueRefVisitor)
+            }
         }
 
         de.deserialize_any(ValueVisitor)
@@ -285,13 +350,9 @@ impl<'de> Deserializer<'de> for Value {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
             }
-            Value::Ext(..) => {
-                // TODO: [i8, [u8]] can be represented as:
-                //      - (0i8, Vec<u8>),
-                //      - struct F(i8, Vec<u8>),
-                //      - struct F {ty: i8, val: Vec<u8>}
-                //      - enum F{ A(Vec<u8>), B { name: Vec<u8> } }
-                unimplemented!();
+            Value::Ext(tag, data) => {
+                let de = ExtDeserializer::new_owned(tag, data);
+                visitor.visit_newtype_struct(de)
             }
         }
     }
@@ -311,9 +372,21 @@ impl<'de> Deserializer<'de> for Value {
     }
 
     #[inline]
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
+        if name == MSGPACK_EXT_STRUCT_NAME {
+            match self {
+                Value::Ext(tag, data) => {
+                    let ext_de = ExtDeserializer::new_owned(tag, data);
+                    return visitor.visit_newtype_struct(ext_de);
+                }
+                other => {
+                    return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext"))
+                }
+            }
+        }
+
         visitor.visit_newtype_struct(self)
     }
 
@@ -376,8 +449,9 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
             }
-            ValueRef::Ext(..) => {
-                unimplemented!();
+            ValueRef::Ext(tag, data) => {
+                let de = ExtDeserializer::new_ref(tag, data);
+                visitor.visit_newtype_struct(de)
             }
         }
     }
@@ -397,9 +471,21 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
     }
 
     #[inline]
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
+        if name == MSGPACK_EXT_STRUCT_NAME {
+            match self {
+                ValueRef::Ext(tag, data) => {
+                    let ext_de = ExtDeserializer::new_ref(tag, data);
+                    return visitor.visit_newtype_struct(ext_de);
+                }
+                other => {
+                    return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext"))
+                }
+            }
+        }
+
         visitor.visit_newtype_struct(self)
     }
 
@@ -462,8 +548,9 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
             }
-            ValueRef::Ext(..) => {
-                unimplemented!();
+            ValueRef::Ext(tag, data) => {
+                let de = ExtDeserializer::new_ref(tag, data);
+                visitor.visit_newtype_struct(de)
             }
         }
     }
@@ -505,9 +592,21 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
     }
 
     #[inline]
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
+        if name == MSGPACK_EXT_STRUCT_NAME {
+            match self {
+                ValueRef::Ext(tag, data) => {
+                    let ext_de = ExtDeserializer::new_ref(*tag, data);
+                    return visitor.visit_newtype_struct(ext_de);
+                }
+                other => {
+                    return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext"))
+                }
+            }
+        }
+
         visitor.visit_newtype_struct(self)
     }
 
@@ -531,6 +630,89 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit seq
         bytes byte_buf map tuple_struct struct
         identifier tuple ignored_any
+    }
+}
+
+struct ExtDeserializer<'de> {
+    tag: Option<i8>,
+    data: Option<Cow<'de, [u8]>>,
+}
+
+impl<'de> ExtDeserializer<'de> {
+    fn new_owned(tag: i8, data: Vec<u8>) -> Self {
+        ExtDeserializer {
+            tag: Some(tag),
+            data: Some(Cow::Owned(data)),
+        }
+    }
+
+    fn new_ref(tag: i8, data: &'de [u8]) -> Self {
+        ExtDeserializer {
+            tag: Some(tag),
+            data: Some(Cow::Borrowed(data)),
+        }
+    }
+}
+
+impl<'de> SeqAccess<'de> for ExtDeserializer<'de> {
+    type Error = Error;
+
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Error>
+    where
+        T: DeserializeSeed<'de>,
+    {
+        if self.tag.is_some() || self.data.is_some() {
+            return Ok(Some(seed.deserialize(self)?));
+        }
+
+        Ok(None)
+    }
+}
+
+/// Deserializer for Ext (expecting sequence)
+impl<'a, 'de: 'a> Deserializer<'de> for ExtDeserializer<'de> {
+    type Error = Error;
+
+    #[inline]
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        visitor.visit_seq(self)
+    }
+
+    forward_to_deserialize_any! {
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
+        seq bytes byte_buf map unit_struct newtype_struct
+        struct identifier tuple enum ignored_any tuple_struct
+    }
+}
+
+/// Deserializer for Ext SeqAccess elements
+impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtDeserializer<'de> {
+    type Error = Error;
+
+    #[inline]
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        if self.tag.is_some() {
+            let tag = self.tag.take().unwrap();
+            visitor.visit_i8(tag)
+        } else if self.data.is_some() {
+            let data = self.data.take().unwrap();
+            match data {
+                Cow::Owned(data) => visitor.visit_byte_buf(data),
+                Cow::Borrowed(data) => visitor.visit_borrowed_bytes(data)
+            }
+        } else {
+            unreachable!("ext seq only has two elements");
+        }
+    }
+
+    forward_to_deserialize_any! {
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
+        seq bytes byte_buf map unit_struct newtype_struct
+        tuple_struct struct identifier tuple enum ignored_any
     }
 }
 

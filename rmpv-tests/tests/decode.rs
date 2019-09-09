@@ -240,3 +240,49 @@ fn pass_enum_from_value() {
     assert_eq!(Enum::Struct { name: "John".into(), age: 42 },
         from_value(Value::Array(vec![Value::from(3), Value::Array(vec![Value::from("John"), Value::from(42)])])).unwrap());
 }
+
+#[test]
+fn pass_tuple_struct_from_ext() {
+    #[derive(Debug, PartialEq)]
+    struct ExtStruct(i8, Vec<u8>);
+
+    struct ExtStructVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for ExtStructVisitor {
+        type Value = ExtStruct;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("msgpack ext")
+        }
+
+        fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+            where D: serde::de::Deserializer<'de>,
+        {
+            deserializer.deserialize_tuple(2, self)
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where A: serde::de::SeqAccess<'de>,
+        {
+
+            let tag = seq.next_element()?
+                .ok_or_else(|| serde::de::Error::invalid_length(0, &self))?;
+            let bytes: serde_bytes::ByteBuf = seq.next_element()?
+                .ok_or_else(|| serde::de::Error::invalid_length(1, &self))?;
+
+            Ok(ExtStruct(tag, bytes.to_vec()))
+        }
+    }
+
+    impl<'de> serde::de::Deserialize<'de> for ExtStruct {
+        fn deserialize<D>(deserializer: D) -> Result<ExtStruct, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            deserializer.deserialize_any(ExtStructVisitor)
+        }
+    }
+
+    assert_eq!(ExtStruct(42, vec![255]),
+        from_value(Value::Ext(42, vec![255])).unwrap());
+}

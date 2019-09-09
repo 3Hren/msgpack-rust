@@ -256,3 +256,48 @@ fn pass_from_slice() {
     assert_eq!(ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from("Smith"), ValueRef::from(42)]),
         rmps::from_slice(&buf[..]).unwrap());
 }
+
+#[test]
+fn pass_from_ext() {
+    #[derive(Debug, PartialEq)]
+    struct ExtRefStruct<'a>(i8, &'a [u8]);
+
+    struct ExtRefStructVisitor;
+
+    impl<'de> serde::de::Deserialize<'de> for ExtRefStruct<'de> {
+        fn deserialize<D>(deserializer: D) -> Result<ExtRefStruct<'de>, D::Error>
+            where D: serde::Deserializer<'de>,
+        {
+            let visitor = ExtRefStructVisitor;
+            deserializer.deserialize_any(visitor)
+        }
+    }
+
+    impl<'de> serde::de::Visitor<'de> for ExtRefStructVisitor {
+        type Value = ExtRefStruct<'de>;
+
+        fn expecting(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+            write!(fmt, "a sequence of tag & binary")
+        }
+
+        fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+            where D: serde::de::Deserializer<'de>,
+        {
+            deserializer.deserialize_tuple(2, self)
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where A: serde::de::SeqAccess<'de>
+        {
+            let tag: i8 = seq.next_element()?
+                .ok_or_else(|| serde::de::Error::invalid_length(0, &self))?;
+            let data: &[u8] = seq.next_element()?
+                .ok_or_else(|| serde::de::Error::invalid_length(1, &self))?;
+
+            Ok(ExtRefStruct(tag, data))
+        }
+    }
+
+    assert_eq!(ExtRefStruct(42, &[255]),
+        deserialize_from(ValueRef::Ext(42, &[255])).unwrap());
+}
