@@ -293,11 +293,17 @@ fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
 }
 
 #[derive(Debug)]
+enum ExtDeserializerState {
+    New,
+    ReadTag,
+    ReadBinary
+}
+
+#[derive(Debug)]
 struct ExtDeserializer<'a, R: 'a> {
     rd: &'a mut R,
     len: u32,
-    read_tag: bool,
-    read_binary: bool
+    state: ExtDeserializerState
 }
 
 impl<'de, 'a, R: ReadSlice<'de> + 'a> ExtDeserializer<'a, R> {
@@ -305,8 +311,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> ExtDeserializer<'a, R> {
         ExtDeserializer {
             rd: &mut d.rd,
             len,
-            read_tag: false,
-            read_binary: false
+            state: ExtDeserializerState::New,
         }
     }
 }
@@ -335,11 +340,10 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> de::SeqAccess<'de> for ExtDeserializer<'a,
     where
         T: DeserializeSeed<'de>,
     {
-        if !self.read_tag || !self.read_binary {
-            return Ok(Some(seed.deserialize(self)?));
+        match self.state {
+            ExtDeserializerState::New | ExtDeserializerState::ReadTag => Ok(Some(seed.deserialize(self)?)),
+            ExtDeserializerState::ReadBinary => Ok(None)
         }
-
-        Ok(None)
     }
 }
 
@@ -352,23 +356,25 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a> de::Deserializer<'de> for &mut ExtDeserial
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        if !self.read_tag {
-            let tag = rmp::decode::read_data_i8(self.rd)?;
-            self.read_tag = true;
-            visitor.visit_i8(tag)
-        } else if !self.read_binary {
-            let data = self.rd.read_slice(self.len as usize).map_err(Error::InvalidDataRead)?;
-            self.read_binary = true;
-            match data {
-                Reference::Borrowed(bytes) => {
-                    visitor.visit_borrowed_bytes(bytes)
-                }
-                Reference::Copied(bytes) => {
-                    visitor.visit_bytes(bytes)
+        match self.state {
+            ExtDeserializerState::New => {
+                let tag = rmp::decode::read_data_i8(self.rd)?;
+                self.state = ExtDeserializerState::ReadTag;
+                visitor.visit_i8(tag)
+            }
+            ExtDeserializerState::ReadTag => {
+                let data = self.rd.read_slice(self.len as usize).map_err(Error::InvalidDataRead)?;
+                self.state = ExtDeserializerState::ReadBinary;
+                match data {
+                    Reference::Borrowed(bytes) => {
+                        visitor.visit_borrowed_bytes(bytes)
+                    }
+                    Reference::Copied(bytes) => {
+                        visitor.visit_bytes(bytes)
+                    }
                 }
             }
-        } else {
-            unreachable!()
+            ExtDeserializerState::ReadBinary => unreachable!()
         }
     }
 
