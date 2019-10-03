@@ -361,3 +361,39 @@ fn from_array_of_two_integers() {
     let vec = vec![Value::from(4), Value::from(42)];
     assert_eq!(Value::Array(vec), read_value(&mut &buf[..]).unwrap());
 }
+
+#[test]
+fn invalid_buf_size_bin32() {
+    // This invalid buffer requests a 4 GiB byte vec.
+    let buf: &[u8] = &[0xc6, 0xff, 0xff, 0xff, 0xff, 0x00];
+    match read_value(&mut &buf[..]) {
+        Ok(_) => panic!("Unexpected success"),
+        Err(Error::InvalidDataRead(_)) => { /* expected */ },
+        Err(e) => panic!("Unexpected error: {}", e),
+    }
+}
+
+#[test]
+fn invalid_buf_size_arr() {
+    // This invalid buffer requests a nested array of depth 10.
+    // All arrays contain the maximum possible number of elements.
+    // If a byte is preallocated for every array content,
+    // that would require 40 GiB of RAM.
+    let buf: &[u8] = &[
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+        0xdd, 0xff, 0xff, 0xff, 0xff,
+    ];
+    match read_value(&mut &buf[..]) {
+        Ok(_) => panic!("Unexpected success"),
+        Err(Error::InvalidMarkerRead(_)) => { /* expected */ },
+        Err(e) => panic!("Unexpected error: {}", e),
+    }
+}

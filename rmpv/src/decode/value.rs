@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::{self, Read};
 
 use rmp::Marker;
 use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64,
@@ -9,7 +9,9 @@ use crate::{Utf8String, Value};
 use super::Error;
 
 fn read_array_data<R: Read>(rd: &mut R, mut len: usize) -> Result<Vec<Value>, Error> {
-    let mut vec = Vec::with_capacity(len);
+    // Note: Do not preallocate a Vec of size `len`.
+    // See https://github.com/3Hren/msgpack-rust/issues/151
+    let mut vec = Vec::new();
 
     while len > 0 {
         vec.push(read_value(rd)?);
@@ -20,7 +22,9 @@ fn read_array_data<R: Read>(rd: &mut R, mut len: usize) -> Result<Vec<Value>, Er
 }
 
 fn read_map_data<R: Read>(rd: &mut R, mut len: usize) -> Result<Vec<(Value, Value)>, Error> {
-    let mut vec = Vec::with_capacity(len);
+    // Note: Do not preallocate a Vec of size `len`.
+    // See https://github.com/3Hren/msgpack-rust/issues/151
+    let mut vec = Vec::new();
 
     while len > 0 {
         vec.push((read_value(rd)?, read_value(rd)?));
@@ -44,9 +48,16 @@ fn read_str_data<R: Read>(rd: &mut R, len: usize) -> Result<Utf8String, Error> {
 }
 
 fn read_bin_data<R: Read>(rd: &mut R, len: usize) -> Result<Vec<u8>, Error> {
-    let mut buf = Vec::with_capacity(len);
-    buf.resize(len as usize, 0u8);
-    rd.read_exact(&mut buf[..]).map_err(Error::InvalidDataRead)?;
+    // Note: Do not preallocate a Vec of size `len`.
+    // See https://github.com/3Hren/msgpack-rust/issues/151
+    let mut buf = Vec::new();
+    let bytes_read = rd.take(len as u64).read_to_end(&mut buf).map_err(Error::InvalidDataRead)?;
+    if bytes_read != len {
+        return Err(Error::InvalidDataRead(io::Error::new(
+            io::ErrorKind::UnexpectedEof,
+            format!("Expected {} bytes, read {} bytes", len, bytes_read),
+        )));
+    }
 
     Ok(buf)
 }
