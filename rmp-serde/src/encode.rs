@@ -107,7 +107,7 @@ pub trait UnderlyingWrite {
 /// # Note
 ///
 /// MessagePack has no specification about how to encode enum types. Thus we are free to do
-/// whatever we want, so the given chose may be not ideal for you.
+/// whatever we want, so the given choice may be not ideal for you.
 ///
 /// An enum value is represented as a single-entry map whose key is the variant
 /// id and whose value is a sequence containing all associated data. If the enum
