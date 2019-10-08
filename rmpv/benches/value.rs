@@ -123,3 +123,105 @@ fn from_complex_read_value_ref_to_owned(b: &mut Bencher) {
     });
     b.bytes = buf.len() as u64;
 }
+
+/// Read a single large bin32 value.
+fn read_large_bin32(b: &mut Bencher, size: u32) {
+    // Creat buffer, fill it with bytes
+    let mut buf = Vec::with_capacity(size as usize);
+    buf.resize(size as usize, 42);
+
+    // Write header (bin32 format family containing size-5 bytes)
+    let size_bytes: [u8; 4] = (size - 5).to_be_bytes();
+    buf[0] = 0xc6;
+    buf[1] = size_bytes[0];
+    buf[2] = size_bytes[1];
+    buf[3] = size_bytes[2];
+    buf[4] = size_bytes[3];
+
+    // Read value
+    b.iter(|| {
+        let res = read_value(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
+    b.bytes = size as u64;
+}
+
+#[bench]
+fn read_bin32_50kib(b: &mut Bencher) {
+    read_large_bin32(b, 50 * 1024);
+}
+
+#[bench]
+fn read_bin32_100kib(b: &mut Bencher) {
+    read_large_bin32(b, 100 * 1024);
+}
+
+#[bench]
+fn read_bin32_1mib(b: &mut Bencher) {
+    read_large_bin32(b, 1024 * 1024);
+}
+
+#[bench]
+fn read_bin32_20mib(b: &mut Bencher) {
+    read_large_bin32(b, 20 * 1024 * 1024);
+}
+
+#[bench]
+fn read_bin32_100mib(b: &mut Bencher) {
+    read_large_bin32(b, 100 * 1024 * 1024);
+}
+
+/// Read a flat array containing positive 32-bit unsigned integers.
+fn read_large_array(b: &mut Bencher, element_count: usize) {
+    // Creat buffer, fill it with bytes
+    let size = element_count * 5 /* uint32 size */ + 5 /* array overhead */;
+    let mut buf = Vec::with_capacity(size);
+    buf.resize(size, 0);
+
+    // Write header
+    let size_bytes: [u8; 4] = (size as u32 - 5).to_be_bytes();
+    buf[0] = 0xc6;
+    buf[1] = size_bytes[0];
+    buf[2] = size_bytes[1];
+    buf[3] = size_bytes[2];
+    buf[4] = size_bytes[3];
+    
+    // Write elements
+    let elements = &mut buf[5..];
+    for i in 0..element_count {
+        let offset = i * 5;
+        let value_bytes = 42u32.to_be_bytes();
+        elements[offset] = 0xce; // u32
+        elements[offset + 1] = value_bytes[0];
+        elements[offset + 2] = value_bytes[1];
+        elements[offset + 3] = value_bytes[2];
+        elements[offset + 4] = value_bytes[3];
+    }
+
+    // Read value
+    b.iter(|| {
+        let res = read_value(&mut &buf[..]).unwrap();
+        test::black_box(res);
+    });
+    b.bytes = size as u64;
+}
+
+#[bench]
+fn read_array_50kib(b: &mut Bencher) {
+    read_large_array(b, 50 * 1024);
+}
+
+#[bench]
+fn read_array_100kib(b: &mut Bencher) {
+    read_large_array(b, 100 * 1024);
+}
+
+#[bench]
+fn read_array_1mib(b: &mut Bencher) {
+    read_large_array(b, 1024 * 1024);
+}
+
+#[bench]
+fn read_array_20mib(b: &mut Bencher) {
+    read_large_array(b, 20 * 1024 * 1024);
+}
