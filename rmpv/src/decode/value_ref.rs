@@ -53,7 +53,9 @@ fn read_ext_body<'a, R>(rd: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error>
 fn read_array_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<ValueRef<'a>>, Error>
     where R: BorrowRead<'a>
 {
-    let mut vec = Vec::with_capacity(len);
+    // Note: Do not preallocate a Vec of size `len`.
+    // See https://github.com/3Hren/msgpack-rust/issues/151
+    let mut vec = Vec::new();
 
     while len > 0 {
         vec.push(read_value_ref(rd)?);
@@ -66,7 +68,9 @@ fn read_array_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<ValueRef<'a>
 fn read_map_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error>
     where R: BorrowRead<'a>
 {
-    let mut vec = Vec::with_capacity(len);
+    // Note: Do not preallocate a Vec of size `len`.
+    // See https://github.com/3Hren/msgpack-rust/issues/151
+    let mut vec = Vec::new();
 
     while len > 0 {
         vec.push((read_value_ref(rd)?, read_value_ref(rd)?));
