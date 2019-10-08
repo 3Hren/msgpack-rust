@@ -27,6 +27,9 @@ before_script:
 script:
   - |
       cargo test --all --verbose;
+      if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
+        cargo bench
+      fi
 
 after_success:
   - |

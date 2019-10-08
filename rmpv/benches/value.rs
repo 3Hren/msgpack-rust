@@ -8,7 +8,7 @@ use test::Bencher;
 use rmpv::decode::*;
 
 // Encoded value: [1, 0, [[["127.0.0.1", 59074]], 1, {0: ["read", {}, {0: ["value", {}], 1: ["error", {}]}], 1: ["write", {}, {0: ["value", {}], 1: ["error", {}]}], 2: ["remove", {}, {0: ["value", {}], 1: ["error", {}]}], 3: ["find", {}, {0: ["value", {}], 1: ["error", {}]}]}], [[80, 81, 82]]].
-const COMPLEX: &[u8] = [
+const COMPLEX: [u8; 137] = [
     0x94, 0x01, 0x00, 0x93, 0x91, 0x92, 0xa9, 0x31,
     0x32, 0x37, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x31,
     0xcd, 0xe6, 0xc2, 0x01, 0x84, 0x00, 0x93, 0xa4,
@@ -65,25 +65,32 @@ fn from_complex_read_value(b: &mut Bencher) {
         let res = read_value(&mut &COMPLEX[..]).unwrap();
         test::black_box(res);
     });
-    b.bytes = buf.len() as u64;
+    b.bytes = COMPLEX.len() as u64;
 }
 
-#[bench]
-fn from_complex_read_value_ref(b: &mut Bencher) {
-    b.iter(|| {
-        let res = read_value_ref(&mut &COMPLEX[..]).unwrap();
-        test::black_box(res);
-    });
-    b.bytes = buf.len() as u64;
-}
+ #[bench]
+ fn from_complex_read_value_ref(b: &mut Bencher) {
+     b.iter(|| {
+         let res = read_value_ref(&mut &COMPLEX[..]).unwrap();
+         test::black_box(res);
+     });
+     b.bytes = COMPLEX.len() as u64;
+ }
 
 #[bench]
 fn from_complex_write_value_ref(b: &mut Bencher) {
     use rmpv::ValueRef::*;
     use rmpv::encode::write_value_ref;
 
-    let val = Array(vec![Nil, U64(42), F64(3.1415),
-        String("Lorem ipsum dolor sit amet."), Map(vec![(String("key"), String("value"))])]);
+    let val = Array(vec![
+        Nil,
+        Integer(42.into()),
+        F64(3.1415),
+        String("Lorem ipsum dolor sit amet.".into()),
+        Map(vec![
+            (String("key".into()), String("value".into())),
+        ]),
+    ]);
 
     let mut buf = [0u8; 64];
 
@@ -91,7 +98,7 @@ fn from_complex_write_value_ref(b: &mut Bencher) {
         let res = write_value_ref(&mut &mut buf[..], &val).unwrap();
         test::black_box(res);
     });
-    b.bytes = 51;
+    b.bytes = buf.len() as u64;
 }
 
 #[bench]
