@@ -847,6 +847,27 @@ impl Index<usize> for Value {
     }
 }
 
+impl Index<&str> for Value {
+    type Output = Value;
+    fn index(&self, index: &str) -> &Value {
+        if let Value::Map(ref map) = *self {
+            if let Some(found) = map.iter().find(
+                |(key, _val)|  {
+                if let Value::String(ref strval) = *key {
+                    if let Some(s) = strval.as_str() {
+                        if s == index { return true; }
+                    }
+                }
+                return false;
+                })
+            {
+                return &found.1;
+            }
+        }
+        &NIL
+    }
+}
+
 impl From<bool> for Value {
     fn from(v: bool) -> Self {
         Value::Boolean(v)
