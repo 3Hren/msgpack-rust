@@ -123,6 +123,24 @@ fn from_f64() {
 }
 
 #[test]
+fn from_iterator() {
+    let v: Vec<u8> = vec![0u8, 1u8, 2u8];
+    let w: Value = v.into_iter().collect();
+
+    let w2 = Value::Array(vec![
+                         Value::from(0u8),
+                         Value::from(1u8),
+                         Value::from(2u8)
+                         ]); 
+
+    assert_eq!(w, w2);
+
+    let w3 = Value::Binary(vec![0u8, 1u8, 2u8]);
+
+    assert!(w != w3);
+}
+
+#[test]
 fn is_nil() {
     assert!(Value::Nil.is_nil());
     assert!(!Value::Boolean(true).is_nil());
