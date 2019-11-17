@@ -13,6 +13,7 @@ use std::borrow::Cow;
 use std::fmt::{self, Debug, Display};
 use std::ops::Index;
 use std::str::Utf8Error;
+use std::iter::FromIterator;
 
 use num_traits::NumCast;
 
@@ -994,6 +995,17 @@ impl From<Vec<(Value, Value)>> for Value {
     }
 }
 
+/// Note that an `Iterator<Item = u8>` will be collected into an
+/// [`Array`](crate::Value::Array), rather than a
+/// [`Binary`](crate::Value::Binary)
+impl<V> FromIterator<V> for Value 
+where V: Into<Value> {
+  fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
+    let v: Vec<Value> = iter.into_iter().map(|v| v.into()).collect();
+    Value::Array(v)
+  }
+}
+
 impl Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
@@ -1255,6 +1267,17 @@ impl<'a> From<Vec<ValueRef<'a>>> for ValueRef<'a> {
     fn from(v: Vec<ValueRef<'a>>) -> Self {
         ValueRef::Array(v)
     }
+}
+
+/// Note that an `Iterator<Item = u8>` will be collected into an
+/// [`Array`](crate::Value::Array), rather than a
+/// [`Binary`](crate::Value::Binary)
+impl<'a, V> FromIterator<V> for ValueRef<'a>
+where V: Into<ValueRef<'a>> {
+  fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
+    let v: Vec<ValueRef<'a>> = iter.into_iter().map(|v| v.into()).collect();
+    ValueRef::Array(v)
+  }
 }
 
 impl<'a> From<Vec<(ValueRef<'a>, ValueRef<'a>)>> for ValueRef<'a> {
