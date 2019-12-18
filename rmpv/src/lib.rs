@@ -14,6 +14,7 @@ use std::fmt::{self, Debug, Display};
 use std::ops::Index;
 use std::str::Utf8Error;
 use std::iter::FromIterator;
+use std::convert::TryFrom;
 
 use num_traits::NumCast;
 
@@ -1006,6 +1007,92 @@ where V: Into<Value> {
   }
 }
 
+impl TryFrom<Value> for u64 {
+  type Error = Value;
+
+  fn try_from(val: Value) -> Result<Self, Self::Error> {
+      match val {
+        Value::Integer(n) => {
+          match n.as_u64() {
+            Some(i) => Ok(i),
+            None => Err(val)
+          }
+        }
+        v => Err(v),
+      }
+  }
+}
+
+impl TryFrom<Value> for i64 {
+  type Error = Value;
+
+  fn try_from(val: Value) -> Result<Self, Self::Error> {
+      match val {
+        Value::Integer(n) => {
+          match n.as_i64() {
+            Some(i) => Ok(i),
+            None => Err(val)
+          }
+        }
+        v => Err(v),
+      }
+  }
+}
+
+impl TryFrom<Value> for f64 {
+  type Error = Value;
+
+  fn try_from(val: Value) -> Result<Self, Self::Error> {
+      match val {
+        Value::Integer(n) => {
+          match n.as_f64() {
+            Some(i) => Ok(i),
+            None => Err(val)
+          }
+        }
+        Value::F32(n) => Ok(From::from(n)),
+        Value::F64(n) => Ok(n),
+        v => Err(v),
+      }
+  }
+}
+// The following impl was left out intentionally, see
+// https://github.com/3Hren/msgpack-rust/pull/228#discussion_r359513925
+/*
+impl TryFrom<Value> for (i8, Vec<u8>) {
+  type Error = Value;
+
+  fn try_from(val: Value) -> Result<Self, Self::Error> {
+      match val {
+        Value::Ext(i, v) => Ok((i, v)),
+        v => Err(v),
+      }
+  }
+}
+*/
+
+macro_rules! impl_try_from {
+  ($t: ty, $p: ident) => {
+    impl TryFrom<Value> for $t {
+      type Error = Value;
+
+      fn try_from(val: Value) -> Result<$t, Self::Error> {
+        match val {
+          Value::$p(v) => Ok(v),
+          v => Err(v)
+        }
+      }
+    }
+  };
+}
+
+impl_try_from!(bool, Boolean);
+impl_try_from!(Vec<Value>, Array);
+impl_try_from!(Vec<(Value, Value)>, Map);
+impl_try_from!(Vec<u8>, Binary);
+impl_try_from!(f32, F32);
+impl_try_from!(Utf8String, String);
+
 impl Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
@@ -1286,7 +1373,61 @@ impl<'a> From<Vec<(ValueRef<'a>, ValueRef<'a>)>> for ValueRef<'a> {
     }
 }
 
+impl<'a> TryFrom<ValueRef<'a>> for u64 {
+  type Error = ValueRef<'a>;
+
+  fn try_from(val: ValueRef<'a>) -> Result<Self, Self::Error> {
+      match val {
+        ValueRef::Integer(n) => {
+          match n.as_u64() {
+            Some(i) => Ok(i),
+            None => Err(val)
+          }
+        }
+        v => Err(v),
+      }
+  }
+}
+
+// The following impl was left out intentionally, see
+// https://github.com/3Hren/msgpack-rust/pull/228#discussion_r359513925
+/*
+impl<'a> TryFrom<ValueRef<'a>> for (i8, &'a[u8]) {
+  type Error = ValueRef<'a>;
+
+  fn try_from(val: ValueRef<'a>) -> Result<Self, Self::Error> {
+      match val {
+        ValueRef::Ext(i, v) => Ok((i, v)),
+        v => Err(v),
+      }
+  }
+}
+*/
+
+macro_rules! impl_try_from_ref {
+  ($t: ty, $p: ident) => {
+    impl<'a> TryFrom<ValueRef<'a>> for $t {
+      type Error = ValueRef<'a>;
+
+      fn try_from(val: ValueRef<'a>) -> Result<$t, Self::Error> {
+        match val {
+          ValueRef::$p(v) => Ok(v),
+          v => Err(v)
+        }
+      }
+    }
+  };
+}
+
+impl_try_from_ref!(bool, Boolean);
+impl_try_from_ref!(Vec<ValueRef<'a>>, Array);
+impl_try_from_ref!(Vec<(ValueRef<'a>, ValueRef<'a>)>, Map);
+impl_try_from_ref!(&'a [u8], Binary);
+impl_try_from_ref!(f32, F32);
+impl_try_from_ref!(Utf8StringRef<'a>, String);
+
 impl<'a> Display for ValueRef<'a> {
+
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             ValueRef::Nil => write!(f, "nil"),

@@ -185,3 +185,13 @@ fn index_into_map() {
     assert!(val["b"][3].is_nil());
     assert!(val["d"][4].is_nil());
 }
+
+#[test]
+fn try_from_val() {
+  use rmpv::Utf8String;
+  use std::convert::TryInto;
+
+  assert_eq!(false, Value::Boolean(false).try_into().unwrap());
+  assert_eq!(Utf8String::from("spook"), Value::from("spook").try_into().unwrap());
+  assert_eq!(vec![0], TryInto::<Vec<u8>>::try_into(Value::Binary(vec![0u8])).unwrap());
+}
