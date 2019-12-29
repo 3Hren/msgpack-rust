@@ -130,13 +130,9 @@ impl<'de> Deserialize<'de> for Value {
             {
                 let mut pairs = vec![];
 
-                loop {
-                    if let Some(key) = visitor.next_key()? {
-                        let val = visitor.next_value()?;
-                        pairs.push((key, val));
-                    } else {
-                        break;
-                    }
+                while let Some(key) = visitor.next_key()? {
+                    let val = visitor.next_value()?;
+                    pairs.push((key, val));
                 }
 
                 Ok(Value::Map(pairs))
@@ -530,7 +526,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
             ValueRef::Binary(v) => visitor.visit_borrowed_bytes(v),
             ValueRef::Array(ref v) => {
                 let len = v.len();
-                let mut de = SeqDeserializer::new(v.into_iter());
+                let mut de = SeqDeserializer::new(v.iter());
                 let seq = visitor.visit_seq(&mut de)?;
                 if de.iter.len() == 0 {
                     Ok(seq)
@@ -540,7 +536,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
             }
             ValueRef::Map(ref v) => {
                 let len = v.len();
-                let mut de = MapRefDeserializer::new(v.into_iter());
+                let mut de = MapRefDeserializer::new(v.iter());
                 let map = visitor.visit_map(&mut de)?;
                 if de.iter.len() == 0 {
                     Ok(map)
@@ -559,7 +555,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        if let &ValueRef::Nil = self {
+        if let ValueRef::Nil = *self {
             visitor.visit_none()
         } else {
             visitor.visit_some(self)
@@ -573,7 +569,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
         match self {
             &ValueRef::Array(ref v) => {
                 let len = v.len();
-                let mut iter = v.into_iter();
+                let mut iter = v.iter();
                 if !(len == 1 || len == 2) {
                     return Err(de::Error::invalid_length(len, &"array with one or two elements"));
                 }
@@ -616,7 +612,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
     {
         match self {
             &ValueRef::Array(ref v) => {
-                if v.len() == 0 {
+                if v.is_empty() {
                     visitor.visit_unit()
                 } else {
                     Err(de::Error::invalid_length(v.len(), &"empty array"))
@@ -722,7 +718,7 @@ struct SeqDeserializer<I> {
 
 impl<I> SeqDeserializer<I> {
     fn new(iter: I) -> Self {
-        Self { iter: iter }
+        Self { iter }
     }
 }
 
@@ -782,7 +778,7 @@ impl<I, U> MapDeserializer<I, U> {
     fn new(iter: I) -> Self {
         Self {
             val: None,
-            iter: iter,
+            iter,
         }
     }
 }
@@ -843,8 +839,8 @@ struct EnumDeserializer<U> {
 impl<U> EnumDeserializer<U> {
     pub fn new(id: u32, value: Option<U>) -> Self {
         Self {
-            id: id,
-            value: value,
+            id,
+            value,
         }
     }
 }
@@ -957,7 +953,7 @@ impl<'de> MapRefDeserializer<'de> {
     fn new(iter: Iter<'de, (ValueRef<'de>, ValueRef<'de>)>) -> Self {
         Self {
             val: None,
-            iter: iter,
+            iter,
         }
     }
 }
@@ -1012,8 +1008,8 @@ pub struct EnumRefDeserializer<'de> {
 impl<'de> EnumRefDeserializer<'de> {
     pub fn new(id: u32, value: Option<&'de ValueRef<'de>>) -> Self {
         Self {
-            id: id,
-            value: value,
+            id,
+            value,
         }
     }
 }
@@ -1042,7 +1038,7 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
         // Can accept only [u32].
         match self.value {
             Some(&ValueRef::Array(ref v)) => {
-                if v.len() == 0 {
+                if v.is_empty() {
                     Ok(())
                 } else {
                     Err(de::Error::invalid_value(Unexpected::Seq, &"empty array"))
@@ -1060,7 +1056,7 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
         match self.value {
             Some(&ValueRef::Array(ref v)) => {
                 let len = v.len();
-                let mut iter = v.into_iter();
+                let mut iter = v.iter();
                 if len > 1 {
                     seed.deserialize(SeqDeserializer::new(iter))
                 } else {
@@ -1087,7 +1083,7 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
         // Can accept [u32, [T...]].
         match self.value {
             Some(&ValueRef::Array(ref v)) => {
-                Deserializer::deserialize_any(SeqDeserializer::new(v.into_iter()), visitor)
+                Deserializer::deserialize_any(SeqDeserializer::new(v.iter()), visitor)
             }
             Some(v) => Err(de::Error::invalid_type(v.unexpected(), &"tuple variant")),
             None => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"tuple variant"))
@@ -1099,10 +1095,10 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
     {
         match self.value {
             Some(&ValueRef::Array(ref v)) => {
-                Deserializer::deserialize_any(SeqDeserializer::new(v.into_iter()), visitor)
+                Deserializer::deserialize_any(SeqDeserializer::new(v.iter()), visitor)
             }
             Some(&ValueRef::Map(ref v)) => {
-                Deserializer::deserialize_any(MapRefDeserializer::new(v.into_iter()), visitor)
+                Deserializer::deserialize_any(MapRefDeserializer::new(v.iter()), visitor)
             }
             Some(v) => Err(de::Error::invalid_type(v.unexpected(), &"struct variant")),
             None => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"struct variant"))
@@ -1190,7 +1186,7 @@ impl<'de> ValueBase<'de> for Value {
 
     #[inline]
     fn is_nil(&self) -> bool {
-        if let &Value::Nil = self {
+        if let Value::Nil = *self {
             true
         } else {
             false
@@ -1222,7 +1218,7 @@ impl<'de> ValueBase<'de> for ValueRef<'de> {
 
     #[inline]
     fn is_nil(&self) -> bool {
-        if let &ValueRef::Nil = self {
+        if let ValueRef::Nil = *self {
             true
         } else {
             false

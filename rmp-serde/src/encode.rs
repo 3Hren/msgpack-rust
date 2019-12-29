@@ -161,7 +161,7 @@ impl<W: Write> Serializer<W, DefaultConfig> {
     /// and enums using the most compact representation.
     pub fn new(wr: W) -> Self {
         Serializer {
-            wr: wr,
+            wr,
             depth: 1024,
             config: DefaultConfig,
         }
@@ -200,8 +200,8 @@ impl<W: Write, C> Serializer<W, C> {
     pub fn with_struct_map(self) -> Serializer<W, StructMapConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
-            wr: wr,
-            depth: depth,
+            wr,
+            depth,
             config: StructMapConfig::new(config),
         }
     }
@@ -214,8 +214,8 @@ impl<W: Write, C> Serializer<W, C> {
     pub fn with_struct_tuple(self) -> Serializer<W, StructTupleConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
-            wr: wr,
-            depth: depth,
+            wr,
+            depth,
             config: StructTupleConfig::new(config),
         }
     }
@@ -227,8 +227,8 @@ impl<W: Write, C> Serializer<W, C> {
     pub fn with_string_variants(self) -> Serializer<W, VariantStringConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
-            wr: wr,
-            depth: depth,
+            wr,
+            depth,
             config: VariantStringConfig::new(config),
         }
     }
@@ -241,8 +241,8 @@ impl<W: Write, C> Serializer<W, C> {
     pub fn with_integer_variants(self) -> Serializer<W, VariantIntegerConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
-            wr: wr,
-            depth: depth,
+            wr,
+            depth,
             config: VariantIntegerConfig::new(config),
         }
     }

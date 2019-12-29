@@ -29,10 +29,10 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef<'_>) -> Result<(), Error>
 {
     match *val {
         ValueRef::Nil => {
-            write_nil(wr).map_err(|err| Error::InvalidMarkerWrite(err))?;
+            write_nil(wr).map_err(Error::InvalidMarkerWrite)?;
         }
         ValueRef::Boolean(val) => {
-            write_bool(wr, val).map_err(|err| Error::InvalidMarkerWrite(err))?;
+            write_bool(wr, val).map_err(Error::InvalidMarkerWrite)?;
         }
         ValueRef::Integer(Integer { n }) => {
             match n {
@@ -74,7 +74,7 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef<'_>) -> Result<(), Error>
         }
         ValueRef::Ext(ty, data) => {
             write_ext_meta(wr, data.len() as u32, ty)?;
-            wr.write_all(data).map_err(|err| Error::InvalidDataWrite(err))?;
+            wr.write_all(data).map_err(Error::InvalidDataWrite)?;
         }
     }
 

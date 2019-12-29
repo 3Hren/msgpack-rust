@@ -92,7 +92,7 @@ pub mod encode;
 /// test_round(ExtStruct((2, serde_bytes::ByteBuf::from(vec![5]))),
 ///            Value::Ext(2, vec![5]));
 /// ```
-pub const MSGPACK_EXT_STRUCT_NAME: &'static str = "_ExtStruct";
+pub const MSGPACK_EXT_STRUCT_NAME: &str = "_ExtStruct";
 
 /// Helper that allows both to encode and decode strings no matter whether they contain valid or
 /// invalid UTF-8.
@@ -215,7 +215,7 @@ impl<'de> de::Visitor<'de> for RawVisitor {
             Err(err) => Err((v.into(), err)),
         };
 
-        Ok(Raw { s: s })
+        Ok(Raw { s })
     }
 
     #[inline]
@@ -230,7 +230,7 @@ impl<'de> de::Visitor<'de> for RawVisitor {
             }
         };
 
-        Ok(Raw { s: s })
+        Ok(Raw { s })
     }
 }
 
@@ -345,7 +345,7 @@ impl<'de> de::Visitor<'de> for RawRefVisitor {
             Err(err) => Err((v, err)),
         };
 
-        Ok(RawRef { s: s })
+        Ok(RawRef { s })
     }
 }
 
