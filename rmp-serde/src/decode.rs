@@ -654,7 +654,7 @@ struct SeqAccess<'a, R> {
 impl<'a, R: 'a> SeqAccess<'a, R> {
     fn new(de: &'a mut Deserializer<R>, len: usize) -> Self {
         SeqAccess {
-            de: de,
+            de,
             left: len,
         }
     }
@@ -687,7 +687,7 @@ struct MapAccess<'a, R> {
 impl<'a, R: 'a> MapAccess<'a, R> {
     fn new(de: &'a mut Deserializer<R>, len: usize) -> Self {
         MapAccess {
-            de: de,
+            de,
             left: len,
         }
     }
@@ -725,7 +725,7 @@ struct VariantAccess<'a, R> {
 impl<'a, R: 'a> VariantAccess<'a, R> {
     pub fn new(de: &'a mut Deserializer<R>) -> Self {
         VariantAccess {
-            de: de,
+            de,
         }
     }
 }
@@ -795,7 +795,7 @@ pub struct ReadReader<R: Read> {
 impl<R: Read> ReadReader<R> {
     fn new(rd: R) -> Self {
         ReadReader {
-            rd: rd,
+            rd,
             buf: Vec::with_capacity(128),
         }
     }
@@ -833,7 +833,7 @@ pub struct ReadRefReader<'a, R: ?Sized> {
 impl<'a, T: AsRef<[u8]> + ?Sized> ReadRefReader<'a, T> {
     fn new(rd: &'a T) -> Self {
         Self {
-            rd: rd,
+            rd,
             buf: rd.as_ref()
         }
     }

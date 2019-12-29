@@ -45,7 +45,7 @@ enum IntPriv {
 /// test_round(ExtStruct((2, serde_bytes::ByteBuf::from(vec![5]))),
 ///            Value::Ext(2, vec![5]));
 /// ```
-pub const MSGPACK_EXT_STRUCT_NAME: &'static str = "_ExtStruct";
+pub const MSGPACK_EXT_STRUCT_NAME: &str = "_ExtStruct";
 
 /// Represents a MessagePack integer, whether signed or unsigned.
 ///
@@ -459,21 +459,21 @@ impl Value {
     /// assert_eq!(expected, val.as_ref());
     /// ```
     pub fn as_ref(&self) -> ValueRef<'_> {
-        match self {
-            &Value::Nil => ValueRef::Nil,
-            &Value::Boolean(val) => ValueRef::Boolean(val),
-            &Value::Integer(val) => ValueRef::Integer(val),
-            &Value::F32(val) => ValueRef::F32(val),
-            &Value::F64(val) => ValueRef::F64(val),
-            &Value::String(ref val) => ValueRef::String(val.as_ref()),
-            &Value::Binary(ref val) => ValueRef::Binary(val.as_slice()),
-            &Value::Array(ref val) => {
+        match *self {
+            Value::Nil => ValueRef::Nil,
+            Value::Boolean(val) => ValueRef::Boolean(val),
+            Value::Integer(val) => ValueRef::Integer(val),
+            Value::F32(val) => ValueRef::F32(val),
+            Value::F64(val) => ValueRef::F64(val),
+            Value::String(ref val) => ValueRef::String(val.as_ref()),
+            Value::Binary(ref val) => ValueRef::Binary(val.as_slice()),
+            Value::Array(ref val) => {
                 ValueRef::Array(val.iter().map(|v| v.as_ref()).collect())
             }
-            &Value::Map(ref val) => {
+            Value::Map(ref val) => {
                 ValueRef::Map(val.iter().map(|&(ref k, ref v)| (k.as_ref(), v.as_ref())).collect())
             }
-            &Value::Ext(ty, ref buf) => ValueRef::Ext(ty, buf.as_slice()),
+            Value::Ext(ty, ref buf) => ValueRef::Ext(ty, buf.as_slice()),
         }
     }
 
@@ -999,7 +999,7 @@ impl From<Vec<(Value, Value)>> for Value {
 /// Note that an `Iterator<Item = u8>` will be collected into an
 /// [`Array`](crate::Value::Array), rather than a
 /// [`Binary`](crate::Value::Binary)
-impl<V> FromIterator<V> for Value 
+impl<V> FromIterator<V> for Value
 where V: Into<Value> {
   fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
     let v: Vec<Value> = iter.into_iter().map(|v| v.into()).collect();
@@ -1197,21 +1197,21 @@ impl<'a> ValueRef<'a> {
     /// assert_eq!(expected, val.to_owned());
     /// ```
     pub fn to_owned(&self) -> Value {
-        match self {
-            &ValueRef::Nil => Value::Nil,
-            &ValueRef::Boolean(val) => Value::Boolean(val),
-            &ValueRef::Integer(val) => Value::Integer(val),
-            &ValueRef::F32(val) => Value::F32(val),
-            &ValueRef::F64(val) => Value::F64(val),
-            &ValueRef::String(val) => Value::String(val.into()),
-            &ValueRef::Binary(val) => Value::Binary(val.to_vec()),
-            &ValueRef::Array(ref val) => {
+        match *self {
+            ValueRef::Nil => Value::Nil,
+            ValueRef::Boolean(val) => Value::Boolean(val),
+            ValueRef::Integer(val) => Value::Integer(val),
+            ValueRef::F32(val) => Value::F32(val),
+            ValueRef::F64(val) => Value::F64(val),
+            ValueRef::String(val) => Value::String(val.into()),
+            ValueRef::Binary(val) => Value::Binary(val.to_vec()),
+            ValueRef::Array(ref val) => {
                 Value::Array(val.iter().map(|v| v.to_owned()).collect())
             }
-            &ValueRef::Map(ref val) => {
+            ValueRef::Map(ref val) => {
                 Value::Map(val.iter().map(|&(ref k, ref v)| (k.to_owned(), v.to_owned())).collect())
             }
-            &ValueRef::Ext(ty, buf) => Value::Ext(ty, buf.to_vec()),
+            ValueRef::Ext(ty, buf) => Value::Ext(ty, buf.to_vec()),
         }
     }
 
@@ -1346,7 +1346,7 @@ impl<'a> From<&'a str> for ValueRef<'a> {
 
 impl<'a> From<&'a [u8]> for ValueRef<'a> {
     fn from(v: &'a [u8]) -> Self {
-        ValueRef::Binary(v.into())
+        ValueRef::Binary(v)
     }
 }
 

@@ -183,7 +183,7 @@ pub fn read_str_from_slice<T: ?Sized + AsRef<[u8]>>(buf: &T) ->
 
     if buf[nread..].len() >= ulen {
         let (head, tail) = buf.split_at(nread + ulen);
-        match from_utf8(&mut &head[nread..]) {
+        match from_utf8(&head[nread..]) {
             Ok(val) => Ok((val, tail)),
             Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
         }

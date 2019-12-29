@@ -127,7 +127,7 @@ fn read_fixext_data<R: Read>(rd: &mut R, buf: &mut [u8]) -> Result<i8, ValueRead
     let id = read_data_i8(rd)?;
     match rd.read_exact(buf) {
         Ok(()) => Ok(id),
-        Err(err) => Err(ValueReadError::InvalidDataRead(From::from(err))),
+        Err(err) => Err(ValueReadError::InvalidDataRead(err)),
     }
 }
 
@@ -166,7 +166,7 @@ pub fn read_ext_meta<R: Read>(rd: &mut R) -> Result<ExtMeta, ValueReadError> {
     let ty = read_data_i8(rd)?;
     let meta = ExtMeta {
         typeid: ty,
-        size: size,
+        size,
     };
 
     Ok(meta)

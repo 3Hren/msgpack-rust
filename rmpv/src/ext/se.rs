@@ -232,7 +232,7 @@ impl ser::Serializer for Serializer {
 
     fn serialize_tuple_variant(self, _name: &'static str, idx: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeTupleVariant, Error> {
         let se = SerializeTupleVariant {
-            idx: idx,
+            idx,
             vec: Vec::with_capacity(len),
         };
         Ok(se)
@@ -252,7 +252,7 @@ impl ser::Serializer for Serializer {
 
     fn serialize_struct_variant(self, _name: &'static str, idx: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Error> {
         let se = SerializeStructVariant {
-            idx: idx,
+            idx,
             vec: Vec::with_capacity(len),
         };
         Ok(se)

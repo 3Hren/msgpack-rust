@@ -17,10 +17,10 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
 {
     match *val {
         Value::Nil => {
-            write_nil(wr).map_err(|err| Error::InvalidMarkerWrite(err))?;
+            write_nil(wr).map_err(Error::InvalidMarkerWrite)?;
         }
         Value::Boolean(val) => {
-            write_bool(wr, val).map_err(|err| Error::InvalidMarkerWrite(err))?;
+            write_bool(wr, val).map_err(Error::InvalidMarkerWrite)?;
         }
         Value::Integer(Integer { n }) => {
             match n {
@@ -62,7 +62,7 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
         }
         Value::Ext(ty, ref data) => {
             write_ext_meta(wr, data.len() as u32, ty)?;
-            wr.write_all(data).map_err(|err| Error::InvalidDataWrite(err))?;
+            wr.write_all(data).map_err(Error::InvalidDataWrite)?;
         }
     }
 
