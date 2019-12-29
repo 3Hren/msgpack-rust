@@ -276,7 +276,7 @@ fn pass_from_ext() {
     impl<'de> serde::de::Visitor<'de> for ExtRefStructVisitor {
         type Value = ExtRefStruct<'de>;
 
-        fn expecting(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fn expecting(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             write!(fmt, "a sequence of tag & binary")
         }
 

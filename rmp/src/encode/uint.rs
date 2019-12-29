@@ -26,7 +26,7 @@ use super::{write_data_u8, write_data_u16, write_data_u32, write_data_u64, write
 /// Panics if `val` is greater than 127.
 pub fn write_pfix<W: Write>(wr: &mut W, val: u8) -> Result<(), Error> {
     assert!(val < 128);
-    r#try!(write_marker(wr, Marker::FixPos(val)));
+    write_marker(wr, Marker::FixPos(val))?;
     Ok(())
 }
 

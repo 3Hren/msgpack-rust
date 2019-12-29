@@ -205,7 +205,7 @@ impl Display for ValueWriteError {
 /// marker or the data.
 pub fn write_array_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> {
     let marker = if len < 16 {
-        r#try!(write_marker(wr, Marker::FixArray(len as u8)));
+        write_marker(wr, Marker::FixArray(len as u8))?;
         Marker::FixArray(len as u8)
     } else if len < 65536 {
         write_marker(wr, Marker::Array16)?;
@@ -229,7 +229,7 @@ pub fn write_array_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWr
 /// marker or the data.
 pub fn write_map_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError> {
     let marker = if len < 16 {
-        r#try!(write_marker(wr, Marker::FixMap(len as u8)));
+        write_marker(wr, Marker::FixMap(len as u8))?;
         Marker::FixMap(len as u8)
     } else if len < 65536 {
         write_marker(wr, Marker::Map16)?;
