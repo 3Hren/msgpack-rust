@@ -1,6 +1,6 @@
 #![feature(test)]
 
-extern crate rmpv;
+
 extern crate test;
 
 use test::Bencher;

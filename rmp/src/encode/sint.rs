@@ -26,7 +26,7 @@ use super::{write_data_i8, write_data_i16, write_data_i32, write_data_i64, write
 /// Panics if `val` does not fit in `[-32; 0)` range.
 pub fn write_nfix<W: Write>(wr: &mut W, val: i8) -> Result<(), Error> {
     assert!(-32 <= val && val < 0);
-    r#try!(write_marker(wr, Marker::FixNeg(val)));
+    write_marker(wr, Marker::FixNeg(val))?;
     Ok(())
 }
 

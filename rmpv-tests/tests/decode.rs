@@ -251,7 +251,7 @@ fn pass_tuple_struct_from_ext() {
     impl<'de> serde::de::Visitor<'de> for ExtStructVisitor {
         type Value = ExtStruct;
 
-        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             formatter.write_str("msgpack ext")
         }
 

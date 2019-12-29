@@ -150,7 +150,7 @@ impl<'de> Deserialize<'de> for Value {
                 impl<'de> serde::de::Visitor<'de> for ExtValueVisitor {
                     type Value = Value;
 
-                    fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+                    fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                         "a valid MessagePack Ext".fmt(fmt)
                     }
 
@@ -280,7 +280,7 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
                 impl<'de> serde::de::Visitor<'de> for ExtValueRefVisitor {
                     type Value = ValueRef<'de>;
 
-                    fn expecting(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+                    fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                         "a valid MessagePack Ext".fmt(fmt)
                     }
 

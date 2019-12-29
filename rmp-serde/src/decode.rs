@@ -300,7 +300,7 @@ enum ExtDeserializerState {
 }
 
 #[derive(Debug)]
-struct ExtDeserializer<'a, R: 'a> {
+struct ExtDeserializer<'a, R> {
     rd: &'a mut R,
     len: u32,
     state: ExtDeserializerState

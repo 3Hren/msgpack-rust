@@ -148,7 +148,7 @@ fn pass_ext_struct() {
     impl<'de> serde::de::Visitor<'de> for ExtStructVisitor {
         type Value = ExtStruct;
 
-        fn expecting(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fn expecting(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             write!(fmt, "a sequence of tag & binary")
         }
 
