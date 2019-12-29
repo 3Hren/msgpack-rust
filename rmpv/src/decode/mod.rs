@@ -29,14 +29,7 @@ impl Error {
 }
 
 impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::InvalidMarkerRead(..) => "I/O error while reading marker byte",
-            Error::InvalidDataRead(..) => "I/O error while reading non-marker bytes",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             Error::InvalidMarkerRead(ref err) => Some(err),
             Error::InvalidDataRead(ref err) => Some(err),

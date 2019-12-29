@@ -19,21 +19,12 @@ pub enum Error {
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::Syntax(ref err) => write!(fmt, "{}: {}", error::Error::description(self), err)
+            Error::Syntax(ref err) => write!(fmt, "error while decoding value: {}", err)
         }
     }
 }
 
 impl error::Error for Error {
-    fn description(&self) -> &str {
-        "error while decoding value"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        match *self {
-            Error::Syntax(..) => None,
-        }
-    }
 }
 
 trait ValueExt {
