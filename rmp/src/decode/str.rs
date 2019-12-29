@@ -17,11 +17,7 @@ pub enum DecodeStringError<'a> {
 }
 
 impl<'a> error::Error for DecodeStringError<'a> {
-    fn description(&self) -> &str {
-        "error while decoding string"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             DecodeStringError::InvalidMarkerRead(ref err) |
             DecodeStringError::InvalidDataRead(ref err) => Some(err),
@@ -34,7 +30,7 @@ impl<'a> error::Error for DecodeStringError<'a> {
 
 impl<'a> Display for DecodeStringError<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        error::Error::description(self).fmt(f)
+        f.write_str("error while decoding string")
     }
 }
 

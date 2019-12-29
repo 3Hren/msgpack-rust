@@ -50,17 +50,7 @@ pub enum ValueReadError {
 }
 
 impl error::Error for ValueReadError {
-    fn description(&self) -> &str {
-        match *self {
-            ValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
-            ValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
-            ValueReadError::TypeMismatch(..) => {
-                "the type decoded isn't match with the expected one"
-            }
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             ValueReadError::InvalidMarkerRead(ref err) |
             ValueReadError::InvalidDataRead(ref err) => Some(err),
@@ -71,7 +61,13 @@ impl error::Error for ValueReadError {
 
 impl Display for ValueReadError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        error::Error::description(self).fmt(f)
+        f.write_str(match *self {
+            ValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
+            ValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
+            ValueReadError::TypeMismatch(..) => {
+                "the type decoded isn't match with the expected one"
+            }
+        })
     }
 }
 
@@ -156,18 +152,7 @@ pub enum NumValueReadError {
 }
 
 impl error::Error for NumValueReadError {
-    fn description(&self) -> &str {
-        match *self {
-            NumValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
-            NumValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
-            NumValueReadError::TypeMismatch(..) => {
-                "the type decoded isn't match with the expected one"
-            }
-            NumValueReadError::OutOfRange => "out of range integral type conversion attempted",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             NumValueReadError::InvalidMarkerRead(ref err) |
             NumValueReadError::InvalidDataRead(ref err) => Some(err),
@@ -179,7 +164,14 @@ impl error::Error for NumValueReadError {
 
 impl Display for NumValueReadError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        error::Error::description(self).fmt(f)
+        f.write_str(match *self {
+            NumValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
+            NumValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
+            NumValueReadError::TypeMismatch(..) => {
+                "the type decoded isn't match with the expected one"
+            }
+            NumValueReadError::OutOfRange => "out of range integral type conversion attempted",
+        })
     }
 }
 

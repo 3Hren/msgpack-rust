@@ -178,11 +178,7 @@ impl From<ValueWriteError> for Error {
 }
 
 impl error::Error for ValueWriteError {
-    fn description(&self) -> &str {
-        "error while writing multi-byte MessagePack value"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             ValueWriteError::InvalidMarkerWrite(ref err) |
             ValueWriteError::InvalidDataWrite(ref err) => Some(err),
@@ -192,7 +188,7 @@ impl error::Error for ValueWriteError {
 
 impl Display for ValueWriteError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        error::Error::description(self).fmt(f)
+        f.write_str("error while writing multi-byte MessagePack value")
     }
 }
 
