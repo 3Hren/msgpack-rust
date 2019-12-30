@@ -1056,6 +1056,19 @@ impl TryFrom<Value> for f64 {
       }
   }
 }
+
+impl TryFrom<Value> for String {
+  type Error = Value;
+
+  fn try_from(val: Value) -> Result<Self, Self::Error> {
+    match val {
+      Value::String(Utf8String{ s: Ok(u)}) => {
+        Ok(u)
+      }
+      _ => Err(val)
+    }
+  }
+}
 // The following impl was left out intentionally, see
 // https://github.com/3Hren/msgpack-rust/pull/228#discussion_r359513925
 /*
