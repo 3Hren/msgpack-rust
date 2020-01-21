@@ -26,7 +26,7 @@
 //!
 //! To be able to serialize a piece of data, it must implement the `serde::Serialize` trait. To be
 //! able to deserialize a piece of data, it must implement the `serde::Deserialize` trait. Serde
-//! provides provides an annotation to automatically generate the code for these
+//! provides an annotation to automatically generate the code for these
 //! traits: `#[derive(Serialize, Deserialize)]`.
 //!
 //! # Examples
