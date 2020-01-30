@@ -271,6 +271,7 @@ pub struct Compound<'a, W: 'a, C: 'a> {
 }
 
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub struct ExtFieldSerializer<'a, W> {
     wr: &'a mut W,
     tag: Option<i8>,

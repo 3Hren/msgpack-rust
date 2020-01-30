@@ -86,7 +86,6 @@ impl Marker {
             0xdd => Marker::Array32,
             0xde => Marker::Map16,
             0xdf => Marker::Map32,
-            _ => unreachable!(),
         }
     }
 
