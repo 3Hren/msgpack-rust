@@ -39,7 +39,7 @@ deserializing Rust structs.
 
 ## Requirements
 
-- Rust 1.16
+- Rust 1.34.2
 
 ## Versioning
 
