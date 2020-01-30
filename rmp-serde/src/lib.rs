@@ -5,18 +5,14 @@
 //! ## Motivating example
 //!
 //! ```
-//! extern crate rmp_serde as rmps;
-//!
-//! # fn main() {
-//! let buf = rmps::to_vec(&(42, "the Answer")).unwrap();
+//! let buf = rmp_serde::to_vec(&(42, "the Answer")).unwrap();
 //!
 //! assert_eq!(
 //!     vec![0x92, 0x2a, 0xaa, 0x74, 0x68, 0x65, 0x20, 0x41, 0x6e, 0x73, 0x77, 0x65, 0x72],
 //!     buf
 //! );
 //!
-//! assert_eq!((42, "the Answer"), rmps::from_read_ref(&buf).unwrap());
-//! # }
+//! assert_eq!((42, "the Answer"), rmp_serde::from_read_ref(&buf).unwrap());
 //! ```
 //!
 //! # Type-based Serialization and Deserialization
