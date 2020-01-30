@@ -917,10 +917,8 @@ where
 /// # Examples
 ///
 /// ```
-/// extern crate rmp_serde as rmps;
 /// # #[macro_use] extern crate serde_derive;
 ///
-/// # fn main() {
 /// // Encoded `["Bobby", 8]`.
 /// let buf = [0x92, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0x8];
 ///
@@ -930,8 +928,7 @@ where
 ///    age: u8,
 /// }
 ///
-/// assert_eq!(Dog { name: "Bobby", age: 8 }, rmps::from_read_ref(&buf).unwrap());
-/// # }
+/// assert_eq!(Dog { name: "Bobby", age: 8 }, rmp_serde::from_read_ref(&buf).unwrap());
 /// ```
 #[inline]
 pub fn from_read_ref<'a, R, T>(rd: &'a R) -> Result<T, Error>
