@@ -1,13 +1,11 @@
 #[macro_use]
 extern crate serde_derive;
 
-extern crate rmp_serde as rmps;
-
+use rmp_serde as rmps;
 use std::borrow::Cow;
 use std::io::Cursor;
-
 use serde::{Deserialize, Serialize};
-use crate::rmps::{Deserializer, Serializer};
+use rmps::{Deserializer, Serializer};
 
 #[test]
 fn round_trip_option() {
@@ -381,4 +379,14 @@ fn round_variant_string() {
             .with_struct_map()
     });
     do_test!(|b| Serializer::new(b).with_integer_variants().with_string_variants());
+}
+
+use std::net::{IpAddr, Ipv4Addr};
+
+#[test]
+fn roundtrip_ip_addr() {
+    let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+    let addr1: IpAddr = rmp_serde::from_slice(&rmp_serde::to_vec(&addr).unwrap()).unwrap();
+
+    assert_eq!(addr1, addr);
 }
