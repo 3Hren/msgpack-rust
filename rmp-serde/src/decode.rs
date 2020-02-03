@@ -638,10 +638,6 @@ impl<'de, 'a, R: ReadSlice<'de>> serde::Deserializer<'de> for &'a mut Deserializ
         }
     }
 
-    fn is_human_readable(&self) -> bool {
-        false
-    }
-
     forward_to_deserialize_any! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 char
         str string bytes byte_buf unit seq map
