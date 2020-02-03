@@ -570,10 +570,6 @@ where
         C::write_variant_ident(self, id, variant)?;
         self.serialize_struct(name, len)
     }
-
-    fn is_human_readable(&self) -> bool {
-        false
-    }
 }
 
 impl<'a, W: Write + 'a> serde::Serializer for &mut ExtFieldSerializer<'a, W> {
