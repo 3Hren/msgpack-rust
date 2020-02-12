@@ -117,7 +117,7 @@ pub trait UnderlyingWrite {
 /// operation is retried.
 // TODO: Docs. Examples.
 #[derive(Debug)]
-pub struct Serializer<W, C> {
+pub struct Serializer<W, C = DefaultConfig> {
     wr: W,
     config: C,
     depth: usize,
