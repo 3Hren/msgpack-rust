@@ -50,7 +50,7 @@ mod sealed {
 /// The default serializer configuration.
 ///
 /// This writes structs as a tuple, without field names, and enum variants as integers.
-/// This is the most compat representation.
+/// This is the most compact representation.
 #[derive(Copy, Clone, Debug)]
 pub struct DefaultConfig;
 
