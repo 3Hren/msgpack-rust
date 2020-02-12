@@ -361,3 +361,8 @@ fn pass_raw_ref_invalid_utf8() {
 
     assert_eq!(vec![0xa4, 0x92, 0xcc, 0xc8, 0x90], buf);
 }
+
+#[test]
+fn serializer_one_type_arg() {
+    let _s: rmp_serde::Serializer<&mut dyn std::io::Write>;
+}
