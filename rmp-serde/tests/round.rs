@@ -385,8 +385,23 @@ use std::net::{IpAddr, Ipv4Addr};
 
 #[test]
 fn roundtrip_ip_addr() {
-    let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
-    let addr1: IpAddr = rmp_serde::from_slice(&rmp_serde::to_vec(&addr).unwrap()).unwrap();
+    assert_roundtrips(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+}
 
-    assert_eq!(addr1, addr);
+#[test]
+fn roundtrip_some() {
+    #[derive(PartialEq, Debug, Serialize, Deserialize)]
+    struct Wrapper<T>(T);
+
+    assert_roundtrips(Some(99));
+    assert_roundtrips(Wrapper(Some(99)));
+    assert_roundtrips(Some(Wrapper(99)));
+    assert_roundtrips(Some("hi".to_string()));
+}
+
+#[cfg(test)]
+fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {
+    let seriaized = rmp_serde::to_vec(&val).unwrap();
+    let val2: T = rmp_serde::from_slice(&seriaized).unwrap();
+    assert_eq!(val2, val);
 }
