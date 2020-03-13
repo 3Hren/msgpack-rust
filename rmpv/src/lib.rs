@@ -347,8 +347,13 @@ impl<'a> Utf8StringRef<'a> {
     }
 
     /// Consumes this object, yielding the string if the string is valid UTF-8, or else `None`.
-    pub fn into_str(self) -> Option<String> {
+    pub fn into_string(self) -> Option<String> {
         self.s.ok().map(|s| s.into())
+    }
+
+    /// Consumes this object, yielding the string reference if the string is valid UTF-8, or else `None`.
+    pub fn into_str(self) -> Option<&'a str> {
+        self.s.ok()
     }
 
     /// Converts a `Utf8StringRef` into a byte vector.
