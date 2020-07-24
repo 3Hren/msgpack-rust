@@ -17,3 +17,6 @@ num-traits = "0.2.8"
 
 [dev-dependencies]
 quickcheck = "0.9"
+
+[badges]
+maintenance = { status = "passively-maintained" }
