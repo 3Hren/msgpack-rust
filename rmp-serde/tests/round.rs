@@ -399,9 +399,22 @@ fn roundtrip_some() {
     assert_roundtrips(Some("hi".to_string()));
 }
 
+#[ignore]
+#[test]
+fn roundtrip_some_failures() {
+    // FIXME
+    assert_roundtrips(Err::<(),_>(222));
+    assert_roundtrips(Some(None::<()>));
+}
+
 #[cfg(test)]
 fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {
     let seriaized = rmp_serde::to_vec(&val).unwrap();
-    let val2: T = rmp_serde::from_slice(&seriaized).unwrap();
+    let val2: T = match rmp_serde::from_slice(&seriaized) {
+        Ok(t) => t,
+        Err(e) => {
+            panic!("Does not deserialize: {}\nSerialized {:?}\nGot {:?}\n", e, val, rmpv::decode::value::read_value(&mut seriaized.as_slice()).expect("rmp didn't serialize corerctly at all"));
+        },
+    };
     assert_eq!(val2, val);
 }
