@@ -72,7 +72,7 @@ pub use crate::decode::{Deserializer, from_read, from_read_ref};
 pub use crate::encode::{Serializer, to_vec, to_vec_named};
 
 #[doc(hidden)]
-pub use crate::decode::from_slice
+pub use crate::decode::from_slice;
 
 pub mod config;
 pub mod decode;
