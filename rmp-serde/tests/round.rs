@@ -381,11 +381,50 @@ fn round_variant_string() {
     do_test!(|b| Serializer::new(b).with_integer_variants().with_string_variants());
 }
 
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 #[test]
-fn roundtrip_ip_addr() {
+fn roundtrip_ipv4addr() {
+    assert_roundtrips(Ipv4Addr::new(127, 0, 0, 1));
+}
+
+#[test]
+fn roundtrip_ipv6addr() {
+    assert_roundtrips(Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8));
+}
+
+#[test]
+fn roundtrip_ipaddr_ipv4addr() {
     assert_roundtrips(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+}
+
+#[test]
+fn roundtrip_ipaddr_ipv6addr() {
+    assert_roundtrips(IpAddr::V6(Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8)));
+}
+
+#[test]
+fn roundtrip_result_ipv4addr() {
+    let val: Result<Ipv4Addr, ()> = Ok(Ipv4Addr::new(127, 0, 0, 1));
+    assert_roundtrips(val);
+}
+
+#[test]
+fn roundtrip_result_num() {
+    assert_roundtrips(Ok::<u32, u32>(42));
+    assert_roundtrips(Err::<(),_>(222));
+}
+
+#[test]
+fn roundtrip_simple_enum() {
+    #[derive(PartialEq, Debug, Serialize, Deserialize)]
+    enum SimpleEnum {
+        V1(u32),
+        V2(String),
+    }
+
+    assert_roundtrips(SimpleEnum::V1(42));
+    assert_roundtrips(SimpleEnum::V2("hello".into()));
 }
 
 #[test]
@@ -403,7 +442,6 @@ fn roundtrip_some() {
 #[test]
 fn roundtrip_some_failures() {
     // FIXME
-    assert_roundtrips(Err::<(),_>(222));
     assert_roundtrips(Some(None::<()>));
 }
 
