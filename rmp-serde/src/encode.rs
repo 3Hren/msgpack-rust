@@ -195,7 +195,7 @@ impl<'a, W: Write + 'a, C> Serializer<W, C> {
 impl<W: Write, C> Serializer<W, C> {
     /// Consumes this serializer returning the new one, which will serialize structs as a map.
     ///
-    /// This is used, when you the default struct serialization as a tuple does not fit your
+    /// This is used, when the default struct serialization as a tuple does not fit your
     /// requirements.
     pub fn with_struct_map(self) -> Serializer<W, StructMapConfig<C>> {
         let Serializer { wr, depth, config } = self;
@@ -222,7 +222,7 @@ impl<W: Write, C> Serializer<W, C> {
 
     /// Consumes this serializer returning the new one, which will serialize enum variants as strings.
     ///
-    /// This is used, when you the default struct serialization as integers does not fit your
+    /// This is used, when the default struct serialization as integers does not fit your
     /// requirements.
     pub fn with_string_variants(self) -> Serializer<W, VariantStringConfig<C>> {
         let Serializer { wr, depth, config } = self;
