@@ -447,11 +447,11 @@ fn roundtrip_some_failures() {
 
 #[cfg(test)]
 fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {
-    let seriaized = rmp_serde::to_vec(&val).unwrap();
-    let val2: T = match rmp_serde::from_slice(&seriaized) {
+    let serialized = rmp_serde::to_vec(&val).unwrap();
+    let val2: T = match rmp_serde::from_slice(&serialized) {
         Ok(t) => t,
         Err(e) => {
-            panic!("Does not deserialize: {}\nSerialized {:?}\nGot {:?}\n", e, val, rmpv::decode::value::read_value(&mut seriaized.as_slice()).expect("rmp didn't serialize corerctly at all"));
+            panic!("Does not deserialize: {}\nSerialized {:?}\nGot {:?}\n", e, val, rmpv::decode::value::read_value(&mut serialized.as_slice()).expect("rmp didn't serialize correctly at all"));
         },
     };
     assert_eq!(val2, val);
