@@ -18,7 +18,7 @@ with-serde = ["serde", "serde_bytes"]
 serde_bytes = { version = "0.11.2", optional = true }
 rmp = { version = "0.8.8", path = "../rmp" }
 num-traits = "0.2.8"
-serde = { version = "1.0.99", optional = true }
+serde = { version = "1.0.116", optional = true }
 
 [dev-dependencies]
 quickcheck = "0.9"
