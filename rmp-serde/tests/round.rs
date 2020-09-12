@@ -6,6 +6,7 @@ use std::borrow::Cow;
 use std::io::Cursor;
 use serde::{Deserialize, Serialize};
 use rmps::{Deserializer, Serializer};
+use rmps::config::{DefaultConfig, SerializerConfig};
 
 #[test]
 fn round_trip_option() {
@@ -381,11 +382,50 @@ fn round_variant_string() {
     do_test!(|b| Serializer::new(b).with_integer_variants().with_string_variants());
 }
 
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 #[test]
-fn roundtrip_ip_addr() {
+fn roundtrip_ipv4addr() {
+    assert_roundtrips(Ipv4Addr::new(127, 0, 0, 1));
+}
+
+#[test]
+fn roundtrip_ipv6addr() {
+    assert_roundtrips(Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8));
+}
+
+#[test]
+fn roundtrip_ipaddr_ipv4addr() {
     assert_roundtrips(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+}
+
+#[test]
+fn roundtrip_ipaddr_ipv6addr() {
+    assert_roundtrips(IpAddr::V6(Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8)));
+}
+
+#[test]
+fn roundtrip_result_ipv4addr() {
+    let val: Result<Ipv4Addr, ()> = Ok(Ipv4Addr::new(127, 0, 0, 1));
+    assert_roundtrips(val);
+}
+
+#[test]
+fn roundtrip_result_num() {
+    assert_roundtrips(Ok::<u32, u32>(42));
+    assert_roundtrips(Err::<(),_>(222));
+}
+
+#[test]
+fn roundtrip_simple_enum() {
+    #[derive(PartialEq, Debug, Serialize, Deserialize)]
+    enum SimpleEnum {
+        V1(u32),
+        V2(String),
+    }
+
+    assert_roundtrips(SimpleEnum::V1(42));
+    assert_roundtrips(SimpleEnum::V2("hello".into()));
 }
 
 #[test]
@@ -403,18 +443,51 @@ fn roundtrip_some() {
 #[test]
 fn roundtrip_some_failures() {
     // FIXME
-    assert_roundtrips(Err::<(),_>(222));
     assert_roundtrips(Some(None::<()>));
 }
 
 #[cfg(test)]
 fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {
-    let seriaized = rmp_serde::to_vec(&val).unwrap();
-    let val2: T = match rmp_serde::from_slice(&seriaized) {
+    assert_roundtrips_config(&val, "default", |s| s);
+    assert_roundtrips_config(&val, ".with_struct_map()", |s| s.with_struct_map());
+    assert_roundtrips_config(&val, ".with_string_variants()", |s| {
+        s.with_string_variants()
+    });
+    assert_roundtrips_config(&val, ".with_struct_map().with_string_variants()", |s| {
+        s.with_struct_map().with_string_variants()
+    });
+}
+
+#[cfg(test)]
+fn assert_roundtrips_config<T, CSF, C>(val: &T, desc: &str, config_serializer: CSF)
+where
+    T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>,
+    CSF: FnOnce(Serializer<Vec<u8>, DefaultConfig>) -> Serializer<Vec<u8>, C>,
+    C: SerializerConfig,
+{
+    let mut serializer = config_serializer(Serializer::new(Vec::new()));
+    if let Err(e) = val.serialize(&mut serializer) {
+        panic!(
+            "Failed to serialize: {}\nConfig: {}\nValue: {:?}\n",
+            e, desc, val
+        );
+    }
+    let serialized = serializer.into_inner();
+
+    let mut deserializer = Deserializer::new(serialized.as_slice());
+    let val2: T = match T::deserialize(&mut deserializer) {
         Ok(t) => t,
         Err(e) => {
-            panic!("Does not deserialize: {}\nSerialized {:?}\nGot {:?}\n", e, val, rmpv::decode::value::read_value(&mut seriaized.as_slice()).expect("rmp didn't serialize corerctly at all"));
-        },
+            panic!(
+                "Does not deserialize: {}\nConfig: {}\nSerialized {:?}\nGot {:?}\n",
+                e,
+                desc,
+                val,
+                rmpv::decode::value::read_value(&mut serialized.as_slice())
+                    .expect("rmp didn't serialize correctly at all")
+            );
+        }
     };
-    assert_eq!(val2, val);
+
+    assert_eq!(val, &val2, "Config: {}", desc);
 }
