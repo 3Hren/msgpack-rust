@@ -14,7 +14,7 @@ use rmp::encode::ValueWriteError;
 
 use crate::config::{
     DefaultConfig, SerializerConfig, StructMapConfig, StructTupleConfig, VariantIntegerConfig,
-    VariantStringConfig,
+    VariantStringConfig, HumanReadableConfig, BinaryConfig,
 };
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
@@ -246,6 +246,36 @@ impl<W: Write, C> Serializer<W, C> {
             config: VariantIntegerConfig::new(config),
         }
     }
+
+    /// Consumes this serializer returning the new one, which will serialize some types in
+    /// human-readable representations (`Serializer::is_human_readable` will return `true`). Note
+    /// that the overall representation is still binary, but some types such as IP addresses will
+    /// be saved as human-readable strings.
+    ///
+    /// This is primarily useful if you need to interoperate with serializations produced by older
+    /// versions of `rmp-serde`.
+    pub fn with_human_readable(self) -> Serializer<W, HumanReadableConfig<C>> {
+        let Serializer { wr, depth, config } = self;
+        Serializer {
+            wr,
+            depth,
+            config: HumanReadableConfig::new(config),
+        }
+    }
+
+    /// Consumes this serializer returning the new one, which will serialize types as binary
+    /// (`Serializer::is_human_readable` will return `false`).
+    ///
+    /// This is the default MessagePack serialization mechanism, emitting the most compact
+    /// representation.
+    pub fn with_binary(self) -> Serializer<W, BinaryConfig<C>> {
+        let Serializer { wr, depth, config } = self;
+        Serializer {
+            wr,
+            depth,
+            config: BinaryConfig::new(config),
+        }
+    }
 }
 
 impl<W: Write, C> UnderlyingWrite for Serializer<W, C> {
@@ -399,6 +429,10 @@ where
     type SerializeMap = Compound<'a, W, C>;
     type SerializeStruct = Compound<'a, W, C>;
     type SerializeStructVariant = Compound<'a, W, C>;
+
+    fn is_human_readable(&self) -> bool {
+        C::is_human_readable()
+    }
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
         encode::write_bool(&mut self.wr, v)
