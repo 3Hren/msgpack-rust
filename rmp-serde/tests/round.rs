@@ -7,6 +7,7 @@ use std::io::Cursor;
 use serde::{Deserialize, Serialize};
 use rmps::{Deserializer, Serializer};
 use rmps::config::{DefaultConfig, SerializerConfig};
+use rmps::decode::ReadReader;
 
 #[test]
 fn round_trip_option() {
@@ -448,22 +449,64 @@ fn roundtrip_some_failures() {
 
 #[cfg(test)]
 fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {
-    assert_roundtrips_config(&val, "default", |s| s);
-    assert_roundtrips_config(&val, ".with_struct_map()", |s| s.with_struct_map());
-    assert_roundtrips_config(&val, ".with_string_variants()", |s| {
-        s.with_string_variants()
-    });
-    assert_roundtrips_config(&val, ".with_struct_map().with_string_variants()", |s| {
-        s.with_struct_map().with_string_variants()
-    });
+    assert_roundtrips_config(&val, "default", |s| s, |d| d);
+    assert_roundtrips_config(&val, ".with_struct_map()", |s| s.with_struct_map(), |d| d);
+    assert_roundtrips_config(
+        &val,
+        ".with_string_variants()",
+        |s| s.with_string_variants(),
+        |d| d,
+    );
+    assert_roundtrips_config(
+        &val,
+        ".with_struct_map().with_string_variants()",
+        |s| s.with_struct_map().with_string_variants(),
+        |d| d,
+    );
+    assert_roundtrips_config(
+        &val,
+        ".with_human_readable()",
+        |s| s.with_human_readable(),
+        |d| d.with_human_readable(),
+    );
+    assert_roundtrips_config(
+        &val,
+        ".with_human_readable().with_struct_map()",
+        |s| s.with_human_readable().with_struct_map(),
+        |d| d.with_human_readable(),
+    );
+    assert_roundtrips_config(
+        &val,
+        ".with_human_readable().with_string_variants()",
+        |s| s.with_human_readable().with_string_variants(),
+        |d| d.with_human_readable(),
+    );
+    assert_roundtrips_config(
+        &val,
+        ".with_human_readable().with_struct_map().with_string_variants()",
+        |s| {
+            s.with_human_readable()
+                .with_struct_map()
+                .with_string_variants()
+        },
+        |d| d.with_human_readable(),
+    );
 }
 
 #[cfg(test)]
-fn assert_roundtrips_config<T, CSF, C>(val: &T, desc: &str, config_serializer: CSF)
-where
+fn assert_roundtrips_config<T, CSF, SC, CDF, DC>(
+    val: &T,
+    desc: &str,
+    config_serializer: CSF,
+    config_deserializer: CDF,
+) where
     T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>,
-    CSF: FnOnce(Serializer<Vec<u8>, DefaultConfig>) -> Serializer<Vec<u8>, C>,
-    C: SerializerConfig,
+    CSF: FnOnce(Serializer<Vec<u8>, DefaultConfig>) -> Serializer<Vec<u8>, SC>,
+    SC: SerializerConfig,
+    CDF: FnOnce(
+        Deserializer<ReadReader<&[u8]>, DefaultConfig>,
+    ) -> Deserializer<ReadReader<&[u8]>, DC>,
+    DC: SerializerConfig,
 {
     let mut serializer = config_serializer(Serializer::new(Vec::new()));
     if let Err(e) = val.serialize(&mut serializer) {
@@ -474,7 +517,7 @@ where
     }
     let serialized = serializer.into_inner();
 
-    let mut deserializer = Deserializer::new(serialized.as_slice());
+    let mut deserializer = config_deserializer(Deserializer::new(serialized.as_slice()));
     let val2: T = match T::deserialize(&mut deserializer) {
         Ok(t) => t,
         Err(e) => {

@@ -14,7 +14,7 @@ use rmp::encode::ValueWriteError;
 
 use crate::config::{
     DefaultConfig, SerializerConfig, StructMapConfig, StructTupleConfig, VariantIntegerConfig,
-    VariantStringConfig,
+    VariantStringConfig, HumanReadableConfig, BinaryConfig,
 };
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
@@ -195,7 +195,7 @@ impl<'a, W: Write + 'a, C> Serializer<W, C> {
 impl<W: Write, C> Serializer<W, C> {
     /// Consumes this serializer returning the new one, which will serialize structs as a map.
     ///
-    /// This is used, when you the default struct serialization as a tuple does not fit your
+    /// This is used, when the default struct serialization as a tuple does not fit your
     /// requirements.
     pub fn with_struct_map(self) -> Serializer<W, StructMapConfig<C>> {
         let Serializer { wr, depth, config } = self;
@@ -222,7 +222,7 @@ impl<W: Write, C> Serializer<W, C> {
 
     /// Consumes this serializer returning the new one, which will serialize enum variants as strings.
     ///
-    /// This is used, when you the default struct serialization as integers does not fit your
+    /// This is used, when the default struct serialization as integers does not fit your
     /// requirements.
     pub fn with_string_variants(self) -> Serializer<W, VariantStringConfig<C>> {
         let Serializer { wr, depth, config } = self;
@@ -244,6 +244,36 @@ impl<W: Write, C> Serializer<W, C> {
             wr,
             depth,
             config: VariantIntegerConfig::new(config),
+        }
+    }
+
+    /// Consumes this serializer returning the new one, which will serialize some types in
+    /// human-readable representations (`Serializer::is_human_readable` will return `true`). Note
+    /// that the overall representation is still binary, but some types such as IP addresses will
+    /// be saved as human-readable strings.
+    ///
+    /// This is primarily useful if you need to interoperate with serializations produced by older
+    /// versions of `rmp-serde`.
+    pub fn with_human_readable(self) -> Serializer<W, HumanReadableConfig<C>> {
+        let Serializer { wr, depth, config } = self;
+        Serializer {
+            wr,
+            depth,
+            config: HumanReadableConfig::new(config),
+        }
+    }
+
+    /// Consumes this serializer returning the new one, which will serialize types as binary
+    /// (`Serializer::is_human_readable` will return `false`).
+    ///
+    /// This is the default MessagePack serialization mechanism, emitting the most compact
+    /// representation.
+    pub fn with_binary(self) -> Serializer<W, BinaryConfig<C>> {
+        let Serializer { wr, depth, config } = self;
+        Serializer {
+            wr,
+            depth,
+            config: BinaryConfig::new(config),
         }
     }
 }
@@ -399,6 +429,10 @@ where
     type SerializeMap = Compound<'a, W, C>;
     type SerializeStruct = Compound<'a, W, C>;
     type SerializeStructVariant = Compound<'a, W, C>;
+
+    fn is_human_readable(&self) -> bool {
+        C::is_human_readable()
+    }
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
         encode::write_bool(&mut self.wr, v)

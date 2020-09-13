@@ -21,7 +21,7 @@ mod sealed {
     ///
     /// This hack disallows external implementations and usage of SerializerConfig and thus
     /// allows us to change SerializerConfig methods freely without breaking backwards compatibility.
-    pub trait SerializerConfig {
+    pub trait SerializerConfig: Copy {
         fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
         where
             S: UnderlyingWrite,
@@ -44,12 +44,20 @@ mod sealed {
         where
             S: UnderlyingWrite,
             for<'a> &'a mut S: Serializer<Ok = (), Error = Error>;
+
+        /// Determines the value of `Serializer::is_human_readable` and
+        /// `Deserializer::is_human_readable`.
+        fn is_human_readable() -> bool;
     }
 }
 
-/// The default serializer configuration.
+/// The default serializer/deserializer configuration.
 ///
-/// This writes structs as a tuple, without field names, and enum variants as integers.
+/// This configuration:
+/// - Writes structs as a tuple, without field names
+/// - Writes enum variants as integers
+/// - Writes and reads types as binary, not human-readable
+//
 /// This is the most compact representation.
 #[derive(Copy, Clone, Debug)]
 pub struct DefaultConfig;
@@ -84,6 +92,10 @@ impl sealed::SerializerConfig for DefaultConfig {
         for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
     {
         ser.serialize_u32(variant_index)
+    }
+
+    fn is_human_readable() -> bool {
+        false
     }
 }
 
@@ -139,6 +151,10 @@ where
     {
         C::write_variant_ident(ser, variant_index, variant)
     }
+
+    fn is_human_readable() -> bool {
+        C::is_human_readable()
+    }
 }
 
 /// Config wrapper that overrides struct serlization by packing as a tuple without field
@@ -186,6 +202,10 @@ where
         for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
     {
         C::write_variant_ident(ser, variant_index, variant)
+    }
+
+    fn is_human_readable() -> bool {
+        C::is_human_readable()
     }
 }
 
@@ -235,6 +255,10 @@ where
     {
         ser.serialize_str(variant)
     }
+
+    fn is_human_readable() -> bool {
+        C::is_human_readable()
+    }
 }
 
 /// Config wrapper that overrides enum variant serialization by packing enum names as their integer indices.
@@ -279,5 +303,110 @@ where
         for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
     {
         ser.serialize_u32(variant_index)
+    }
+
+    fn is_human_readable() -> bool {
+        C::is_human_readable()
+    }
+}
+
+/// Config wrapper that overrides `Serializer::is_human_readable` and
+/// `Deserializer::is_human_readable` to return `true`.
+#[derive(Copy, Clone, Debug)]
+pub struct HumanReadableConfig<C>(C);
+
+impl<C> HumanReadableConfig<C> {
+    /// Creates a `HumanReadableConfig` inheriting unchanged configuration options from the given configuration.
+    pub fn new(inner: C) -> Self {
+        Self(inner)
+    }
+}
+
+impl<C> sealed::SerializerConfig for HumanReadableConfig<C>
+where
+    C: sealed::SerializerConfig,
+{
+    fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        C::write_struct_len(ser, len)
+    }
+
+    fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+        T: ?Sized + Serialize,
+    {
+        C::write_struct_field(ser, key, value)
+    }
+
+    fn write_variant_ident<S>(
+        ser: &mut S,
+        variant_index: u32,
+        variant: &'static str,
+    ) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        C::write_variant_ident(ser, variant_index, variant)
+    }
+
+    fn is_human_readable() -> bool {
+        true
+    }
+}
+
+
+/// Config wrapper that overrides `Serializer::is_human_readable` and
+/// `Deserializer::is_human_readable` to return `false`.
+#[derive(Copy, Clone, Debug)]
+pub struct BinaryConfig<C>(C);
+
+impl<C> BinaryConfig<C> {
+    /// Creates a `BinaryConfig` inheriting unchanged configuration options from the given configuration.
+    pub fn new(inner: C) -> Self {
+        Self(inner)
+    }
+}
+
+impl<C> sealed::SerializerConfig for BinaryConfig<C>
+where
+    C: sealed::SerializerConfig,
+{
+    fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        C::write_struct_len(ser, len)
+    }
+
+    fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+        T: ?Sized + Serialize,
+    {
+        C::write_struct_field(ser, key, value)
+    }
+
+    fn write_variant_ident<S>(
+        ser: &mut S,
+        variant_index: u32,
+        variant: &'static str,
+    ) -> Result<(), Error>
+    where
+        S: UnderlyingWrite,
+        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
+    {
+        C::write_variant_ident(ser, variant_index, variant)
+    }
+
+    fn is_human_readable() -> bool {
+        false
     }
 }
