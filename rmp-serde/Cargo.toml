@@ -11,6 +11,9 @@ keywords = ["msgpack", "MessagePack", "serde", "serialization"]
 categories = ["encoding"]
 edition = "2018"
 
+[features]
+serde128 = []
+
 [dependencies]
 byteorder = "1.3.2"
 serde = "1.0.116"
