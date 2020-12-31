@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add `UnderlyingWrite` trait for `Serializer` and its wrappers to be able to obtain the underlying writer.
 - Add missing `Debug` implementations.
 - More `decode::Error` conversions.
+- Support for serializing and deserializing 128-bit values in serde.
 
 ### Changed:
 - (Breaking) Serialize newtype structs by serializing its inner type without wrapping into a tuple.
