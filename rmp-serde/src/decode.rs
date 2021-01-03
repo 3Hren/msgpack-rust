@@ -316,6 +316,33 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
             Reference::Copied(buf) => visitor.visit_bytes(buf),
         }
     }
+
+    #[cfg(feature = "serde128")]
+    fn read_128(&mut self) -> Result<[u8; 16], Error> {
+        use std::convert::TryInto;
+
+        let marker = match self.marker.take() {
+            Some(marker) => marker,
+            None => rmp::decode::read_marker(&mut self.rd)?,
+        };
+
+        if marker != Marker::Bin8 {
+            return Err(Error::TypeMismatch(marker));
+        }
+
+        let len = read_u8(&mut self.rd)?;
+
+        if len != 16 {
+            return Err(Error::LengthMismatch(16));
+        }
+
+        let buf = match self.read_bin_data(len as u32)? {
+            Reference::Borrowed(buf) => buf,
+            Reference::Copied(buf) => buf,
+        };
+
+        Ok(buf.try_into().unwrap())
+    }
 }
 
 fn read_u8<R: Read>(rd: &mut R) -> Result<u8, Error> {
@@ -630,6 +657,24 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
                 self.deserialize_any(visitor)
             }
         }
+    }
+
+    #[cfg(feature = "serde128")]
+    fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        let buf = self.read_128()?;
+        visitor.visit_i128(i128::from_be_bytes(buf))
+    }
+
+    #[cfg(feature = "serde128")]
+    fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        let buf = self.read_128()?;
+        visitor.visit_u128(u128::from_be_bytes(buf))
     }
 
     fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
