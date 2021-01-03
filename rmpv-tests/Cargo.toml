@@ -6,8 +6,8 @@ publish = false
 edition = "2018"
 
 [dependencies]
-serde = "1"
-serde_derive = "1"
+serde = "1.0.118"
+serde_derive = "1.0.118"
 rmp-serde = { version = "0.15", path = "../rmp-serde" }
 rmpv = { features = ["with-serde"], path = "../rmpv" }
 
