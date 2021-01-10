@@ -9,7 +9,7 @@ use serde::Serialize;
 use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
                  SerializeTuple, SerializeTupleStruct, SerializeTupleVariant};
 
-use rmp::encode;
+use rmp::{Marker, encode};
 use rmp::encode::ValueWriteError;
 
 use crate::config::{
@@ -24,6 +24,7 @@ use crate::MSGPACK_EXT_STRUCT_NAME;
 pub enum Error {
     /// Failed to write a MessagePack value.
     InvalidValueWrite(ValueWriteError),
+    //TODO: This can be removed at some point
     /// Failed to serialize struct, sequence or map, because its length is unknown.
     UnknownLength,
     /// Invalid Data model, i.e. Serialize trait is not implmented correctly
@@ -192,6 +193,24 @@ impl<'a, W: Write + 'a, C> Serializer<W, C> {
     }
 }
 
+impl<'a, W: Write + 'a, C: SerializerConfig> Serializer<W, C> {
+    #[inline]
+    fn maybe_unknown_len_compound<F>(&'a mut self, len: Option<usize>, f: F) -> Result<MaybeUnknownLengthCompound<'a, W, C>, Error>
+    where F: Fn(&mut W, u32) -> Result<Marker, ValueWriteError>
+    {
+        Ok(MaybeUnknownLengthCompound {
+            compound: match len {
+                Some(len) => {
+                    f(&mut self.wr, len as u32)?;
+                    None
+                }
+                None => Some(UnknownLengthCompound::from(&*self))
+            },
+            se: self,
+        })
+    }
+}
+
 impl<W: Write, C> Serializer<W, C> {
     /// Consumes this serializer returning the new one, which will serialize structs as a map.
     ///
@@ -354,36 +373,6 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeTupleStruct for Compound<'
     }
 }
 
-impl<'a, W: Write + 'a, C: SerializerConfig> SerializeTupleVariant for Compound<'a, W, C> {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
-        value.serialize(&mut *self.se)
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(())
-    }
-}
-
-impl<'a, W: Write + 'a, C: SerializerConfig> SerializeMap for Compound<'a, W, C> {
-    type Ok = ();
-    type Error = Error;
-
-    fn serialize_key<T: ?Sized + Serialize>(&mut self, key: &T) -> Result<(), Self::Error> {
-        key.serialize(&mut *self.se)
-    }
-
-    fn serialize_value<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
-        value.serialize(&mut *self.se)
-    }
-
-    fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(())
-    }
-}
-
 impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStruct for Compound<'a, W, C> {
     type Ok = ();
     type Error = Error;
@@ -392,6 +381,19 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStruct for Compound<'a, W,
         Result<(), Self::Error>
     {
         C::write_struct_field(&mut *self.se, key, value)
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        Ok(())
+    }
+}
+
+impl<'a, W: Write + 'a, C: SerializerConfig> SerializeTupleVariant for Compound<'a, W, C> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+        value.serialize(&mut *self.se)
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
@@ -414,6 +416,90 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
     }
 }
 
+/// Contains a `Serializer` for sequences and maps whose length is not yet known
+/// and a counter for the number of elements that are encoded by the `Serializer`.
+#[derive(Debug)]
+struct UnknownLengthCompound<C> {
+    se: Serializer<Vec<u8>, C>,
+    elem_count: u32
+}
+impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound<C> {
+    fn from(se: &Serializer<W, C>) -> Self {
+        Self {
+            se: Serializer { wr: Vec::with_capacity(128), config: se.config, depth: se.depth },
+            elem_count: 0
+        }
+    }
+}
+
+/// Contains a `Serializer` for encoding elements of sequences and maps.
+///
+/// # Note
+///
+/// If , for example, a field inside a struct is tagged with `#serde(flatten)` the total number of
+/// fields of this struct will be unknown to serde because flattened fields may have name clashes
+/// and then will be overwritten. So, serde wants to serialize the struct as a map with an unknown
+/// length.
+///
+/// For the described case a `UnknownLengthCompound` is used to encode the elements. On `end()`
+/// the counted length and the encoded elements will be written to the `Serializer`. A caveat is,
+/// that structs that contain flattened fields arem always written as a map, even when compact
+/// representaion is desired.
+///
+/// Otherwise, if the length is known, the elements will be encoded directly by the `Serializer`.
+#[derive(Debug)]
+pub struct MaybeUnknownLengthCompound<'a, W: 'a, C: 'a> {
+    se: &'a mut Serializer<W, C>,
+    compound: Option<UnknownLengthCompound<C>>,
+}
+
+impl<'a, W: Write + 'a, C: SerializerConfig> SerializeSeq for MaybeUnknownLengthCompound<'a, W, C> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+        match self.compound.as_mut() {
+            None => value.serialize(&mut *self.se),
+            Some(buf) =>  {
+                value.serialize(&mut buf.se)?;
+                buf.elem_count += 1;
+                Ok(())
+            }
+        }
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        if let Some(compound) = self.compound {
+            encode::write_array_len(&mut self.se.wr, compound.elem_count)?;
+            self.se.wr.write_all(&compound.se.into_inner())
+                .map_err(ValueWriteError::InvalidDataWrite)?;
+        }
+        Ok(())
+    }
+}
+
+impl<'a, W: Write + 'a, C: SerializerConfig> SerializeMap for MaybeUnknownLengthCompound<'a, W, C> {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_key<T: ?Sized + Serialize>(&mut self, key: &T) -> Result<(), Self::Error> {
+        <Self as SerializeSeq>::serialize_element(self, key)
+    }
+
+    fn serialize_value<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+        <Self as SerializeSeq>::serialize_element(self, value)
+    }
+
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        if let Some(compound) = self.compound {
+            encode::write_map_len(&mut self.se.wr, compound.elem_count / 2)?;
+            self.se.wr.write_all(&compound.se.into_inner())
+                .map_err(ValueWriteError::InvalidDataWrite)?;
+        }
+        Ok(())
+    }
+}
+
 impl<'a, W, C> serde::Serializer for &'a mut Serializer<W, C>
 where
     W: Write,
@@ -422,11 +508,11 @@ where
     type Ok = ();
     type Error = Error;
 
-    type SerializeSeq = Compound<'a, W, C>;
+    type SerializeSeq = MaybeUnknownLengthCompound<'a, W, C>;
     type SerializeTuple = Compound<'a, W, C>;
     type SerializeTupleStruct = Compound<'a, W, C>;
     type SerializeTupleVariant = Compound<'a, W, C>;
-    type SerializeMap = Compound<'a, W, C>;
+    type SerializeMap = MaybeUnknownLengthCompound<'a, W, C>;
     type SerializeStruct = Compound<'a, W, C>;
     type SerializeStructVariant = Compound<'a, W, C>;
 
@@ -558,18 +644,14 @@ where
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Error> {
-        let len = match len {
-            Some(len) => len,
-            None => return Err(Error::UnknownLength),
-        };
+        self.maybe_unknown_len_compound(len, |wr, len| encode::write_array_len(wr, len))
+    }
 
+    //TODO: normal compund
+    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
         encode::write_array_len(&mut self.wr, len as u32)?;
 
         self.compound()
-    }
-
-    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        self.serialize_seq(Some(len))
     }
 
     fn serialize_tuple_struct(self, _name: &'static str, len: usize) ->
@@ -590,13 +672,7 @@ where
     }
 
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Error> {
-        match len {
-            Some(len) => {
-                encode::write_map_len(&mut self.wr, len as u32)?;
-                self.compound()
-            }
-            None => Err(Error::UnknownLength),
-        }
+        self.maybe_unknown_len_compound(len, |wr, len| encode::write_map_len(wr, len))
     }
 
     fn serialize_struct(self, _name: &'static str, len: usize) ->
