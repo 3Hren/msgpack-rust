@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add missing `Debug` implementations.
 - More `decode::Error` conversions.
 - Support for serializing and deserializing 128-bit values in serde.
+- Support for serializing sequences and maps with unknown length, that enables the use of `#[serde(flatten)]` attribute (#196).
 
 ### Changed:
 - (Breaking) Serialize newtype structs by serializing its inner type without wrapping into a tuple.
