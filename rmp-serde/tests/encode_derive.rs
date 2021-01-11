@@ -167,6 +167,103 @@ fn serialize_struct_variant_as_map() {
 }
 
 #[test]
+fn serialize_struct_with_flattened_map_field() {
+    use std::collections::BTreeMap;
+
+    #[derive(Serialize)]
+    struct Struct {
+        f1: u32,
+        // not flattend!
+        f2: BTreeMap<String, String>,
+        #[serde(flatten)]
+        f3: BTreeMap<String, String>
+    }
+
+    let mut se = Serializer::new(Vec::new());
+    Struct {
+        f1: 0,
+        f2: {
+            let mut map = BTreeMap::new();
+            map.insert("german".to_string(), "Hallo Welt!".to_string());
+            map
+        },
+        f3: {
+            let mut map = BTreeMap::new();
+            map.insert("english".to_string(), "Hello World!".to_string());
+            map
+        }
+    }
+    .serialize(&mut se).unwrap();
+
+    // Expect: { "f1": 0, "f2": { "german": "Hallo Welt!" }, "english": "Hello World!" }.
+    assert_eq!(
+        vec![
+            0x83, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x81, 0xA6, 0x67, 0x65, 0x72, 0x6D, 0x61, 0x6E, 0xAB,
+            0x48, 0x61, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x65, 0x6C, 0x74, 0x21, 0xA7, 0x65, 0x6E, 0x67, 0x6C, 0x69,
+            0x73, 0x68, 0xAC, 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64, 0x21,
+        ],
+        se.into_inner()
+    );
+}
+
+#[test]
+fn serialize_struct_with_flattened_struct_field() {
+    #[derive(Serialize)]
+    struct Struct {
+        f1: u32,
+        // not flattend!
+        f2: InnerStruct,
+        #[serde(flatten)]
+        f3: InnerStruct
+    }
+
+    #[derive(Serialize)]
+    struct InnerStruct {
+        f4: u32,
+        f5: u32
+    }
+
+    let strct = Struct {
+        f1: 0,
+        f2: InnerStruct {
+            f4: 8,
+            f5: 13
+        },
+        f3: InnerStruct {
+            f4: 21,
+            f5: 34
+        }
+    };
+
+    // struct-as-tuple
+    {
+        let mut se = Serializer::new(Vec::new());
+        strct.serialize(&mut se).unwrap();
+
+        // Expect: { "f1": 0, "f2": [8, 13], "f4": 21, "f5": 34 }.
+        assert_eq!(vec![
+            0x84, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x92, 0x08, 0x0D, 0xA2, 0x66, 0x34, 0x15, 0xA2, 0x66, 0x35, 0x22,
+        ],
+        se.into_inner());
+    }
+
+    // struct-as-map
+    {
+        let mut se = Serializer::new(Vec::new()).with_struct_map();
+        strct.serialize(&mut se).unwrap();
+
+        // Expect: { "f1": 0, "f2": { "f4": 8, "f5": 13 }, "f4": 21, "f5": 34 }.
+        assert_eq!(
+            vec![
+                0x84, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x82, 0xA2, 0x66, 0x34, 0x08,
+                0xA2, 0x66, 0x35, 0x0D, 0xA2, 0x66, 0x34, 0x15, 0xA2, 0x66, 0x35, 0x22,
+            ],
+            se.into_inner()
+        );
+    }
+}
+
+#[test]
 fn pass_struct_as_map_using_ext() {
     #[derive(Serialize)]
     struct Dog<'a> {

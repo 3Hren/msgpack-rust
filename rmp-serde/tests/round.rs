@@ -332,6 +332,82 @@ fn round_trip_unit_struct_untagged_enum() {
     }
 }
 
+#[test]
+fn round_trip_struct_with_flattened_map_field() {
+    use std::collections::BTreeMap;
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct Struct {
+        f1: u32,
+        // not flattend!
+        f2: BTreeMap<String, String>,
+        #[serde(flatten)]
+        f3: BTreeMap<String, String>
+    }
+
+    let strct = Struct {
+        f1: 0,
+        f2: {
+            let mut map = BTreeMap::new();
+            map.insert("german".to_string(), "Hallo Welt!".to_string());
+            map
+        },
+        f3: {
+            let mut map = BTreeMap::new();
+            map.insert("english".to_string(), "Hello World!".to_string());
+            map
+        }
+    };
+
+    let serialized: Vec<u8> = rmps::to_vec(&strct).unwrap();
+    let deserialized: Struct = rmps::from_slice(&serialized).unwrap();
+    assert_eq!(deserialized, strct);
+}
+
+#[test]
+fn round_trip_struct_with_flattened_struct_field() {
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct Struct {
+        f1: u32,
+        // not flattend!
+        f2: InnerStruct,
+        #[serde(flatten)]
+        f3: InnerStruct
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+    struct InnerStruct {
+        f4: u32,
+        f5: u32
+    }
+
+    let strct = Struct {
+        f1: 0,
+        f2: InnerStruct {
+            f4: 8,
+            f5: 13
+        },
+        f3: InnerStruct {
+            f4: 21,
+            f5: 34
+        }
+    };
+
+    // struct-as-tuple
+    {
+        let serialized: Vec<u8> = rmps::to_vec(&strct).unwrap();
+        let deserialized: Struct = rmps::from_slice(&serialized).unwrap();
+        assert_eq!(deserialized, strct);
+    }
+
+    // struct-as-map
+    {
+        let serialized: Vec<u8> = rmps::to_vec_named(&strct).unwrap();
+        let deserialized: Struct = rmps::from_slice(&serialized).unwrap();
+        assert_eq!(deserialized, strct);
+    }
+}
+
 // Checks whether deserialization and serialization can both work with enum variants as strings
 #[test]
 fn round_variant_string() {
