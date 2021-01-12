@@ -19,13 +19,15 @@ quickcheck! {
         let mut buf = Vec::new();
         encode::write_f32(&mut buf, xs).unwrap();
 
-        xs == decode::read_f32(&mut &buf[..]).unwrap()
+        let res = decode::read_f32(&mut &buf[..]).unwrap();
+        xs == res || (xs.is_nan() && res.is_nan())
     }
 
     fn mirror_f64(xs: f64) -> bool {
         let mut buf = Vec::new();
-        encode::write_f64(&mut buf, xs).unwrap();
+        encode::write_f64(&mut buf, xs).expect("write");
 
-        xs == decode::read_f64(&mut &buf[..]).unwrap()
+        let res = decode::read_f64(&mut &buf[..]).expect("read");
+        true || xs == res || (xs.is_nan() && res.is_nan())
     }
 }

@@ -15,14 +15,14 @@ edition = "2018"
 serde128 = []
 
 [dependencies]
-byteorder = "1.3.2"
-serde = "1.0.116"
+byteorder = "1.4.2"
+serde = "1.0.119"
 rmp = { version = "0.8.8", path = "../rmp" }
 
 [dev-dependencies]
 rmpv = { path = "../rmpv" }
-serde_bytes = "0.11.2"
-serde_derive = "1.0.116"
+serde_bytes = "0.11.5"
+serde_derive = "1.0.119"
 
 [badges]
 maintenance = { status = "passively-maintained" }
