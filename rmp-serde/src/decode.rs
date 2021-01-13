@@ -153,6 +153,15 @@ pub struct Deserializer<R, C = DefaultConfig> {
     depth: usize,
 }
 
+impl<R: Read, C> Deserializer<R, C> {
+    #[inline]
+    fn take_or_read_marker(&mut self) -> Result<Marker, MarkerReadError> {
+        self.marker
+            .take()
+            .map_or_else(|| rmp::decode::read_marker(&mut self.rd), Ok)
+    }
+}
+
 impl<R: Read> Deserializer<ReadReader<R>, DefaultConfig> {
     #[doc(hidden)]
     #[deprecated(note="use `Deserializer::new` instead")]
@@ -321,10 +330,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     fn read_128(&mut self) -> Result<[u8; 16], Error> {
         use std::convert::TryInto;
 
-        let marker = match self.marker.take() {
-            Some(marker) => marker,
-            None => rmp::decode::read_marker(&mut self.rd)?,
-        };
+        let marker = self.take_or_read_marker()?;
 
         if marker != Marker::Bin8 {
             return Err(Error::TypeMismatch(marker));
@@ -462,12 +468,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        let marker = match self.marker.take() {
-            Some(marker) => marker,
-            None => rmp::decode::read_marker(&mut self.rd)?,
-        };
-
-        match marker {
+        match self.take_or_read_marker()? {
             Marker::Null => visitor.visit_unit(),
             Marker::True => visitor.visit_bool(true),
             Marker::False => visitor.visit_bool(false),
@@ -584,10 +585,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         // Round trips of Options where `Option<t> = None` such as `Some(None)` will fail because
         // they are just seriialized as `nil`. The serialization format has probably to be changed
         // to solve this. But as serde_json behaves the same, I think it's not worth doing this.
-        let marker = match self.marker.take() {
-            Some(marker) => marker,
-            None => rmp::decode::read_marker(&mut self.rd)?,
-        };
+        let marker = self.take_or_read_marker()?;
 
         if marker == Marker::Null {
             visitor.visit_none()
@@ -601,11 +599,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     fn deserialize_enum<V>(self, _name: &str, _variants: &[&str], visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
-        let marker = match self.marker.take() {
-            Some(marker) => marker,
-            None => rmp::decode::read_marker(&mut self.rd)?,
-        };
-
+        let marker = self.take_or_read_marker()?;
         match rmp::decode::marker_to_len(&mut self.rd, marker)? {
             1 => visitor.visit_enum(VariantAccess::new(self)),
             n => Err(Error::LengthMismatch(n as u32)),
@@ -616,11 +610,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         where V: Visitor<'de>
     {
         if name == MSGPACK_EXT_STRUCT_NAME {
-            let marker = match self.marker.take() {
-                Some(marker) => marker,
-                None => rmp::decode::read_marker(&mut self.rd)?,
-            };
-            let len = match marker {
+            let len = match self.take_or_read_marker()? {
                 Marker::FixExt1 => {
                     1 as u32
                 }
@@ -645,7 +635,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
                 Marker::Ext32 => {
                     read_u32(&mut self.rd)? as u32
                 }
-                _ => {
+                marker => {
                     return Err(Error::TypeMismatch(marker))
                 }
             };
@@ -663,11 +653,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         // We need to special case this so that [] is treated as a unit struct when asked for,
         // but as a sequence otherwise. This is because we serialize unit structs as [] rather
         // than as 'nil'.
-        let marker = match self.marker.take() {
-            Some(marker) => marker,
-            None => rmp::decode::read_marker(&mut self.rd)?,
-        };
-        match marker {
+        match self.take_or_read_marker()? {
             Marker::Null | Marker::FixArray(0) => visitor.visit_unit(),
             marker => {
                 self.marker = Some(marker);
@@ -702,11 +688,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         //
         // This allows interoperability with msgpack-lite, which performs an optimization of
         // storing rounded floats as integers.
-        let marker = match self.marker.take() {
-            Some(marker) => marker,
-            None => rmp::decode::read_marker(&mut self.rd)?,
-        };
-        match marker {
+        match self.take_or_read_marker()? {
             Marker::U8 => visitor.visit_f32(rmp::decode::read_data_u8(&mut self.rd)?.into()),
             Marker::U16 => visitor.visit_f32(rmp::decode::read_data_u16(&mut self.rd)?.into()),
             Marker::I8 => visitor.visit_f32(rmp::decode::read_data_i8(&mut self.rd)?.into()),
@@ -724,11 +706,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     {
         // This special case allows us to decode some integer types as floats when safe, and
         // asked for. This is here to be consistent with 'f32'.
-        let marker = match self.marker.take() {
-            Some(marker) => marker,
-            None => rmp::decode::read_marker(&mut self.rd)?,
-        };
-        match marker {
+        match self.take_or_read_marker()? {
             Marker::U8 => visitor.visit_f64(rmp::decode::read_data_u8(&mut self.rd)?.into()),
             Marker::U16 => visitor.visit_f64(rmp::decode::read_data_u16(&mut self.rd)?.into()),
             Marker::U32 => visitor.visit_f64(rmp::decode::read_data_u32(&mut self.rd)?.into()),
