@@ -571,11 +571,28 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        let marker = rmp::decode::read_marker(&mut self.rd)?;
+        // # Important
+        //
+        // If a nested Option `o ∈ { Option<Opion<t>>, Option<Option<Option<t>>>, ..., Option<Option<...Option<t>...> }`
+        // is visited for the first time, the marker (read from the underlying Reader) will determine
+        // `o`'s innermost type `t`.
+        // For subsequent visits of `o` the marker will not be re-read again but kept until type `t`
+        // is visited.
+        //
+        // # Note
+        //
+        // Round trips of Options where `Option<t> = None` such as `Some(None)` will fail because
+        // they are just seriialized as `nil`. The serialization format has probably to be changed
+        // to solve this. But as serde_json behaves the same, I think it's not worth doing this.
+        let marker = match self.marker.take() {
+            Some(marker) => marker,
+            None => rmp::decode::read_marker(&mut self.rd)?,
+        };
 
         if marker == Marker::Null {
             visitor.visit_none()
         } else {
+            // Keep the marker until `o`'s innermost type `t` is visited.
             self.marker = Some(marker);
             visitor.visit_some(self)
         }
