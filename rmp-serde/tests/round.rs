@@ -27,6 +27,27 @@ fn round_trip_option() {
 }
 
 #[test]
+fn round_trip_nested_option() {
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    struct Struct {
+        f1: Option<Option<u32>>,
+        f2: Option<Option<u32>>,
+    }
+
+    let expected = Struct {
+        f1: Some(Some(13)),
+        f2: None
+    };
+
+    let mut buf = Vec::new();
+    expected.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+    let mut de = Deserializer::new(Cursor::new(&buf[..]));
+
+    assert_eq!(expected, Deserialize::deserialize(&mut de).unwrap());
+}
+
+#[test]
 fn round_trip_optional_enum() {
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     pub enum SimpleEnum {
