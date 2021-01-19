@@ -384,6 +384,25 @@ fn pass_enum_with_one_arg() {
 }
 
 #[test]
+fn pass_struct_with_nested_options() {
+    // The encoded bytearray is: [null, 13].
+    let buf = [0x92, 0xc0, 0x0D];
+    let cur = Cursor::new(&buf[..]);
+
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Struct {
+        f1: Option<Option<u32>>,
+        f2: Option<Option<u32>>,
+    }
+
+    let mut de = Deserializer::new(cur);
+    let actual: Struct = Deserialize::deserialize(&mut de).unwrap();
+
+    assert_eq!(Struct { f1: None, f2: Some(Some(13)) }, actual);
+    assert_eq!(buf.len() as u64, de.get_ref().position());
+}
+
+#[test]
 fn pass_struct_with_flattened_map_field() {
     use std::collections::BTreeMap;
 

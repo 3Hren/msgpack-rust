@@ -274,6 +274,24 @@ fn pass_option_none() {
 }
 
 #[test]
+fn pass_nested_option_some() {
+    let buf = [0x1f];
+
+    let mut de = Deserializer::new(&buf[..]);
+    let actual: Option<Option<u8>> = Deserialize::deserialize(&mut de).unwrap();
+    assert_eq!(Some(Some(31)), actual);
+}
+
+#[test]
+fn pass_nested_option_none() {
+    let buf = [0xc0];
+
+    let mut de = Deserializer::new(&buf[..]);
+    let actual: Option<Option<u8>> = Deserialize::deserialize(&mut de).unwrap();
+    assert_eq!(None, actual);
+}
+
+#[test]
 fn fail_option_u8_from_reserved() {
     let buf = [0xc1];
     let cur = Cursor::new(&buf[..]);

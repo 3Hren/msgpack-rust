@@ -26,6 +26,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fix error decoding `Some(enum)` (#185)
 - Fix error decoding unit structs which were encoded as `[]` (#181)
 - Fix `Display` implementations for errors not including all relevant information (#199)
+- Fix deserialization of nested `Option`s (#245)
 
 ## 0.13.7 - 2017-09-13
 ### Changed:
