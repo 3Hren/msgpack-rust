@@ -62,12 +62,14 @@ impl error::Error for Error {
 }
 
 impl de::Error for Error {
+    #[cold]
     fn custom<T: Display>(msg: T) -> Self {
         Error::Syntax(msg.to_string())
     }
 }
 
 impl Display for Error {
+    #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::InvalidMarkerRead(ref err) => write!(fmt, "IO error while reading marker: {}", err),
@@ -90,6 +92,7 @@ impl Display for Error {
 }
 
 impl From<MarkerReadError> for Error {
+    #[cold]
     fn from(err: MarkerReadError) -> Error {
         match err {
             MarkerReadError(err) => Error::InvalidMarkerRead(err),
@@ -98,12 +101,14 @@ impl From<MarkerReadError> for Error {
 }
 
 impl From<Utf8Error> for Error {
+    #[cold]
     fn from(err: Utf8Error) -> Error {
         Error::Utf8Error(err)
     }
 }
 
 impl From<ValueReadError> for Error {
+    #[cold]
     fn from(err: ValueReadError) -> Error {
         match err {
             ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
@@ -114,6 +119,7 @@ impl From<ValueReadError> for Error {
 }
 
 impl From<NumValueReadError> for Error {
+    #[cold]
     fn from(err: NumValueReadError) -> Error {
         match err {
             NumValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
@@ -125,6 +131,7 @@ impl From<NumValueReadError> for Error {
 }
 
 impl<'a> From<DecodeStringError<'a>> for Error {
+    #[cold]
     fn from(err: DecodeStringError<'_>) -> Error {
         match err {
             DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
@@ -167,6 +174,7 @@ impl<R: Read> Deserializer<ReadReader<R>, DefaultConfig> {
     }
 
     /// Constructs a new `Deserializer` by consuming the given reader.
+    #[inline]
     pub fn new(rd: R) -> Self {
         Self {
             rd: ReadReader::new(rd),
@@ -180,16 +188,19 @@ impl<R: Read> Deserializer<ReadReader<R>, DefaultConfig> {
 
 impl<R: Read, C> Deserializer<ReadReader<R>, C> {
     /// Gets a reference to the underlying reader in this decoder.
+    #[inline(always)]
     pub fn get_ref(&self) -> &R {
         &self.rd.rd
     }
 
     /// Gets a mutable reference to the underlying reader in this decoder.
+    #[inline(always)]
     pub fn get_mut(&mut self) -> &mut R {
         &mut self.rd.rd
     }
 
     /// Consumes this deserializer returning the underlying reader.
+    #[inline]
     pub fn into_inner(self) -> R {
         self.rd.rd
     }
@@ -201,6 +212,7 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
     ///
     /// This is primarily useful if you need to interoperate with serializations produced by older
     /// versions of `rmp-serde`.
+    #[inline]
     pub fn with_human_readable(self) -> Deserializer<R, HumanReadableConfig<C>> {
         let Deserializer { rd, config, marker, depth } = self;
         Deserializer {
@@ -216,6 +228,7 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
     ///
     /// This is the default MessagePack deserialization mechanism, consuming the most compact
     /// representation.
+    #[inline]
     pub fn with_binary(self) -> Deserializer<R, BinaryConfig<C>> {
         let Deserializer { rd, config, marker, depth } = self;
         Deserializer {
@@ -229,6 +242,7 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
 
 impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
     /// Returns the current position of this deserializer, i.e. how many bytes were read.
+    #[inline]
     pub fn position(&self) -> u64 {
         self.rd.rd.position()
     }
@@ -239,6 +253,7 @@ impl<'de, R> Deserializer<ReadRefReader<'de, R>>
         R: AsRef<[u8]> + ?Sized
 {
     /// Constructs a new `Deserializer` from the given byte slice.
+    #[inline]
     pub fn from_read_ref(rd: &'de R) -> Self {
         Deserializer {
             rd: ReadRefReader::new(rd),
@@ -249,6 +264,7 @@ impl<'de, R> Deserializer<ReadRefReader<'de, R>>
     }
 
     /// Gets a reference to the underlying reader in this decoder.
+    #[inline]
     pub fn get_ref(&self) -> &R {
         self.rd.rd
     }
@@ -256,6 +272,7 @@ impl<'de, R> Deserializer<ReadRefReader<'de, R>>
 
 impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     /// Changes the maximum nesting depth that is allowed
+    #[inline]
     pub fn set_max_depth(&mut self, depth: usize) {
         self.depth = depth;
     }
@@ -389,7 +406,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> ExtDeserializer<'a, R
 impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de> for ExtDeserializer<'a, R, C> {
     type Error = Error;
 
-    #[inline]
+    #[inline(always)]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
@@ -406,6 +423,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
 impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> for ExtDeserializer<'a, R, C> {
     type Error = Error;
 
+    #[inline]
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Error>
     where
         T: DeserializeSeed<'de>,
@@ -458,10 +476,12 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
 impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &'a mut Deserializer<R, C> {
     type Error = Error;
 
+    #[inline(always)]
     fn is_human_readable(&self) -> bool {
         C::is_human_readable()
     }
 
+    #[inline(never)]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
@@ -660,6 +680,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     }
 
     #[cfg(feature = "serde128")]
+    #[inline]
     fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
@@ -669,6 +690,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     }
 
     #[cfg(feature = "serde128")]
+    #[inline]
     fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
@@ -733,6 +755,7 @@ struct SeqAccess<'a, R, C> {
 }
 
 impl<'a, R: 'a, C> SeqAccess<'a, R, C> {
+    #[inline]
     fn new(de: &'a mut Deserializer<R, C>, len: usize) -> Self {
         SeqAccess {
             de,
@@ -744,6 +767,7 @@ impl<'a, R: 'a, C> SeqAccess<'a, R, C> {
 impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> for SeqAccess<'a, R, C> {
     type Error = Error;
 
+    #[inline]
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
         where T: DeserializeSeed<'de>
     {
@@ -755,6 +779,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> fo
         }
     }
 
+    #[inline(always)]
     fn size_hint(&self) -> Option<usize> {
         Some(self.left)
     }
@@ -777,6 +802,7 @@ impl<'a, R: 'a, C> MapAccess<'a, R, C> {
 impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de> for MapAccess<'a, R, C> {
     type Error = Error;
 
+    #[inline]
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
         where K: DeserializeSeed<'de>
     {
@@ -788,12 +814,14 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de> fo
         }
     }
 
+    #[inline]
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
         where V: DeserializeSeed<'de>
     {
         Ok(seed.deserialize(&mut *self.de)?)
     }
 
+    #[inline(always)]
     fn size_hint(&self) -> Option<usize> {
         Some(self.left)
     }
@@ -815,6 +843,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de> for Va
     type Error = Error;
     type Variant = Self;
 
+    #[inline]
     fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self), Error>
         where V: de::DeserializeSeed<'de>,
     {
@@ -825,23 +854,27 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de> for Va
 impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::VariantAccess<'de> for VariantAccess<'a, R, C> {
     type Error = Error;
 
+    #[inline]
     fn unit_variant(self) -> Result<(), Error> {
         decode::read_nil(&mut self.de.rd)?;
         Ok(())
     }
 
+    #[inline]
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
         where T: DeserializeSeed<'de>
     {
         seed.deserialize(self.de)
     }
 
+    #[inline]
     fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
         de::Deserializer::deserialize_tuple(self.de, len, visitor)
     }
 
+    #[inline]
     fn struct_variant<V>(self, fields: &'static [&'static str], visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
@@ -874,6 +907,7 @@ pub struct ReadReader<R: Read> {
 }
 
 impl<R: Read> ReadReader<R> {
+    #[inline]
     fn new(rd: R) -> Self {
         ReadReader {
             rd,
@@ -912,6 +946,7 @@ pub struct ReadRefReader<'a, R: ?Sized> {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> ReadRefReader<'a, T> {
+    #[inline]
     fn new(rd: &'a T) -> Self {
         Self {
             rd,
@@ -962,6 +997,7 @@ fn test_as_ref_reader() {
 /// This conversion can fail if the structure of the Value does not match the structure expected
 /// by `T`. It can also fail if the structure is correct but `T`'s implementation of `Deserialize`
 /// decides that something is wrong with the data, for example required struct fields are missing.
+#[inline]
 pub fn from_read<R, T>(rd: R) -> Result<T, Error>
 where R: Read,
       T: DeserializeOwned
@@ -973,6 +1009,7 @@ where R: Read,
 ///
 /// Currently deprecated, use more generic `from_read_ref` instead.
 #[doc(hidden)]
+#[inline]
 pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
 where
     T: Deserialize<'a>

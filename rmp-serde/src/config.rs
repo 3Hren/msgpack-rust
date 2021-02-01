@@ -73,6 +73,7 @@ impl sealed::SerializerConfig for DefaultConfig {
         Ok(())
     }
 
+    #[inline]
     fn write_struct_field<S, T>(ser: &mut S, _key: &'static str, value: &T) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -82,6 +83,7 @@ impl sealed::SerializerConfig for DefaultConfig {
         value.serialize(ser)
     }
 
+    #[inline]
     fn write_variant_ident<S>(
         ser: &mut S,
         variant_index: u32,
@@ -94,6 +96,7 @@ impl sealed::SerializerConfig for DefaultConfig {
         ser.serialize_u32(variant_index)
     }
 
+    #[inline(always)]
     fn is_human_readable() -> bool {
         false
     }
@@ -111,6 +114,7 @@ pub struct StructMapConfig<C>(C);
 
 impl<C> StructMapConfig<C> {
     /// Creates a `StructMapConfig` inheriting unchanged configuration options from the given configuration.
+    #[inline]
     pub fn new(inner: C) -> Self {
         StructMapConfig(inner)
     }
@@ -140,6 +144,7 @@ where
         value.serialize(ser)
     }
 
+    #[inline]
     fn write_variant_ident<S>(
         ser: &mut S,
         variant_index: u32,
@@ -152,6 +157,7 @@ where
         C::write_variant_ident(ser, variant_index, variant)
     }
 
+    #[inline(always)]
     fn is_human_readable() -> bool {
         C::is_human_readable()
     }
@@ -164,6 +170,7 @@ pub struct StructTupleConfig<C>(C);
 
 impl<C> StructTupleConfig<C> {
     /// Creates a `StructTupleConfig` inheriting unchanged configuration options from the given configuration.
+    #[inline]
     pub fn new(inner: C) -> Self {
         StructTupleConfig(inner)
     }
@@ -183,6 +190,7 @@ where
         Ok(())
     }
 
+    #[inline]
     fn write_struct_field<S, T>(ser: &mut S, _key: &'static str, value: &T) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -192,6 +200,7 @@ where
         value.serialize(ser)
     }
 
+    #[inline]
     fn write_variant_ident<S>(
         ser: &mut S,
         variant_index: u32,
@@ -204,6 +213,7 @@ where
         C::write_variant_ident(ser, variant_index, variant)
     }
 
+    #[inline(always)]
     fn is_human_readable() -> bool {
         C::is_human_readable()
     }
@@ -218,6 +228,7 @@ pub struct VariantStringConfig<C>(C);
 
 impl<C> VariantStringConfig<C> {
     /// Creates a `VariantStringConfig` inheriting unchanged configuration options from the given configuration.
+    #[inline]
     pub fn new(inner: C) -> Self {
         VariantStringConfig(inner)
     }
@@ -227,6 +238,7 @@ impl<C> sealed::SerializerConfig for VariantStringConfig<C>
 where
     C: sealed::SerializerConfig,
 {
+    #[inline]
     fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -235,6 +247,7 @@ where
         C::write_struct_len(ser, len)
     }
 
+    #[inline]
     fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -244,6 +257,7 @@ where
         C::write_struct_field(ser, key, value)
     }
 
+    #[inline]
     fn write_variant_ident<S>(
         ser: &mut S,
         _variant_index: u32,
@@ -256,6 +270,7 @@ where
         ser.serialize_str(variant)
     }
 
+    #[inline(always)]
     fn is_human_readable() -> bool {
         C::is_human_readable()
     }
@@ -267,6 +282,7 @@ pub struct VariantIntegerConfig<C>(C);
 
 impl<C> VariantIntegerConfig<C> {
     /// Creates a `VariantIntegerConfig` inheriting unchanged configuration options from the given configuration.
+    #[inline]
     pub fn new(inner: C) -> Self {
         VariantIntegerConfig(inner)
     }
@@ -276,6 +292,7 @@ impl<C> sealed::SerializerConfig for VariantIntegerConfig<C>
 where
     C: sealed::SerializerConfig,
 {
+    #[inline]
     fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -284,6 +301,7 @@ where
         C::write_struct_len(ser, len)
     }
 
+    #[inline]
     fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -293,6 +311,7 @@ where
         C::write_struct_field(ser, key, value)
     }
 
+    #[inline]
     fn write_variant_ident<S>(
         ser: &mut S,
         variant_index: u32,
@@ -305,6 +324,7 @@ where
         ser.serialize_u32(variant_index)
     }
 
+    #[inline(always)]
     fn is_human_readable() -> bool {
         C::is_human_readable()
     }
@@ -317,6 +337,7 @@ pub struct HumanReadableConfig<C>(C);
 
 impl<C> HumanReadableConfig<C> {
     /// Creates a `HumanReadableConfig` inheriting unchanged configuration options from the given configuration.
+    #[inline]
     pub fn new(inner: C) -> Self {
         Self(inner)
     }
@@ -326,6 +347,7 @@ impl<C> sealed::SerializerConfig for HumanReadableConfig<C>
 where
     C: sealed::SerializerConfig,
 {
+    #[inline]
     fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -334,6 +356,7 @@ where
         C::write_struct_len(ser, len)
     }
 
+    #[inline]
     fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -343,6 +366,7 @@ where
         C::write_struct_field(ser, key, value)
     }
 
+    #[inline]
     fn write_variant_ident<S>(
         ser: &mut S,
         variant_index: u32,
@@ -355,6 +379,7 @@ where
         C::write_variant_ident(ser, variant_index, variant)
     }
 
+    #[inline(always)]
     fn is_human_readable() -> bool {
         true
     }
@@ -368,6 +393,7 @@ pub struct BinaryConfig<C>(C);
 
 impl<C> BinaryConfig<C> {
     /// Creates a `BinaryConfig` inheriting unchanged configuration options from the given configuration.
+    #[inline(always)]
     pub fn new(inner: C) -> Self {
         Self(inner)
     }
@@ -377,6 +403,7 @@ impl<C> sealed::SerializerConfig for BinaryConfig<C>
 where
     C: sealed::SerializerConfig,
 {
+    #[inline]
     fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -385,6 +412,7 @@ where
         C::write_struct_len(ser, len)
     }
 
+    #[inline]
     fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
     where
         S: UnderlyingWrite,
@@ -394,6 +422,7 @@ where
         C::write_struct_field(ser, key, value)
     }
 
+    #[inline]
     fn write_variant_ident<S>(
         ser: &mut S,
         variant_index: u32,
@@ -406,6 +435,7 @@ where
         C::write_variant_ident(ser, variant_index, variant)
     }
 
+    #[inline(always)]
     fn is_human_readable() -> bool {
         false
     }

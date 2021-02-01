@@ -49,6 +49,7 @@ impl error::Error for Error {
 }
 
 impl Display for Error {
+    #[cold]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::InvalidValueWrite(ref err) => write!(f, "invalid value write: {}", err),
@@ -63,6 +64,7 @@ impl Display for Error {
 }
 
 impl From<ValueWriteError> for Error {
+    #[cold]
     fn from(err: ValueWriteError) -> Error {
         Error::InvalidValueWrite(err)
     }
@@ -70,6 +72,7 @@ impl From<ValueWriteError> for Error {
 
 impl serde::ser::Error for Error {
     /// Raised when there is general error when deserializing a type.
+    #[cold]
     fn custom<T: Display>(msg: T) -> Error {
         Error::Syntax(msg.to_string())
     }
@@ -116,6 +119,7 @@ pub struct Serializer<W, C = DefaultConfig> {
 
 impl<W: Write, C> Serializer<W, C> {
     /// Gets a reference to the underlying writer.
+    #[inline(always)]
     pub fn get_ref(&self) -> &W {
         &self.wr
     }
@@ -123,11 +127,13 @@ impl<W: Write, C> Serializer<W, C> {
     /// Gets a mutable reference to the underlying writer.
     ///
     /// It is inadvisable to directly write to the underlying writer.
+    #[inline(always)]
     pub fn get_mut(&mut self) -> &mut W {
         &mut self.wr
     }
 
     /// Unwraps this `Serializer`, returning the underlying writer.
+    #[inline(always)]
     pub fn into_inner(self) -> W {
         self.wr
     }
@@ -136,6 +142,7 @@ impl<W: Write, C> Serializer<W, C> {
     ///
     /// Currently unused.
     #[doc(hidden)]
+    #[inline]
     pub fn set_max_depth(&mut self, depth: usize) {
         self.depth = depth;
     }
@@ -149,6 +156,7 @@ impl<W: Write> Serializer<W, DefaultConfig> {
     ///
     /// This is the default constructor, which returns a serializer that will serialize structs
     /// and enums using the most compact representation.
+    #[inline]
     pub fn new(wr: W) -> Self {
         Serializer {
             wr,
@@ -205,6 +213,7 @@ impl<W: Write, C> Serializer<W, C> {
     ///
     /// This is used, when the default struct serialization as a tuple does not fit your
     /// requirements.
+    #[inline]
     pub fn with_struct_map(self) -> Serializer<W, StructMapConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
@@ -219,6 +228,7 @@ impl<W: Write, C> Serializer<W, C> {
     ///
     /// This is the default MessagePack serialization mechanism, emitting the most compact
     /// representation.
+    #[inline]
     pub fn with_struct_tuple(self) -> Serializer<W, StructTupleConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
@@ -232,6 +242,7 @@ impl<W: Write, C> Serializer<W, C> {
     ///
     /// This is used, when the default struct serialization as integers does not fit your
     /// requirements.
+    #[inline]
     pub fn with_string_variants(self) -> Serializer<W, VariantStringConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
@@ -246,6 +257,7 @@ impl<W: Write, C> Serializer<W, C> {
     ///
     /// This is the default MessagePack serialization mechanism, emitting the most compact
     /// representation.
+    #[inline]
     pub fn with_integer_variants(self) -> Serializer<W, VariantIntegerConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
@@ -262,6 +274,7 @@ impl<W: Write, C> Serializer<W, C> {
     ///
     /// This is primarily useful if you need to interoperate with serializations produced by older
     /// versions of `rmp-serde`.
+    #[inline]
     pub fn with_human_readable(self) -> Serializer<W, HumanReadableConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
@@ -276,6 +289,7 @@ impl<W: Write, C> Serializer<W, C> {
     ///
     /// This is the default MessagePack serialization mechanism, emitting the most compact
     /// representation.
+    #[inline]
     pub fn with_binary(self) -> Serializer<W, BinaryConfig<C>> {
         let Serializer { wr, depth, config } = self;
         Serializer {
@@ -289,14 +303,17 @@ impl<W: Write, C> Serializer<W, C> {
 impl<W: Write, C> UnderlyingWrite for Serializer<W, C> {
     type Write = W;
 
+    #[inline(always)]
     fn get_ref(&self) -> &Self::Write {
         &self.wr
     }
 
+    #[inline(always)]
     fn get_mut(&mut self) -> &mut Self::Write {
         &mut self.wr
     }
 
+    #[inline(always)]
     fn into_inner(self) -> Self::Write {
         self.wr
     }
@@ -327,10 +344,12 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeSeq for Compound<'a, W, C>
     type Ok = ();
     type Error = Error;
 
+    #[inline]
     fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
         value.serialize(&mut *self.se)
     }
 
+    #[inline(always)]
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
@@ -340,10 +359,12 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeTuple for Compound<'a, W, 
     type Ok = ();
     type Error = Error;
 
+    #[inline]
     fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
         value.serialize(&mut *self.se)
     }
 
+    #[inline(always)]
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
@@ -353,10 +374,12 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeTupleStruct for Compound<'
     type Ok = ();
     type Error = Error;
 
+    #[inline]
     fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
         value.serialize(&mut *self.se)
     }
 
+    #[inline(always)]
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
@@ -366,12 +389,14 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStruct for Compound<'a, W,
     type Ok = ();
     type Error = Error;
 
+    #[inline]
     fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
         Result<(), Self::Error>
     {
         C::write_struct_field(&mut *self.se, key, value)
     }
 
+    #[inline(always)]
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
@@ -381,10 +406,12 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeTupleVariant for Compound<
     type Ok = ();
     type Error = Error;
 
+    #[inline]
     fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
         value.serialize(&mut *self.se)
     }
 
+    #[inline(always)]
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
@@ -400,6 +427,7 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
         C::write_struct_field(&mut *self.se, key, value)
     }
 
+    #[inline(always)]
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
@@ -861,116 +889,118 @@ impl<'a, W: Write + 'a> serde::ser::Serializer for &mut ExtSerializer<'a, W> {
     type SerializeStructVariant = serde::ser::Impossible<(), Error>;
 
 
-    #[inline]
+    #[cold]
     fn serialize_bytes(self, _val: &[u8]) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received bytes"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_bool(self, _val: bool) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received bool"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_i8(self, _value: i8) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received i8"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_i16(self, _val: i16) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received i16"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_i32(self, _val: i32) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received i32"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_i64(self, _val: i64) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received i64"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_u8(self, _val: u8) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received u8"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_u16(self, _val: u16) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received u16"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_u32(self, _val: u32) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received u32"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_u64(self, _val: u64) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received u64"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_f32(self, _val: f32) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received f32"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_f64(self, _val: f64) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received f64"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_char(self, _val: char) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received char"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_str(self, _val: &str) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received str"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received unit"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received unit_struct"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_unit_variant(self, _name: &'static str, _idx: u32, _variant: &'static str) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received unit_variant"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
         Err(Error::InvalidDataModel("expected tuple, received newtype_struct"))
     }
 
+    #[cold]
     fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
         Err(Error::InvalidDataModel("expected tuple, received newtype_variant"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received none"))
     }
 
-    #[inline]
+    #[cold]
     fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
         Err(Error::InvalidDataModel("expected tuple, received some"))
     }
 
+    #[cold]
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received seq"))
     }
@@ -982,22 +1012,27 @@ impl<'a, W: Write + 'a> serde::ser::Serializer for &mut ExtSerializer<'a, W> {
         Ok(self)
     }
 
+    #[cold]
     fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, Error> {
         Err(Error::InvalidDataModel("expected tuple, received tuple_struct"))
     }
 
+    #[cold]
     fn serialize_tuple_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, Error> {
         Err(Error::InvalidDataModel("expected tuple, received tuple_variant"))
     }
 
+    #[cold]
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Error> {
         Err(Error::InvalidDataModel("expected tuple, received map"))
     }
 
+    #[cold]
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Error> {
         Err(Error::InvalidDataModel("expected tuple, received struct"))
     }
 
+    #[cold]
     fn serialize_struct_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, Error> {
         Err(Error::InvalidDataModel("expected tuple, received struct_variant"))
     }
@@ -1007,10 +1042,12 @@ impl<'a, W: Write + 'a> SerializeTuple for &mut ExtSerializer<'a, W> {
     type Ok = ();
     type Error = Error;
 
+    #[inline]
     fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
         value.serialize(&mut self.fields_se)
     }
 
+    #[inline(always)]
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
@@ -1018,6 +1055,7 @@ impl<'a, W: Write + 'a> SerializeTuple for &mut ExtSerializer<'a, W> {
 
 
 impl<'a, W: Write + 'a> ExtSerializer<'a, W> {
+    #[inline]
     fn new<C>(ser: &'a mut Serializer<W, C>) -> Self {
         Self {
             fields_se: ExtFieldSerializer::new(ser),
@@ -1025,6 +1063,7 @@ impl<'a, W: Write + 'a> ExtSerializer<'a, W> {
         }
     }
 
+    #[inline]
     fn end(self) -> Result<(), Error> {
         if !self.tuple_received {
             Err(Error::InvalidDataModel("expected tuple, received nothing"))
@@ -1035,6 +1074,7 @@ impl<'a, W: Write + 'a> ExtSerializer<'a, W> {
 }
 
 impl<'a, W: Write + 'a> ExtFieldSerializer<'a, W> {
+    #[inline]
     fn new<C>(ser: &'a mut Serializer<W, C>) -> Self {
         Self {
            wr: UnderlyingWrite::get_mut(ser),
@@ -1043,6 +1083,7 @@ impl<'a, W: Write + 'a> ExtFieldSerializer<'a, W> {
         }
     }
 
+    #[inline]
     fn end(self) -> Result<(), Error> {
         if self.finish {
             Ok(())

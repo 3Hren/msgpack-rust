@@ -104,6 +104,7 @@ pub struct Raw {
 
 impl Raw {
     /// Constructs a new `Raw` from the UTF-8 string.
+    #[inline]
     pub fn new(v: String) -> Self {
         Self { s: Ok(v) }
     }
@@ -122,16 +123,19 @@ impl Raw {
     }
 
     /// Returns `true` if the raw is valid UTF-8.
+    #[inline]
     pub fn is_str(&self) -> bool {
         self.s.is_ok()
     }
 
     /// Returns `true` if the raw contains invalid UTF-8 sequence.
+    #[inline]
     pub fn is_err(&self) -> bool {
         self.s.is_err()
     }
 
     /// Returns the string reference if the raw is valid UTF-8, or else `None`.
+    #[inline]
     pub fn as_str(&self) -> Option<&str> {
         match self.s {
             Ok(ref s) => Some(s.as_str()),
@@ -141,6 +145,7 @@ impl Raw {
 
     /// Returns the underlying `Utf8Error` if the raw contains invalid UTF-8 sequence, or
     /// else `None`.
+    #[inline]
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
             Ok(..) => None,
@@ -149,6 +154,7 @@ impl Raw {
     }
 
     /// Returns a byte slice of this raw's contents.
+    #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         match self.s {
             Ok(ref s) => s.as_bytes(),
@@ -157,11 +163,13 @@ impl Raw {
     }
 
     /// Consumes this object, yielding the string if the raw is valid UTF-8, or else `None`.
+    #[inline]
     pub fn into_str(self) -> Option<String> {
         self.s.ok()
     }
 
     /// Converts a `Raw` into a byte vector.
+    #[inline]
     pub fn into_bytes(self) -> Vec<u8> {
         match self.s {
             Ok(s) => s.into_bytes(),
@@ -189,6 +197,7 @@ struct RawVisitor;
 impl<'de> de::Visitor<'de> for RawVisitor {
     type Value = Raw;
 
+    #[cold]
     fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         "string or bytes".fmt(fmt)
     }
@@ -253,6 +262,7 @@ pub struct RawRef<'a> {
 
 impl<'a> RawRef<'a> {
     /// Constructs a new `RawRef` from the UTF-8 string.
+    #[inline]
     pub fn new(v: &'a str) -> Self {
         Self { s: Ok(v) }
     }
@@ -270,16 +280,19 @@ impl<'a> RawRef<'a> {
     }
 
     /// Returns `true` if the raw is valid UTF-8.
+    #[inline]
     pub fn is_str(&self) -> bool {
         self.s.is_ok()
     }
 
     /// Returns `true` if the raw contains invalid UTF-8 sequence.
+    #[inline]
     pub fn is_err(&self) -> bool {
         self.s.is_err()
     }
 
     /// Returns the string reference if the raw is valid UTF-8, or else `None`.
+    #[inline]
     pub fn as_str(&self) -> Option<&str> {
         match self.s {
             Ok(ref s) => Some(s),
@@ -289,6 +302,7 @@ impl<'a> RawRef<'a> {
 
     /// Returns the underlying `Utf8Error` if the raw contains invalid UTF-8 sequence, or
     /// else `None`.
+    #[inline]
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
             Ok(..) => None,
@@ -297,6 +311,7 @@ impl<'a> RawRef<'a> {
     }
 
     /// Returns a byte slice of this raw's contents.
+    #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         match self.s {
             Ok(ref s) => s.as_bytes(),
@@ -324,6 +339,7 @@ struct RawRefVisitor;
 impl<'de> de::Visitor<'de> for RawRefVisitor {
     type Value = RawRef<'de>;
 
+    #[cold]
     fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         "string or bytes".fmt(fmt)
     }
