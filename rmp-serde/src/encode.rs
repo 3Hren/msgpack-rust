@@ -36,19 +36,8 @@ pub enum Error {
 }
 
 impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::InvalidValueWrite(..) => "invalid value write",
-            Error::UnknownLength => {
-                "attempt to serialize struct, sequence or map with unknown length"
-            }
-            Error::InvalidDataModel(_) => "serialize data model is invalid",
-            Error::DepthLimitExceeded => "depth limit exceeded",
-            Error::Syntax(..) => "syntax error",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    #[cold]
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             Error::InvalidValueWrite(ref err) => Some(err),
             Error::UnknownLength => None,

@@ -45,11 +45,8 @@ pub enum Error {
 }
 
 impl error::Error for Error {
-    fn description(&self) -> &str {
-        "error while decoding value"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    #[cold]
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             Error::TypeMismatch(..) => None,
             Error::InvalidMarkerRead(ref err) => Some(err),
