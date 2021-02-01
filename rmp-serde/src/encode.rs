@@ -1110,7 +1110,6 @@ where
 /// This function serializes structures as maps
 ///
 /// Serialization can fail if `T`'s implementation of `Serialize` decides to fail.
-#[inline]
 pub fn write_named<W, T>(wr: &mut W, val: &T) -> Result<(), Error>
 where
     W: Write + ?Sized,
