@@ -51,6 +51,7 @@ pub enum ValueReadError {
 }
 
 impl error::Error for ValueReadError {
+    #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             ValueReadError::InvalidMarkerRead(ref err) |
@@ -61,6 +62,7 @@ impl error::Error for ValueReadError {
 }
 
 impl Display for ValueReadError {
+    #[cold]
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         f.write_str(match *self {
             ValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
@@ -73,6 +75,7 @@ impl Display for ValueReadError {
 }
 
 impl From<MarkerReadError> for ValueReadError {
+    #[cold]
     fn from(err: MarkerReadError) -> ValueReadError {
         match err {
             MarkerReadError(err) => ValueReadError::InvalidMarkerRead(err),
@@ -81,12 +84,14 @@ impl From<MarkerReadError> for ValueReadError {
 }
 
 impl From<Error> for MarkerReadError {
+    #[cold]
     fn from(err: Error) -> MarkerReadError {
         MarkerReadError(err)
     }
 }
 
 /// Attempts to read a single byte from the given reader and to decode it as a MessagePack marker.
+#[inline]
 pub fn read_marker<R: Read>(rd: &mut R) -> Result<Marker, MarkerReadError> {
     Ok(Marker::from_u8(rd.read_u8()?))
 }
@@ -177,6 +182,7 @@ impl Display for NumValueReadError {
 }
 
 impl From<MarkerReadError> for NumValueReadError {
+    #[cold]
     fn from(err: MarkerReadError) -> NumValueReadError {
         match err {
             MarkerReadError(err) => NumValueReadError::InvalidMarkerRead(err),
@@ -185,6 +191,7 @@ impl From<MarkerReadError> for NumValueReadError {
 }
 
 impl From<ValueReadError> for NumValueReadError {
+    #[cold]
     fn from(err: ValueReadError) -> NumValueReadError {
         match err {
             ValueReadError::InvalidMarkerRead(err) => NumValueReadError::InvalidMarkerRead(err),
