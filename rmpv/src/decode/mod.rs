@@ -20,6 +20,7 @@ pub enum Error {
 }
 
 impl Error {
+    #[cold]
     pub fn kind(&self) -> ErrorKind {
         match *self {
             Error::InvalidMarkerRead(ref err) => err.kind(),
@@ -29,6 +30,7 @@ impl Error {
 }
 
 impl error::Error for Error {
+    #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             Error::InvalidMarkerRead(ref err) => Some(err),
@@ -38,6 +40,7 @@ impl error::Error for Error {
 }
 
 impl Display for Error {
+    #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::InvalidMarkerRead(ref err) => {
@@ -51,12 +54,14 @@ impl Display for Error {
 }
 
 impl From<MarkerReadError> for Error {
+    #[cold]
     fn from(err: MarkerReadError) -> Error {
         Error::InvalidMarkerRead(err.0)
     }
 }
 
 impl From<ValueReadError> for Error {
+    #[cold]
     fn from(err: ValueReadError) -> Error {
         match err {
             ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
@@ -69,6 +74,7 @@ impl From<ValueReadError> for Error {
 }
 
 impl Into<io::Error> for Error {
+    #[cold]
     fn into(self) -> io::Error {
         match self {
             Error::InvalidMarkerRead(err) |

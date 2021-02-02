@@ -12,12 +12,14 @@ use crate::{Integer, IntPriv, Utf8String, Utf8StringRef, Value, ValueRef};
 use super::{Error, ValueExt};
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
+#[inline]
 pub fn from_value<T>(val: Value) -> Result<T, Error>
     where T: for<'de> Deserialize<'de>
 {
     deserialize_from(val)
 }
 
+#[inline]
 pub fn deserialize_from<'de, T, D>(val: D) -> Result<T, Error>
     where T: Deserialize<'de>,
           D: Deserializer<'de, Error = Error>
@@ -26,6 +28,7 @@ pub fn deserialize_from<'de, T, D>(val: D) -> Result<T, Error>
 }
 
 impl de::Error for Error {
+    #[cold]
     fn custom<T: Display>(msg: T) -> Self {
         Error::Syntax(format!("{}", msg))
     }
@@ -41,6 +44,7 @@ impl<'de> Deserialize<'de> for Value {
         impl<'de> serde::de::Visitor<'de> for ValueVisitor {
             type Value = Value;
 
+            #[cold]
             fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                 "any valid MessagePack value".fmt(fmt)
             }
@@ -138,7 +142,6 @@ impl<'de> Deserialize<'de> for Value {
                 Ok(Value::Map(pairs))
             }
 
-            #[inline]
             fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
                 where D: Deserializer<'de>,
             {
@@ -146,6 +149,7 @@ impl<'de> Deserialize<'de> for Value {
                 impl<'de> serde::de::Visitor<'de> for ExtValueVisitor {
                     type Value = Value;
 
+                    #[cold]
                     fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                         "a valid MessagePack Ext".fmt(fmt)
                     }
@@ -181,6 +185,7 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
         impl<'de> de::Visitor<'de> for ValueVisitor {
             type Value = ValueRef<'de>;
 
+            #[cold]
             fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                 "any valid MessagePack value".fmt(fmt)
             }
@@ -268,7 +273,6 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
                 Ok(ValueRef::Map(vec))
             }
 
-            #[inline]
             fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
                 where D: Deserializer<'de>,
             {
@@ -304,7 +308,6 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
 impl<'de> Deserializer<'de> for Value {
     type Error = Error;
 
-    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {

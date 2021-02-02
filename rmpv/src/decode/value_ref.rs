@@ -154,6 +154,7 @@ impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
 ///
 /// assert_eq!(ValueRef::from("le message"), read_value_ref(&mut rd).unwrap());
 /// ```
+#[inline(never)]
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error>
     where R: BorrowRead<'a>
 {
