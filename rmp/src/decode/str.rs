@@ -17,6 +17,7 @@ pub enum DecodeStringError<'a> {
 }
 
 impl<'a> error::Error for DecodeStringError<'a> {
+    #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             DecodeStringError::InvalidMarkerRead(ref err) |
@@ -29,12 +30,14 @@ impl<'a> error::Error for DecodeStringError<'a> {
 }
 
 impl<'a> Display for DecodeStringError<'a> {
+    #[cold]
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         f.write_str("error while decoding string")
     }
 }
 
 impl<'a> From<ValueReadError> for DecodeStringError<'a> {
+    #[cold]
     fn from(err: ValueReadError) -> DecodeStringError<'a> {
         match err {
             ValueReadError::InvalidMarkerRead(err) => DecodeStringError::InvalidMarkerRead(err),
@@ -57,6 +60,7 @@ impl<'a> From<ValueReadError> for DecodeStringError<'a> {
 ///
 /// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
 /// expected one, indicating you with the actual type.
+#[inline]
 pub fn read_str_len<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
     Ok(read_str_len_with_nread(rd)?.0)
 }

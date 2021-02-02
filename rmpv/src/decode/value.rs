@@ -80,6 +80,7 @@ fn read_ext_body<R: Read>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), Error
 /// This function will return `Error` on any I/O error while either reading or decoding a `Value`.
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
+#[inline(never)]
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
 {

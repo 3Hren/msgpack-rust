@@ -17,6 +17,7 @@ pub enum Error {
 }
 
 impl Display for Error {
+    #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::Syntax(ref err) => write!(fmt, "error while decoding value: {}", err)
@@ -32,6 +33,7 @@ trait ValueExt {
 }
 
 impl ValueExt for Value {
+    #[cold]
     fn unexpected(&self) -> Unexpected<'_> {
         match *self {
             Value::Nil => Unexpected::Unit,
@@ -59,6 +61,7 @@ impl ValueExt for Value {
 }
 
 impl<'a> ValueExt for ValueRef<'a> {
+    #[cold]
     fn unexpected(&self) -> Unexpected<'_> {
         match *self {
             ValueRef::Nil => Unexpected::Unit,

@@ -30,12 +30,14 @@ pub type Error = ::std::io::Error;
 struct MarkerWriteError(Error);
 
 impl From<Error> for MarkerWriteError {
+    #[cold]
     fn from(err: Error) -> MarkerWriteError {
         MarkerWriteError(err)
     }
 }
 
 impl From<MarkerWriteError> for Error {
+    #[cold]
     fn from(err: MarkerWriteError) -> Error {
         match err {
             MarkerWriteError(err) => err
@@ -52,12 +54,16 @@ fn write_marker<W: Write>(wr: &mut W, marker: Marker) -> Result<(), MarkerWriteE
 struct DataWriteError(Error);
 
 impl From<Error> for DataWriteError {
+    #[cold]
+    #[inline]
     fn from(err: Error) -> DataWriteError {
         DataWriteError(err)
     }
 }
 
 impl From<DataWriteError> for Error {
+    #[cold]
+    #[inline]
     fn from(err: DataWriteError) -> Error {
         err.0
     }
@@ -80,6 +86,7 @@ impl From<DataWriteError> for Error {
 ///
 /// assert_eq!(vec![0xc0], buf);
 /// ```
+#[inline]
 pub fn write_nil<W: Write>(wr: &mut W) -> Result<(), Error> {
     write_marker(wr, Marker::Null).map_err(From::from)
 }
@@ -93,6 +100,7 @@ pub fn write_nil<W: Write>(wr: &mut W) -> Result<(), Error> {
 ///
 /// Each call to this function may generate an I/O error indicating that the operation could not be
 /// completed.
+#[inline]
 pub fn write_bool<W: Write>(wr: &mut W, val: bool) -> Result<(), Error> {
     let marker = if val {
         Marker::True
@@ -103,42 +111,52 @@ pub fn write_bool<W: Write>(wr: &mut W, val: bool) -> Result<(), Error> {
     write_marker(wr, marker).map_err(From::from)
 }
 
+#[inline]
 fn write_data_u8<W: Write>(wr: &mut W, val: u8) -> Result<(), DataWriteError> {
     wr.write_u8(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_u16<W: Write>(wr: &mut W, val: u16) -> Result<(), DataWriteError> {
     wr.write_u16::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_u32<W: Write>(wr: &mut W, val: u32) -> Result<(), DataWriteError> {
     wr.write_u32::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_u64<W: Write>(wr: &mut W, val: u64) -> Result<(), DataWriteError> {
     wr.write_u64::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_i8<W: Write>(wr: &mut W, val: i8) -> Result<(), DataWriteError> {
     wr.write_i8(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_i16<W: Write>(wr: &mut W, val: i16) -> Result<(), DataWriteError> {
     wr.write_i16::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_i32<W: Write>(wr: &mut W, val: i32) -> Result<(), DataWriteError> {
     wr.write_i32::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_i64<W: Write>(wr: &mut W, val: i64) -> Result<(), DataWriteError> {
     wr.write_i64::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_f32<W: Write>(wr: &mut W, val: f32) -> Result<(), DataWriteError> {
     wr.write_f32::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
 
+#[inline]
 fn write_data_f64<W: Write>(wr: &mut W, val: f64) -> Result<(), DataWriteError> {
     wr.write_f64::<byteorder::BigEndian>(val).map_err(DataWriteError)
 }
@@ -153,6 +171,7 @@ pub enum ValueWriteError {
 }
 
 impl From<MarkerWriteError> for ValueWriteError {
+    #[cold]
     fn from(err: MarkerWriteError) -> ValueWriteError {
         match err {
             MarkerWriteError(err) => ValueWriteError::InvalidMarkerWrite(err),
@@ -161,6 +180,7 @@ impl From<MarkerWriteError> for ValueWriteError {
 }
 
 impl From<DataWriteError> for ValueWriteError {
+    #[cold]
     fn from(err: DataWriteError) -> ValueWriteError {
         match err {
             DataWriteError(err) => ValueWriteError::InvalidDataWrite(err),
@@ -169,6 +189,7 @@ impl From<DataWriteError> for ValueWriteError {
 }
 
 impl From<ValueWriteError> for Error {
+    #[cold]
     fn from(err: ValueWriteError) -> Error {
         match err {
             ValueWriteError::InvalidMarkerWrite(err) |
@@ -178,6 +199,7 @@ impl From<ValueWriteError> for Error {
 }
 
 impl error::Error for ValueWriteError {
+    #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             ValueWriteError::InvalidMarkerWrite(ref err) |
@@ -187,6 +209,7 @@ impl error::Error for ValueWriteError {
 }
 
 impl Display for ValueWriteError {
+    #[cold]
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         f.write_str("error while writing multi-byte MessagePack value")
     }
