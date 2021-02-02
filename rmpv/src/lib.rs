@@ -293,7 +293,7 @@ impl Display for Utf8String {
     #[cold]
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self.s {
-            Ok(ref s) => write!(fmt, "\"{}\"", s),
+            Ok(ref s) => Debug::fmt(&s, fmt),
             Err(ref err) => Debug::fmt(&err.0, fmt),
         }
     }
@@ -399,7 +399,7 @@ impl<'a> Display for Utf8StringRef<'a> {
     #[cold]
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self.s {
-            Ok(ref s) => write!(fmt, "\"{}\"", s),
+            Ok(ref s) => Debug::fmt(&s, fmt),
             Err(ref err) => Debug::fmt(&err.0, fmt),
         }
     }
@@ -1186,13 +1186,13 @@ impl Display for Value {
     #[cold]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Value::Nil => Display::fmt("nil", f),
-            Value::Boolean(val) => write!(f, "{}", val),
-            Value::Integer(ref val) => write!(f, "{}", val),
-            Value::F32(val) => write!(f, "{}", val),
-            Value::F64(val) => write!(f, "{}", val),
-            Value::String(ref val) => write!(f, "{}", val),
-            Value::Binary(ref val) => write!(f, "{:?}", val),
+            Value::Nil => f.write_str("nil"),
+            Value::Boolean(val) => Display::fmt(&val, f),
+            Value::Integer(ref val) => Display::fmt(&val, f),
+            Value::F32(val) => Display::fmt(&val, f),
+            Value::F64(val) => Display::fmt(&val, f),
+            Value::String(ref val) => Display::fmt(&val, f),
+            Value::Binary(ref val) => Debug::fmt(&val, f),
             Value::Array(ref vec) => {
                 // TODO: This can be slower than naive implementation. Need benchmarks for more
                 // information.
@@ -1537,12 +1537,12 @@ impl<'a> Display for ValueRef<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             ValueRef::Nil => write!(f, "nil"),
-            ValueRef::Boolean(val) => write!(f, "{}", val),
-            ValueRef::Integer(ref val) => write!(f, "{}", val),
-            ValueRef::F32(val) => write!(f, "{}", val),
-            ValueRef::F64(val) => write!(f, "{}", val),
-            ValueRef::String(ref val) => write!(f, "{}", val),
-            ValueRef::Binary(ref val) => write!(f, "{:?}", val),
+            ValueRef::Boolean(val) => Display::fmt(&val, f),
+            ValueRef::Integer(ref val) => Display::fmt(&val, f),
+            ValueRef::F32(val) => Display::fmt(&val, f),
+            ValueRef::F64(val) => Display::fmt(&val, f),
+            ValueRef::String(ref val) => Display::fmt(&val, f),
+            ValueRef::Binary(ref val) => Debug::fmt(&val, f),
             ValueRef::Array(ref vec) => {
                 let res = vec.iter()
                     .map(|val| format!("{}", val))
