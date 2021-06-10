@@ -541,3 +541,31 @@ fn fail_str_invalid_utf8() {
         err => panic!("unexpected error: {:?}", err),
     }
 }
+
+
+#[test]
+fn fail_depth_limit() {
+    struct Nested {
+        sub: Vec<Nested>
+    }
+
+    impl<'de> de::Deserialize<'de> for Nested {
+        fn deserialize<D>(de: D) -> Result<Self, D::Error>
+            where D: de::Deserializer<'de>
+        {
+            let nested = Vec::deserialize(de)?;
+            Ok(Nested{sub: nested})
+        }
+    }
+    let mut data = Vec::new();
+    for _ in 0..100 {
+        data.push(0x91u8);
+    }
+    let mut reader = rmp_serde::Deserializer::new(Cursor::new(data));
+    reader.set_max_depth(100);
+    let res = Nested::deserialize(&mut reader);
+    match res.err().unwrap() {
+        decode::Error::DepthLimitExceeded => (),
+        other => panic!("unexpected result: {:?}", other)
+    }
+}

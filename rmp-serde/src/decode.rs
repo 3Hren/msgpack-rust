@@ -40,9 +40,23 @@ pub enum Error {
     Syntax(String),
     /// An encoded string could not be parsed as UTF-8.
     Utf8Error(Utf8Error),
-    /// The depth limit was exceeded; not currently used.
+    /// The depth limit was exceeded.
     DepthLimitExceeded,
 }
+
+macro_rules! depth_count(
+    ( $counter:expr, $expr:expr ) => {
+        {
+            $counter -= 1;
+            if $counter == 0 {
+                return Err(Error::DepthLimitExceeded)
+            }
+            let res = $expr;
+            $counter += 1;
+            res
+        }
+    }
+);
 
 impl error::Error for Error {
     #[cold]
@@ -507,7 +521,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
                     Marker::Array16 => read_u16(&mut self.rd).map(u32::from),
                     Marker::Array32 | _ => read_u32(&mut self.rd).map(u32::from),
                 }?;
-                visitor.visit_seq(SeqAccess::new(self, len as usize))
+                depth_count!(self.depth, visitor.visit_seq(SeqAccess::new(self, len as usize)))
             }
             Marker::FixMap(_) |
             Marker::Map16 |
@@ -517,7 +531,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
                     Marker::Map16 => read_u16(&mut self.rd).map(u32::from),
                     Marker::Map32 | _ => read_u32(&mut self.rd).map(u32::from),
                 }?;
-                visitor.visit_map(MapAccess::new(self, len as usize))
+                depth_count!(self.depth, visitor.visit_map(MapAccess::new(self, len as usize)))
             }
             Marker::Bin8 | Marker::Bin16| Marker::Bin32 => {
                 let len = match marker {
@@ -539,7 +553,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             Marker::Ext16 |
             Marker::Ext32 => {
                 let len = ext_len(&mut self.rd, marker)?;
-                visitor.visit_newtype_struct(ExtDeserializer::new(self, len))
+                depth_count!(self.depth, visitor.visit_newtype_struct(ExtDeserializer::new(self, len)))
             }
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
         }
