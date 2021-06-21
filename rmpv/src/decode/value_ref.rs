@@ -10,10 +10,11 @@ use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_
 use crate::{Utf8StringRef, ValueRef};
 use super::Error;
 
-fn read_str_data<'a, R>(rd: &mut R, len: usize) -> Result<Utf8StringRef<'a>, Error>
+fn read_str_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8StringRef<'a>, Error>
     where R: BorrowRead<'a>
 {
-    let buf = read_bin_data(rd, len)?;
+    let depth = super::increment_depth(depth)?;
+    let buf = read_bin_data(rd, len, depth)?;
     match str::from_utf8(buf) {
         Ok(s) => Ok(Utf8StringRef::from(s)),
         Err(err) => {
@@ -25,9 +26,10 @@ fn read_str_data<'a, R>(rd: &mut R, len: usize) -> Result<Utf8StringRef<'a>, Err
     }
 }
 
-fn read_bin_data<'a, R>(rd: &mut R, len: usize) -> Result<&'a [u8], Error>
+fn read_bin_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<&'a [u8], Error>
     where R: BorrowRead<'a>
 {
+    let _depth = super::increment_depth(depth)?;
     let buf = rd.fill_buf();
 
     if len > buf.len() {
@@ -41,39 +43,42 @@ fn read_bin_data<'a, R>(rd: &mut R, len: usize) -> Result<&'a [u8], Error>
     Ok(buf)
 }
 
-fn read_ext_body<'a, R>(rd: &mut R, len: usize) -> Result<(i8, &'a [u8]), Error>
+fn read_ext_body<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, &'a [u8]), Error>
     where R: BorrowRead<'a>
 {
+    let depth = super::increment_depth(depth)?;
     let ty = read_data_i8(rd)?;
-    let buf = read_bin_data(rd, len)?;
+    let buf = read_bin_data(rd, len, depth)?;
 
     Ok((ty, buf))
 }
 
-fn read_array_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<ValueRef<'a>>, Error>
+fn read_array_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<ValueRef<'a>>, Error>
     where R: BorrowRead<'a>
 {
+    let depth = super::increment_depth(depth)?;
     // Note: Do not preallocate a Vec of size `len`.
     // See https://github.com/3Hren/msgpack-rust/issues/151
     let mut vec = Vec::new();
 
     while len > 0 {
-        vec.push(read_value_ref(rd)?);
+        vec.push(read_value_ref_inner(rd, depth)?);
         len -= 1;
     }
 
     Ok(vec)
 }
 
-fn read_map_data<'a, R>(rd: &mut R, mut len: usize) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error>
+fn read_map_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error>
     where R: BorrowRead<'a>
 {
+    let depth = super::increment_depth(depth)?;
     // Note: Do not preallocate a Vec of size `len`.
     // See https://github.com/3Hren/msgpack-rust/issues/151
     let mut vec = Vec::new();
 
     while len > 0 {
-        vec.push((read_value_ref(rd)?, read_value_ref(rd)?));
+        vec.push((read_value_ref_inner(rd, depth)?, read_value_ref_inner(rd, depth)?));
         len -= 1;
     }
 
@@ -124,6 +129,137 @@ impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
     }
 }
 
+fn read_value_ref_inner<'a, R>(rd: &mut R, depth: usize) -> Result<ValueRef<'a>, Error>
+    where R: BorrowRead<'a>
+{
+    let depth = super::increment_depth(depth)?;
+
+    // Reading the marker involves either 1 byte read or nothing. On success consumes strictly
+    // 1 byte from the `rd`.
+    let val = match read_marker(rd)? {
+        Marker::Null => ValueRef::Nil,
+        Marker::True => ValueRef::Boolean(true),
+        Marker::False => ValueRef::Boolean(false),
+        Marker::FixPos(val) => ValueRef::from(val),
+        Marker::FixNeg(val) => ValueRef::from(val),
+        Marker::U8 => ValueRef::from(read_data_u8(rd)?),
+        Marker::U16 => ValueRef::from(read_data_u16(rd)?),
+        Marker::U32 => ValueRef::from(read_data_u32(rd)?),
+        Marker::U64 => ValueRef::from(read_data_u64(rd)?),
+        Marker::I8 => ValueRef::from(read_data_i8(rd)?),
+        Marker::I16 => ValueRef::from(read_data_i16(rd)?),
+        Marker::I32 => ValueRef::from(read_data_i32(rd)?),
+        Marker::I64 => ValueRef::from(read_data_i64(rd)?),
+        Marker::F32 => ValueRef::F32(read_data_f32(rd)?),
+        Marker::F64 => ValueRef::F64(read_data_f64(rd)?),
+        Marker::FixStr(len) => {
+            let res = read_str_data(rd, len as usize, depth)?;
+            ValueRef::String(res)
+        }
+        Marker::Str8 => {
+            let len = read_data_u8(rd)?;
+            let res = read_str_data(rd, len as usize, depth)?;
+            ValueRef::String(res)
+        }
+        Marker::Str16 => {
+            let len = read_data_u16(rd)?;
+            let res = read_str_data(rd, len as usize, depth)?;
+            ValueRef::String(res)
+        }
+        Marker::Str32 => {
+            let len = read_data_u32(rd)?;
+            let res = read_str_data(rd, len as usize, depth)?;
+            ValueRef::String(res)
+        }
+        Marker::Bin8 => {
+            let len = read_data_u8(rd)?;
+            let res = read_bin_data(rd, len as usize, depth)?;
+            ValueRef::Binary(res)
+        }
+        Marker::Bin16 => {
+            let len = read_data_u16(rd)?;
+            let res = read_bin_data(rd, len as usize, depth)?;
+            ValueRef::Binary(res)
+        }
+        Marker::Bin32 => {
+            let len = read_data_u32(rd)?;
+            let res = read_bin_data(rd, len as usize, depth)?;
+            ValueRef::Binary(res)
+        }
+        Marker::FixArray(len) => {
+            let vec = read_array_data(rd, len as usize, depth)?;
+            ValueRef::Array(vec)
+        }
+        Marker::Array16 => {
+            let len = read_data_u16(rd)?;
+            let vec = read_array_data(rd, len as usize, depth)?;
+            ValueRef::Array(vec)
+        }
+        Marker::Array32 => {
+            let len = read_data_u32(rd)?;
+            let vec = read_array_data(rd, len as usize, depth)?;
+            ValueRef::Array(vec)
+        }
+        Marker::FixMap(len) => {
+            let map = read_map_data(rd, len as usize, depth)?;
+            ValueRef::Map(map)
+        }
+        Marker::Map16 => {
+            let len = read_data_u16(rd)?;
+            let map = read_map_data(rd, len as usize, depth)?;
+            ValueRef::Map(map)
+        }
+        Marker::Map32 => {
+            let len = read_data_u32(rd)?;
+            let map = read_map_data(rd, len as usize, depth)?;
+            ValueRef::Map(map)
+        }
+        Marker::FixExt1 => {
+            let len = 1;
+            let (ty, vec) = read_ext_body(rd, len as usize, depth)?;
+            ValueRef::Ext(ty, vec)
+        }
+        Marker::FixExt2 => {
+            let len = 2;
+            let (ty, vec) = read_ext_body(rd, len as usize, depth)?;
+            ValueRef::Ext(ty, vec)
+        }
+        Marker::FixExt4 => {
+            let len = 4;
+            let (ty, vec) = read_ext_body(rd, len as usize, depth)?;
+            ValueRef::Ext(ty, vec)
+        }
+        Marker::FixExt8 => {
+            let len = 8;
+            let (ty, vec) = read_ext_body(rd, len as usize, depth)?;
+            ValueRef::Ext(ty, vec)
+        }
+        Marker::FixExt16 => {
+            let len = 16;
+            let (ty, vec) = read_ext_body(rd, len as usize, depth)?;
+            ValueRef::Ext(ty, vec)
+        }
+        Marker::Ext8 => {
+            let len = read_data_u8(rd)?;
+            let (ty, vec) = read_ext_body(rd, len as usize, depth)?;
+            ValueRef::Ext(ty, vec)
+        }
+        Marker::Ext16 => {
+            let len = read_data_u16(rd)?;
+            let (ty, vec) = read_ext_body(rd, len as usize, depth)?;
+            ValueRef::Ext(ty, vec)
+        }
+        Marker::Ext32 => {
+            let len = read_data_u32(rd)?;
+            let (ty, vec) = read_ext_body(rd, len as usize, depth)?;
+            ValueRef::Ext(ty, vec)
+        }
+        Marker::Reserved => ValueRef::Nil,
+    };
+
+    Ok(val)
+}
+
 /// Attempts to read the data from the given reader until either a complete MessagePack value
 /// decoded or an error detected.
 ///
@@ -158,129 +294,5 @@ impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error>
     where R: BorrowRead<'a>
 {
-
-    // Reading the marker involves either 1 byte read or nothing. On success consumes strictly
-    // 1 byte from the `rd`.
-    let val = match read_marker(rd)? {
-        Marker::Null => ValueRef::Nil,
-        Marker::True => ValueRef::Boolean(true),
-        Marker::False => ValueRef::Boolean(false),
-        Marker::FixPos(val) => ValueRef::from(val),
-        Marker::FixNeg(val) => ValueRef::from(val),
-        Marker::U8 => ValueRef::from(read_data_u8(rd)?),
-        Marker::U16 => ValueRef::from(read_data_u16(rd)?),
-        Marker::U32 => ValueRef::from(read_data_u32(rd)?),
-        Marker::U64 => ValueRef::from(read_data_u64(rd)?),
-        Marker::I8 => ValueRef::from(read_data_i8(rd)?),
-        Marker::I16 => ValueRef::from(read_data_i16(rd)?),
-        Marker::I32 => ValueRef::from(read_data_i32(rd)?),
-        Marker::I64 => ValueRef::from(read_data_i64(rd)?),
-        Marker::F32 => ValueRef::F32(read_data_f32(rd)?),
-        Marker::F64 => ValueRef::F64(read_data_f64(rd)?),
-        Marker::FixStr(len) => {
-            let res = read_str_data(rd, len as usize)?;
-            ValueRef::String(res)
-        }
-        Marker::Str8 => {
-            let len = read_data_u8(rd)?;
-            let res = read_str_data(rd, len as usize)?;
-            ValueRef::String(res)
-        }
-        Marker::Str16 => {
-            let len = read_data_u16(rd)?;
-            let res = read_str_data(rd, len as usize)?;
-            ValueRef::String(res)
-        }
-        Marker::Str32 => {
-            let len = read_data_u32(rd)?;
-            let res = read_str_data(rd, len as usize)?;
-            ValueRef::String(res)
-        }
-        Marker::Bin8 => {
-            let len = read_data_u8(rd)?;
-            let res = read_bin_data(rd, len as usize)?;
-            ValueRef::Binary(res)
-        }
-        Marker::Bin16 => {
-            let len = read_data_u16(rd)?;
-            let res = read_bin_data(rd, len as usize)?;
-            ValueRef::Binary(res)
-        }
-        Marker::Bin32 => {
-            let len = read_data_u32(rd)?;
-            let res = read_bin_data(rd, len as usize)?;
-            ValueRef::Binary(res)
-        }
-        Marker::FixArray(len) => {
-            let vec = read_array_data(rd, len as usize)?;
-            ValueRef::Array(vec)
-        }
-        Marker::Array16 => {
-            let len = read_data_u16(rd)?;
-            let vec = read_array_data(rd, len as usize)?;
-            ValueRef::Array(vec)
-        }
-        Marker::Array32 => {
-            let len = read_data_u32(rd)?;
-            let vec = read_array_data(rd, len as usize)?;
-            ValueRef::Array(vec)
-        }
-        Marker::FixMap(len) => {
-            let map = read_map_data(rd, len as usize)?;
-            ValueRef::Map(map)
-        }
-        Marker::Map16 => {
-            let len = read_data_u16(rd)?;
-            let map = read_map_data(rd, len as usize)?;
-            ValueRef::Map(map)
-        }
-        Marker::Map32 => {
-            let len = read_data_u32(rd)?;
-            let map = read_map_data(rd, len as usize)?;
-            ValueRef::Map(map)
-        }
-        Marker::FixExt1 => {
-            let len = 1;
-            let (ty, vec) = read_ext_body(rd, len as usize)?;
-            ValueRef::Ext(ty, vec)
-        }
-        Marker::FixExt2 => {
-            let len = 2;
-            let (ty, vec) = read_ext_body(rd, len as usize)?;
-            ValueRef::Ext(ty, vec)
-        }
-        Marker::FixExt4 => {
-            let len = 4;
-            let (ty, vec) = read_ext_body(rd, len as usize)?;
-            ValueRef::Ext(ty, vec)
-        }
-        Marker::FixExt8 => {
-            let len = 8;
-            let (ty, vec) = read_ext_body(rd, len as usize)?;
-            ValueRef::Ext(ty, vec)
-        }
-        Marker::FixExt16 => {
-            let len = 16;
-            let (ty, vec) = read_ext_body(rd, len as usize)?;
-            ValueRef::Ext(ty, vec)
-        }
-        Marker::Ext8 => {
-            let len = read_data_u8(rd)?;
-            let (ty, vec) = read_ext_body(rd, len as usize)?;
-            ValueRef::Ext(ty, vec)
-        }
-        Marker::Ext16 => {
-            let len = read_data_u16(rd)?;
-            let (ty, vec) = read_ext_body(rd, len as usize)?;
-            ValueRef::Ext(ty, vec)
-        }
-        Marker::Ext32 => {
-            let len = read_data_u32(rd)?;
-            let (ty, vec) = read_ext_body(rd, len as usize)?;
-            ValueRef::Ext(ty, vec)
-        }
-        Marker::Reserved => ValueRef::Nil,
-    };
-
-    Ok(val)
+    read_value_ref_inner(rd, 0)
 }

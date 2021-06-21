@@ -21,6 +21,18 @@ fn test_decode(buf: &[u8], v: Value) {
 }
 
 #[test]
+fn test_stack_depth_checking() {
+    let mut buf: Vec<u8> = (0..decode::MAX_DEPTH).map(|_| 0x91).collect();
+    buf.push(0xc3);
+
+    match decode::read_value(&mut &buf[..]) {
+        Ok(_) => panic!("expected max stack depth to be exceeded"),
+        Err(decode::Error::DepthLimitExceeded) => {},
+        Err(err) => panic!("unexpected error: {}", err),
+    }
+}
+
+#[test]
 fn pass_null() {
     test_decode(&[0xc0], Value::Nil);
 }
