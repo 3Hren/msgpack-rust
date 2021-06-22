@@ -7,8 +7,8 @@ use rmp::decode::{MarkerReadError, ValueReadError};
 pub mod value;
 pub mod value_ref;
 
-pub use self::value::{read_value, read_value_max_depth};
-pub use self::value_ref::{read_value_ref, read_value_ref_max_depth};
+pub use self::value::{read_value, read_value_with_max_depth};
+pub use self::value_ref::{read_value_ref, read_value_ref_with_max_depth};
 
 /// The maximum recursion depth before [`Error::DepthLimitExceeded`] is returned.
 pub const MAX_DEPTH: usize = 1024;

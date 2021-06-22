@@ -214,12 +214,12 @@ fn read_value_inner<R>(rd: &mut R, depth: usize) -> Result<Value, Error> where R
 /// # Errors
 ///
 /// This function will return [`Error`] on any I/O error while either reading or decoding a [`Value`].
-/// All instances of [`ErrorKind::Interrupted`] are handled by this function and the underlying
-/// operation is retried.
+/// All instances of [`ErrorKind::Interrupted`](io::ErrorKind) are handled by this function and the
+/// underlying operation is retried.
 ///
 /// [`Error::DepthLimitExceeded`] is returned if this function recurses
 /// [`MAX_DEPTH`](super::MAX_DEPTH) times. To configure the maximum recursion depth, use
-/// [`read_value_max_depth`] instead.
+/// [`read_value_with_max_depth`] instead.
 #[inline(never)]
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
@@ -232,14 +232,14 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
 /// # Errors
 ///
 /// This function will return [`Error`] on any I/O error while either reading or decoding a [`Value`].
-/// All instances of [`ErrorKind::Interrupted`] are handled by this function and the underlying
-/// operation is retried.
+/// All instances of [`ErrorKind::Interrupted`](io::ErrorKind) are handled by this function and the
+/// underlying operation is retried.
 ///
 /// [`Error::DepthLimitExceeded`] is returned if this function recurses
 /// `max_depth` times. If the default [`MAX_DEPTH`](super::MAX_DEPTH) is sufficient or you do not
 /// need recursion depth checking for your data, consider using [`read_value`] instead.
 #[inline(never)]
-pub fn read_value_max_depth<R>(rd: &mut R, max_depth: usize) -> Result<Value, Error>
+pub fn read_value_with_max_depth<R>(rd: &mut R, max_depth: usize) -> Result<Value, Error>
     where R: Read
 {
     read_value_inner(rd, max_depth)   

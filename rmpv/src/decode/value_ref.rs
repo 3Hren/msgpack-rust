@@ -282,7 +282,7 @@ fn read_value_ref_inner<'a, R>(rd: &mut R, depth: usize) -> Result<ValueRef<'a>,
 ///
 /// This function enforces a maximum recursion depth of [`MAX_DEPTH`](super::MAX_DEPTH) and returns
 /// [`Error::DepthLimitExceeded`] if the maximum is hit. If you run into stack overflows despite
-/// this, use [`read_value_ref_max_depth`] with a custom maximum depth.
+/// this, use [`read_value_ref_with_max_depth`] with a custom maximum depth.
 ///
 /// # Examples
 /// ```
@@ -315,7 +315,7 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error>
 /// Same as [`read_value_ref`], using the `max_depth` parameter in place of
 /// [`MAX_DEPTH`](super::MAX_DEPTH).
 #[inline(never)]
-pub fn read_value_ref_max_depth<'a, R>(rd: &mut R, max_depth: usize) -> Result<ValueRef<'a>, Error>
+pub fn read_value_ref_with_max_depth<'a, R>(rd: &mut R, max_depth: usize) -> Result<ValueRef<'a>, Error>
     where R: BorrowRead<'a>
 {
     read_value_ref_inner(rd, max_depth)
