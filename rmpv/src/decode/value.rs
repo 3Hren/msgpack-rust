@@ -15,7 +15,7 @@ const PREALLOC_MAX: usize = 64 * 1024; // 64 KiB
 
 
 fn read_array_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<Value>, Error> {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
 
     // Note: Do not preallocate a Vec of size `len`.
     // See https://github.com/3Hren/msgpack-rust/issues/151
@@ -30,7 +30,7 @@ fn read_array_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<
 }
 
 fn read_map_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<(Value, Value)>, Error> {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
 
     // Note: Do not preallocate a Vec of size `len`.
     // See https://github.com/3Hren/msgpack-rust/issues/151
@@ -45,7 +45,7 @@ fn read_map_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<Ve
 }
 
 fn read_str_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8String, Error> {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
 
     match String::from_utf8(read_bin_data(rd, len, depth)?) {
         Ok(s) => Ok(Utf8String::from(s)),
@@ -60,7 +60,7 @@ fn read_str_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8St
 }
 
 fn read_bin_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Vec<u8>, Error> {
-    let _depth = super::increment_depth(depth)?;
+    let _depth = super::decrement_depth(depth)?;
 
     let mut buf = Vec::with_capacity(min(len, PREALLOC_MAX));
     let bytes_read = rd.take(len as u64).read_to_end(&mut buf).map_err(Error::InvalidDataRead)?;
@@ -75,7 +75,7 @@ fn read_bin_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Vec<u8
 }
 
 fn read_ext_body<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, Vec<u8>), Error> {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
 
     let ty = read_data_i8(rd)?;
     let vec = read_bin_data(rd, len, depth)?;
@@ -84,7 +84,7 @@ fn read_ext_body<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, V
 }
 
 fn read_value_inner<R>(rd: &mut R, depth: usize) -> Result<Value, Error> where R: Read {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
     let val = match read_marker(rd)? {
         Marker::Null => Value::Nil,
         Marker::True => Value::Boolean(true),
@@ -209,16 +209,38 @@ fn read_value_inner<R>(rd: &mut R, depth: usize) -> Result<Value, Error> where R
     Ok(val)
 }
 
-/// Attempts to read bytes from the given reader and interpret them as a `Value`.
+/// Attempts to read bytes from the given reader and interpret them as a [`Value`].
 ///
 /// # Errors
 ///
-/// This function will return `Error` on any I/O error while either reading or decoding a `Value`.
-/// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
+/// This function will return [`Error`] on any I/O error while either reading or decoding a [`Value`].
+/// All instances of [`ErrorKind::Interrupted`] are handled by this function and the underlying
 /// operation is retried.
+///
+/// [`Error::DepthLimitExceeded`] is returned if this function recurses
+/// [`MAX_DEPTH`](super::MAX_DEPTH) times. To configure the maximum recursion depth, use
+/// [`read_value_max_depth`] instead.
 #[inline(never)]
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
 {
-    read_value_inner(rd, 0)
+    read_value_inner(rd, super::MAX_DEPTH)
+}
+
+/// Attempts to read bytes from the given reader and interpret them as a [`Value`].
+///
+/// # Errors
+///
+/// This function will return [`Error`] on any I/O error while either reading or decoding a [`Value`].
+/// All instances of [`ErrorKind::Interrupted`] are handled by this function and the underlying
+/// operation is retried.
+///
+/// [`Error::DepthLimitExceeded`] is returned if this function recurses
+/// `max_depth` times. If the default [`MAX_DEPTH`](super::MAX_DEPTH) is sufficient or you do not
+/// need recursion depth checking for your data, consider using [`read_value`] instead.
+#[inline(never)]
+pub fn read_value_max_depth<R>(rd: &mut R, max_depth: usize) -> Result<Value, Error>
+    where R: Read
+{
+    read_value_inner(rd, max_depth)   
 }

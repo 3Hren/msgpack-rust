@@ -11,7 +11,7 @@ pub use self::value::read_value;
 pub use self::value_ref::read_value_ref;
 
 /// The maximum recursion depth before [`Error::DepthLimitExceeded`] is returned.
-pub const MAX_DEPTH: usize = 256;
+pub const MAX_DEPTH: usize = 1024;
 
 /// This type represents all possible errors that can occur when deserializing a value.
 #[derive(Debug)]
@@ -24,11 +24,11 @@ pub enum Error {
     DepthLimitExceeded,
 }
 
-fn increment_depth(depth: usize) -> Result<usize, Error> {
-    if depth == MAX_DEPTH {
+fn decrement_depth(depth: usize) -> Result<usize, Error> {
+    if depth == 0 {
         Err(Error::DepthLimitExceeded)
     } else {
-        Ok(depth + 1)
+        Ok(depth - 1)
     }
 }
 

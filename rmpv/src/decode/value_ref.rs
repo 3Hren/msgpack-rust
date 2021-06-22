@@ -13,7 +13,7 @@ use super::Error;
 fn read_str_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8StringRef<'a>, Error>
     where R: BorrowRead<'a>
 {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
     let buf = read_bin_data(rd, len, depth)?;
     match str::from_utf8(buf) {
         Ok(s) => Ok(Utf8StringRef::from(s)),
@@ -29,7 +29,7 @@ fn read_str_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8Stri
 fn read_bin_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<&'a [u8], Error>
     where R: BorrowRead<'a>
 {
-    let _depth = super::increment_depth(depth)?;
+    let _depth = super::decrement_depth(depth)?;
     let buf = rd.fill_buf();
 
     if len > buf.len() {
@@ -46,7 +46,7 @@ fn read_bin_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<&'a [u8]
 fn read_ext_body<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, &'a [u8]), Error>
     where R: BorrowRead<'a>
 {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
     let ty = read_data_i8(rd)?;
     let buf = read_bin_data(rd, len, depth)?;
 
@@ -56,7 +56,7 @@ fn read_ext_body<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, &'a
 fn read_array_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<ValueRef<'a>>, Error>
     where R: BorrowRead<'a>
 {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
     // Note: Do not preallocate a Vec of size `len`.
     // See https://github.com/3Hren/msgpack-rust/issues/151
     let mut vec = Vec::new();
@@ -72,7 +72,7 @@ fn read_array_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Ve
 fn read_map_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error>
     where R: BorrowRead<'a>
 {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
     // Note: Do not preallocate a Vec of size `len`.
     // See https://github.com/3Hren/msgpack-rust/issues/151
     let mut vec = Vec::new();
@@ -132,7 +132,7 @@ impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
 fn read_value_ref_inner<'a, R>(rd: &mut R, depth: usize) -> Result<ValueRef<'a>, Error>
     where R: BorrowRead<'a>
 {
-    let depth = super::increment_depth(depth)?;
+    let depth = super::decrement_depth(depth)?;
 
     // Reading the marker involves either 1 byte read or nothing. On success consumes strictly
     // 1 byte from the `rd`.
@@ -280,6 +280,10 @@ fn read_value_ref_inner<'a, R>(rd: &mut R, depth: usize) -> Result<ValueRef<'a>,
 /// Returns an `Error` value if unable to continue the decoding operation either because of read
 /// failure or any other circumstances. See `Error` documentation for more information.
 ///
+/// This function enforces a maximum recursion depth of [`MAX_DEPTH`](super::MAX_DEPTH) and returns
+/// [`Error::DepthLimitExceeded`] if the maximum is hit. If you run into stack overflows despite
+/// this, use [`read_value_ref_max_depth`] with a custom maximum depth.
+///
 /// # Examples
 /// ```
 /// use rmpv::ValueRef;
@@ -294,5 +298,25 @@ fn read_value_ref_inner<'a, R>(rd: &mut R, depth: usize) -> Result<ValueRef<'a>,
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error>
     where R: BorrowRead<'a>
 {
-    read_value_ref_inner(rd, 0)
+    read_value_ref_inner(rd, super::MAX_DEPTH)
+}
+
+/// Attempts to read the data from the given reader until either a complete MessagePack value
+/// decoded or an error detected.
+///
+/// Returns either a non-owning `ValueRef`, which borrows the buffer from the given reader or an
+/// error.
+///
+/// See [`read_value_ref`] for more information on how to use this function. This variant allows
+/// you to specify the maximum recursion depth, if [`MAX_DEPTH`](super::MAX_DEPTH) is too high.
+///
+/// # Errors
+///
+/// Same as [`read_value_ref`], using the `max_depth` parameter in place of
+/// [`MAX_DEPTH`](super::MAX_DEPTH).
+#[inline(never)]
+pub fn read_value_ref_max_depth<'a, R>(rd: &mut R, max_depth: usize) -> Result<ValueRef<'a>, Error>
+    where R: BorrowRead<'a>
+{
+    read_value_ref_inner(rd, max_depth)
 }
