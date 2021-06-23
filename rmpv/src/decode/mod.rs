@@ -7,8 +7,11 @@ use rmp::decode::{MarkerReadError, ValueReadError};
 pub mod value;
 pub mod value_ref;
 
-pub use self::value::read_value;
-pub use self::value_ref::read_value_ref;
+pub use self::value::{read_value, read_value_with_max_depth};
+pub use self::value_ref::{read_value_ref, read_value_ref_with_max_depth};
+
+/// The maximum recursion depth before [`Error::DepthLimitExceeded`] is returned.
+pub const MAX_DEPTH: usize = 1024;
 
 /// This type represents all possible errors that can occur when deserializing a value.
 #[derive(Debug)]
@@ -17,6 +20,16 @@ pub enum Error {
     InvalidMarkerRead(io::Error),
     /// Error while reading data.
     InvalidDataRead(io::Error),
+    /// The depth limit [`MAX_DEPTH`] was exceeded.
+    DepthLimitExceeded,
+}
+
+fn decrement_depth(depth: usize) -> Result<usize, Error> {
+    if depth == 0 {
+        Err(Error::DepthLimitExceeded)
+    } else {
+        Ok(depth - 1)
+    }
 }
 
 impl Error {
@@ -25,6 +38,7 @@ impl Error {
         match *self {
             Error::InvalidMarkerRead(ref err) => err.kind(),
             Error::InvalidDataRead(ref err) => err.kind(),
+            Error::DepthLimitExceeded => ErrorKind::Unsupported,
         }
     }
 }
@@ -35,6 +49,7 @@ impl error::Error for Error {
         match *self {
             Error::InvalidMarkerRead(ref err) => Some(err),
             Error::InvalidDataRead(ref err) => Some(err),
+            Error::DepthLimitExceeded => None,
         }
     }
 }
@@ -48,6 +63,9 @@ impl Display for Error {
             }
             Error::InvalidDataRead(ref err) => {
                 write!(fmt, "I/O error while reading non-marker bytes: {}", err)
+            }
+            Error::DepthLimitExceeded => {
+                write!(fmt, "depth limit exceeded")
             }
         }
     }
@@ -79,6 +97,7 @@ impl Into<io::Error> for Error {
         match self {
             Error::InvalidMarkerRead(err) |
             Error::InvalidDataRead(err) => err,
+            Error::DepthLimitExceeded => io::Error::new(self.kind(), self),
         }
     }
 }
