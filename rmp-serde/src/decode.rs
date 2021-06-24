@@ -8,7 +8,7 @@ use std::str::{self, Utf8Error};
 use byteorder::{self, ReadBytesExt};
 
 use serde;
-use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Visitor};
+use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Unexpected, Visitor};
 
 use rmp;
 use rmp::decode::{self, DecodeStringError, MarkerReadError, NumValueReadError, ValueReadError};
@@ -181,6 +181,16 @@ impl<R: Read, C> Deserializer<R, C> {
         self.marker
             .take()
             .map_or_else(|| rmp::decode::read_marker(&mut self.rd), Ok)
+    }
+
+    #[inline]
+    fn peek_or_read_marker(&mut self) -> Result<Marker, MarkerReadError> {
+        if let Some(m) = self.marker {
+            Ok(m)
+        } else {
+            let m = rmp::decode::read_marker(&mut self.rd)?;
+            Ok(self.marker.insert(m).to_owned())
+        }
     }
 }
 
@@ -629,10 +639,20 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de>
     where
         V: Visitor<'de>,
     {
-        let marker = self.take_or_read_marker()?;
-        match rmp::decode::marker_to_len(&mut self.rd, marker)? {
-            1 => visitor.visit_enum(VariantAccess::new(self)),
-            n => Err(Error::LengthMismatch(n as u32)),
+        let marker = self.peek_or_read_marker()?;
+        match rmp::decode::marker_to_len(&mut self.rd, marker) {
+            Ok(len) => match len {
+                // Enums are either encoded as maps with a single K/V pair
+                // where the K = the variant & V = associated data
+                // or as just the variant
+                1 => {
+                    self.marker = None;
+                    visitor.visit_enum(VariantAccess::new(self))
+                }
+                n => Err(Error::LengthMismatch(n as u32)),
+            },
+            // TODO: Check this is a string
+            Err(_) => visitor.visit_enum(UnitVariantAccess::new(self)),
         }
     }
 
@@ -825,6 +845,76 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de>
     #[inline(always)]
     fn size_hint(&self) -> Option<usize> {
         Some(self.left)
+    }
+}
+
+struct UnitVariantAccess<'a, R: 'a, C> {
+    de: &'a mut Deserializer<R, C>,
+}
+
+impl<'a, R: 'a, C> UnitVariantAccess<'a, R, C> {
+    pub fn new(de: &'a mut Deserializer<R, C>) -> Self {
+        UnitVariantAccess { de }
+    }
+}
+
+impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de>
+    for UnitVariantAccess<'a, R, C>
+{
+    type Error = Error;
+    type Variant = Self;
+
+    #[inline]
+    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self), Error>
+    where
+        V: de::DeserializeSeed<'de>,
+    {
+        let variant = seed.deserialize(&mut *self.de)?;
+        Ok((variant, self))
+    }
+}
+
+impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::VariantAccess<'de>
+    for UnitVariantAccess<'a, R, C>
+{
+    type Error = Error;
+
+    fn unit_variant(self) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn newtype_variant_seed<T>(self, _seed: T) -> Result<T::Value, Error>
+    where
+        T: de::DeserializeSeed<'de>,
+    {
+        Err(de::Error::invalid_type(
+            Unexpected::UnitVariant,
+            &"newtype variant",
+        ))
+    }
+
+    fn tuple_variant<V>(self, _len: usize, _visitor: V) -> Result<V::Value, Error>
+    where
+        V: de::Visitor<'de>,
+    {
+        Err(de::Error::invalid_type(
+            Unexpected::UnitVariant,
+            &"tuple variant",
+        ))
+    }
+
+    fn struct_variant<V>(
+        self,
+        _fields: &'static [&'static str],
+        _visitor: V,
+    ) -> Result<V::Value, Error>
+    where
+        V: de::Visitor<'de>,
+    {
+        Err(de::Error::invalid_type(
+            Unexpected::UnitVariant,
+            &"struct variant",
+        ))
     }
 }
 

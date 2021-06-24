@@ -462,26 +462,19 @@ fn round_variant_string() {
         }};
     }
 
-    do_test!(|b| Serializer::new(b).with_string_variants());
-    do_test!(|b| Serializer::new(b).with_struct_map().with_string_variants());
-    do_test!(|b| Serializer::new(b)
-        .with_struct_tuple()
-        .with_string_variants());
-    do_test!(|b| Serializer::new(b).with_string_variants().with_struct_map());
-    do_test!(|b| Serializer::new(b)
-        .with_string_variants()
-        .with_struct_tuple());
+    do_test!(|b| Serializer::new(b));
+    do_test!(|b| Serializer::new(b).with_struct_map());
+    do_test!(|b| Serializer::new(b).with_struct_tuple());
+    do_test!(|b| Serializer::new(b).with_struct_map());
+    do_test!(|b| Serializer::new(b).with_struct_tuple());
     do_test!(|b| {
         Serializer::new(b)
-            .with_string_variants()
             .with_struct_tuple()
             .with_struct_map()
             .with_struct_tuple()
             .with_struct_map()
     });
-    do_test!(|b| Serializer::new(b)
-        .with_integer_variants()
-        .with_string_variants());
+    do_test!(|b| Serializer::new(b));
 }
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -552,18 +545,7 @@ fn roundtrip_some_failures() {
 fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {
     assert_roundtrips_config(&val, "default", |s| s, |d| d);
     assert_roundtrips_config(&val, ".with_struct_map()", |s| s.with_struct_map(), |d| d);
-    assert_roundtrips_config(
-        &val,
-        ".with_string_variants()",
-        |s| s.with_string_variants(),
-        |d| d,
-    );
-    assert_roundtrips_config(
-        &val,
-        ".with_struct_map().with_string_variants()",
-        |s| s.with_struct_map().with_string_variants(),
-        |d| d,
-    );
+    assert_roundtrips_config(&val, ".with_struct_map()", |s| s.with_struct_map(), |d| d);
     assert_roundtrips_config(
         &val,
         ".with_human_readable()",
@@ -578,18 +560,14 @@ fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deseri
     );
     assert_roundtrips_config(
         &val,
-        ".with_human_readable().with_string_variants()",
-        |s| s.with_human_readable().with_string_variants(),
+        ".with_human_readable()",
+        |s| s.with_human_readable(),
         |d| d.with_human_readable(),
     );
     assert_roundtrips_config(
         &val,
-        ".with_human_readable().with_struct_map().with_string_variants()",
-        |s| {
-            s.with_human_readable()
-                .with_struct_map()
-                .with_string_variants()
-        },
+        ".with_human_readable().with_struct_map()",
+        |s| s.with_human_readable().with_struct_map(),
         |d| d.with_human_readable(),
     );
 }

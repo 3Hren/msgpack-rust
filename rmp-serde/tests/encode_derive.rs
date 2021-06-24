@@ -30,8 +30,8 @@ fn pass_unit_variant() {
     Enum::V1.serialize(&mut Serializer::new(&mut buf)).unwrap();
     Enum::V2.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    // Expect: {0 => nil} {1 => nil}.
-    assert_eq!(vec![0x81, 0x00, 0xC0, 0x81, 0x01, 0xC0], buf);
+    // Expect "V1", "V2"
+    assert_eq!(vec![0xa2, 0x56, 0x31, 0xa2, 0x56, 0x32], buf)
 }
 
 #[test]
@@ -58,8 +58,8 @@ fn pass_newtype_variant() {
         .serialize(&mut Serializer::new(&mut buf))
         .unwrap();
 
-    // Expect: {0 => 42}.
-    assert_eq!(vec![0x81, 0x00, 0x2a], buf);
+    // Expect: {"V2" => 42}.
+    assert_eq!(buf, vec![0x81, 0xa2, 0x56, 0x32, 42])
 }
 
 #[test]
@@ -80,7 +80,8 @@ fn pass_untagged_newtype_variant() {
     let buf2 = rmps::to_vec(&Enum1::B(Enum2::C)).unwrap();
 
     assert_eq!(buf1, [123]);
-    assert_eq!(buf2, [0x81, 0x0, 0xC0]);
+    // Expect: "C"
+    assert_eq!(buf2, [0xa1, 0x43]);
 }
 
 #[test]
@@ -110,9 +111,13 @@ fn pass_tuple_variant() {
         .serialize(&mut Serializer::new(&mut buf))
         .unwrap();
 
-    // Expect: {0 => nil} {1 => [42, 100500]}
+    for item in &buf {
+        print!("{:#02x}, ", item);
+    }
+
+    // Expect: "V1", { "V2" => [42, 100500] }
     assert_eq!(
-        vec![0x81, 0x00, 0xC0, 0x81, 0x01, 0x92, 0x2a, 0xce, 0x00, 0x01, 0x88, 0x94],
+        vec![0xa2, 0x56, 0x31, 0x81, 0xa2, 0x56, 0x32, 0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94],
         buf
     );
 }
@@ -149,8 +154,15 @@ fn serialize_struct_variant() {
         .serialize(&mut Serializer::new(&mut buf))
         .unwrap();
 
-    // Expect: {0 => [42]} {1 => [43]}.
-    assert_eq!(vec![0x81, 0x00, 0x91, 0x2a, 0x81, 0x01, 0x91, 0x2b], buf);
+    for item in &buf {
+        print!("{:#02x}, ", item);
+    }
+
+    // Expect: { "V1" => [42] } { "V2" => [43] }
+    assert_eq!(
+        vec![0x81, 0xa2, 0x56, 0x31, 0x91, 0x2a, 0x81, 0xa2, 0x56, 0x32, 0x91, 0x2b],
+        buf
+    );
 }
 
 #[test]
@@ -163,9 +175,9 @@ fn serialize_struct_variant_as_map() {
     let mut se = Serializer::new(Vec::new()).with_struct_map();
     Enum::V1 { f1: 42 }.serialize(&mut se).unwrap();
 
-    // Expect: {0 => {"f1": 42}}.
+    // Expect: {"V1" => {"f1": 42}}.
     assert_eq!(
-        vec![0x81, 0x00, 0x81, 0xa2, 0x66, 0x31, 0x2a],
+        vec![0x81, 0xa2, 0x56, 0x31, 0x81, 0xa2, 0x66, 0x31, 0x2a],
         se.into_inner()
     );
 }

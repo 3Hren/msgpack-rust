@@ -16,7 +16,7 @@ use rmp::{encode, Marker};
 
 use crate::config::{
     BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig, StructMapConfig,
-    StructTupleConfig, VariantIntegerConfig, VariantStringConfig,
+    StructTupleConfig,
 };
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
@@ -241,35 +241,6 @@ impl<W: Write, C> Serializer<W, C> {
             wr,
             depth,
             config: StructTupleConfig::new(config),
-        }
-    }
-
-    /// Consumes this serializer returning the new one, which will serialize enum variants as strings.
-    ///
-    /// This is used, when the default struct serialization as integers does not fit your
-    /// requirements.
-    #[inline]
-    pub fn with_string_variants(self) -> Serializer<W, VariantStringConfig<C>> {
-        let Serializer { wr, depth, config } = self;
-        Serializer {
-            wr,
-            depth,
-            config: VariantStringConfig::new(config),
-        }
-    }
-
-    /// Consumes this serializer returning the new one, which will serialize enum variants as a their
-    /// integer indices.
-    ///
-    /// This is the default MessagePack serialization mechanism, emitting the most compact
-    /// representation.
-    #[inline]
-    pub fn with_integer_variants(self) -> Serializer<W, VariantIntegerConfig<C>> {
-        let Serializer { wr, depth, config } = self;
-        Serializer {
-            wr,
-            depth,
-            config: VariantIntegerConfig::new(config),
         }
     }
 
@@ -656,10 +627,7 @@ where
         idx: u32,
         variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
-        // encode as a map from variant idx to nil, like: {idx => nil}
-        encode::write_map_len(&mut self.wr, 1)?;
-        C::write_variant_ident(self, idx, variant)?;
-        self.serialize_unit()
+        C::write_variant_ident(self, idx, variant)
     }
 
     fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(
