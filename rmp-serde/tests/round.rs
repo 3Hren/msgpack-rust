@@ -2,12 +2,12 @@
 extern crate serde_derive;
 
 use rmp_serde as rmps;
-use std::borrow::Cow;
-use std::io::Cursor;
-use serde::{Deserialize, Serialize};
-use rmps::{Deserializer, Serializer};
 use rmps::config::{DefaultConfig, SerializerConfig};
 use rmps::decode::ReadReader;
+use rmps::{Deserializer, Serializer};
+use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
+use std::io::Cursor;
 
 #[test]
 fn round_trip_option() {
@@ -36,7 +36,7 @@ fn round_trip_nested_option() {
 
     let expected = Struct {
         f1: Some(Some(13)),
-        f2: None
+        f2: None,
     };
 
     let mut buf = Vec::new();
@@ -69,7 +69,9 @@ fn round_trip_cow() {
         v: Cow<'a, [u8]>,
     }
 
-    let expected = Foo { v : Cow::Borrowed(&[]) };
+    let expected = Foo {
+        v: Cow::Borrowed(&[]),
+    };
 
     let mut buf = Vec::new();
     expected.serialize(&mut Serializer::new(&mut buf)).unwrap();
@@ -81,16 +83,16 @@ fn round_trip_cow() {
 
 #[test]
 fn round_trip_option_cow() {
+    use serde::Serialize;
     use std::borrow::Cow;
     use std::io::Cursor;
-    use serde::Serialize;
 
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     struct Foo<'a> {
         v: Option<Cow<'a, [u8]>>,
     }
 
-    let expected = Foo { v : None };
+    let expected = Foo { v: None };
 
     let mut buf = Vec::new();
     expected.serialize(&mut Serializer::new(&mut buf)).unwrap();
@@ -192,7 +194,7 @@ fn round_trip_untagged_enum_with_enum_associated_data() {
         B,
         C(String),
         D(u64, u64, u64),
-        E{f1: String},
+        E { f1: String },
     }
 
     let data1_1 = Foo::A(Bar::B);
@@ -205,12 +207,12 @@ fn round_trip_untagged_enum_with_enum_associated_data() {
     let data2_2 = rmps::from_slice(&bytes_2).unwrap();
     assert_eq!(data2_1, data2_2);
 
-    let data3_1 = Foo::A(Bar::D(1,2,3));
+    let data3_1 = Foo::A(Bar::D(1, 2, 3));
     let bytes_3 = rmps::to_vec(&data3_1).unwrap();
     let data3_2 = rmps::from_slice(&bytes_3).unwrap();
     assert_eq!(data3_1, data3_2);
 
-    let data4_1 = Foo::A(Bar::E{f1: "Hello".into()});
+    let data4_1 = Foo::A(Bar::E { f1: "Hello".into() });
     let bytes_4 = rmps::to_vec(&data4_1).unwrap();
     let data4_2 = rmps::from_slice(&bytes_4).unwrap();
     assert_eq!(data4_1, data4_2);
@@ -219,8 +221,8 @@ fn round_trip_untagged_enum_with_enum_associated_data() {
 // Checks whether deserialization and serialization can both work with structs as maps
 #[test]
 fn round_struct_as_map() {
-    use crate::rmps::to_vec_named;
     use crate::rmps::decode::from_slice;
+    use crate::rmps::to_vec_named;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Dog1 {
@@ -363,7 +365,7 @@ fn round_trip_struct_with_flattened_map_field() {
         // not flattend!
         f2: BTreeMap<String, String>,
         #[serde(flatten)]
-        f3: BTreeMap<String, String>
+        f3: BTreeMap<String, String>,
     }
 
     let strct = Struct {
@@ -377,7 +379,7 @@ fn round_trip_struct_with_flattened_map_field() {
             let mut map = BTreeMap::new();
             map.insert("english".to_string(), "Hello World!".to_string());
             map
-        }
+        },
     };
 
     let serialized: Vec<u8> = rmps::to_vec(&strct).unwrap();
@@ -393,25 +395,19 @@ fn round_trip_struct_with_flattened_struct_field() {
         // not flattend!
         f2: InnerStruct,
         #[serde(flatten)]
-        f3: InnerStruct
+        f3: InnerStruct,
     }
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct InnerStruct {
         f4: u32,
-        f5: u32
+        f5: u32,
     }
 
     let strct = Struct {
         f1: 0,
-        f2: InnerStruct {
-            f4: 8,
-            f5: 13
-        },
-        f3: InnerStruct {
-            f4: 21,
-            f5: 34
-        }
+        f2: InnerStruct { f4: 8, f5: 13 },
+        f3: InnerStruct { f4: 21, f5: 34 },
     };
 
     // struct-as-tuple
@@ -451,24 +447,30 @@ fn round_variant_string() {
     // use helper macro so that we can test many combinations at once. Needs to be a macro to deal
     // with the serializer owning a reference to the Vec.
     macro_rules! do_test {
-        ($ser:expr) => {
-            {
-                let animal1 = Animal1::Dog { breed: "Pitbull".to_owned() };
-                let expected = Animal2::Dog { breed: "Pitbull".to_owned() };
-                let mut buf = Vec::new();
-                animal1.serialize(&mut $ser(&mut buf)).unwrap();
+        ($ser:expr) => {{
+            let animal1 = Animal1::Dog {
+                breed: "Pitbull".to_owned(),
+            };
+            let expected = Animal2::Dog {
+                breed: "Pitbull".to_owned(),
+            };
+            let mut buf = Vec::new();
+            animal1.serialize(&mut $ser(&mut buf)).unwrap();
 
-                let deserialized: Animal2 = from_slice(&buf).unwrap();
-                assert_eq!(deserialized, expected);
-            }
-        }
+            let deserialized: Animal2 = from_slice(&buf).unwrap();
+            assert_eq!(deserialized, expected);
+        }};
     }
 
     do_test!(|b| Serializer::new(b).with_string_variants());
     do_test!(|b| Serializer::new(b).with_struct_map().with_string_variants());
-    do_test!(|b| Serializer::new(b).with_struct_tuple().with_string_variants());
+    do_test!(|b| Serializer::new(b)
+        .with_struct_tuple()
+        .with_string_variants());
     do_test!(|b| Serializer::new(b).with_string_variants().with_struct_map());
-    do_test!(|b| Serializer::new(b).with_string_variants().with_struct_tuple());
+    do_test!(|b| Serializer::new(b)
+        .with_string_variants()
+        .with_struct_tuple());
     do_test!(|b| {
         Serializer::new(b)
             .with_string_variants()
@@ -477,7 +479,9 @@ fn round_variant_string() {
             .with_struct_tuple()
             .with_struct_map()
     });
-    do_test!(|b| Serializer::new(b).with_integer_variants().with_string_variants());
+    do_test!(|b| Serializer::new(b)
+        .with_integer_variants()
+        .with_string_variants());
 }
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -511,7 +515,7 @@ fn roundtrip_result_ipv4addr() {
 #[test]
 fn roundtrip_result_num() {
     assert_roundtrips(Ok::<u32, u32>(42));
-    assert_roundtrips(Err::<(),_>(222));
+    assert_roundtrips(Err::<(), _>(222));
 }
 
 #[test]

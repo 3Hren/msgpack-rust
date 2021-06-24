@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
-use crate::msgpack::Marker;
 use crate::msgpack::decode::*;
+use crate::msgpack::Marker;
 
 #[test]
 fn from_fixstr_min_read_str_len() {
@@ -127,14 +127,16 @@ fn from_null_read_str_len() {
 
     match read_str_len(&mut cur) {
         Err(ValueReadError::TypeMismatch(Marker::Null)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
     assert_eq!(1, cur.position());
 }
 
 #[test]
 fn from_str_strfix() {
-    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let buf: &[u8] = &[
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+    ];
     let mut cur = Cursor::new(buf);
 
     let mut out: &mut [u8] = &mut [0u8; 16];
@@ -145,7 +147,9 @@ fn from_str_strfix() {
 
 #[test]
 fn from_str_strfix_extra_data() {
-    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x00];
+    let buf: &[u8] = &[
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x00,
+    ];
     let mut cur = Cursor::new(buf);
 
     let mut out: &mut [u8] = &mut [0u8; 16];
@@ -156,7 +160,9 @@ fn from_str_strfix_extra_data() {
 
 #[test]
 fn from_str_strfix_exact_buffer() {
-    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let buf: &[u8] = &[
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+    ];
     let mut cur = Cursor::new(buf);
 
     let mut out: &mut [u8] = &mut [0u8; 10];
@@ -177,7 +183,7 @@ fn from_str_strfix_invalid_utf8() {
         Err(DecodeStringError::InvalidUtf8(raw, _)) => {
             assert_eq!(&[0xc3, 0x28], raw);
         }
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 
     assert_eq!(3, cur.position());
@@ -185,14 +191,16 @@ fn from_str_strfix_invalid_utf8() {
 
 #[test]
 fn from_str_strfix_buffer_too_small() {
-    let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let buf: &[u8] = &[
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+    ];
     let mut cur = Cursor::new(buf);
 
     let mut out: &mut [u8] = &mut [0u8; 9];
 
     match read_str(&mut cur, &mut out) {
         Err(DecodeStringError::BufferSizeTooSmall(10)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
     assert_eq!(1, cur.position());
 }
@@ -211,19 +219,21 @@ fn from_str_strfix_decode_from_slice() {
 #[test]
 fn from_str_strfix_decode_from_slice_with_trailing_bytes() {
     let buf = vec![
-        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x01, 0x02, 0x03
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x01, 0x02, 0x03,
     ];
 
-    assert_eq!(("le message", &[0x01, 0x02, 0x03][..]), read_str_from_slice(&buf).unwrap());
+    assert_eq!(
+        ("le message", &[0x01, 0x02, 0x03][..]),
+        read_str_from_slice(&buf).unwrap()
+    );
 }
 
 #[test]
 fn example_process_sequence_of_strings() {
     // Encoded: 'Unpacking', 'multiple', 'strings'.
     let vec = vec![
-        0xa9, 0x55, 0x6e, 0x70, 0x61, 0x63, 0x6b, 0x69, 0x6e, 0x67,
-        0xa8, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x65, 0xa7,
-        0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x73
+        0xa9, 0x55, 0x6e, 0x70, 0x61, 0x63, 0x6b, 0x69, 0x6e, 0x67, 0xa8, 0x6d, 0x75, 0x6c, 0x74,
+        0x69, 0x70, 0x6c, 0x65, 0xa7, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x73,
     ];
 
     let mut chunks = Vec::new();

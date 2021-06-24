@@ -1,7 +1,9 @@
 use std::io::Read;
 
+use super::{
+    read_data_i8, read_data_u16, read_data_u32, read_data_u8, read_marker, ValueReadError,
+};
 use crate::Marker;
-use super::{read_marker, read_data_i8, read_data_u8, read_data_u16, read_data_u32, ValueReadError};
 
 /// Attempts to read exactly 3 bytes from the given reader and interpret them as a fixext1 type
 /// with data attached.
@@ -164,10 +166,7 @@ pub fn read_ext_meta<R: Read>(rd: &mut R) -> Result<ExtMeta, ValueReadError> {
     };
 
     let ty = read_data_i8(rd)?;
-    let meta = ExtMeta {
-        typeid: ty,
-        size,
-    };
+    let meta = ExtMeta { typeid: ty, size };
 
     Ok(meta)
 }

@@ -4,8 +4,8 @@ extern crate rmp_serde as rmps;
 
 use std::fmt::Debug;
 
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_bytes::ByteBuf;
 
 use rmpv::Value;
@@ -17,7 +17,8 @@ use rmpv::Value;
 /// - `[u8]`  -> `Value` == `Value`.
 /// - `Value` -> `T`     == `T`.
 fn test_round<'de, T>(var: T, val: Value)
-    where T: Debug + PartialEq + Serialize + DeserializeOwned
+where
+    T: Debug + PartialEq + Serialize + DeserializeOwned,
 {
     // Serialize part.
     // Test that `T` -> `[u8]` equals with serialization from `Value` -> `[u8]`.
@@ -93,13 +94,19 @@ fn pass_str() {
 
 #[test]
 fn pass_bin() {
-    test_round(ByteBuf::from(&[0xcc, 0x80][..]), Value::from(&[0xcc, 0x80][..]));
+    test_round(
+        ByteBuf::from(&[0xcc, 0x80][..]),
+        Value::from(&[0xcc, 0x80][..]),
+    );
 }
 
 #[test]
 fn pass_vec() {
     test_round([0, 42], Value::from(vec![Value::from(0), Value::from(42)]));
-    test_round(vec![0, 42], Value::from(vec![Value::from(0), Value::from(42)]));
+    test_round(
+        vec![0, 42],
+        Value::from(vec![Value::from(0), Value::from(42)]),
+    );
 }
 
 #[test]
@@ -115,7 +122,7 @@ fn pass_ext_struct() {
     #[derive(Debug, PartialEq)]
     enum ExtStruct {
         One(u8),
-        Two(u8)
+        Two(u8),
     }
 
     struct ExtStructVisitor;
@@ -125,7 +132,8 @@ fn pass_ext_struct() {
 
     impl Serialize for ExtStruct {
         fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
-            where S: serde::ser::Serializer
+        where
+            S: serde::ser::Serializer,
         {
             let value = match self {
                 ExtStruct::One(data) => {
@@ -153,17 +161,21 @@ fn pass_ext_struct() {
         }
 
         fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-            where D: serde::de::Deserializer<'de>,
+        where
+            D: serde::de::Deserializer<'de>,
         {
             deserializer.deserialize_tuple(2, self)
         }
 
         fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where A: serde::de::SeqAccess<'de>
+        where
+            A: serde::de::SeqAccess<'de>,
         {
-            let tag: i8 = seq.next_element()?
+            let tag: i8 = seq
+                .next_element()?
                 .ok_or_else(|| serde::de::Error::invalid_length(0, &self))?;
-            let data: ByteBuf = seq.next_element()?
+            let data: ByteBuf = seq
+                .next_element()?
                 .ok_or_else(|| serde::de::Error::invalid_length(1, &self))?;
 
             if tag == 1 {
@@ -179,7 +191,8 @@ fn pass_ext_struct() {
 
     impl<'de> serde::de::Deserialize<'de> for ExtStruct {
         fn deserialize<D>(deserializer: D) -> Result<ExtStruct, D::Error>
-            where D: serde::Deserializer<'de>,
+        where
+            D: serde::Deserializer<'de>,
         {
             let visitor = ExtStructVisitor;
             deserializer.deserialize_newtype_struct(rmps::MSGPACK_EXT_STRUCT_NAME, visitor)
@@ -195,6 +208,8 @@ fn pass_derive_serde_ext_struct() {
     #[serde(rename = "_ExtStruct")]
     struct ExtStruct((i8, serde_bytes::ByteBuf));
 
-    test_round(ExtStruct((2, serde_bytes::ByteBuf::from(vec![5]))),
-               Value::Ext(2, vec![5]));
+    test_round(
+        ExtStruct((2, serde_bytes::ByteBuf::from(vec![5]))),
+        Value::Ext(2, vec![5]),
+    );
 }

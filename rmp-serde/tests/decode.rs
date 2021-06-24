@@ -1,14 +1,14 @@
 extern crate rmp_serde as rmps;
 
-use std::io::Cursor;
 use std::fmt::{self, Formatter};
+use std::io::Cursor;
 
 use serde::de;
 use serde::Deserialize;
 
-use rmp::Marker;
-use crate::rmps::{Deserializer, Raw, RawRef};
 use crate::rmps::decode::{self, Error};
+use crate::rmps::{Deserializer, Raw, RawRef};
+use rmp::Marker;
 
 #[test]
 fn pass_nil() {
@@ -25,7 +25,7 @@ fn fail_nil_from_reserved() {
     let res: Result<(), Error> = Deserialize::deserialize(&mut de);
     match res.err() {
         Some(Error::TypeMismatch(Marker::Reserved)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 
@@ -48,7 +48,7 @@ fn fail_bool_from_fixint() {
     let res: Result<bool, Error> = Deserialize::deserialize(&mut deserializer);
     match res.err().unwrap() {
         Error::Syntax(..) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 
@@ -59,7 +59,10 @@ fn pass_u64() {
 
     let mut de = Deserializer::new(cur);
 
-    assert_eq!(18446744073709551615u64, Deserialize::deserialize(&mut de).unwrap());
+    assert_eq!(
+        18446744073709551615u64,
+        Deserialize::deserialize(&mut de).unwrap()
+    );
 }
 
 #[test]
@@ -82,7 +85,7 @@ fn fail_u32_from_u64() {
     let res: Result<u32, Error> = Deserialize::deserialize(&mut de);
     match res.err().unwrap() {
         Error::Syntax(..) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 
@@ -133,7 +136,10 @@ fn pass_i64() {
 
     let mut de = Deserializer::new(cur);
 
-    assert_eq!(9223372036854775807i64, Deserialize::deserialize(&mut de).unwrap());
+    assert_eq!(
+        9223372036854775807i64,
+        Deserialize::deserialize(&mut de).unwrap()
+    );
 }
 
 #[test]
@@ -220,7 +226,9 @@ fn pass_u32_as_f64() {
 
 #[test]
 fn pass_string() {
-    let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let buf = [
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+    ];
     let cur = Cursor::new(&buf[..]);
 
     let mut de = Deserializer::new(cur);
@@ -251,7 +259,7 @@ fn fail_tuple_len_mismatch() {
 
     match actual.err().unwrap() {
         Error::LengthMismatch(1) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 
@@ -300,7 +308,7 @@ fn fail_option_u8_from_reserved() {
     let actual: Result<Option<u8>, Error> = Deserialize::deserialize(&mut de);
     match actual.err() {
         Some(Error::TypeMismatch(Marker::Reserved)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 
@@ -323,7 +331,7 @@ fn pass_map() {
         0xa3, 0x69, 0x6e, 0x74, // 'int'
         0xcc, 0x80, // 128
         0xa3, 0x6b, 0x65, 0x79, // 'key'
-        0x2a // 42
+        0x2a, // 42
     ];
     let cur = Cursor::new(&buf[..]);
 
@@ -381,7 +389,9 @@ fn pass_bin8_into_bytebuf_regression_growing_buffer() {
     use serde_bytes::ByteBuf;
 
     // Try to deserialize large buf and a small buf
-    let buf = [0x92, 0xc4, 0x04, 0x71, 0x75, 0x75, 0x78, 0xc4, 0x03, 0x62, 0x61, 0x72];
+    let buf = [
+        0x92, 0xc4, 0x04, 0x71, 0x75, 0x75, 0x78, 0xc4, 0x03, 0x62, 0x61, 0x72,
+    ];
     let cur = Cursor::new(&buf[..]);
 
     let mut de = Deserializer::new(cur);
@@ -401,14 +411,15 @@ fn test_deserialize_numeric() {
 
     impl<'de> de::Deserialize<'de> for FloatOrInteger {
         fn deserialize<D>(de: D) -> Result<FloatOrInteger, D::Error>
-            where D: de::Deserializer<'de>
+        where
+            D: de::Deserializer<'de>,
         {
             struct FloatOrIntegerVisitor;
 
             impl<'de> de::Visitor<'de> for FloatOrIntegerVisitor {
                 type Value = FloatOrInteger;
 
-                fn expecting(&self, fmt: &mut Formatter<'_>) ->  Result<(), fmt::Error> {
+                fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                     write!(fmt, "either a float or an integer")
                 }
 
@@ -482,7 +493,10 @@ fn pass_deserializer_cursor_position() {
 
 #[test]
 fn pass_from() {
-    assert_eq!(2147483647, decode::from_read(&[0xd2, 0x7f, 0xff, 0xff, 0xff][..]).unwrap());
+    assert_eq!(
+        2147483647,
+        decode::from_read(&[0xd2, 0x7f, 0xff, 0xff, 0xff][..]).unwrap()
+    );
 }
 
 #[test]
@@ -542,19 +556,19 @@ fn fail_str_invalid_utf8() {
     }
 }
 
-
 #[test]
 fn fail_depth_limit() {
     struct Nested {
-        sub: Vec<Nested>
+        sub: Vec<Nested>,
     }
 
     impl<'de> de::Deserialize<'de> for Nested {
         fn deserialize<D>(de: D) -> Result<Self, D::Error>
-            where D: de::Deserializer<'de>
+        where
+            D: de::Deserializer<'de>,
         {
             let nested = Vec::deserialize(de)?;
-            Ok(Nested{sub: nested})
+            Ok(Nested { sub: nested })
         }
     }
     let mut data = Vec::new();
@@ -566,6 +580,6 @@ fn fail_depth_limit() {
     let res = Nested::deserialize(&mut reader);
     match res.err().unwrap() {
         decode::Error::DepthLimitExceeded => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }

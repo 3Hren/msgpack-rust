@@ -18,7 +18,7 @@ fn fail_invalid_marker() {
 
     match read_nil(&mut cur) {
         Err(ValueReadError::TypeMismatch(..)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
     assert_eq!(1, cur.position());
 }
@@ -36,10 +36,14 @@ fn fail_unexpected_eof() {
 fn interrupt_safe() {
     use std::io::{Error, ErrorKind, Read};
 
-    struct MockRead { state_: u8 }
+    struct MockRead {
+        state_: u8,
+    }
 
     impl MockRead {
-        fn state(&self) -> u8 { self.state_ }
+        fn state(&self) -> u8 {
+            self.state_
+        }
     }
 
     impl Read for MockRead {

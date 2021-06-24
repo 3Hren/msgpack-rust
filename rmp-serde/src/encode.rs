@@ -5,16 +5,18 @@ use std::fmt::{self, Display};
 use std::io::Write;
 
 use serde;
+use serde::ser::{
+    SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTuple,
+    SerializeTupleStruct, SerializeTupleVariant,
+};
 use serde::Serialize;
-use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
-                 SerializeTuple, SerializeTupleStruct, SerializeTupleVariant};
 
-use rmp::{Marker, encode};
 use rmp::encode::ValueWriteError;
+use rmp::{encode, Marker};
 
 use crate::config::{
-    DefaultConfig, SerializerConfig, StructMapConfig, StructTupleConfig, VariantIntegerConfig,
-    VariantStringConfig, HumanReadableConfig, BinaryConfig,
+    BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig, StructMapConfig,
+    StructTupleConfig, VariantIntegerConfig, VariantStringConfig,
 };
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
@@ -116,7 +118,6 @@ pub struct Serializer<W, C = DefaultConfig> {
     depth: usize,
 }
 
-
 impl<W: Write, C> Serializer<W, C> {
     /// Gets a reference to the underlying writer.
     #[inline(always)]
@@ -192,8 +193,13 @@ impl<'a, W: Write + 'a, C> Serializer<W, C> {
 
 impl<'a, W: Write + 'a, C: SerializerConfig> Serializer<W, C> {
     #[inline]
-    fn maybe_unknown_len_compound<F>(&'a mut self, len: Option<usize>, f: F) -> Result<MaybeUnknownLengthCompound<'a, W, C>, Error>
-    where F: Fn(&mut W, u32) -> Result<Marker, ValueWriteError>
+    fn maybe_unknown_len_compound<F>(
+        &'a mut self,
+        len: Option<usize>,
+        f: F,
+    ) -> Result<MaybeUnknownLengthCompound<'a, W, C>, Error>
+    where
+        F: Fn(&mut W, u32) -> Result<Marker, ValueWriteError>,
     {
         Ok(MaybeUnknownLengthCompound {
             compound: match len {
@@ -201,7 +207,7 @@ impl<'a, W: Write + 'a, C: SerializerConfig> Serializer<W, C> {
                     f(&mut self.wr, len as u32)?;
                     None
                 }
-                None => Some(UnknownLengthCompound::from(&*self))
+                None => Some(UnknownLengthCompound::from(&*self)),
             },
             se: self,
         })
@@ -330,14 +336,14 @@ pub struct Compound<'a, W: 'a, C: 'a> {
 pub struct ExtFieldSerializer<'a, W> {
     wr: &'a mut W,
     tag: Option<i8>,
-    finish: bool
+    finish: bool,
 }
 
 /// Represents MessagePack serialization implementation for Ext.
 #[derive(Debug)]
 pub struct ExtSerializer<'a, W> {
     fields_se: ExtFieldSerializer<'a, W>,
-    tuple_received: bool
+    tuple_received: bool,
 }
 
 impl<'a, W: Write + 'a, C: SerializerConfig> SerializeSeq for Compound<'a, W, C> {
@@ -390,9 +396,11 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStruct for Compound<'a, W,
     type Error = Error;
 
     #[inline]
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
+    fn serialize_field<T: ?Sized + Serialize>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error> {
         C::write_struct_field(&mut *self.se, key, value)
     }
 
@@ -421,9 +429,11 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
+    fn serialize_field<T: ?Sized + Serialize>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error> {
         C::write_struct_field(&mut *self.se, key, value)
     }
 
@@ -438,13 +448,17 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
 #[derive(Debug)]
 struct UnknownLengthCompound<C> {
     se: Serializer<Vec<u8>, C>,
-    elem_count: u32
+    elem_count: u32,
 }
 impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound<C> {
     fn from(se: &Serializer<W, C>) -> Self {
         Self {
-            se: Serializer { wr: Vec::with_capacity(128), config: se.config, depth: se.depth },
-            elem_count: 0
+            se: Serializer {
+                wr: Vec::with_capacity(128),
+                config: se.config,
+                depth: se.depth,
+            },
+            elem_count: 0,
         }
     }
 }
@@ -477,7 +491,7 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeSeq for MaybeUnknownLength
     fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
         match self.compound.as_mut() {
             None => value.serialize(&mut *self.se),
-            Some(buf) =>  {
+            Some(buf) => {
                 value.serialize(&mut buf.se)?;
                 buf.elem_count += 1;
                 Ok(())
@@ -488,7 +502,9 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeSeq for MaybeUnknownLength
     fn end(self) -> Result<Self::Ok, Self::Error> {
         if let Some(compound) = self.compound {
             encode::write_array_len(&mut self.se.wr, compound.elem_count)?;
-            self.se.wr.write_all(&compound.se.into_inner())
+            self.se
+                .wr
+                .write_all(&compound.se.into_inner())
                 .map_err(ValueWriteError::InvalidDataWrite)?;
         }
         Ok(())
@@ -510,7 +526,9 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeMap for MaybeUnknownLength
     fn end(self) -> Result<Self::Ok, Self::Error> {
         if let Some(compound) = self.compound {
             encode::write_map_len(&mut self.se.wr, compound.elem_count / 2)?;
-            self.se.wr.write_all(&compound.se.into_inner())
+            self.se
+                .wr
+                .write_all(&compound.se.into_inner())
                 .map_err(ValueWriteError::InvalidDataWrite)?;
         }
         Ok(())
@@ -559,10 +577,10 @@ where
         Ok(())
     }
 
-	#[cfg(feature = "serde128")]
-	fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
-		self.serialize_bytes(&v.to_be_bytes())
-	}
+    #[cfg(feature = "serde128")]
+    fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
+        self.serialize_bytes(&v.to_be_bytes())
+    }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
         self.serialize_u64(v as u64)
@@ -581,7 +599,7 @@ where
         Ok(())
     }
 
-	#[cfg(feature = "serde128")]
+    #[cfg(feature = "serde128")]
     fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
         self.serialize_bytes(&v.to_be_bytes())
     }
@@ -632,16 +650,23 @@ where
         Ok(())
     }
 
-    fn serialize_unit_variant(self, _name: &str, idx: u32, variant: &'static str) ->
-        Result<Self::Ok, Self::Error>
-    {
+    fn serialize_unit_variant(
+        self,
+        _name: &str,
+        idx: u32,
+        variant: &'static str,
+    ) -> Result<Self::Ok, Self::Error> {
         // encode as a map from variant idx to nil, like: {idx => nil}
         encode::write_map_len(&mut self.wr, 1)?;
         C::write_variant_ident(self, idx, variant)?;
         self.serialize_unit()
     }
 
-    fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(self, name: &'static str, value: &T) -> Result<(), Self::Error> {
+    fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(
+        self,
+        name: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error> {
         if name == MSGPACK_EXT_STRUCT_NAME {
             let mut ext_se = ExtSerializer::new(self);
             value.serialize(&mut ext_se)?;
@@ -653,7 +678,13 @@ where
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(
+        self,
+        _name: &'static str,
+        idx: u32,
+        variant: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error> {
         // encode as a map from variant idx to its attributed data, like: {idx => value}
         encode::write_map_len(&mut self.wr, 1)?;
         C::write_variant_ident(self, idx, variant)?;
@@ -671,17 +702,23 @@ where
         self.compound()
     }
 
-    fn serialize_tuple_struct(self, _name: &'static str, len: usize) ->
-        Result<Self::SerializeTupleStruct, Self::Error>
-    {
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeTupleStruct, Self::Error> {
         encode::write_array_len(&mut self.wr, len as u32)?;
 
         self.compound()
     }
 
-    fn serialize_tuple_variant(self, _name: &'static str, idx: u32, variant: &'static str, len: usize) ->
-        Result<Self::SerializeTupleVariant, Error>
-    {
+    fn serialize_tuple_variant(
+        self,
+        _name: &'static str,
+        idx: u32,
+        variant: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeTupleVariant, Error> {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
         C::write_variant_ident(self, idx, variant)?;
@@ -692,16 +729,22 @@ where
         self.maybe_unknown_len_compound(len, |wr, len| encode::write_map_len(wr, len))
     }
 
-    fn serialize_struct(self, _name: &'static str, len: usize) ->
-        Result<Self::SerializeStruct, Self::Error>
-    {
+    fn serialize_struct(
+        self,
+        _name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStruct, Self::Error> {
         C::write_struct_len(self, len)?;
         self.compound()
     }
 
-    fn serialize_struct_variant(self, name: &'static str, id: u32, variant: &'static str, len: usize) ->
-        Result<Self::SerializeStructVariant, Error>
-    {
+    fn serialize_struct_variant(
+        self,
+        name: &'static str,
+        id: u32,
+        variant: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStructVariant, Error> {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
         C::write_variant_ident(self, id, variant)?;
@@ -727,7 +770,9 @@ impl<'a, W: Write + 'a> serde::Serializer for &mut ExtFieldSerializer<'a, W> {
             self.tag.replace(value);
             Ok(())
         } else {
-            Err(Error::InvalidDataModel("expected i8 and bytes, unexpected second i8"))
+            Err(Error::InvalidDataModel(
+                "expected i8 and bytes, unexpected second i8",
+            ))
         }
     }
 
@@ -743,136 +788,228 @@ impl<'a, W: Write + 'a> serde::Serializer for &mut ExtFieldSerializer<'a, W> {
 
             Ok(())
         } else {
-            Err(Error::InvalidDataModel("expected i8 and bytes, received bytes first"))
+            Err(Error::InvalidDataModel(
+                "expected i8 and bytes, received bytes first",
+            ))
         }
     }
 
     #[inline]
     fn serialize_bool(self, _val: bool) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, bool unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, bool unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_i16(self, _val: i16) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, i16 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, i16 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_i32(self, _val: i32) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, i32 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, i32 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_i64(self, _val: i64) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, i64 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, i64 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_u8(self, _val: u8) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, u8 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, u8 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_u16(self, _val: u16) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, u16 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, u16 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_u32(self, _val: u32) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, u32 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, u32 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_u64(self, _val: u64) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, u64 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, u64 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_f32(self, _val: f32) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, f32 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, f32 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_f64(self, _val: f64) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, f64 unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, f64 unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_char(self, _val: char) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, char unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, char unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_str(self, _val: &str) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, str unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, str unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, unit unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, unit unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, unit struct unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, unit struct unexpected",
+        ))
     }
 
     #[inline]
-    fn serialize_unit_variant(self, _name: &'static str, _idx: u32, _variant: &'static str) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, unit variant unexpected"))
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        _idx: u32,
+        _variant: &'static str,
+    ) -> Result<Self::Ok, Self::Error> {
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, unit variant unexpected",
+        ))
     }
 
     #[inline]
-    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_struct<T: ?Sized>(
+        self,
+        _name: &'static str,
+        _value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
     {
-        Err(Error::InvalidDataModel("expected i8 and bytes, newtype struct unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, newtype struct unexpected",
+        ))
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_variant<T: ?Sized>(
+        self,
+        _name: &'static str,
+        _idx: u32,
+        _variant: &'static str,
+        _value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
     {
-        Err(Error::InvalidDataModel("expected i8 and bytes, newtype variant unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, newtype variant unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, none unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, none unexpected",
+        ))
     }
 
     #[inline]
     fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
-        Err(Error::InvalidDataModel("expected i8 and bytes, some unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, some unexpected",
+        ))
     }
 
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, seq unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, seq unexpected",
+        ))
     }
 
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, tuple unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, tuple unexpected",
+        ))
     }
 
-    fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, tuple struct unexpected"))
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleStruct, Error> {
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, tuple struct unexpected",
+        ))
     }
 
-    fn serialize_tuple_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, tuple variant unexpected"))
+    fn serialize_tuple_variant(
+        self,
+        _name: &'static str,
+        _idx: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleVariant, Error> {
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, tuple variant unexpected",
+        ))
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, map unexpected"))
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, map unexpected",
+        ))
     }
 
-    fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, struct unexpected"))
+    fn serialize_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStruct, Error> {
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, struct unexpected",
+        ))
     }
 
-    fn serialize_struct_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, Error> {
-        Err(Error::InvalidDataModel("expected i8 and bytes, struct variant unexpected"))
+    fn serialize_struct_variant(
+        self,
+        _name: &'static str,
+        _idx: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStructVariant, Error> {
+        Err(Error::InvalidDataModel(
+            "expected i8 and bytes, struct variant unexpected",
+        ))
     }
 }
 
@@ -887,7 +1024,6 @@ impl<'a, W: Write + 'a> serde::ser::Serializer for &mut ExtSerializer<'a, W> {
     type SerializeMap = serde::ser::Impossible<(), Error>;
     type SerializeStruct = serde::ser::Impossible<(), Error>;
     type SerializeStructVariant = serde::ser::Impossible<(), Error>;
-
 
     #[cold]
     fn serialize_bytes(self, _val: &[u8]) -> Result<Self::Ok, Self::Error> {
@@ -966,26 +1102,51 @@ impl<'a, W: Write + 'a> serde::ser::Serializer for &mut ExtSerializer<'a, W> {
 
     #[cold]
     fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected tuple, received unit_struct"))
+        Err(Error::InvalidDataModel(
+            "expected tuple, received unit_struct",
+        ))
     }
 
     #[cold]
-    fn serialize_unit_variant(self, _name: &'static str, _idx: u32, _variant: &'static str) -> Result<Self::Ok, Self::Error> {
-        Err(Error::InvalidDataModel("expected tuple, received unit_variant"))
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        _idx: u32,
+        _variant: &'static str,
+    ) -> Result<Self::Ok, Self::Error> {
+        Err(Error::InvalidDataModel(
+            "expected tuple, received unit_variant",
+        ))
     }
 
     #[cold]
-    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_struct<T: ?Sized>(
+        self,
+        _name: &'static str,
+        _value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
     {
-        Err(Error::InvalidDataModel("expected tuple, received newtype_struct"))
+        Err(Error::InvalidDataModel(
+            "expected tuple, received newtype_struct",
+        ))
     }
 
     #[cold]
-    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_variant<T: ?Sized>(
+        self,
+        _name: &'static str,
+        _idx: u32,
+        _variant: &'static str,
+        _value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
     {
-        Err(Error::InvalidDataModel("expected tuple, received newtype_variant"))
+        Err(Error::InvalidDataModel(
+            "expected tuple, received newtype_variant",
+        ))
     }
 
     #[cold]
@@ -995,7 +1156,8 @@ impl<'a, W: Write + 'a> serde::ser::Serializer for &mut ExtSerializer<'a, W> {
 
     #[cold]
     fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
         Err(Error::InvalidDataModel("expected tuple, received some"))
     }
@@ -1013,13 +1175,27 @@ impl<'a, W: Write + 'a> serde::ser::Serializer for &mut ExtSerializer<'a, W> {
     }
 
     #[cold]
-    fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, Error> {
-        Err(Error::InvalidDataModel("expected tuple, received tuple_struct"))
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleStruct, Error> {
+        Err(Error::InvalidDataModel(
+            "expected tuple, received tuple_struct",
+        ))
     }
 
     #[cold]
-    fn serialize_tuple_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, Error> {
-        Err(Error::InvalidDataModel("expected tuple, received tuple_variant"))
+    fn serialize_tuple_variant(
+        self,
+        _name: &'static str,
+        _idx: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleVariant, Error> {
+        Err(Error::InvalidDataModel(
+            "expected tuple, received tuple_variant",
+        ))
     }
 
     #[cold]
@@ -1028,13 +1204,25 @@ impl<'a, W: Write + 'a> serde::ser::Serializer for &mut ExtSerializer<'a, W> {
     }
 
     #[cold]
-    fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Error> {
+    fn serialize_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStruct, Error> {
         Err(Error::InvalidDataModel("expected tuple, received struct"))
     }
 
     #[cold]
-    fn serialize_struct_variant(self, _name: &'static str, _idx: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, Error> {
-        Err(Error::InvalidDataModel("expected tuple, received struct_variant"))
+    fn serialize_struct_variant(
+        self,
+        _name: &'static str,
+        _idx: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStructVariant, Error> {
+        Err(Error::InvalidDataModel(
+            "expected tuple, received struct_variant",
+        ))
     }
 }
 
@@ -1053,13 +1241,12 @@ impl<'a, W: Write + 'a> SerializeTuple for &mut ExtSerializer<'a, W> {
     }
 }
 
-
 impl<'a, W: Write + 'a> ExtSerializer<'a, W> {
     #[inline]
     fn new<C>(ser: &'a mut Serializer<W, C>) -> Self {
         Self {
             fields_se: ExtFieldSerializer::new(ser),
-            tuple_received: false
+            tuple_received: false,
         }
     }
 
@@ -1077,9 +1264,9 @@ impl<'a, W: Write + 'a> ExtFieldSerializer<'a, W> {
     #[inline]
     fn new<C>(ser: &'a mut Serializer<W, C>) -> Self {
         Self {
-           wr: UnderlyingWrite::get_mut(ser),
-           tag: None,
-           finish: false
+            wr: UnderlyingWrite::get_mut(ser),
+            tag: None,
+            finish: false,
         }
     }
 
@@ -1101,7 +1288,7 @@ impl<'a, W: Write + 'a> ExtFieldSerializer<'a, W> {
 pub fn write<W, T>(wr: &mut W, val: &T) -> Result<(), Error>
 where
     W: Write + ?Sized,
-    T: Serialize + ?Sized
+    T: Serialize + ?Sized,
 {
     val.serialize(&mut Serializer::new(wr))
 }
@@ -1113,10 +1300,9 @@ where
 pub fn write_named<W, T>(wr: &mut W, val: &T) -> Result<(), Error>
 where
     W: Write + ?Sized,
-    T: Serialize + ?Sized
+    T: Serialize + ?Sized,
 {
-    let mut se = Serializer::new(wr)
-        .with_struct_map();
+    let mut se = Serializer::new(wr).with_struct_map();
     val.serialize(&mut se)
 }
 
@@ -1127,7 +1313,7 @@ where
 #[inline]
 pub fn to_vec<T>(val: &T) -> Result<Vec<u8>, Error>
 where
-    T: Serialize + ?Sized
+    T: Serialize + ?Sized,
 {
     let mut wr = Vec::with_capacity(128);
     write(&mut wr, val)?;
@@ -1143,7 +1329,7 @@ where
 #[inline]
 pub fn to_vec_named<T>(val: &T) -> Result<Vec<u8>, Error>
 where
-    T: Serialize + ?Sized
+    T: Serialize + ?Sized,
 {
     let mut wr = Vec::with_capacity(128);
     write_named(&mut wr, val)?;

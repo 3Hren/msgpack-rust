@@ -1,8 +1,8 @@
 use std::io::Write;
 
-use crate::Marker;
+use super::{write_data_f32, write_data_f64, write_marker};
 use crate::encode::ValueWriteError;
-use super::{write_marker, write_data_f32, write_data_f64};
+use crate::Marker;
 
 /// Encodes and attempts to write an `f32` value as a 5-byte sequence into the given write.
 ///

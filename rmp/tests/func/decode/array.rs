@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
-use crate::msgpack::Marker;
 use crate::msgpack::decode::*;
+use crate::msgpack::Marker;
 
 #[test]
 fn from_empty_array_read_size() {
@@ -15,8 +15,8 @@ fn from_empty_array_read_size() {
 #[test]
 fn from_fixarray_max_read_size() {
     let buf: &[u8] = &[
-        0x9f,
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e
+        0x9f, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+        0x0e,
     ];
     let mut cur = Cursor::new(buf);
 
@@ -85,7 +85,7 @@ fn from_null_read_array_len() {
 
     match read_array_len(&mut cur) {
         Err(ValueReadError::TypeMismatch(Marker::Null)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
     assert_eq!(1, cur.position());
 }

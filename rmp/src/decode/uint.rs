@@ -1,7 +1,9 @@
 use std::io::Read;
 
+use super::{
+    read_data_u16, read_data_u32, read_data_u64, read_data_u8, read_marker, ValueReadError,
+};
 use crate::Marker;
-use super::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64, ValueReadError};
 
 /// Attempts to read a single byte from the given reader and to decode it as a positive fixnum
 /// value.

@@ -385,7 +385,6 @@ where
     }
 }
 
-
 /// Config wrapper that overrides `Serializer::is_human_readable` and
 /// `Deserializer::is_human_readable` to return `false`.
 #[derive(Copy, Clone, Debug)]

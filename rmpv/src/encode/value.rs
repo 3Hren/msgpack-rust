@@ -1,10 +1,12 @@
 use std::io::Write;
 
-use rmp::encode::{write_nil, write_bool, write_uint, write_sint, write_f32, write_f64, write_str,
-                  write_bin, write_array_len, write_map_len, write_ext_meta};
+use rmp::encode::{
+    write_array_len, write_bin, write_bool, write_ext_meta, write_f32, write_f64, write_map_len,
+    write_nil, write_sint, write_str, write_uint,
+};
 
-use crate::{Integer, IntPriv, Utf8String, Value};
 use super::Error;
+use crate::{IntPriv, Integer, Utf8String, Value};
 
 /// Encodes and attempts to write the most efficient representation of the given Value.
 ///
@@ -13,7 +15,8 @@ use super::Error;
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
 pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
-    where W: Write
+where
+    W: Write,
 {
     match *val {
         Value::Nil => {
@@ -22,28 +25,24 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
         Value::Boolean(val) => {
             write_bool(wr, val).map_err(Error::InvalidMarkerWrite)?;
         }
-        Value::Integer(Integer { n }) => {
-            match n {
-                IntPriv::PosInt(n) => {
-                    write_uint(wr, n)?;
-                }
-                IntPriv::NegInt(n) => {
-                    write_sint(wr, n)?;
-                }
+        Value::Integer(Integer { n }) => match n {
+            IntPriv::PosInt(n) => {
+                write_uint(wr, n)?;
             }
-        }
+            IntPriv::NegInt(n) => {
+                write_sint(wr, n)?;
+            }
+        },
         Value::F32(val) => {
             write_f32(wr, val)?;
         }
         Value::F64(val) => {
             write_f64(wr, val)?;
         }
-        Value::String(Utf8String { ref s }) => {
-            match *s {
-                Ok(ref val) => write_str(wr, &val)?,
-                Err(ref err) => write_bin(wr, &err.0)?,
-            }
-        }
+        Value::String(Utf8String { ref s }) => match *s {
+            Ok(ref val) => write_str(wr, &val)?,
+            Err(ref err) => write_bin(wr, &err.0)?,
+        },
         Value::Binary(ref val) => {
             write_bin(wr, &val)?;
         }

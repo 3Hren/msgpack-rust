@@ -15,12 +15,15 @@ mod sint;
 mod str;
 mod uint;
 
-pub use self::sint::{read_nfix, read_i8, read_i16, read_i32, read_i64};
-pub use self::uint::{read_pfix, read_u8, read_u16, read_u32, read_u64};
 pub use self::dec::{read_f32, read_f64};
-#[allow(deprecated)] // While we re-export deprecated items, we don't want to trigger warnings while compiling this crate
-pub use self::str::{read_str_len, read_str, read_str_from_slice, read_str_ref, DecodeStringError};
-pub use self::ext::{read_fixext1, read_fixext2, read_fixext4, read_fixext8, read_fixext16, read_ext_meta, ExtMeta};
+pub use self::ext::{
+    read_ext_meta, read_fixext1, read_fixext16, read_fixext2, read_fixext4, read_fixext8, ExtMeta,
+};
+pub use self::sint::{read_i16, read_i32, read_i64, read_i8, read_nfix};
+#[allow(deprecated)]
+// While we re-export deprecated items, we don't want to trigger warnings while compiling this crate
+pub use self::str::{read_str, read_str_from_slice, read_str_len, read_str_ref, DecodeStringError};
+pub use self::uint::{read_pfix, read_u16, read_u32, read_u64, read_u8};
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
@@ -54,8 +57,8 @@ impl error::Error for ValueReadError {
     #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            ValueReadError::InvalidMarkerRead(ref err) |
-            ValueReadError::InvalidDataRead(ref err) => Some(err),
+            ValueReadError::InvalidMarkerRead(ref err)
+            | ValueReadError::InvalidDataRead(ref err) => Some(err),
             ValueReadError::TypeMismatch(..) => None,
         }
     }
@@ -160,10 +163,9 @@ pub enum NumValueReadError {
 impl error::Error for NumValueReadError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            NumValueReadError::InvalidMarkerRead(ref err) |
-            NumValueReadError::InvalidDataRead(ref err) => Some(err),
-            NumValueReadError::TypeMismatch(..) |
-            NumValueReadError::OutOfRange => None,
+            NumValueReadError::InvalidMarkerRead(ref err)
+            | NumValueReadError::InvalidDataRead(ref err) => Some(err),
+            NumValueReadError::TypeMismatch(..) | NumValueReadError::OutOfRange => None,
         }
     }
 }
@@ -212,19 +214,22 @@ pub fn read_data_u8<R: Read>(rd: &mut R) -> Result<u8, ValueReadError> {
 #[doc(hidden)]
 #[inline]
 pub fn read_data_u16<R: Read>(rd: &mut R) -> Result<u16, ValueReadError> {
-    rd.read_u16::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+    rd.read_u16::<byteorder::BigEndian>()
+        .map_err(ValueReadError::InvalidDataRead)
 }
 
 #[doc(hidden)]
 #[inline]
 pub fn read_data_u32<R: Read>(rd: &mut R) -> Result<u32, ValueReadError> {
-    rd.read_u32::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+    rd.read_u32::<byteorder::BigEndian>()
+        .map_err(ValueReadError::InvalidDataRead)
 }
 
 #[doc(hidden)]
 #[inline]
 pub fn read_data_u64<R: Read>(rd: &mut R) -> Result<u64, ValueReadError> {
-    rd.read_u64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+    rd.read_u64::<byteorder::BigEndian>()
+        .map_err(ValueReadError::InvalidDataRead)
 }
 
 #[doc(hidden)]
@@ -236,31 +241,36 @@ pub fn read_data_i8<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
 #[doc(hidden)]
 #[inline]
 pub fn read_data_i16<R: Read>(rd: &mut R) -> Result<i16, ValueReadError> {
-    rd.read_i16::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+    rd.read_i16::<byteorder::BigEndian>()
+        .map_err(ValueReadError::InvalidDataRead)
 }
 
 #[doc(hidden)]
 #[inline]
 pub fn read_data_i32<R: Read>(rd: &mut R) -> Result<i32, ValueReadError> {
-    rd.read_i32::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+    rd.read_i32::<byteorder::BigEndian>()
+        .map_err(ValueReadError::InvalidDataRead)
 }
 
 #[doc(hidden)]
 #[inline]
 pub fn read_data_i64<R: Read>(rd: &mut R) -> Result<i64, ValueReadError> {
-    rd.read_i64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+    rd.read_i64::<byteorder::BigEndian>()
+        .map_err(ValueReadError::InvalidDataRead)
 }
 
 #[doc(hidden)]
 #[inline]
 pub fn read_data_f32<R: Read>(rd: &mut R) -> Result<f32, ValueReadError> {
-    rd.read_f32::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+    rd.read_f32::<byteorder::BigEndian>()
+        .map_err(ValueReadError::InvalidDataRead)
 }
 
 #[doc(hidden)]
 #[inline]
 pub fn read_data_f64<R: Read>(rd: &mut R) -> Result<f64, ValueReadError> {
-    rd.read_f64::<byteorder::BigEndian>().map_err(ValueReadError::InvalidDataRead)
+    rd.read_f64::<byteorder::BigEndian>()
+        .map_err(ValueReadError::InvalidDataRead)
 }
 
 /// Attempts to read up to 9 bytes from the given reader and to decode them as integral `T` value.

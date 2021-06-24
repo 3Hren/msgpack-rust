@@ -2,38 +2,42 @@ use std;
 use std::io::{self, Cursor, ErrorKind, Read};
 use std::str;
 
+use rmp::decode::{
+    read_data_f32, read_data_f64, read_data_i16, read_data_i32, read_data_i64, read_data_i8,
+    read_data_u16, read_data_u32, read_data_u64, read_data_u8, read_marker,
+};
 use rmp::Marker;
-use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64,
-                  read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
-                  read_data_f64};
 
-use crate::{Utf8StringRef, ValueRef};
 use super::Error;
+use crate::{Utf8StringRef, ValueRef};
 
 fn read_str_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8StringRef<'a>, Error>
-    where R: BorrowRead<'a>
+where
+    R: BorrowRead<'a>,
 {
     let depth = super::decrement_depth(depth)?;
     let buf = read_bin_data(rd, len, depth)?;
     match str::from_utf8(buf) {
         Ok(s) => Ok(Utf8StringRef::from(s)),
         Err(err) => {
-            let s = Utf8StringRef {
-                s: Err((buf, err)),
-            };
+            let s = Utf8StringRef { s: Err((buf, err)) };
             Ok(s)
         }
     }
 }
 
 fn read_bin_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<&'a [u8], Error>
-    where R: BorrowRead<'a>
+where
+    R: BorrowRead<'a>,
 {
     let _depth = super::decrement_depth(depth)?;
     let buf = rd.fill_buf();
 
     if len > buf.len() {
-        return Err(Error::InvalidDataRead(io::Error::new(ErrorKind::UnexpectedEof, "unexpected EOF")));
+        return Err(Error::InvalidDataRead(io::Error::new(
+            ErrorKind::UnexpectedEof,
+            "unexpected EOF",
+        )));
     }
 
     // Take a slice.
@@ -44,7 +48,8 @@ fn read_bin_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<&'a [u8]
 }
 
 fn read_ext_body<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, &'a [u8]), Error>
-    where R: BorrowRead<'a>
+where
+    R: BorrowRead<'a>,
 {
     let depth = super::decrement_depth(depth)?;
     let ty = read_data_i8(rd)?;
@@ -53,8 +58,13 @@ fn read_ext_body<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, &'a
     Ok((ty, buf))
 }
 
-fn read_array_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<ValueRef<'a>>, Error>
-    where R: BorrowRead<'a>
+fn read_array_data<'a, R>(
+    rd: &mut R,
+    mut len: usize,
+    depth: usize,
+) -> Result<Vec<ValueRef<'a>>, Error>
+where
+    R: BorrowRead<'a>,
 {
     let depth = super::decrement_depth(depth)?;
     // Note: Do not preallocate a Vec of size `len`.
@@ -69,8 +79,13 @@ fn read_array_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Ve
     Ok(vec)
 }
 
-fn read_map_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error>
-    where R: BorrowRead<'a>
+fn read_map_data<'a, R>(
+    rd: &mut R,
+    mut len: usize,
+    depth: usize,
+) -> Result<Vec<(ValueRef<'a>, ValueRef<'a>)>, Error>
+where
+    R: BorrowRead<'a>,
 {
     let depth = super::decrement_depth(depth)?;
     // Note: Do not preallocate a Vec of size `len`.
@@ -78,7 +93,10 @@ fn read_map_data<'a, R>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<
     let mut vec = Vec::new();
 
     while len > 0 {
-        vec.push((read_value_ref_inner(rd, depth)?, read_value_ref_inner(rd, depth)?));
+        vec.push((
+            read_value_ref_inner(rd, depth)?,
+            read_value_ref_inner(rd, depth)?,
+        ));
         len -= 1;
     }
 
@@ -130,7 +148,8 @@ impl<'a> BorrowRead<'a> for Cursor<&'a [u8]> {
 }
 
 fn read_value_ref_inner<'a, R>(rd: &mut R, depth: usize) -> Result<ValueRef<'a>, Error>
-    where R: BorrowRead<'a>
+where
+    R: BorrowRead<'a>,
 {
     let depth = super::decrement_depth(depth)?;
 
@@ -296,7 +315,8 @@ fn read_value_ref_inner<'a, R>(rd: &mut R, depth: usize) -> Result<ValueRef<'a>,
 /// ```
 #[inline(never)]
 pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error>
-    where R: BorrowRead<'a>
+where
+    R: BorrowRead<'a>,
 {
     read_value_ref_inner(rd, super::MAX_DEPTH)
 }
@@ -315,8 +335,12 @@ pub fn read_value_ref<'a, R>(rd: &mut R) -> Result<ValueRef<'a>, Error>
 /// Same as [`read_value_ref`], using the `max_depth` parameter in place of
 /// [`MAX_DEPTH`](super::MAX_DEPTH).
 #[inline(never)]
-pub fn read_value_ref_with_max_depth<'a, R>(rd: &mut R, max_depth: usize) -> Result<ValueRef<'a>, Error>
-    where R: BorrowRead<'a>
+pub fn read_value_ref_with_max_depth<'a, R>(
+    rd: &mut R,
+    max_depth: usize,
+) -> Result<ValueRef<'a>, Error>
+where
+    R: BorrowRead<'a>,
 {
     read_value_ref_inner(rd, max_depth)
 }
