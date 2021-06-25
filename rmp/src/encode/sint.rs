@@ -1,8 +1,10 @@
 use std::io::Write;
 
+use super::{write_data_i16, write_data_i32, write_data_i64, write_data_i8, write_marker};
+use crate::encode::{
+    write_pfix, write_u16, write_u32, write_u64, write_u8, Error, ValueWriteError,
+};
 use crate::Marker;
-use crate::encode::{write_pfix, write_u8, write_u16, write_u32, write_u64, Error, ValueWriteError};
-use super::{write_data_i8, write_data_i16, write_data_i32, write_data_i64, write_marker};
 
 /// Encodes and attempts to write a negative small integer value as a negative fixnum into the
 /// given write.

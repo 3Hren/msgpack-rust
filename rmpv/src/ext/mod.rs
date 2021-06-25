@@ -3,7 +3,7 @@ use std::fmt::{self, Display, Formatter};
 
 use serde::de::Unexpected;
 
-use crate::{Integer, IntPriv, Value, ValueRef};
+use crate::{IntPriv, Integer, Value, ValueRef};
 
 pub use self::de::{deserialize_from, from_value, EnumRefDeserializer};
 pub use self::se::to_value;
@@ -20,13 +20,12 @@ impl Display for Error {
     #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::Syntax(ref err) => write!(fmt, "error while decoding value: {}", err)
+            Error::Syntax(ref err) => write!(fmt, "error while decoding value: {}", err),
         }
     }
 }
 
-impl error::Error for Error {
-}
+impl error::Error for Error {}
 
 trait ValueExt {
     fn unexpected(&self) -> Unexpected<'_>;

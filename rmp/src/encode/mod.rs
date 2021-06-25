@@ -9,11 +9,11 @@ mod str;
 mod uint;
 mod vec;
 
-pub use self::sint::{write_nfix, write_i8, write_i16, write_i32, write_i64, write_sint};
-pub use self::uint::{write_pfix, write_u8, write_u16, write_u32, write_u64, write_uint};
+pub use self::bin::{write_bin, write_bin_len};
 pub use self::dec::{write_f32, write_f64};
-pub use self::str::{write_str_len, write_str};
-pub use self::bin::{write_bin_len, write_bin};
+pub use self::sint::{write_i16, write_i32, write_i64, write_i8, write_nfix, write_sint};
+pub use self::str::{write_str, write_str_len};
+pub use self::uint::{write_pfix, write_u16, write_u32, write_u64, write_u8, write_uint};
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
@@ -40,7 +40,7 @@ impl From<MarkerWriteError> for Error {
     #[cold]
     fn from(err: MarkerWriteError) -> Error {
         match err {
-            MarkerWriteError(err) => err
+            MarkerWriteError(err) => err,
         }
     }
 }
@@ -102,11 +102,7 @@ pub fn write_nil<W: Write>(wr: &mut W) -> Result<(), Error> {
 /// completed.
 #[inline]
 pub fn write_bool<W: Write>(wr: &mut W, val: bool) -> Result<(), Error> {
-    let marker = if val {
-        Marker::True
-    } else {
-        Marker::False
-    };
+    let marker = if val { Marker::True } else { Marker::False };
 
     write_marker(wr, marker).map_err(From::from)
 }

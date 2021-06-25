@@ -3,8 +3,8 @@ extern crate serde_derive;
 
 extern crate rmp_serde as rmps;
 
-use serde::Serialize;
 use crate::rmps::Serializer;
+use serde::Serialize;
 
 #[test]
 fn pass_unit_struct() {
@@ -133,12 +133,8 @@ fn pass_struct() {
 fn serialize_struct_variant() {
     #[derive(Serialize)]
     enum Enum {
-        V1 {
-            f1: u32,
-        },
-        V2 {
-            f1: u32,
-        },
+        V1 { f1: u32 },
+        V2 { f1: u32 },
     }
 
     let mut buf = Vec::new();
@@ -158,8 +154,7 @@ fn serialize_struct_variant_as_map() {
         }
     }
 
-    let mut se = Serializer::new(Vec::new())
-        .with_struct_map();
+    let mut se = Serializer::new(Vec::new()).with_struct_map();
     Enum::V1 { f1: 42 }.serialize(&mut se).unwrap();
 
     // Expect: {0 => {"f1": 42}}.
@@ -176,7 +171,7 @@ fn serialize_struct_with_flattened_map_field() {
         // not flattend!
         f2: BTreeMap<String, String>,
         #[serde(flatten)]
-        f3: BTreeMap<String, String>
+        f3: BTreeMap<String, String>,
     }
 
     let mut se = Serializer::new(Vec::new());
@@ -191,7 +186,7 @@ fn serialize_struct_with_flattened_map_field() {
             let mut map = BTreeMap::new();
             map.insert("english".to_string(), "Hello World!".to_string());
             map
-        }
+        },
     }
     .serialize(&mut se).unwrap();
 
@@ -214,25 +209,19 @@ fn serialize_struct_with_flattened_struct_field() {
         // not flattend!
         f2: InnerStruct,
         #[serde(flatten)]
-        f3: InnerStruct
+        f3: InnerStruct,
     }
 
     #[derive(Serialize)]
     struct InnerStruct {
         f4: u32,
-        f5: u32
+        f5: u32,
     }
 
     let strct = Struct {
         f1: 0,
-        f2: InnerStruct {
-            f4: 8,
-            f5: 13
-        },
-        f3: InnerStruct {
-            f4: 21,
-            f5: 34
-        }
+        f2: InnerStruct { f4: 8, f5: 13 },
+        f3: InnerStruct { f4: 21, f5: 34 },
     };
 
     // struct-as-tuple
@@ -276,8 +265,7 @@ fn pass_struct_as_map_using_ext() {
         age: 8,
     };
 
-    let mut se = Serializer::new(Vec::new())
-        .with_struct_map();
+    let mut se = Serializer::new(Vec::new()).with_struct_map();
 
     dog.serialize(&mut se).unwrap();
 

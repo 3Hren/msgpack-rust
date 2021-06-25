@@ -18,7 +18,7 @@ fn fail_invalid_marker() {
 
     match read_nil(&mut cur) {
         Err(ValueReadError::TypeMismatch(..)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
     assert_eq!(1, cur.position());
 }

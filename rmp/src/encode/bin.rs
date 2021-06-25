@@ -1,8 +1,8 @@
 use std::io::Write;
 
-use crate::Marker;
+use super::{write_data_u16, write_data_u32, write_data_u8};
 use crate::encode::{write_marker, ValueWriteError};
-use super::{write_data_u8, write_data_u16, write_data_u32};
+use crate::Marker;
 
 /// Encodes and attempts to write the most efficient binary array length implementation to the given
 /// write, returning the marker used.
@@ -39,5 +39,6 @@ pub fn write_bin_len<W: Write>(wr: &mut W, len: u32) -> Result<Marker, ValueWrit
 // TODO: Docs, range check, example, visibility.
 pub fn write_bin<W: Write>(wr: &mut W, data: &[u8]) -> Result<(), ValueWriteError> {
     write_bin_len(wr, data.len() as u32)?;
-    wr.write_all(data).map_err(ValueWriteError::InvalidDataWrite)
+    wr.write_all(data)
+        .map_err(ValueWriteError::InvalidDataWrite)
 }

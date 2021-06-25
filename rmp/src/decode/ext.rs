@@ -164,10 +164,7 @@ pub fn read_ext_meta<R: Read>(rd: &mut R) -> Result<ExtMeta, ValueReadError> {
     };
 
     let ty = read_data_i8(rd)?;
-    let meta = ExtMeta {
-        typeid: ty,
-        size,
-    };
+    let meta = ExtMeta { typeid: ty, size };
 
     Ok(meta)
 }

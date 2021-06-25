@@ -4,8 +4,8 @@ use std::io::Cursor;
 
 use serde::Serialize;
 
-use crate::rmps::{Raw, RawRef, Serializer};
 use crate::rmps::encode::{self, Error};
+use crate::rmps::{Raw, RawRef, Serializer};
 
 #[test]
 fn pass_null() {
@@ -25,7 +25,7 @@ fn fail_null() {
 
     match val.serialize(&mut Serializer::new(&mut &mut buf[..])) {
         Err(Error::InvalidValueWrite(..)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 

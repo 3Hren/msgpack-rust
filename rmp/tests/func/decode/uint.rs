@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
-use crate::msgpack::Marker;
 use crate::msgpack::decode::*;
+use crate::msgpack::Marker;
 
 #[test]
 fn from_positive_fixnum() {
@@ -43,7 +43,7 @@ fn from_u8_type_mismatch() {
 
     match read_u8(&mut cur) {
         Err(ValueReadError::TypeMismatch(Marker::Null)) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
     assert_eq!(1, cur.position());
 }

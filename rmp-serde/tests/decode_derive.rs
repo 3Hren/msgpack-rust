@@ -7,8 +7,8 @@ use std::io::Cursor;
 
 use serde::Deserialize;
 
-use crate::rmps::Deserializer;
 use crate::rmps::decode::Error;
+use crate::rmps::Deserializer;
 
 #[test]
 fn pass_newtype() {
@@ -45,13 +45,13 @@ fn pass_single_field_struct() {
 
     #[derive(Debug, PartialEq, Deserialize)]
     struct Struct {
-        inner: u32
+        inner: u32,
     };
 
     let mut de = Deserializer::new(cur);
     let actual: Struct = Deserialize::deserialize(&mut de).unwrap();
 
-    assert_eq!(Struct{inner: 42}, actual);
+    assert_eq!(Struct { inner: 42 }, actual);
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn pass_struct() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Decoded {
         id: u32,
-        value: u32
+        value: u32,
     };
 
     let mut de = Deserializer::new(cur);
@@ -116,8 +116,8 @@ fn pass_unit_variant() {
     let enum_a = Enum::deserialize(&mut de).unwrap();
     let enum_b = Enum::deserialize(&mut de).unwrap();
 
-    assert_eq!(enum_a , Enum::A);
-    assert_eq!(enum_b , Enum::B);
+    assert_eq!(enum_a, Enum::A);
+    assert_eq!(enum_b, Enum::B);
     assert_eq!(6, de.get_ref().position());
 }
 
@@ -172,7 +172,7 @@ fn fail_enum_map_mismatch() {
 
     match err.unwrap_err() {
         Error::LengthMismatch(2) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 
@@ -193,7 +193,7 @@ fn fail_enum_overflow() {
 
     match actual.err().unwrap() {
         Error::Syntax(..) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 
@@ -237,11 +237,11 @@ fn pass_newtype_variant() {
     assert_eq!(buf.len() as u64, de.get_ref().position())
 }
 
-#[cfg(disabled)]  // This test doesn't actually compile anymore
+#[cfg(disabled)] // This test doesn't actually compile anymore
 #[test]
 fn pass_enum_custom_policy() {
-    use std::io::Read;
     use rmp_serde::decode::VariantVisitor;
+    use std::io::Read;
 
     // We expect enums to be endoded as id, [...] (without wrapping tuple).
 
@@ -281,7 +281,9 @@ fn pass_enum_custom_policy() {
         }
     }
 
-    let mut de = CustomDeserializer { inner: Deserializer::new(cur) };
+    let mut de = CustomDeserializer {
+        inner: Deserializer::new(cur),
+    };
     let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Enum::B, actual);
@@ -361,8 +363,7 @@ fn pass_internally_tagged_enum_struct() {
     let actual: Result<Enum, Error> = Deserialize::deserialize(&mut de);
 
     assert!(actual.is_ok());
-    assert_eq!(Enum::Foo{ value: 123 }, actual.unwrap())
-
+    assert_eq!(Enum::Foo { value: 123 }, actual.unwrap())
 }
 
 #[test]
@@ -420,7 +421,7 @@ fn pass_struct_with_flattened_map_field() {
         // not flattend!
         f2: BTreeMap<String, String>,
         #[serde(flatten)]
-        f3: BTreeMap<String, String>
+        f3: BTreeMap<String, String>,
     }
 
     let expected = Struct {
@@ -434,7 +435,7 @@ fn pass_struct_with_flattened_map_field() {
             let mut map = BTreeMap::new();
             map.insert("english".to_string(), "Hello World!".to_string());
             map
-        }
+        },
     };
 
     let mut de = Deserializer::new(cur);
@@ -452,13 +453,13 @@ fn pass_struct_with_flattened_struct_field() {
         // not flattend!
         f2: InnerStruct,
         #[serde(flatten)]
-        f3: InnerStruct
+        f3: InnerStruct,
     }
 
     #[derive(Debug, PartialEq, Deserialize)]
     struct InnerStruct {
         f4: u32,
-        f5: u32
+        f5: u32,
     }
 
     let expected = Struct {

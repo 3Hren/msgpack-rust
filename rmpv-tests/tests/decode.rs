@@ -6,9 +6,9 @@ use std::collections::BTreeMap;
 
 use serde_bytes::ByteBuf;
 
-use rmpv::Value;
 use rmpv::decode;
 use rmpv::ext::from_value;
+use rmpv::Value;
 
 /// Tests that a `Value` is properly decoded from bytes using two different mechanisms: direct
 /// deserialization using `rmp::decode::read_value` and using `serde`.

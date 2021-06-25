@@ -1,8 +1,8 @@
 use std::io::Write;
 
-use crate::Marker;
+use super::{write_data_u16, write_data_u32, write_data_u64, write_data_u8, write_marker};
 use crate::encode::{Error, ValueWriteError};
-use super::{write_data_u8, write_data_u16, write_data_u32, write_data_u64, write_marker};
+use crate::Marker;
 
 /// Encodes and attempts to write an unsigned small integer value as a positive fixint into the
 /// given write.

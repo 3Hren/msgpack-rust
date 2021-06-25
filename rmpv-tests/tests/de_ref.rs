@@ -6,9 +6,9 @@ use std::collections::BTreeMap;
 
 use serde_bytes::ByteBuf;
 
-use rmpv::ValueRef;
 use rmpv::decode;
 use rmpv::ext::deserialize_from;
+use rmpv::ValueRef;
 
 /// Tests that a `ValueRef` is properly decoded from bytes using two different mechanisms: direct
 /// deserialization using `rmp::decode::read_value_ref` and using `serde`.

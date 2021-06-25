@@ -1,7 +1,7 @@
 use std::io::Read;
 
+use super::{read_data_f32, read_data_f64, read_marker, ValueReadError};
 use crate::Marker;
-use super::{read_marker, read_data_f32, read_data_f64, ValueReadError};
 
 /// Attempts to read exactly 5 bytes from the given reader and to decode them as `f32` value.
 ///

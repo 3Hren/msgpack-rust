@@ -1,5 +1,5 @@
-use rmpv::ValueRef;
 use rmpv::encode::write_value_ref;
+use rmpv::ValueRef;
 
 #[test]
 fn pack_nil() {
@@ -20,7 +20,7 @@ fn pack_nil_when_buffer_is_tool_small() {
 
     match write_value_ref(&mut &mut buf[..], &val) {
         Err(..) => (),
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 
@@ -69,7 +69,7 @@ fn check_packed_eq(expected: &Vec<u8>, actual: &ValueRef<'_>) {
 fn pass_pack_f32() {
     check_packed_eq(
         &vec![0xca, 0x7f, 0x7f, 0xff, 0xff],
-        &ValueRef::F32(3.4028234e38_f32)
+        &ValueRef::F32(3.4028234e38_f32),
     );
 }
 
@@ -78,7 +78,7 @@ fn pass_pack_f64() {
     use std::f64;
     check_packed_eq(
         &vec![0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-        &ValueRef::F64(f64::INFINITY)
+        &ValueRef::F64(f64::INFINITY),
     );
 }
 
@@ -126,6 +126,6 @@ fn pass_pack_map() {
 fn pass_pack_ext() {
     check_packed_eq(
         &vec![0xc7, 0x03, 0x10, 0x01, 0x02, 0x03],
-        &ValueRef::Ext(16, &[0x01, 0x02, 0x03])
+        &ValueRef::Ext(16, &[0x01, 0x02, 0x03]),
     );
 }

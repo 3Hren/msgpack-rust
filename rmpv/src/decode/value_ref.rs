@@ -2,13 +2,14 @@ use std;
 use std::io::{self, Cursor, ErrorKind, Read};
 use std::str;
 
+use rmp::decode::{
+    read_data_f32, read_data_f64, read_data_i16, read_data_i32, read_data_i64, read_data_i8,
+    read_data_u16, read_data_u32, read_data_u64, read_data_u8, read_marker,
+};
 use rmp::Marker;
-use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64,
-                  read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
-                  read_data_f64};
 
-use crate::{Utf8StringRef, ValueRef};
 use super::Error;
+use crate::{Utf8StringRef, ValueRef};
 
 fn read_str_data<'a, R>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8StringRef<'a>, Error>
     where R: BorrowRead<'a>

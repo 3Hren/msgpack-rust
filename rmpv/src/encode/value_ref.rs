@@ -1,10 +1,12 @@
 use std::io::Write;
 
-use rmp::encode::{write_bool, write_nil, write_sint, write_uint, write_f32, write_f64, write_str,
-                  write_bin, write_array_len, write_map_len, write_ext_meta};
+use rmp::encode::{
+    write_array_len, write_bin, write_bool, write_ext_meta, write_f32, write_f64, write_map_len,
+    write_nil, write_sint, write_str, write_uint,
+};
 
-use crate::{Integer, IntPriv, Utf8StringRef, ValueRef};
 use super::Error;
+use crate::{IntPriv, Integer, Utf8StringRef, ValueRef};
 
 /// Encodes and attempts to write the given non-owning ValueRef into the Write.
 ///

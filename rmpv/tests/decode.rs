@@ -1,5 +1,5 @@
-use rmpv::Value;
 use rmpv::decode::{read_value, Error};
+use rmpv::Value;
 
 #[test]
 fn from_null_decode_value() {
@@ -100,7 +100,7 @@ fn from_fixarray_incomplete_decode_value() {
 
     match read_value(&mut &buf[..]) {
         Err(Error::InvalidMarkerRead(..)) => {}
-        other => panic!("unexpected result: {:?}", other)
+        other => panic!("unexpected result: {:?}", other),
     }
 }
 

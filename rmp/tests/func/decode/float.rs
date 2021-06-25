@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
-use crate::msgpack::Marker;
 use crate::msgpack::decode::*;
+use crate::msgpack::Marker;
 
 #[test]
 fn from_f32_zero_plus() {

@@ -1,5 +1,5 @@
-use crate::msgpack::Marker;
 use crate::msgpack::encode::*;
+use crate::msgpack::Marker;
 
 #[test]
 fn pass_pack_meta_fix1() {

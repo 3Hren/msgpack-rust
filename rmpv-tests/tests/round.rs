@@ -4,8 +4,8 @@ extern crate rmp_serde as rmps;
 
 use std::fmt::Debug;
 
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_bytes::ByteBuf;
 
 use rmpv::Value;
@@ -115,7 +115,7 @@ fn pass_ext_struct() {
     #[derive(Debug, PartialEq)]
     enum ExtStruct {
         One(u8),
-        Two(u8)
+        Two(u8),
     }
 
     struct ExtStructVisitor;

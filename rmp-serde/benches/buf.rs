@@ -2,12 +2,11 @@
 
 extern crate test;
 
-
 use rmp_serde;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use test::{Bencher};
+use test::Bencher;
 
 #[bench]
 fn bench_strings_1000(bencher: &mut Bencher) {

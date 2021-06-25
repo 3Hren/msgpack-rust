@@ -1,5 +1,5 @@
-use rmpv::ValueRef;
 use rmpv::decode::{read_value_ref, Error};
+use rmpv::ValueRef;
 
 #[test]
 fn from_nil() {

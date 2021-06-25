@@ -1,8 +1,8 @@
 use std::io::Write;
 
-use crate::Marker;
+use super::{write_data_u16, write_data_u32, write_data_u8, write_marker};
 use crate::encode::ValueWriteError;
-use super::{write_marker, write_data_u8, write_data_u16, write_data_u32};
+use crate::Marker;
 
 /// Encodes and attempts to write the most efficient string length implementation to the given
 /// write, returning the marker used.

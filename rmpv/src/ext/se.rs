@@ -1,10 +1,12 @@
 use std::fmt::Display;
 
+use serde::ser::{
+    self, SerializeMap, SerializeSeq, SerializeStruct, SerializeTuple, SerializeTupleStruct,
+};
 use serde::Serialize;
-use serde::ser::{self, SerializeTupleStruct, SerializeSeq, SerializeTuple, SerializeMap, SerializeStruct};
 use serde_bytes::Bytes;
 
-use crate::{Integer, IntPriv, Value};
+use crate::{IntPriv, Integer, Value};
 
 use super::Error;
 use crate::MSGPACK_EXT_STRUCT_NAME;

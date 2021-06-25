@@ -1,13 +1,13 @@
+use std::borrow::Cow;
 use std::fmt::{self, Display, Formatter};
 use std::iter::ExactSizeIterator;
 use std::slice::Iter;
 use std::vec::IntoIter;
-use std::borrow::Cow;
 
-use serde::{self, Deserialize, Deserializer};
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
+use serde::{self, Deserialize, Deserializer};
 
-use crate::{Integer, IntPriv, Utf8String, Utf8StringRef, Value, ValueRef};
+use crate::{IntPriv, Integer, Utf8String, Utf8StringRef, Value, ValueRef};
 
 use super::{Error, ValueExt};
 use crate::MSGPACK_EXT_STRUCT_NAME;

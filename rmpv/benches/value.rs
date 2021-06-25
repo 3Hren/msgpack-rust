@@ -1,6 +1,5 @@
 #![feature(test)]
 
-
 extern crate test;
 
 use test::Bencher;
@@ -79,8 +78,8 @@ fn from_complex_read_value(b: &mut Bencher) {
 
 #[bench]
 fn from_complex_write_value_ref(b: &mut Bencher) {
-    use rmpv::ValueRef::*;
     use rmpv::encode::write_value_ref;
+    use rmpv::ValueRef::*;
 
     let val = Array(vec![
         Nil,
@@ -185,7 +184,7 @@ fn read_large_array(b: &mut Bencher, element_count: usize) {
     buf[2] = size_bytes[1];
     buf[3] = size_bytes[2];
     buf[4] = size_bytes[3];
-    
+
     // Write elements
     let elements = &mut buf[5..];
     for i in 0..element_count {

@@ -6,12 +6,12 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 use serde::Serialize;
-use serde_bytes::{Bytes, ByteBuf};
+use serde_bytes::{ByteBuf, Bytes};
 
 use crate::rmps::Serializer;
-use rmpv::Value;
 use rmpv::encode;
 use rmpv::ext::to_value;
+use rmpv::Value;
 
 /// Tests that a `Value` is properly encoded using two different mechanisms: direct serialization
 /// using `rmp::encode::write_value` and using `serde`.

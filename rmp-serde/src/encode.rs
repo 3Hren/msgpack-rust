@@ -5,16 +5,18 @@ use std::fmt::{self, Display};
 use std::io::Write;
 
 use serde;
+use serde::ser::{
+    SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTuple,
+    SerializeTupleStruct, SerializeTupleVariant,
+};
 use serde::Serialize;
-use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
-                 SerializeTuple, SerializeTupleStruct, SerializeTupleVariant};
 
-use rmp::{Marker, encode};
 use rmp::encode::ValueWriteError;
+use rmp::{encode, Marker};
 
 use crate::config::{
-    DefaultConfig, SerializerConfig, StructMapConfig, StructTupleConfig, VariantIntegerConfig,
-    VariantStringConfig, HumanReadableConfig, BinaryConfig,
+    BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig, StructMapConfig,
+    StructTupleConfig, VariantIntegerConfig, VariantStringConfig,
 };
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
@@ -116,7 +118,6 @@ pub struct Serializer<W, C = DefaultConfig> {
     depth: usize,
 }
 
-
 impl<W: Write, C> Serializer<W, C> {
     /// Gets a reference to the underlying writer.
     #[inline(always)]
@@ -201,7 +202,7 @@ impl<'a, W: Write + 'a, C: SerializerConfig> Serializer<W, C> {
                     f(&mut self.wr, len as u32)?;
                     None
                 }
-                None => Some(UnknownLengthCompound::from(&*self))
+                None => Some(UnknownLengthCompound::from(&*self)),
             },
             se: self,
         })
@@ -330,14 +331,14 @@ pub struct Compound<'a, W: 'a, C: 'a> {
 pub struct ExtFieldSerializer<'a, W> {
     wr: &'a mut W,
     tag: Option<i8>,
-    finish: bool
+    finish: bool,
 }
 
 /// Represents MessagePack serialization implementation for Ext.
 #[derive(Debug)]
 pub struct ExtSerializer<'a, W> {
     fields_se: ExtFieldSerializer<'a, W>,
-    tuple_received: bool
+    tuple_received: bool,
 }
 
 impl<'a, W: Write + 'a, C: SerializerConfig> SerializeSeq for Compound<'a, W, C> {
@@ -438,7 +439,7 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
 #[derive(Debug)]
 struct UnknownLengthCompound<C> {
     se: Serializer<Vec<u8>, C>,
-    elem_count: u32
+    elem_count: u32,
 }
 impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound<C> {
     fn from(se: &Serializer<W, C>) -> Self {
@@ -477,7 +478,7 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeSeq for MaybeUnknownLength
     fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
         match self.compound.as_mut() {
             None => value.serialize(&mut *self.se),
-            Some(buf) =>  {
+            Some(buf) => {
                 value.serialize(&mut buf.se)?;
                 buf.elem_count += 1;
                 Ok(())
@@ -559,10 +560,10 @@ where
         Ok(())
     }
 
-	#[cfg(feature = "serde128")]
-	fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
-		self.serialize_bytes(&v.to_be_bytes())
-	}
+    #[cfg(feature = "serde128")]
+    fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
+        self.serialize_bytes(&v.to_be_bytes())
+    }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
         self.serialize_u64(v as u64)
@@ -581,7 +582,7 @@ where
         Ok(())
     }
 
-	#[cfg(feature = "serde128")]
+    #[cfg(feature = "serde128")]
     fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
         self.serialize_bytes(&v.to_be_bytes())
     }
@@ -888,7 +889,6 @@ impl<'a, W: Write + 'a> serde::ser::Serializer for &mut ExtSerializer<'a, W> {
     type SerializeStruct = serde::ser::Impossible<(), Error>;
     type SerializeStructVariant = serde::ser::Impossible<(), Error>;
 
-
     #[cold]
     fn serialize_bytes(self, _val: &[u8]) -> Result<Self::Ok, Self::Error> {
         Err(Error::InvalidDataModel("expected tuple, received bytes"))
@@ -1053,13 +1053,12 @@ impl<'a, W: Write + 'a> SerializeTuple for &mut ExtSerializer<'a, W> {
     }
 }
 
-
 impl<'a, W: Write + 'a> ExtSerializer<'a, W> {
     #[inline]
     fn new<C>(ser: &'a mut Serializer<W, C>) -> Self {
         Self {
             fields_se: ExtFieldSerializer::new(ser),
-            tuple_received: false
+            tuple_received: false,
         }
     }
 
@@ -1077,9 +1076,9 @@ impl<'a, W: Write + 'a> ExtFieldSerializer<'a, W> {
     #[inline]
     fn new<C>(ser: &'a mut Serializer<W, C>) -> Self {
         Self {
-           wr: UnderlyingWrite::get_mut(ser),
-           tag: None,
-           finish: false
+            wr: UnderlyingWrite::get_mut(ser),
+            tag: None,
+            finish: false,
         }
     }
 
@@ -1115,8 +1114,7 @@ where
     W: Write + ?Sized,
     T: Serialize + ?Sized
 {
-    let mut se = Serializer::new(wr)
-        .with_struct_map();
+    let mut se = Serializer::new(wr).with_struct_map();
     val.serialize(&mut se)
 }
 

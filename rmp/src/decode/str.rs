@@ -1,10 +1,10 @@
 use std::error;
-use std::io::{self, Read};
 use std::fmt::{self, Display, Formatter};
-use std::str::{Utf8Error, from_utf8};
+use std::io::{self, Read};
+use std::str::{from_utf8, Utf8Error};
 
+use super::{read_data_u16, read_data_u32, read_data_u8, read_marker, Error, ValueReadError};
 use crate::Marker;
-use super::{read_marker, read_data_u8, read_data_u16, read_data_u32, Error, ValueReadError};
 
 #[derive(Debug)]
 pub enum DecodeStringError<'a> {
@@ -73,7 +73,7 @@ fn read_str_len_with_nread<R>(rd: &mut R) -> Result<(u32, usize), ValueReadError
         Marker::Str8 => Ok((read_data_u8(rd)? as u32, 2)),
         Marker::Str16 => Ok((read_data_u16(rd)? as u32, 3)),
         Marker::Str32 => Ok((read_data_u32(rd)?, 5)),
-        marker => Err(ValueReadError::TypeMismatch(marker))
+        marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
 
@@ -131,12 +131,10 @@ pub fn read_str_data<'r, R>(rd: &mut R,
 
     // Trying to copy exact `len` bytes.
     match rd.read_exact(buf) {
-        Ok(()) => {
-            match from_utf8(buf) {
-                Ok(decoded) => Ok(decoded),
-                Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
-            }
-        }
+        Ok(()) => match from_utf8(buf) {
+            Ok(decoded) => Ok(decoded),
+            Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
+        },
         Err(err) => Err(DecodeStringError::InvalidDataRead(From::from(err))),
     }
 }
@@ -174,9 +172,9 @@ pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError<'_>> {
 ///
 /// assert_eq!(vec!["Unpacking", "multiple", "strings"], chunks);
 /// ```
-pub fn read_str_from_slice<T: ?Sized + AsRef<[u8]>>(buf: &T) ->
-    Result<(&str, &[u8]), DecodeStringError<'_>>
-{
+pub fn read_str_from_slice<T: ?Sized + AsRef<[u8]>>(
+    buf: &T,
+) -> Result<(&str, &[u8]), DecodeStringError<'_>> {
     let buf = buf.as_ref();
     let (len, nread) = read_str_len_with_nread(&mut &buf[..])?;
     let ulen = len as usize;

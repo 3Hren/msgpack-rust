@@ -11,11 +11,11 @@ use serde;
 use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Visitor};
 
 use rmp;
+use rmp::decode::{self, DecodeStringError, MarkerReadError, NumValueReadError, ValueReadError};
 use rmp::Marker;
-use rmp::decode::{self, MarkerReadError, DecodeStringError, ValueReadError, NumValueReadError};
 
+use crate::config::{BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig};
 use crate::MSGPACK_EXT_STRUCT_NAME;
-use crate::config::{DefaultConfig, SerializerConfig, HumanReadableConfig, BinaryConfig};
 
 /// Enum representing errors that can occur while decoding MessagePack data.
 #[derive(Debug)]
@@ -263,8 +263,8 @@ impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
 }
 
 impl<'de, R> Deserializer<ReadRefReader<'de, R>>
-    where
-        R: AsRef<[u8]> + ?Sized
+where
+    R: AsRef<[u8]> + ?Sized,
 {
     /// Constructs a new `Deserializer` from the given byte slice.
     #[inline]
@@ -356,11 +356,13 @@ fn read_u8<R: Read>(rd: &mut R) -> Result<u8, Error> {
 }
 
 fn read_u16<R: Read>(rd: &mut R) -> Result<u16, Error> {
-    rd.read_u16::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
+    rd.read_u16::<byteorder::BigEndian>()
+        .map_err(Error::InvalidDataRead)
 }
 
 fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
-    rd.read_u32::<byteorder::BigEndian>().map_err(Error::InvalidDataRead)
+    rd.read_u32::<byteorder::BigEndian>()
+        .map_err(Error::InvalidDataRead)
 }
 
 fn ext_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
@@ -373,9 +375,7 @@ fn ext_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
         Marker::Ext8 => read_u8(rd)? as u32,
         Marker::Ext16 => read_u16(rd)? as u32,
         Marker::Ext32 => read_u32(rd)? as u32,
-        _ => {
-            return Err(Error::TypeMismatch(marker))
-        }
+        _ => return Err(Error::TypeMismatch(marker)),
     })
 }
 
@@ -383,7 +383,7 @@ fn ext_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
 enum ExtDeserializerState {
     New,
     ReadTag,
-    ReadBinary
+    ReadBinary,
 }
 
 #[derive(Debug)]
@@ -391,7 +391,7 @@ struct ExtDeserializer<'a, R, C> {
     rd: &'a mut R,
     config: C,
     len: u32,
-    state: ExtDeserializerState
+    state: ExtDeserializerState,
 }
 
 impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> ExtDeserializer<'a, R, C> {
@@ -455,15 +455,11 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
                 let data = self.rd.read_slice(self.len as usize).map_err(Error::InvalidDataRead)?;
                 self.state = ExtDeserializerState::ReadBinary;
                 match data {
-                    Reference::Borrowed(bytes) => {
-                        visitor.visit_borrowed_bytes(bytes)
-                    }
-                    Reference::Copied(bytes) => {
-                        visitor.visit_bytes(bytes)
-                    }
+                    Reference::Borrowed(bytes) => visitor.visit_borrowed_bytes(bytes),
+                    Reference::Copied(bytes) => visitor.visit_bytes(bytes),
                 }
             }
-            ExtDeserializerState::ReadBinary => unreachable!()
+            ExtDeserializerState::ReadBinary => unreachable!(),
         }
     }
 
@@ -504,7 +500,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             Marker::I64 => visitor.visit_i64(rmp::decode::read_data_i64(&mut self.rd)?),
             Marker::F32 => visitor.visit_f32(rmp::decode::read_data_f32(&mut self.rd)?),
             Marker::F64 => visitor.visit_f64(rmp::decode::read_data_f64(&mut self.rd)?),
-            Marker::FixStr(_) | Marker::Str8 | Marker::Str16| Marker::Str32 => {
+            Marker::FixStr(_) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
                 let len = match marker {
                     Marker::FixStr(len) => Ok(len.into()),
                     Marker::Str8 => read_u8(&mut self.rd).map(u32::from),
@@ -661,7 +657,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             Marker::F32 => rmp::decode::read_data_f32(&mut self.rd),
             marker => {
                 self.marker = Some(marker);
-                return self.deserialize_any(visitor)
+                return self.deserialize_any(visitor);
             }
         }?;
         visitor.visit_f32(f)
@@ -683,7 +679,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             Marker::F64 => rmp::decode::read_data_f64(&mut self.rd),
             marker => {
                 self.marker = Some(marker);
-                return self.deserialize_any(visitor)
+                return self.deserialize_any(visitor);
             }
         }?;
         visitor.visit_f64(f)
@@ -781,9 +777,7 @@ struct VariantAccess<'a, R, C> {
 
 impl<'a, R: 'a, C> VariantAccess<'a, R, C> {
     pub fn new(de: &'a mut Deserializer<R, C>) -> Self {
-        VariantAccess {
-            de,
-        }
+        VariantAccess { de }
     }
 }
 
@@ -898,7 +892,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ReadRefReader<'a, T> {
     fn new(rd: &'a T) -> Self {
         Self {
             rd,
-            buf: rd.as_ref()
+            buf: rd.as_ref(),
         }
     }
 }

@@ -1,18 +1,17 @@
 use std::cmp::min;
 use std::io::{self, Read};
 
+use rmp::decode::{
+    read_data_f32, read_data_f64, read_data_i16, read_data_i32, read_data_i64, read_data_i8,
+    read_data_u16, read_data_u32, read_data_u64, read_data_u8, read_marker,
+};
 use rmp::Marker;
-use rmp::decode::{read_marker, read_data_u8, read_data_u16, read_data_u32, read_data_u64,
-                  read_data_i8, read_data_i16, read_data_i32, read_data_i64, read_data_f32,
-                  read_data_f64};
 
-use crate::{Utf8String, Value};
 use super::Error;
-
+use crate::{Utf8String, Value};
 
 // See https://github.com/3Hren/msgpack-rust/issues/151
 const PREALLOC_MAX: usize = 64 * 1024; // 64 KiB
-
 
 fn read_array_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<Value>, Error> {
     let depth = super::decrement_depth(depth)?;
@@ -242,5 +241,5 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
 pub fn read_value_with_max_depth<R>(rd: &mut R, max_depth: usize) -> Result<Value, Error>
     where R: Read
 {
-    read_value_inner(rd, max_depth)   
+    read_value_inner(rd, max_depth)
 }
