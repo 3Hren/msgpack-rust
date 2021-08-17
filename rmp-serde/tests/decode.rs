@@ -544,6 +544,7 @@ fn fail_str_invalid_utf8() {
 
 #[test]
 fn fail_depth_limit() {
+    #[allow(dead_code)]
     struct Nested {
         sub: Vec<Nested>,
     }

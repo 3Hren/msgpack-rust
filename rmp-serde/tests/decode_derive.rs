@@ -46,7 +46,7 @@ fn pass_single_field_struct() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Struct {
         inner: u32,
-    };
+    }
 
     let mut de = Deserializer::new(cur);
     let actual: Struct = Deserialize::deserialize(&mut de).unwrap();
@@ -63,7 +63,7 @@ fn pass_struct() {
     struct Decoded {
         id: u32,
         value: u32,
-    };
+    }
 
     let mut de = Deserializer::new(cur);
     let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
