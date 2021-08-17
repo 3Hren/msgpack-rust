@@ -26,6 +26,8 @@ use crate::Marker;
 /// # Panics
 ///
 /// Panics if `val` does not fit in `[-32; 0)` range.
+#[inline]
+#[track_caller]
 pub fn write_nfix<W: Write>(wr: &mut W, val: i8) -> Result<(), Error> {
     assert!(-32 <= val && val < 0);
     write_marker(wr, Marker::FixNeg(val))?;

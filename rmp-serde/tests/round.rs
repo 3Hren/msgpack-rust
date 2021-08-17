@@ -573,6 +573,7 @@ fn roundtrip_some_failures() {
 }
 
 #[cfg(test)]
+#[track_caller]
 fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {
     assert_roundtrips_config(&val, "default", |s| s, |d| d);
     assert_roundtrips_config(&val, ".with_struct_map()", |s| s.with_struct_map(), |d| d);
@@ -612,6 +613,7 @@ fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deseri
 }
 
 #[cfg(test)]
+#[track_caller]
 fn assert_roundtrips_config<T, CSF, SC, CDF, DC>(
     val: &T,
     desc: &str,
