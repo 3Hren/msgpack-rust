@@ -10,6 +10,40 @@ use std::borrow::Cow;
 use std::io::Cursor;
 
 #[test]
+#[ignore]
+fn issue_250() {
+    #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+    #[serde(tag = "type", content = "payload")]
+    pub enum Example {
+        Unit1,
+        Unit2,
+        HasValue { x: u32 },
+        TupleWithValue(u32, u32),
+        InnerValue(SomeInnerValue),
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+    pub struct SomeInnerValue {
+        pub a: u32,
+        pub b: String,
+    }
+
+    let v = rmp_serde::to_vec(&Example::HasValue { x: 3 }).unwrap();
+
+    // Fails unwrap with Syntax("invalid type: sequence,
+    // expected struct variant Example::HasValue")
+    let ex: Example = rmp_serde::from_slice(&v).unwrap();
+    assert_eq!(Example::HasValue { x: 3 }, ex);
+
+    let v = rmp_serde::to_vec(&Example::Unit1).unwrap();
+
+    // Fails unwrap with Syntax("invalid length 1,
+    // expected adjacently tagged enum Example")
+    let ex: Example = rmp_serde::from_slice(&v).unwrap();
+    assert_eq!(Example::Unit1, ex);
+}
+
+#[test]
 fn round_trip_option() {
     #[derive(Debug, PartialEq, Serialize, Deserialize)]
     struct Foo {
