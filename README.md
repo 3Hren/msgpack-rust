@@ -8,11 +8,11 @@ RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
 This repository consists of three separate crates: the RMP core and two implementations to ease serializing and
 deserializing Rust structs.
 
-|                   | crates.io                                 | API Documentation               |
-|-------------------|-------------------------------------------|---------------------------------|
-| **rmp**           | [![][crates-rmp-img]][crates-rmp-url]     | [RMP][rmp-docs-url]             |
-| **rmps**          | [![][crates-rmps-img]][crates-rmps-url]   | [RMP Serde][rmps-docs-url]      |
-| **rmpv**          | [![][crates-rmpv-img]][crates-rmpv-url]   | [RMP Value][rmpv-docs-url]      |
+ crates.rs                                 | API Documentation               |
+-------------------------------------------|---------------------------------|
+ [![rmp][crates-rmp-img]][crates-rmp-url]     | [RMP][rmp-docs-url]             |
+ [![rmps][crates-rmps-img]][crates-rmps-url]   | [RMP Serde][rmps-docs-url]      |
+ [![rmpv][crates-rmpv-img]][crates-rmpv-url]   | [RMP Value][rmpv-docs-url]      |
 
 ## Features
 
@@ -39,17 +39,7 @@ deserializing Rust structs.
 
 ## Requirements
 
-- Rust 1.34.2
-
-## Versioning
-
-This project adheres to [Semantic Versioning](http://semver.org/). However until 1.0.0 comes there
-will be the following rules:
-
- - Any API/ABI breaking changes will be notified in the changelog explicitly and results in minor
-   version bumping.
- - API extending features results in patch version bumping.
- - Non-breaking bug fixes and performance improving results in patch version bumping.
+- Rust 1.53.0 or later
 
 [rustc-serialize]: https://github.com/rust-lang-nursery/rustc-serialize
 [serde]: https://github.com/serde-rs/serde
@@ -61,11 +51,11 @@ will be the following rules:
 [rmps-docs-url]: https://docs.rs/rmp-serde
 [rmpv-docs-url]: https://docs.rs/rmpv
 
-[crates-rmp-img]: http://meritbadge.herokuapp.com/rmp
-[crates-rmp-url]: https://crates.io/crates/rmp
+[crates-rmp-img]: https://img.shields.io/crates/v/rmp.svg
+[crates-rmp-url]: https://lib.rs/crates/rmp
 
-[crates-rmps-img]: http://meritbadge.herokuapp.com/rmp-serde
-[crates-rmps-url]: https://crates.io/crates/rmp-serde
+[crates-rmps-img]: https://img.shields.io/crates/v/rmp-serde.svg
+[crates-rmps-url]: https://lib.rs/crates/rmp-serde
 
-[crates-rmpv-img]: http://meritbadge.herokuapp.com/rmpv
-[crates-rmpv-url]: https://crates.io/crates/rmpv
+[crates-rmpv-img]: https://img.shields.io/crates/v/rmpv.svg
+[crates-rmpv-url]: https://lib.rs/crates/rmpv
