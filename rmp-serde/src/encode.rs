@@ -144,7 +144,7 @@ impl<W: Write, C> Serializer<W, C> {
     /// Currently unused.
     #[doc(hidden)]
     #[inline]
-    pub fn set_max_depth(&mut self, depth: usize) {
+    pub fn unstable_set_max_depth(&mut self, depth: usize) {
         self.depth = depth;
     }
 }
@@ -164,22 +164,6 @@ impl<W: Write> Serializer<W, DefaultConfig> {
             depth: 1024,
             config: DefaultConfig,
         }
-    }
-}
-
-impl<W: Write> Serializer<W, StructTupleConfig<DefaultConfig>> {
-    #[deprecated(note = "use `Serializer::new` instead")]
-    #[doc(hidden)]
-    pub fn compact(wr: W) -> Self {
-        Serializer::new(wr).with_struct_tuple()
-    }
-}
-
-impl<W: Write> Serializer<W, StructMapConfig<DefaultConfig>> {
-    #[deprecated(note = "use `Serializer::with_struct_map()` instead")]
-    #[doc(hidden)]
-    pub fn new_named(wr: W) -> Self {
-        Serializer::new(wr).with_struct_map()
     }
 }
 

@@ -71,7 +71,6 @@ use serde::{Deserialize, Serialize};
 pub use crate::decode::{from_read, from_read_ref, Deserializer};
 pub use crate::encode::{to_vec, to_vec_named, Serializer};
 
-#[doc(hidden)]
 pub use crate::decode::from_slice;
 
 pub mod config;

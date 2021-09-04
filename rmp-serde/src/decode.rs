@@ -191,12 +191,6 @@ impl<R: Read, C> Deserializer<R, C> {
 }
 
 impl<R: Read> Deserializer<ReadReader<R>, DefaultConfig> {
-    #[doc(hidden)]
-    #[deprecated(note="use `Deserializer::new` instead")]
-    pub fn from_read(rd: R) -> Self {
-        Self::new(rd)
-    }
-
     /// Constructs a new `Deserializer` by consuming the given reader.
     #[inline]
     pub fn new(rd: R) -> Self {
@@ -266,7 +260,7 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
 
 impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
     /// Returns the current position of this deserializer, i.e. how many bytes were read.
-    #[inline]
+    #[inline(always)]
     pub fn position(&self) -> u64 {
         self.rd.rd.position()
     }
@@ -277,7 +271,7 @@ where
     R: AsRef<[u8]> + ?Sized,
 {
     /// Constructs a new `Deserializer` from the given byte slice.
-    #[inline]
+    #[inline(always)]
     pub fn from_read_ref(rd: &'de R) -> Self {
         Deserializer {
             rd: ReadRefReader::new(rd),
@@ -288,7 +282,7 @@ where
     }
 
     /// Gets a reference to the underlying reader in this decoder.
-    #[inline]
+    #[inline(always)]
     pub fn get_ref(&self) -> &R {
         self.rd.rd
     }
@@ -296,7 +290,7 @@ where
 
 impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     /// Changes the maximum nesting depth that is allowed
-    #[inline]
+    #[inline(always)]
     pub fn set_max_depth(&mut self, depth: usize) {
         self.depth = depth;
     }
@@ -1039,9 +1033,8 @@ where R: Read,
 
 /// Deserializes a byte slice into the desired type.
 ///
-/// Currently deprecated, use more generic `from_read_ref` instead.
-#[doc(hidden)]
-#[inline]
+/// It just calls the more generic `from_read_ref`.
+#[inline(always)]
 pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
 where
     T: Deserialize<'a>
