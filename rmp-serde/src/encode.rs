@@ -515,7 +515,6 @@ where
         Ok(())
     }
 
-    #[cfg(feature = "serde128")]
     fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
         self.serialize_bytes(&v.to_be_bytes())
     }
@@ -537,7 +536,6 @@ where
         Ok(())
     }
 
-    #[cfg(feature = "serde128")]
     fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
         self.serialize_bytes(&v.to_be_bytes())
     }

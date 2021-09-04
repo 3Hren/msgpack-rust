@@ -326,7 +326,6 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
         }
     }
 
-    #[cfg(feature = "serde128")]
     fn read_128(&mut self) -> Result<[u8; 16], Error> {
         use std::convert::TryInto;
 
@@ -635,7 +634,6 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         }
     }
 
-    #[cfg(feature = "serde128")]
     #[inline]
     fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -645,7 +643,6 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         visitor.visit_i128(i128::from_be_bytes(buf))
     }
 
-    #[cfg(feature = "serde128")]
     #[inline]
     fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
