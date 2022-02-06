@@ -11,7 +11,7 @@ use serde;
 use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Unexpected, Visitor};
 
 use rmp;
-use rmp::decode::{self, DecodeStringError, MarkerReadError, NumValueReadError, ValueReadError};
+use rmp::decode::{self, RmpRead, DecodeStringError, MarkerReadError, NumValueReadError, ValueReadError};
 use rmp::Marker;
 
 use crate::config::{BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig};
@@ -355,7 +355,7 @@ fn read_bin_data<'a, 'de, R: ReadSlice<'de>>(rd: &'a mut R, len: u32) -> Result<
 }
 
 fn read_u8<R: Read>(rd: &mut R) -> Result<u8, Error> {
-    rd.read_u8().map_err(Error::InvalidDataRead)
+    byteorder::ReadBytesExt::read_u8(rd).map_err(Error::InvalidDataRead)
 }
 
 fn read_u16<R: Read>(rd: &mut R) -> Result<u16, Error> {
@@ -450,7 +450,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
     {
         match self.state {
             ExtDeserializerState::New => {
-                let tag = rmp::decode::read_data_i8(self.rd)?;
+                let tag = self.rd.read_data_i8()?;
                 self.state = ExtDeserializerState::ReadTag;
                 visitor.visit_i8(tag)
             }
@@ -493,16 +493,16 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             Marker::False => visitor.visit_bool(marker == Marker::True),
             Marker::FixPos(val) => visitor.visit_u8(val),
             Marker::FixNeg(val) => visitor.visit_i8(val),
-            Marker::U8 => visitor.visit_u8(rmp::decode::read_data_u8(&mut self.rd)?),
-            Marker::U16 => visitor.visit_u16(rmp::decode::read_data_u16(&mut self.rd)?),
-            Marker::U32 => visitor.visit_u32(rmp::decode::read_data_u32(&mut self.rd)?),
-            Marker::U64 => visitor.visit_u64(rmp::decode::read_data_u64(&mut self.rd)?),
-            Marker::I8 => visitor.visit_i8(rmp::decode::read_data_i8(&mut self.rd)?),
-            Marker::I16 => visitor.visit_i16(rmp::decode::read_data_i16(&mut self.rd)?),
-            Marker::I32 => visitor.visit_i32(rmp::decode::read_data_i32(&mut self.rd)?),
-            Marker::I64 => visitor.visit_i64(rmp::decode::read_data_i64(&mut self.rd)?),
-            Marker::F32 => visitor.visit_f32(rmp::decode::read_data_f32(&mut self.rd)?),
-            Marker::F64 => visitor.visit_f64(rmp::decode::read_data_f64(&mut self.rd)?),
+            Marker::U8 => visitor.visit_u8(self.rd.read_data_u8()?),
+            Marker::U16 => visitor.visit_u16(self.rd.read_data_u16()?),
+            Marker::U32 => visitor.visit_u32(self.rd.read_data_u32()?),
+            Marker::U64 => visitor.visit_u64(self.rd.read_data_u64()?),
+            Marker::I8 => visitor.visit_i8(self.rd.read_data_i8()?),
+            Marker::I16 => visitor.visit_i16(self.rd.read_data_i16()?),
+            Marker::I32 => visitor.visit_i32(self.rd.read_data_i32()?),
+            Marker::I64 => visitor.visit_i64(self.rd.read_data_i64()?),
+            Marker::F32 => visitor.visit_f32(self.rd.read_data_f32()?),
+            Marker::F64 => visitor.visit_f64(self.rd.read_data_f64()?),
             Marker::FixStr(_) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
                 let len = match marker {
                     Marker::FixStr(len) => Ok(len.into()),
@@ -661,11 +661,11 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         // This allows interoperability with msgpack-lite, which performs an optimization of
         // storing rounded floats as integers.
         let f = match self.take_or_read_marker()? {
-            Marker::U8 => rmp::decode::read_data_u8(&mut self.rd).map(f32::from),
-            Marker::U16 => rmp::decode::read_data_u16(&mut self.rd).map(f32::from),
-            Marker::I8 => rmp::decode::read_data_i8(&mut self.rd).map(f32::from),
-            Marker::I16 => rmp::decode::read_data_i16(&mut self.rd).map(f32::from),
-            Marker::F32 => rmp::decode::read_data_f32(&mut self.rd),
+            Marker::U8 => self.rd.read_data_u8().map(f32::from),
+            Marker::U16 => self.rd.read_data_u16().map(f32::from),
+            Marker::I8 => self.rd.read_data_i8().map(f32::from),
+            Marker::I16 => self.rd.read_data_i16().map(f32::from),
+            Marker::F32 => self.rd.read_data_f32(),
             marker => {
                 self.marker = Some(marker);
                 return self.deserialize_any(visitor);
@@ -680,14 +680,14 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         // This special case allows us to decode some integer types as floats when safe, and
         // asked for. This is here to be consistent with 'f32'.
         let f = match self.take_or_read_marker()? {
-            Marker::U8 => rmp::decode::read_data_u8(&mut self.rd).map(f64::from),
-            Marker::U16 => rmp::decode::read_data_u16(&mut self.rd).map(f64::from),
-            Marker::U32 => rmp::decode::read_data_u32(&mut self.rd).map(f64::from),
-            Marker::I8 => rmp::decode::read_data_i8(&mut self.rd).map(f64::from),
-            Marker::I16 => rmp::decode::read_data_i16(&mut self.rd).map(f64::from),
-            Marker::I32 => rmp::decode::read_data_i32(&mut self.rd).map(f64::from),
-            Marker::F32 => rmp::decode::read_data_f32(&mut self.rd).map(f64::from),
-            Marker::F64 => rmp::decode::read_data_f64(&mut self.rd),
+            Marker::U8 => self.rd.read_data_u8().map(f64::from),
+            Marker::U16 => self.rd.read_data_u16().map(f64::from),
+            Marker::U32 => self.rd.read_data_u32().map(f64::from),
+            Marker::I8 => self.rd.read_data_i8().map(f64::from),
+            Marker::I16 => self.rd.read_data_i16().map(f64::from),
+            Marker::I32 => self.rd.read_data_i32().map(f64::from),
+            Marker::F32 => self.rd.read_data_f32().map(f64::from),
+            Marker::F64 => self.rd.read_data_f64(),
             marker => {
                 self.marker = Some(marker);
                 return self.deserialize_any(visitor);
