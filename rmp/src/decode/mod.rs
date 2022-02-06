@@ -35,8 +35,9 @@ use num_traits::cast::FromPrimitive;
 
 use crate::Marker;
 
-/// An error that can occur when attempting to read bytes from the reader.
-pub type Error = ::std::io::Error;
+#[doc(inline)]
+#[allow(deprecated)]
+pub use crate::errors::Error;
 
 /// An error that can occur when attempting to read a MessagePack marker from the reader.
 #[derive(Debug)]

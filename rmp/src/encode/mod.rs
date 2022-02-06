@@ -25,33 +25,16 @@ use byteorder::{ByteOrder};
 
 use crate::Marker;
 
-#[cfg(feature = "std")]
-#[deprecated(note = "Doesn't abstract over RmpWrite (or work on no_std), use RmpWrite::Error and RmpWriteErr instead")]
-pub type Error = ::std::io::Error;
-
-#[cfg(not(feature = "std"))]
-#[deprecated(note = "Doesn't work meaningfully on no_std")]
-pub type Error = ::core::convert::Infallible;
-
-#[cfg(feature = "std")]
-#[doc(hidden)]
-pub trait MaybeErrBound: std::error::Error {}
-#[cfg(feature = "std")]
-impl<T: ?Sized + std::error::Error> MaybeErrBound for T  {}
-#[cfg(not(feature = "std"))]
-#[doc(hidden)]
-pub trait MaybeErrBound {}
-#[cfg(not(feature = "std"))]
-impl<T: ?Sized> MaybeErrBound for T  {}
+#[doc(inline)]
+#[allow(deprecated)]
+pub use crate::errors::Error;
 
 /// The error type for I/O operations of the `RmpWrite` and associated traits.
 ///
 /// For `std::io::Write`, this is `std;:io::Error`
-pub trait RmpWriteErr: Display + Debug + MaybeErrBound + 'static {}
+pub trait RmpWriteErr: Display + Debug + crate::errors::MaybeErrBound + 'static {}
 #[cfg(feature = "std")]
-impl RmpWriteErr for std::io::Error {
-
-}
+impl RmpWriteErr for std::io::Error {}
 impl RmpWriteErr for core::convert::Infallible {}
 
 /// A wrapper around `Vec<u8>` to serialize more efficiently.
