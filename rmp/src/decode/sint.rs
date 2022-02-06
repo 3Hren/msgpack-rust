@@ -1,7 +1,5 @@
-use std::io::Read;
-
 use crate::Marker;
-use super::{read_marker, read_data_i8, read_data_i16, read_data_i32, read_data_i64, ValueReadError};
+use super::{read_marker, RmpRead, ValueReadError};
 
 /// Attempts to read a single byte from the given reader and to decode it as a negative fixnum
 /// value.
@@ -21,7 +19,7 @@ use super::{read_marker, read_data_i8, read_data_i16, read_data_i32, read_data_i
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_nfix<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
+pub fn read_nfix<R: RmpRead>(rd: &mut R) -> Result<i8, ValueReadError<R::Error>> {
     match read_marker(rd)? {
         Marker::FixNeg(val) => Ok(val),
         marker => Err(ValueReadError::TypeMismatch(marker)),
@@ -44,9 +42,9 @@ pub fn read_nfix<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_i8<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
+pub fn read_i8<R: RmpRead>(rd: &mut R) -> Result<i8, ValueReadError<R::Error>> {
     match read_marker(rd)? {
-        Marker::I8 => read_data_i8(rd),
+        Marker::I8 => rd.read_data_i8(),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -67,9 +65,9 @@ pub fn read_i8<R: Read>(rd: &mut R) -> Result<i8, ValueReadError> {
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_i16<R: Read>(rd: &mut R) -> Result<i16, ValueReadError> {
+pub fn read_i16<R: RmpRead>(rd: &mut R) -> Result<i16, ValueReadError<R::Error>> {
     match read_marker(rd)? {
-        Marker::I16 => read_data_i16(rd),
+        Marker::I16 => rd.read_data_i16(),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -90,9 +88,9 @@ pub fn read_i16<R: Read>(rd: &mut R) -> Result<i16, ValueReadError> {
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_i32<R: Read>(rd: &mut R) -> Result<i32, ValueReadError> {
+pub fn read_i32<R: RmpRead>(rd: &mut R) -> Result<i32, ValueReadError<R::Error>> {
     match read_marker(rd)? {
-        Marker::I32 => read_data_i32(rd),
+        Marker::I32 => rd.read_data_i32(),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -113,9 +111,9 @@ pub fn read_i32<R: Read>(rd: &mut R) -> Result<i32, ValueReadError> {
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_i64<R: Read>(rd: &mut R) -> Result<i64, ValueReadError> {
+pub fn read_i64<R: RmpRead>(rd: &mut R) -> Result<i64, ValueReadError<R::Error>> {
     match read_marker(rd)? {
-        Marker::I64 => read_data_i64(rd),
+        Marker::I64 => rd.read_data_i64(),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }

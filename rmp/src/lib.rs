@@ -151,7 +151,6 @@
 
 extern crate alloc;
 
-#[cfg(feature = "std")]
 pub mod decode;
 pub mod encode;
 mod marker;

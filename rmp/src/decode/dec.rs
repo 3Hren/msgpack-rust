@@ -1,6 +1,4 @@
-use std::io::Read;
-
-use super::{read_data_f32, read_data_f64, read_marker, ValueReadError};
+use super::{RmpRead, read_marker, ValueReadError};
 use crate::Marker;
 
 /// Attempts to read exactly 5 bytes from the given reader and to decode them as `f32` value.
@@ -19,9 +17,9 @@ use crate::Marker;
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_f32<R: Read>(rd: &mut R) -> Result<f32, ValueReadError> {
+pub fn read_f32<R: RmpRead>(rd: &mut R) -> Result<f32, ValueReadError<R::Error>> {
     match read_marker(rd)? {
-        Marker::F32 => Ok(read_data_f32(rd)?),
+        Marker::F32 => Ok(rd.read_data_f32()?),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -42,9 +40,9 @@ pub fn read_f32<R: Read>(rd: &mut R) -> Result<f32, ValueReadError> {
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_f64<R: Read>(rd: &mut R) -> Result<f64, ValueReadError> {
+pub fn read_f64<R: RmpRead>(rd: &mut R) -> Result<f64, ValueReadError<R::Error>> {
     match read_marker(rd)? {
-        Marker::F64 => Ok(read_data_f64(rd)?),
+        Marker::F64 => Ok(rd.read_data_f64()?),
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }

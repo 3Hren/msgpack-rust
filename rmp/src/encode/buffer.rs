@@ -1,6 +1,7 @@
 //! Implementation of the [ByteBuf] type
 
 use super::RmpWrite;
+use alloc::vec::Vec;
 
 /// A wrapper around `Vec<u8>` to serialize more efficiently.
 ///

@@ -17,11 +17,7 @@ pub use self::uint::{write_pfix, write_u16, write_u32, write_u64, write_u8, writ
 
 #[cfg(feature = "std")]
 use std::error;
-use alloc::vec::Vec;
 use core::fmt::{self, Display, Debug, Formatter};
-#[cfg(feature = "std")]
-use std::io::Write;
-use byteorder::{ByteOrder};
 
 use crate::Marker;
 
@@ -32,9 +28,10 @@ pub use buffer::ByteBuf;
 #[allow(deprecated)]
 pub use crate::errors::Error;
 
-/// The error type for I/O operations of the `RmpWrite` and associated traits.
+/// The error type for operations on the [RmpWrite] trait.
 ///
-/// For `std::io::Write`, this is `std;:io::Error`
+/// For [std::io::Write], this is [std::io::Error]
+/// For [ByteBuf], this is [core::convert::Infallible]
 pub trait RmpWriteErr: Display + Debug + crate::errors::MaybeErrBound + 'static {}
 #[cfg(feature = "std")]
 impl RmpWriteErr for std::io::Error {}
@@ -124,7 +121,7 @@ macro_rules! write_byteorder_utils {
                 const SIZE: usize = core::mem::size_of::<$tp>();
                 let mut buf: [u8; SIZE] = [0u8; SIZE];
                 paste::paste! {
-                    byteorder::BigEndian::[<write_ $tp>](&mut buf, val);
+                    <byteorder::BigEndian as byteorder::ByteOrder>::[<write_ $tp>](&mut buf, val);
                 }
                 self.write_bytes(&buf).map_err(DataWriteError)
             }
@@ -135,35 +132,42 @@ macro_rules! write_byteorder_utils {
 /// A type that `rmp` supports writing into.
 ///
 /// The methods of this trait should be considered an implementation detail (for now).
+/// It is currently sealed (can not be implemented by the user).
 ///
-/// See also [std::io::Write] and [byteorder::WriteBytesExt]
+/// See also [std::uo::Write] and [byteorder::WriteBytesExt]
 ///
-/// It is only implemented for `std::io::Read` and `Bytes`.
+/// Its primary implementations are [std::io::Write] and [ByteBuf].
 pub trait RmpWrite: sealed::Sealed {
     type Error: RmpWriteErr;
+
     /// Write a single byte to this stream
     #[inline]
     fn write_u8(&mut self, val: u8) -> Result<(), Self::Error> {
         let buf = [val];
         self.write_bytes(&buf)
     }
-    /// Write a single (signed) byte to this type.
-    #[inline]
-    #[doc(hidden)]
-    fn write_data_u8(&mut self, val: u8) -> Result<(), DataWriteError<Self::Error>> {
-        self.write_u8(val).map_err(DataWriteError)
-    }
-    /// Write a single (signed) byte to this type.
-    #[inline]
-    #[doc(hidden)]
-    fn write_data_i8(&mut self, val: i8) -> Result<(), DataWriteError<Self::Error>> {
-        self.write_data_u8(val as u8)
-    }
+
     /// Write a slice of bytes to the underlying stream
     ///
     /// This will either write all the bytes or return an error.
     /// See also [std::io::Write::write_all]
     fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error>;
+
+    // Internal helper functions to map I/O error into the `DataWriteError` error.
+
+    /// Write a single (signed) byte to this stream.
+    #[inline]
+    #[doc(hidden)]
+    fn write_data_u8(&mut self, val: u8) -> Result<(), DataWriteError<Self::Error>> {
+        self.write_u8(val).map_err(DataWriteError)
+    }
+    /// Write a single (signed) byte to this stream.
+    #[inline]
+    #[doc(hidden)]
+    fn write_data_i8(&mut self, val: i8) -> Result<(), DataWriteError<Self::Error>> {
+        self.write_data_u8(val as u8)
+    }
+
     write_byteorder_utils!(
         write_data_u16 => u16,
         write_data_u32 => u32,
