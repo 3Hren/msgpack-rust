@@ -25,6 +25,9 @@ use byteorder::{ByteOrder};
 
 use crate::Marker;
 
+mod buffer;
+pub use buffer::ByteBuf;
+
 #[doc(inline)]
 #[allow(deprecated)]
 pub use crate::errors::Error;
@@ -36,34 +39,6 @@ pub trait RmpWriteErr: Display + Debug + crate::errors::MaybeErrBound + 'static 
 #[cfg(feature = "std")]
 impl RmpWriteErr for std::io::Error {}
 impl RmpWriteErr for core::convert::Infallible {}
-
-/// A wrapper around `Vec<u8>` to serialize more efficiently.
-///
-/// This has a specialized implementation of `RmpWrite`.
-///
-/// This has the additional benefit of working on `#[no_std]`
-///
-/// See also [serde_bytes::ByteBuf](https://docs.rs/serde_bytes/0.11/serde_bytes/struct.ByteBuf.html)
-pub struct ByteBuf {
-    bytes: Vec<u8>,
-}
-
-impl RmpWrite for ByteBuf {
-    type Error = core::convert::Infallible;
-
-    #[inline]
-    fn write_u8(&mut self, val: u8) -> Result<(), Self::Error> {
-        self.bytes.push(val);
-        Ok(())
-    }
-
-    #[inline]
-    fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
-        self.bytes.extend_from_slice(buf);
-        Ok(())
-    }
-}
-
 
 // An error returned from the `write_marker` and `write_fixval` functions.
 struct MarkerWriteError<E: RmpWriteErr>(E);
