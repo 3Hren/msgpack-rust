@@ -1,6 +1,4 @@
-use std::io::Write;
-
-use super::{write_data_f32, write_data_f64, write_marker};
+use super::{RmpWrite, write_marker};
 use crate::encode::ValueWriteError;
 use crate::Marker;
 
@@ -12,9 +10,9 @@ use crate::Marker;
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
-pub fn write_f32<W: Write>(wr: &mut W, val: f32) -> Result<(), ValueWriteError> {
+pub fn write_f32<W: RmpWrite>(wr: &mut W, val: f32) -> Result<(), ValueWriteError<W::Error>> {
     write_marker(wr, Marker::F32)?;
-    write_data_f32(wr, val)?;
+    wr.write_data_f32(val)?;
     Ok(())
 }
 
@@ -26,8 +24,8 @@ pub fn write_f32<W: Write>(wr: &mut W, val: f32) -> Result<(), ValueWriteError> 
 ///
 /// This function will return `ValueWriteError` on any I/O error occurred while writing either the
 /// marker or the data.
-pub fn write_f64<W: Write>(wr: &mut W, val: f64) -> Result<(), ValueWriteError> {
+pub fn write_f64<W: RmpWrite>(wr: &mut W, val: f64) -> Result<(), ValueWriteError<W::Error>> {
     write_marker(wr, Marker::F64)?;
-    write_data_f64(wr, val)?;
+    wr.write_data_f64(val)?;
     Ok(())
 }

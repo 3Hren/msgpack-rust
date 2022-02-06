@@ -12,8 +12,15 @@ categories = ["encoding"]
 edition = "2018"
 
 [dependencies]
-byteorder = "1.4.2"
-num-traits = "0.2.14"
+byteorder = { version = "1.4.2", default-features = false }
+num-traits = { version = "0.2.14", default-features = false }
+# This is macro_only ;)
+paste = "1.0"
+
+
+[features]
+default = ["std"]
+std = ["byteorder/std", "num-traits/std"]
 
 [dev-dependencies]
 quickcheck = "1.0.2"
