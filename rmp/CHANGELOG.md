@@ -2,7 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## Unreleased (0.8.11)
+### Added
+- Implemeneted support for `#![no_std]` in `rmpv`
+   - Adds new `feature="std"` (on by default)
+- Introduces new `RmpRead` and `RmpWrite` traits.
+   - Needed because `std::io::Read` (and Write) are missing on `#![no_std]`
+- Introduces new `Bytes` and `ByteBuf` wrappers, that implement RmpRead/RmpWrite for no\_std targets.
+
 ## 0.8.6 - 2017-04-23
 ### Added
 - New `rmp::decode::read_str_from_slice` function for zero-copy reading strings from slices.
