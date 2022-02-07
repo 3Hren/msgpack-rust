@@ -21,7 +21,7 @@ use core::fmt::{self, Display, Debug, Formatter};
 
 use crate::Marker;
 
-mod buffer;
+pub mod buffer;
 pub use buffer::ByteBuf;
 
 #[doc(inline)]
@@ -109,6 +109,7 @@ mod sealed{
     #[cfg(feature = "std")]
     impl<T: ?Sized + std::io::Write> Sealed for T {}
     impl Sealed for super::ByteBuf {}
+    impl Sealed for super::buffer::FixedByteBuf<'_> {}
 }
 
 
