@@ -113,6 +113,38 @@ impl RmpWrite for FixedByteBuf<'_> {
     }
 }
 
+#[cfg(not(feature = "std"))]
+impl<'a> RmpWrite for &'a mut [u8] {
+    type Error = FixedBufCapacityOverflow;
+
+    #[inline]
+    fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
+        let to_write = buf.len();
+        let remaining = self.len();
+        if to_write <= remaining {
+            self[..to_write].copy_from_slice(buf);
+            unsafe {
+                /*
+                 * Cant use split_at or re-borrowing due to lifetime errors :(
+                 *
+                 * This is the reason we use the 'offset' in FixedByteBuf
+                 */
+                *self = core::slice::from_raw_parts_mut(
+                    self.as_mut_ptr().add(to_write),
+                    remaining - to_write,
+                )
+            }
+            Ok(())
+        } else {
+            Err(FixedBufCapacityOverflow {
+                needed_bytes: to_write,
+                remaining_bytes: remaining,
+                total_bytes: remaining // We don't really know this :(
+            })
+        }
+    }
+}
+
 /// A wrapper around `Vec<u8>` to serialize more efficiently.
 ///
 /// This has a specialized implementation of `RmpWrite`.
@@ -205,6 +237,23 @@ impl RmpWrite for ByteBuf {
     #[inline]
     fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
         self.bytes.extend_from_slice(buf);
+        Ok(())
+    }
+}
+#[cfg(not(feature = "std"))]
+impl<'a> RmpWrite for Vec<u8> {
+    type Error = core::convert::Infallible;
+
+
+    #[inline]
+    fn write_u8(&mut self, val: u8) -> Result<(), Self::Error> {
+        self.push(val);
+        Ok(())
+    }
+
+    #[inline]
+    fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
+        self.extend_from_slice(buf);
         Ok(())
     }
 }
