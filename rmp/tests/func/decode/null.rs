@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use super::Cursor;
 
 use crate::msgpack::decode::*;
 
@@ -33,6 +33,7 @@ fn fail_unexpected_eof() {
 }
 
 #[test]
+#[cfg(feature = "std")]
 fn interrupt_safe() {
     use std::io::{Error, ErrorKind, Read};
 

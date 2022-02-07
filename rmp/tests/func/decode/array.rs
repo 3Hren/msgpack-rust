@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use super::Cursor;
 
 use crate::msgpack::decode::*;
 use crate::msgpack::Marker;

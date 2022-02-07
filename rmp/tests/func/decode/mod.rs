@@ -8,3 +8,8 @@ mod null;
 mod sint;
 mod string;
 mod uint;
+
+#[cfg(feature = "std")]
+pub type Cursor<'a> = std::io::Cursor<&'a [u8]>;
+#[cfg(not(feature = "std"))]
+pub type Cursor<'a> = crate::msgpack::decode::Bytes<'a>;
