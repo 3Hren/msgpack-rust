@@ -33,7 +33,7 @@ use num_traits::cast::FromPrimitive;
 
 use crate::Marker;
 
-mod bytes;
+pub mod bytes;
 pub use bytes::Bytes;
 
 #[doc(inline)]

@@ -148,7 +148,7 @@ pub fn read_str_data<'r, R>(rd: &mut R,
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError<'_, super::bytes::BytesReadError>> {
     let mut cur = super::Bytes::new(rd);
     let len = read_str_len(&mut cur)?;
-    Ok(&cur.as_slice()[..len as usize])
+    Ok(&cur.remaining_slice()[..len as usize])
 }
 
 /// Attempts to read and decode a string value from the reader, returning a borrowed slice from it.
