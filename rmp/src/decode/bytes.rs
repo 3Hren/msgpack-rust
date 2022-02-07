@@ -40,6 +40,7 @@ impl RmpReadErr for BytesReadError {}
 /// See also [serde_bytes::Bytes](https://docs.rs/serde_bytes/0.11/serde_bytes/struct.Bytes.html)
 ///
 /// Unlike a plain `&[u8]` this also tracks an internal offset in the input (See [Self::position]).
+///
 /// This is used for (limited) compatibility with [std::io::Cursor]. Unlike a [Cursor](std::io::Cursor) it does
 /// not support mark/reset.
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash, Ord, PartialOrd)]
@@ -112,6 +113,40 @@ impl RmpRead for Bytes<'_> {
                 expected: to_read,
                 actual: self.bytes.len(),
                 position: self.current_position
+            })
+        }
+    }
+}
+
+#[cfg(not(feature = "std"))]
+impl<'a> RmpRead for &'a [u8] {
+    type Error = BytesReadError;
+
+    fn read_u8(&mut self) -> Result<u8, Self::Error> {
+        if let Some((&first, newly_remaining)) = self.split_first() {
+            *self = newly_remaining;
+            Ok(first)
+        } else {
+            Err(BytesReadError::InsufficientBytes {
+                expected: 1,
+                actual: 0,
+                position: 0
+            })
+        }
+    }
+
+    fn read_exact_buf(&mut self, buf: &mut [u8]) -> Result<(), Self::Error> {
+        let to_read = buf.len();
+        if to_read <= self.len() {
+            let (src, newly_remaining) = self.split_at(to_read);
+            *self = newly_remaining;
+            buf.copy_from_slice(src);
+            Ok(())
+        } else {
+            Err(BytesReadError::InsufficientBytes {
+                expected: to_read,
+                actual: self.len(),
+                position: 0
             })
         }
     }
