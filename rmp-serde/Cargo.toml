@@ -14,7 +14,7 @@ edition = "2018"
 [dependencies]
 byteorder = "1.4.3"
 serde = "1.0.133"
-rmp = { version = "0.8.8", path = "../rmp" }
+rmp = { version = "0.8.11", path = "../rmp" }
 
 [dev-dependencies]
 rmpv = { path = "../rmpv" }

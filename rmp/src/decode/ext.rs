@@ -1,7 +1,5 @@
-use std::io::Read;
-
 use crate::Marker;
-use super::{read_marker, read_data_i8, read_data_u8, read_data_u16, read_data_u32, ValueReadError};
+use super::{read_marker, RmpRead, ValueReadError};
 
 /// Attempts to read exactly 3 bytes from the given reader and interpret them as a fixext1 type
 /// with data attached.
@@ -20,11 +18,11 @@ use super::{read_marker, read_data_i8, read_data_u8, read_data_u16, read_data_u3
 ///
 /// This function will silently retry on every EINTR received from the underlying `Read` until
 /// successful read.
-pub fn read_fixext1<R: Read>(rd: &mut R) -> Result<(i8, u8), ValueReadError> {
+pub fn read_fixext1<R: RmpRead>(rd: &mut R) -> Result<(i8, u8), ValueReadError<R::Error>> {
     match read_marker(rd)? {
         Marker::FixExt1 => {
-            let ty = read_data_i8(rd)?;
-            let data = read_data_u8(rd)?;
+            let ty = rd.read_data_i8()?;
+            let data = rd.read_data_u8()?;
             Ok((ty, data))
         }
         marker => Err(ValueReadError::TypeMismatch(marker)),
@@ -44,7 +42,7 @@ pub fn read_fixext1<R: Read>(rd: &mut R) -> Result<(i8, u8), ValueReadError> {
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
 /// the data.
-pub fn read_fixext2<R: Read>(rd: &mut R) -> Result<(i8, [u8; 2]), ValueReadError> {
+pub fn read_fixext2<R: RmpRead>(rd: &mut R) -> Result<(i8, [u8; 2]), ValueReadError<R::Error>> {
     match read_marker(rd)? {
         Marker::FixExt2 => {
             let mut buf = [0; 2];
@@ -67,7 +65,7 @@ pub fn read_fixext2<R: Read>(rd: &mut R) -> Result<(i8, [u8; 2]), ValueReadError
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
 /// the data.
-pub fn read_fixext4<R: Read>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError> {
+pub fn read_fixext4<R: RmpRead>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError<R::Error>> {
     match read_marker(rd)? {
         Marker::FixExt4 => {
             let mut buf = [0; 4];
@@ -90,7 +88,7 @@ pub fn read_fixext4<R: Read>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadError
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
 /// the data.
-pub fn read_fixext8<R: Read>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError> {
+pub fn read_fixext8<R: RmpRead>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError<R::Error>> {
     match read_marker(rd)? {
         Marker::FixExt8 => {
             let mut buf = [0; 8];
@@ -113,7 +111,7 @@ pub fn read_fixext8<R: Read>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadError
 ///
 /// This function will return `ValueReadError` on any I/O error while reading either the marker or
 /// the data.
-pub fn read_fixext16<R: Read>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError> {
+pub fn read_fixext16<R: RmpRead>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadError<R::Error>> {
     match read_marker(rd)? {
         Marker::FixExt16 => {
             let mut buf = [0; 16];
@@ -123,9 +121,9 @@ pub fn read_fixext16<R: Read>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueReadErr
     }
 }
 
-fn read_fixext_data<R: Read>(rd: &mut R, buf: &mut [u8]) -> Result<i8, ValueReadError> {
-    let id = read_data_i8(rd)?;
-    match rd.read_exact(buf) {
+fn read_fixext_data<R: RmpRead>(rd: &mut R, buf: &mut [u8]) -> Result<i8, ValueReadError<R::Error>> {
+    let id = rd.read_data_i8()?;
+    match rd.read_exact_buf(buf) {
         Ok(()) => Ok(id),
         Err(err) => Err(ValueReadError::InvalidDataRead(err)),
     }
@@ -150,20 +148,20 @@ pub struct ExtMeta {
     pub size: u32,
 }
 
-pub fn read_ext_meta<R: Read>(rd: &mut R) -> Result<ExtMeta, ValueReadError> {
+pub fn read_ext_meta<R: RmpRead>(rd: &mut R) -> Result<ExtMeta, ValueReadError<R::Error>> {
     let size = match read_marker(rd)? {
         Marker::FixExt1 => 1,
         Marker::FixExt2 => 2,
         Marker::FixExt4 => 4,
         Marker::FixExt8 => 8,
         Marker::FixExt16 => 16,
-        Marker::Ext8 => read_data_u8(rd)? as u32,
-        Marker::Ext16 => read_data_u16(rd)? as u32,
-        Marker::Ext32 => read_data_u32(rd)?,
+        Marker::Ext8 => rd.read_data_u8()? as u32,
+        Marker::Ext16 => rd.read_data_u16()? as u32,
+        Marker::Ext32 => rd.read_data_u32()?,
         marker => return Err(ValueReadError::TypeMismatch(marker)),
     };
 
-    let ty = read_data_i8(rd)?;
+    let ty = rd.read_data_i8()?;
     let meta = ExtMeta { typeid: ty, size };
 
     Ok(meta)
