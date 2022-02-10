@@ -113,7 +113,6 @@ mod sealed{
     #[cfg(not(feature = "std"))]
     impl Sealed for alloc::vec::Vec<u8> {}
     impl Sealed for super::ByteBuf {}
-    impl Sealed for super::buffer::FixedByteBuf<'_> {}
 }
 
 

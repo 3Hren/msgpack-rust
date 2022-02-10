@@ -1,118 +1,49 @@
 //! Implementation of the [ByteBuf] type
 
 use super::RmpWrite;
+#[cfg(not(feature = "std"))]
+use core::fmt::{self, Display, Formatter};
 use alloc::vec::Vec;
-use core::fmt::{Display, Formatter};
-use crate::encode::RmpWriteErr;
 
+/// An error returned from writing to `&mut [u8]` (a byte buffer of fixed capacity) on no_std
+///
+/// In feature="std", capacity overflow in `<&mut [u8] as std::io::Write>::write_exact()`
+/// currently returns [`ErrorKind::WriteZero`](https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.WriteZero).
+///
+/// Since no_std doesn't have std::io::Error we use this instead ;)
+///
+/// This is specific to `#[cfg(not(feature = "std"))]` so it is `#[doc(hidden)]`
 #[derive(Debug)]
+#[cfg(not(feature = "std"))]
+#[doc(hidden)]
 pub struct FixedBufCapacityOverflow {
     needed_bytes: usize,
     remaining_bytes: usize,
-    total_bytes: usize
 }
 
+/// An error returned from writing to `&mut [u8]`
+///
+/// Aliased for compatibility with `no_std` mode.
 #[cfg(feature = "std")]
-impl std::error::Error for FixedBufCapacityOverflow {}
+#[doc(hidden)]
+pub type FixedBufCapacityOverflow = std::io::Error;
+
+#[cfg(not(feature = "std"))]
 impl Display for FixedBufCapacityOverflow {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
-            f, "Capacity overflow: Need to write {} bytes, but only {} remaining (total {})",
-            self.needed_bytes, self.remaining_bytes, self.total_bytes
+            f, "Capacity overflow: Need to write {} bytes, but only space for {} remaining",
+            self.needed_bytes, self.remaining_bytes 
         )
     }
 }
-impl RmpWriteErr for FixedBufCapacityOverflow {}
+#[cfg(not(feature = "std"))]
+impl crate::encode::RmpWriteErr for FixedBufCapacityOverflow {}
 
-/// EXPERIMENTAL: A version of [ByteBuf] with a fixed capacity.
+/// Fallback implementation for fixed-capacity buffers
 ///
-/// This is a wrapper around `&mut [u8]`. It is intended primarily for `#[no_std]` targets,
-/// where the regular `impl std::io::Write for &mut [u8]` impl is unavailable.
-///
-/// Unlike `ByteBuf`, it requires no allocation.
-///
-/// ## Safety
-/// Unlike most other types in this crate, this uses unsafe code internally.
-///
-/// It is only line (avoiding a bounds check).
-pub struct FixedByteBuf<'a> {
-    buffer: &'a mut [u8],
-    /// The position within the internal buffer.
-    ///
-    /// ## Safety
-    /// Undefined behavior if `offset > self.buffer.len()`
-    ///
-    /// This is necessary to avoid bounds checks inside the innermost write method
-    /// and work around the restrictions on mutable aliasing
-    offset: usize
-}
-
-impl<'a> FixedByteBuf<'a> {
-    /// Create a new [FixedByteBuf] from the specified buffer array.
-    ///
-    /// The capacity is fixed and cannot change.
-    pub fn from_buf(buffer: &'a mut [u8]) -> Self {
-        FixedByteBuf { buffer, offset: 0 }
-    }
-    /// Return the number of bytes that have currently been written.
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.offset
-    }
-    /// Return the (fixed) capacity of this buffer
-    #[inline]
-    pub fn total_capacity(&self) -> usize {
-        self.buffer.len()
-    }
-    /// Return the remaining capacity, which is the number of bytes that can still be written.
-    #[inline]
-    pub fn remaining_capacity(&self) -> usize {
-        self.total_capacity() - self.len()
-    }
-    #[inline]
-    fn remaining_buffer(&mut self) -> &mut [u8] {
-        debug_assert!(self.offset <= self.buffer.len());
-        unsafe {
-            // Optimizer doesn't like panics
-            self.buffer.get_unchecked_mut(self.offset..)
-        }
-    }
-    #[cold]
-    #[inline]
-    fn overflow_err(&self, needed_bytes: usize) -> FixedBufCapacityOverflow {
-        FixedBufCapacityOverflow {
-            total_bytes: self.total_capacity(),
-            needed_bytes, remaining_bytes: self.remaining_capacity()
-        }
-    }
-    /// Unwrap the originally underlying buffer
-    ///
-    /// This returns both the data that has been written,
-    /// and the data that has not.
-    #[inline]
-    pub fn into_original_buffer(self) -> &'a mut [u8] {
-        self.buffer
-    }
-}
-
-impl RmpWrite for FixedByteBuf<'_> {
-    type Error = FixedBufCapacityOverflow;
-
-    #[inline]
-    fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
-        let to_write = buf.len();
-        let remaining = self.remaining_buffer();
-        if to_write <= remaining.len() {
-            remaining[..to_write].copy_from_slice(buf);
-            self.offset += to_write;
-            debug_assert!(self.offset <= self.buffer.len());
-            Ok(())
-        } else {
-            Err(self.overflow_err(to_write))
-        }
-    }
-}
-
+/// Only needed for no-std because we don't have
+/// the blanket impl for `std::io::Write`
 #[cfg(not(feature = "std"))]
 impl<'a> RmpWrite for &'a mut [u8] {
     type Error = FixedBufCapacityOverflow;
@@ -124,11 +55,7 @@ impl<'a> RmpWrite for &'a mut [u8] {
         if to_write <= remaining {
             self[..to_write].copy_from_slice(buf);
             unsafe {
-                /*
-                 * Cant use split_at or re-borrowing due to lifetime errors :(
-                 *
-                 * This is the reason we use the 'offset' in FixedByteBuf
-                 */
+                //Cant use split_at or re-borrowing due to lifetime errors :(
                 *self = core::slice::from_raw_parts_mut(
                     self.as_mut_ptr().add(to_write),
                     remaining - to_write,
@@ -139,7 +66,6 @@ impl<'a> RmpWrite for &'a mut [u8] {
             Err(FixedBufCapacityOverflow {
                 needed_bytes: to_write,
                 remaining_bytes: remaining,
-                total_bytes: remaining // We don't really know this :(
             })
         }
     }
