@@ -70,7 +70,9 @@ impl<'a> RmpWrite for &'a mut [u8] {
 
 /// A wrapper around `Vec<u8>` to serialize more efficiently.
 ///
-/// This has a specialized implementation of `RmpWrite`.
+/// This has a specialized implementation of `RmpWrite`
+/// It gives `std::convert::Infailable` for errors.
+/// This is because writing to `Vec<T>` can only fail due to allocation.
 ///
 /// This has the additional benefit of working on `#[no_std]`
 ///
