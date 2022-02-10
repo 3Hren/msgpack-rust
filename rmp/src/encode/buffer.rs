@@ -17,8 +17,7 @@ use alloc::vec::Vec;
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
 pub struct FixedBufCapacityOverflow {
-    needed_bytes: usize,
-    remaining_bytes: usize,
+    _priv: ()
 }
 
 /// An error returned from writing to `&mut [u8]`
@@ -31,10 +30,9 @@ pub type FixedBufCapacityOverflow = std::io::Error;
 #[cfg(not(feature = "std"))]
 impl Display for FixedBufCapacityOverflow {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f, "Capacity overflow: Need to write {} bytes, but only space for {} remaining",
-            self.needed_bytes, self.remaining_bytes 
-        )
+        // This is intentionally vauge because std::io::Error is
+        // Doesn't make sense for no_std to have bettetr errors than std
+        f.write_str("Capacity overflow for fixed-size byte buffer")
     }
 }
 #[cfg(not(feature = "std"))]
@@ -64,8 +62,7 @@ impl<'a> RmpWrite for &'a mut [u8] {
             Ok(())
         } else {
             Err(FixedBufCapacityOverflow {
-                needed_bytes: to_write,
-                remaining_bytes: remaining,
+                _priv: ()
             })
         }
     }
