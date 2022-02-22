@@ -14,7 +14,7 @@ use rmp;
 use rmp::decode::{self, RmpRead, DecodeStringError, MarkerReadError, NumValueReadError, ValueReadError};
 use rmp::Marker;
 
-use crate::config::{BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig};
+use crate::config::{BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig, StructMapConfig};
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
 /// Enum representing errors that can occur while decoding MessagePack data.
