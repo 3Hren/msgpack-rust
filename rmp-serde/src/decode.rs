@@ -256,6 +256,19 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
             depth,
         }
     }
+
+    /// Consumes this deserializer and returns a new one, which will deserialize types with
+    /// struct map representations.
+    #[inline]
+    pub fn with_struct_map(self) -> Deserializer<R, StructMapConfig<C>> {
+        let Deserializer { rd, config, marker, depth } = self;
+        Deserializer {
+            rd,
+            config: StructMapConfig::new(config),
+            marker,
+            depth,
+        }
+    }
 }
 
 impl<R: AsRef<[u8]>> Deserializer<ReadReader<Cursor<R>>> {
