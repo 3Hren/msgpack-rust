@@ -942,8 +942,11 @@ impl<R: Read> ReadReader<R> {
 impl<'de, R: Read> ReadSlice<'de> for ReadReader<R> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
-        self.buf.resize(len, 0u8);
-        self.rd.read_exact(&mut self.buf[..])?;
+        self.buf.clear();
+        let read = self.rd.by_ref().take(len as u64).read_to_end(&mut self.buf)?;
+        if read != len {
+            return Err(io::ErrorKind::UnexpectedEof.into());
+        }
 
         Ok(Reference::Copied(&self.buf[..]))
     }
