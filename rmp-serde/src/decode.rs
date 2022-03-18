@@ -968,6 +968,13 @@ pub struct ReadRefReader<'a, R: ?Sized> {
     buf: &'a [u8],
 }
 
+impl<'a, T> ReadRefReader<'a, T> {
+    /// Returns the part that hasn't been consumed yet
+    pub fn remaining_slice(&self) -> &'a [u8] {
+        self.buf
+    }
+}
+
 impl<'a, T: AsRef<[u8]> + ?Sized> ReadRefReader<'a, T> {
     #[inline]
     fn new(rd: &'a T) -> Self {
