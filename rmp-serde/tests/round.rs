@@ -494,7 +494,7 @@ fn round_variant_string() {
         }
     }
 
-    do_test!(|b| Serializer::new(b));
+    do_test!(Serializer::new);
     do_test!(|b| Serializer::new(b).with_struct_map());
     do_test!(|b| Serializer::new(b).with_struct_tuple());
     do_test!(|b| Serializer::new(b).with_struct_map());
@@ -563,6 +563,50 @@ fn roundtrip_some() {
     assert_roundtrips(Wrapper(Some(99)));
     assert_roundtrips(Some(Wrapper(99)));
     assert_roundtrips(Some("hi".to_string()));
+}
+
+/// Some types don't fully consume their input SeqAccess, leading to incorrect
+/// deserializes.
+///
+/// https://github.com/3Hren/msgpack-rust/issues/287
+#[test]
+fn checked_seq_access_len()
+{
+    #[derive(Serialize)]
+    struct Input {
+        a: [&'static str; 4],
+        d: &'static str,
+    }
+
+    #[allow(dead_code)]
+    #[derive(Deserialize, Debug)]
+    struct Output {
+        a: [String; 2],
+        c: String,
+    }
+
+    let mut buffer = Vec::new();
+    let mut serializer = Serializer::new(&mut buffer)
+        .with_binary()
+        .with_struct_map();
+
+    // The bug is basically that Output will successfully deserialize from input
+    // because the [String; 0] deserializer doesn't drain the SeqAccess, and
+    // the two fields it leaves behind can then be deserialized into `v`
+
+    let data = Input {
+        a: ["b", "b", "c", "c"],
+        d: "d",
+    };
+
+    data.serialize(&mut serializer).expect("failed to serialize");
+
+    let mut deserializer = rmp_serde::Deserializer::new(
+        Cursor::new(&buffer)
+    ).with_binary();
+
+    Output::deserialize(&mut deserializer)
+        .expect_err("Input round tripped into Output; this shouldn't happen");
 }
 
 #[ignore]
