@@ -148,7 +148,7 @@ impl Raw {
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
             Ok(..) => None,
-            Err((_, ref err)) => Some(&err),
+            Err((_, ref err)) => Some(err),
         }
     }
 
@@ -294,7 +294,7 @@ impl<'a> RawRef<'a> {
     #[inline]
     pub fn as_str(&self) -> Option<&str> {
         match self.s {
-            Ok(ref s) => Some(s),
+            Ok(s) => Some(s),
             Err(..) => None,
         }
     }
@@ -305,7 +305,7 @@ impl<'a> RawRef<'a> {
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
             Ok(..) => None,
-            Err((_, ref err)) => Some(&err),
+            Err((_, ref err)) => Some(err),
         }
     }
 
@@ -313,8 +313,8 @@ impl<'a> RawRef<'a> {
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         match self.s {
-            Ok(ref s) => s.as_bytes(),
-            Err(ref err) => &err.0[..],
+            Ok(s) => s.as_bytes(),
+            Err((bytes, _err)) => bytes,
         }
     }
 }
