@@ -679,55 +679,11 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         visitor.visit_u128(u128::from_be_bytes(buf))
     }
 
-    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
-    {
-        // This special case allows us to decode some integer types as floats when safe, and
-        // asked for.
-        //
-        // This allows interoperability with msgpack-lite, which performs an optimization of
-        // storing rounded floats as integers.
-        let f = match self.take_or_read_marker()? {
-            Marker::U8 => self.rd.read_data_u8().map(f32::from),
-            Marker::U16 => self.rd.read_data_u16().map(f32::from),
-            Marker::I8 => self.rd.read_data_i8().map(f32::from),
-            Marker::I16 => self.rd.read_data_i16().map(f32::from),
-            Marker::F32 => self.rd.read_data_f32(),
-            marker => {
-                self.marker = Some(marker);
-                return self.deserialize_any(visitor);
-            }
-        }?;
-        visitor.visit_f32(f)
-    }
-
-    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
-    {
-        // This special case allows us to decode some integer types as floats when safe, and
-        // asked for. This is here to be consistent with 'f32'.
-        let f = match self.take_or_read_marker()? {
-            Marker::U8 => self.rd.read_data_u8().map(f64::from),
-            Marker::U16 => self.rd.read_data_u16().map(f64::from),
-            Marker::U32 => self.rd.read_data_u32().map(f64::from),
-            Marker::I8 => self.rd.read_data_i8().map(f64::from),
-            Marker::I16 => self.rd.read_data_i16().map(f64::from),
-            Marker::I32 => self.rd.read_data_i32().map(f64::from),
-            Marker::F32 => self.rd.read_data_f32().map(f64::from),
-            Marker::F64 => self.rd.read_data_f64(),
-            marker => {
-                self.marker = Some(marker);
-                return self.deserialize_any(visitor);
-            }
-        }?;
-        visitor.visit_f64(f)
-    }
-
     forward_to_deserialize_any! {
-        bool u8 u16 u32 u64 i8 i16 i32 i64 char
-        str string bytes byte_buf unit seq map
-        struct identifier tuple tuple_struct
-        ignored_any
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32
+        f64 char str string bytes byte_buf unit
+        seq map struct identifier tuple
+        tuple_struct ignored_any
     }
 }
 
