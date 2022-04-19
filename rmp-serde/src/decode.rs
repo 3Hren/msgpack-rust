@@ -1,8 +1,10 @@
 //! Generic MessagePack deserialization.
 
+use std::convert::TryInto;
 use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::io::{self, Cursor, ErrorKind, Read};
+use std::num::TryFromIntError;
 use std::str::{self, Utf8Error};
 
 use byteorder::{self, ReadBytesExt};
@@ -154,6 +156,13 @@ impl<'a> From<DecodeStringError<'a>> for Error {
             DecodeStringError::BufferSizeTooSmall(..) => Error::Uncategorized("BufferSizeTooSmall".to_string()),
             DecodeStringError::InvalidUtf8(..) => Error::Uncategorized("InvalidUtf8".to_string()),
         }
+    }
+}
+
+impl From<TryFromIntError> for Error {
+    #[cold]
+    fn from(_: TryFromIntError) -> Self {
+        Error::OutOfRange
     }
 }
 
@@ -327,8 +336,6 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     }
 
     fn read_128(&mut self) -> Result<[u8; 16], Error> {
-        use std::convert::TryInto;
-
         let marker = self.take_or_read_marker()?;
 
         if marker != Marker::Bin8 {
@@ -508,7 +515,8 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
                     Marker::FixStr(len) => Ok(len.into()),
                     Marker::Str8 => read_u8(&mut self.rd).map(u32::from),
                     Marker::Str16 => read_u16(&mut self.rd).map(u32::from),
-                    Marker::Str32 | _ => read_u32(&mut self.rd).map(u32::from),
+                    Marker::Str32 => read_u32(&mut self.rd).map(u32::from),
+                    _ => unreachable!()
                 }?;
                 self.read_str_data(len, visitor)
             }
@@ -516,27 +524,46 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             Marker::Array16 |
             Marker::Array32 => {
                 let len = match marker {
-                    Marker::FixArray(len) => Ok(len.into()),
-                    Marker::Array16 => read_u16(&mut self.rd).map(u32::from),
-                    Marker::Array32 | _ => read_u32(&mut self.rd).map(u32::from),
-                }?;
-                depth_count!(self.depth, visitor.visit_seq(SeqAccess::new(self, len as usize)))
+                    Marker::FixArray(len) => len.into(),
+                    Marker::Array16 => read_u16(&mut self.rd)?.into(),
+                    Marker::Array32 => read_u32(&mut self.rd)?,
+                    _ => unreachable!(),
+                };
+
+                depth_count!(self.depth, {
+                    let mut seq = SeqAccess::new(self, len);
+                    let res = visitor.visit_seq(&mut seq)?;
+                    match seq.left {
+                        0 => Ok(res),
+                        excess => Err(Error::LengthMismatch(len - excess)),
+                    }
+                })
             }
             Marker::FixMap(_) |
             Marker::Map16 |
             Marker::Map32 => {
                 let len = match marker {
-                    Marker::FixMap(len) => Ok(len.into()),
-                    Marker::Map16 => read_u16(&mut self.rd).map(u32::from),
-                    Marker::Map32 | _ => read_u32(&mut self.rd).map(u32::from),
-                }?;
-                depth_count!(self.depth, visitor.visit_map(MapAccess::new(self, len as usize)))
+                    Marker::FixMap(len) => len.into(),
+                    Marker::Map16 => read_u16(&mut self.rd)?.into(),
+                    Marker::Map32 => read_u32(&mut self.rd)?,
+                    _ => unreachable!()
+                };
+
+                depth_count!(self.depth, {
+                    let mut seq = MapAccess::new(self, len);
+                    let res = visitor.visit_map(&mut seq)?;
+                    match seq.left {
+                        0 => Ok(res),
+                        excess => Err(Error::LengthMismatch(len - excess)),
+                    }
+                })
             }
-            Marker::Bin8 | Marker::Bin16| Marker::Bin32 => {
+            Marker::Bin8 | Marker::Bin16 | Marker::Bin32 => {
                 let len = match marker {
                     Marker::Bin8 => read_u8(&mut self.rd).map(u32::from),
                     Marker::Bin16 => read_u16(&mut self.rd).map(u32::from),
-                    Marker::Bin32 | _ => read_u32(&mut self.rd).map(u32::from),
+                    Marker::Bin32 => read_u32(&mut self.rd).map(u32::from),
+                    _ => unreachable!()
                 }?;
                 match read_bin_data(&mut self.rd, len)? {
                     Reference::Borrowed(buf) => visitor.visit_borrowed_bytes(buf),
@@ -652,66 +679,22 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         visitor.visit_u128(u128::from_be_bytes(buf))
     }
 
-    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
-    {
-        // This special case allows us to decode some integer types as floats when safe, and
-        // asked for.
-        //
-        // This allows interoperability with msgpack-lite, which performs an optimization of
-        // storing rounded floats as integers.
-        let f = match self.take_or_read_marker()? {
-            Marker::U8 => self.rd.read_data_u8().map(f32::from),
-            Marker::U16 => self.rd.read_data_u16().map(f32::from),
-            Marker::I8 => self.rd.read_data_i8().map(f32::from),
-            Marker::I16 => self.rd.read_data_i16().map(f32::from),
-            Marker::F32 => self.rd.read_data_f32(),
-            marker => {
-                self.marker = Some(marker);
-                return self.deserialize_any(visitor);
-            }
-        }?;
-        visitor.visit_f32(f)
-    }
-
-    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
-    {
-        // This special case allows us to decode some integer types as floats when safe, and
-        // asked for. This is here to be consistent with 'f32'.
-        let f = match self.take_or_read_marker()? {
-            Marker::U8 => self.rd.read_data_u8().map(f64::from),
-            Marker::U16 => self.rd.read_data_u16().map(f64::from),
-            Marker::U32 => self.rd.read_data_u32().map(f64::from),
-            Marker::I8 => self.rd.read_data_i8().map(f64::from),
-            Marker::I16 => self.rd.read_data_i16().map(f64::from),
-            Marker::I32 => self.rd.read_data_i32().map(f64::from),
-            Marker::F32 => self.rd.read_data_f32().map(f64::from),
-            Marker::F64 => self.rd.read_data_f64(),
-            marker => {
-                self.marker = Some(marker);
-                return self.deserialize_any(visitor);
-            }
-        }?;
-        visitor.visit_f64(f)
-    }
-
     forward_to_deserialize_any! {
-        bool u8 u16 u32 u64 i8 i16 i32 i64 char
-        str string bytes byte_buf unit seq map
-        struct identifier tuple tuple_struct
-        ignored_any
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32
+        f64 char str string bytes byte_buf unit
+        seq map struct identifier tuple
+        tuple_struct ignored_any
     }
 }
 
 struct SeqAccess<'a, R, C> {
     de: &'a mut Deserializer<R, C>,
-    left: usize,
+    left: u32,
 }
 
 impl<'a, R: 'a, C> SeqAccess<'a, R, C> {
     #[inline]
-    fn new(de: &'a mut Deserializer<R, C>, len: usize) -> Self {
+    fn new(de: &'a mut Deserializer<R, C>, len: u32) -> Self {
         SeqAccess {
             de,
             left: len,
@@ -736,17 +719,17 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> fo
 
     #[inline(always)]
     fn size_hint(&self) -> Option<usize> {
-        Some(self.left)
+        self.left.try_into().ok()
     }
 }
 
 struct MapAccess<'a, R, C> {
     de: &'a mut Deserializer<R, C>,
-    left: usize,
+    left: u32,
 }
 
 impl<'a, R: 'a, C> MapAccess<'a, R, C> {
-    fn new(de: &'a mut Deserializer<R, C>, len: usize) -> Self {
+    fn new(de: &'a mut Deserializer<R, C>, len: u32) -> Self {
         MapAccess {
             de,
             left: len,
@@ -763,7 +746,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de> fo
     {
         if self.left > 0 {
             self.left -= 1;
-            Ok(Some(seed.deserialize(&mut *self.de)?))
+            seed.deserialize(&mut *self.de).map(Some)
         } else {
             Ok(None)
         }
@@ -778,7 +761,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de> fo
 
     #[inline(always)]
     fn size_hint(&self) -> Option<usize> {
-        Some(self.left)
+        self.left.try_into().ok()
     }
 }
 

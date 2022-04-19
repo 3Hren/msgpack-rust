@@ -320,7 +320,7 @@ impl<'a> RawRef<'a> {
     pub fn as_bytes(&self) -> &[u8] {
         match self.s {
             Ok(s) => s.as_bytes(),
-            Err(ref err) => err.0,
+            Err((bytes, _err)) => bytes,
         }
     }
 }
