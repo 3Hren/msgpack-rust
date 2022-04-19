@@ -42,12 +42,12 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
         }
         Value::String(Utf8String { ref s }) => {
             match *s {
-                Ok(ref val) => write_str(wr, &val)?,
+                Ok(ref val) => write_str(wr, val)?,
                 Err(ref err) => write_bin(wr, &err.0)?,
             }
         }
         Value::Binary(ref val) => {
-            write_bin(wr, &val)?;
+            write_bin(wr, val)?;
         }
         Value::Array(ref vec) => {
             write_array_len(wr, vec.len() as u32)?;

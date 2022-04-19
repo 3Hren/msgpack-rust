@@ -293,7 +293,7 @@ where
     /// Gets a reference to the underlying reader in this decoder.
     #[inline(always)]
     pub fn get_ref(&self) -> &R {
-        self.rd.rd
+        self.rd.whole_slice
     }
 }
 
@@ -399,7 +399,7 @@ enum ExtDeserializerState {
 #[derive(Debug)]
 struct ExtDeserializer<'a, R, C> {
     rd: &'a mut R,
-    config: C,
+    _config: C,
     len: u32,
     state: ExtDeserializerState,
 }
@@ -408,7 +408,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> ExtDeserializer<'a, R
     fn new(d: &'a mut Deserializer<R, C>, len: u32) -> Self {
         ExtDeserializer {
             rd: &mut d.rd,
-            config: d.config,
+            _config: d.config,
             len,
             state: ExtDeserializerState::New,
         }
@@ -925,8 +925,11 @@ impl<R: Read> ReadReader<R> {
 impl<'de, R: Read> ReadSlice<'de> for ReadReader<R> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
-        self.buf.resize(len, 0u8);
-        self.rd.read_exact(&mut self.buf[..])?;
+        self.buf.clear();
+        let read = self.rd.by_ref().take(len as u64).read_to_end(&mut self.buf)?;
+        if read != len {
+            return Err(io::ErrorKind::UnexpectedEof.into());
+        }
 
         Ok(Reference::Copied(&self.buf[..]))
     }
@@ -947,15 +950,22 @@ impl<R: Read> Read for ReadReader<R> {
 /// Borrowed reader wrapper.
 #[derive(Debug)]
 pub struct ReadRefReader<'a, R: ?Sized> {
-    rd: &'a R,
+    whole_slice: &'a R,
     buf: &'a [u8],
+}
+
+impl<'a, T> ReadRefReader<'a, T> {
+    /// Returns the part that hasn't been consumed yet
+    pub fn remaining_slice(&self) -> &'a [u8] {
+        self.buf
+    }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> ReadRefReader<'a, T> {
     #[inline]
     fn new(rd: &'a T) -> Self {
         Self {
-            rd,
+            whole_slice: rd,
             buf: rd.as_ref(),
         }
     }
@@ -1011,21 +1021,10 @@ where R: Read,
     Deserialize::deserialize(&mut Deserializer::new(rd))
 }
 
-/// Deserializes a byte slice into the desired type.
-///
-/// It just calls the more generic `from_read_ref`.
-#[inline(always)]
-pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
-where
-    T: Deserialize<'a>
-{
-    from_read_ref(input)
-}
-
-/// Deserialize an instance of type `T` from a reference I/O reader of MessagePack.
+/// Deserialize a temporary scope-bound instance of type `T` from a slice, with zero-copy if possible.
 ///
 /// Deserialization will be performed in zero-copy manner whenever it is possible, borrowing the
-/// data from the reader itself. For example, strings and byte-arrays won't be not copied.
+/// data from the slice itself. For example, strings and byte-arrays won't copied.
 ///
 /// # Errors
 ///
@@ -1047,9 +1046,20 @@ where
 ///    age: u8,
 /// }
 ///
-/// assert_eq!(Dog { name: "Bobby", age: 8 }, rmp_serde::from_read_ref(&buf).unwrap());
+/// assert_eq!(Dog { name: "Bobby", age: 8 }, rmp_serde::from_slice(&buf).unwrap());
 /// ```
+#[inline(always)]
+#[allow(deprecated)]
+pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
+where
+    T: Deserialize<'a>
+{
+    from_read_ref(input)
+}
+
 #[inline]
+#[doc(hidden)]
+#[deprecated(note = "use from_slice")]
 pub fn from_read_ref<'a, R, T>(rd: &'a R) -> Result<T, Error>
 where
     R: AsRef<[u8]> + ?Sized,

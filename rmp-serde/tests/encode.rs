@@ -328,6 +328,7 @@ fn pass_raw_valid_utf8() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn pass_raw_invalid_utf8() {
     // >>> msgpack.dumps(msgpack.dumps([200, []]))
     // '\xa4\x92\xcc\xc8\x90'
@@ -350,6 +351,7 @@ fn pass_raw_ref_valid_utf8() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn pass_raw_ref_invalid_utf8() {
     // >>> msgpack.dumps(msgpack.dumps([200, []]))
     // '\xa4\x92\xcc\xc8\x90'

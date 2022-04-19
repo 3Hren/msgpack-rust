@@ -137,7 +137,7 @@ pub fn read_str_data<'r, R>(rd: &mut R,
             Ok(decoded) => Ok(decoded),
             Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
         },
-        Err(err) => Err(DecodeStringError::InvalidDataRead(From::from(err))),
+        Err(err) => Err(DecodeStringError::InvalidDataRead(err)),
     }
 }
 

@@ -2,7 +2,7 @@
 
 extern crate test;
 
-use rmp_serde;
+
 
 use serde::{Deserialize, Serialize};
 

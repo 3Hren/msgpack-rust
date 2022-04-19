@@ -252,7 +252,7 @@ impl Utf8String {
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
             Ok(..) => None,
-            Err((_, ref err)) => Some(&err),
+            Err((_, ref err)) => Some(err),
         }
     }
 
@@ -349,7 +349,7 @@ impl<'a> Utf8StringRef<'a> {
     #[inline]
     pub fn as_str(&self) -> Option<&str> {
         match self.s {
-            Ok(ref s) => Some(s),
+            Ok(s) => Some(s),
             Err(..) => None,
         }
     }
@@ -360,7 +360,7 @@ impl<'a> Utf8StringRef<'a> {
     pub fn as_err(&self) -> Option<&Utf8Error> {
         match self.s {
             Ok(..) => None,
-            Err((_, ref err)) => Some(&err),
+            Err((_, ref err)) => Some(err),
         }
     }
 
@@ -368,7 +368,7 @@ impl<'a> Utf8StringRef<'a> {
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         match self.s {
-            Ok(ref s) => s.as_bytes(),
+            Ok(s) => s.as_bytes(),
             Err(ref err) => err.0,
         }
     }
@@ -915,7 +915,7 @@ impl Index<&str> for Value {
                         if s == index { return true; }
                     }
                 }
-                return false;
+                false
                 })
             {
                 return &found.1;

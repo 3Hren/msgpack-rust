@@ -523,6 +523,7 @@ fn pass_from_slice() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn pass_from_ref() {
     let buf = [0x92, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0x8];
 

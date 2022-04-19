@@ -75,11 +75,11 @@ impl<'a> ValueExt for ValueRef<'a> {
             ValueRef::F64(v) => Unexpected::Float(v),
             ValueRef::String(ref v) => {
                 match v.s {
-                    Ok(ref v) => Unexpected::Str(v),
-                    Err(ref v) => Unexpected::Bytes(&v.0[..]),
+                    Ok(v) => Unexpected::Str(v),
+                    Err(ref v) => Unexpected::Bytes(v.0),
                 }
             }
-            ValueRef::Binary(ref v) => Unexpected::Bytes(v),
+            ValueRef::Binary(v) => Unexpected::Bytes(v),
             ValueRef::Array(..) => Unexpected::Seq,
             ValueRef::Map(..) => Unexpected::Map,
             ValueRef::Ext(..) => Unexpected::Seq,
