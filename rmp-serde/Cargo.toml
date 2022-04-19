@@ -1,6 +1,6 @@
 [package]
 name = "rmp-serde"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Serde bindings for RMP"
@@ -13,13 +13,13 @@ edition = "2018"
 
 [dependencies]
 byteorder = "1.4.3"
-serde = "1.0.133"
+serde = "1.0.136"
 rmp = { version = "0.8.11", path = "../rmp" }
 
 [dev-dependencies]
 rmpv = { path = "../rmpv" }
 serde_bytes = "0.11.5"
-serde_derive = "1.0.133"
+serde_derive = "1.0.136"
 
 [badges]
 maintenance = { status = "passively-maintained" }
