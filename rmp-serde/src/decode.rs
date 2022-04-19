@@ -773,7 +773,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de> fo
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
         where V: DeserializeSeed<'de>
     {
-        Ok(seed.deserialize(&mut *self.de)?)
+        seed.deserialize(&mut *self.de)
     }
 
     #[inline(always)]

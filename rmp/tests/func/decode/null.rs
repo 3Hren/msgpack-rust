@@ -49,7 +49,7 @@ fn interrupt_safe() {
                 self.state_ = 1;
                 Err(Error::new(ErrorKind::Interrupted, "interrupted"))
             } else {
-                assert!(buf.len() > 0);
+                assert!(!buf.is_empty());
 
                 buf[0] = 0xc0;
                 Ok(1)

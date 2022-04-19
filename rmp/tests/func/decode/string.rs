@@ -137,9 +137,9 @@ fn from_str_strfix() {
     let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     let mut cur = Cursor::new(buf);
 
-    let mut out: &mut [u8] = &mut [0u8; 16];
+    let out: &mut [u8] = &mut [0u8; 16];
 
-    assert_eq!("le message", read_str(&mut cur, &mut out).unwrap());
+    assert_eq!("le message", read_str(&mut cur, out).unwrap());
     assert_eq!(11, cur.position());
 }
 
@@ -148,9 +148,9 @@ fn from_str_strfix_extra_data() {
     let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x00];
     let mut cur = Cursor::new(buf);
 
-    let mut out: &mut [u8] = &mut [0u8; 16];
+    let out: &mut [u8] = &mut [0u8; 16];
 
-    assert_eq!("le message", read_str(&mut cur, &mut out).unwrap());
+    assert_eq!("le message", read_str(&mut cur, out).unwrap());
     assert_eq!(11, cur.position());
 }
 
@@ -159,9 +159,9 @@ fn from_str_strfix_exact_buffer() {
     let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     let mut cur = Cursor::new(buf);
 
-    let mut out: &mut [u8] = &mut [0u8; 10];
+    let out: &mut [u8] = &mut [0u8; 10];
 
-    assert_eq!("le message", read_str(&mut cur, &mut out).unwrap());
+    assert_eq!("le message", read_str(&mut cur, out).unwrap());
     assert_eq!(11, cur.position());
 }
 
@@ -171,9 +171,9 @@ fn from_str_strfix_invalid_utf8() {
     let buf: &[u8] = &[0xa2, 0xc3, 0x28];
     let mut cur = Cursor::new(buf);
 
-    let mut out: &mut [u8] = &mut [0u8; 16];
+    let out: &mut [u8] = &mut [0u8; 16];
 
-    match read_str(&mut cur, &mut out) {
+    match read_str(&mut cur, out) {
         Err(DecodeStringError::InvalidUtf8(raw, _)) => {
             assert_eq!(&[0xc3, 0x28], raw);
         }
@@ -188,9 +188,9 @@ fn from_str_strfix_buffer_too_small() {
     let buf: &[u8] = &[0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
     let mut cur = Cursor::new(buf);
 
-    let mut out: &mut [u8] = &mut [0u8; 9];
+    let out: &mut [u8] = &mut [0u8; 9];
 
-    match read_str(&mut cur, &mut out) {
+    match read_str(&mut cur, out) {
         Err(DecodeStringError::BufferSizeTooSmall(10)) => (),
         other => panic!("unexpected result: {:?}", other)
     }

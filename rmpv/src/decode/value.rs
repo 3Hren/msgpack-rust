@@ -160,27 +160,27 @@ fn read_value_inner<R>(rd: &mut R, depth: usize) -> Result<Value, Error> where R
             Value::Binary(vec)
         }
         Marker::FixExt1 => {
-            let len = 1 as usize;
+            let len = 1_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
         }
         Marker::FixExt2 => {
-            let len = 2 as usize;
+            let len = 2_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
         }
         Marker::FixExt4 => {
-            let len = 4 as usize;
+            let len = 4_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
         }
         Marker::FixExt8 => {
-            let len = 8 as usize;
+            let len = 8_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
         }
         Marker::FixExt16 => {
-            let len = 16 as usize;
+            let len = 16_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
         }

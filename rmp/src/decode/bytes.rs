@@ -63,7 +63,7 @@ impl<'a> Bytes<'a> {
     /// Get a reference to the remaining bytes in the buffer.
     #[inline]
     pub fn remaining_slice(&self) -> &'a [u8] {
-        &self.bytes
+        self.bytes
     }
     /// Return the position of the input buffer.
     ///

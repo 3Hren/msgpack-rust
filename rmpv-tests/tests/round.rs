@@ -129,13 +129,13 @@ fn pass_ext_struct() {
         {
             let value = match self {
                 ExtStruct::One(data) => {
-                    let tag = 1 as i8;
+                    let tag = 1_i8;
                     let byte_buf = ByteBuf::from(vec![*data]);
 
                     (tag, byte_buf)
                 }
                 ExtStruct::Two(data) => {
-                    let tag = 2 as i8;
+                    let tag = 2_i8;
                     let byte_buf = ByteBuf::from(vec![*data]);
 
                     (tag, byte_buf)

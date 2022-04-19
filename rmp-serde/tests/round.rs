@@ -494,7 +494,7 @@ fn round_variant_string() {
         }
     }
 
-    do_test!(|b| Serializer::new(b));
+    do_test!(Serializer::new);
     do_test!(|b| Serializer::new(b).with_struct_map());
     do_test!(|b| Serializer::new(b).with_struct_tuple());
     do_test!(|b| Serializer::new(b).with_struct_map());

@@ -25,7 +25,7 @@ quickcheck! {
 
     fn mirror_f32_value(xs: f32) -> bool {
         let mut buf = Vec::new();
-        write_value(&mut buf, &Value::from(xs.clone())).unwrap();
+        write_value(&mut buf, &Value::from(xs)).unwrap();
         let eq = Value::from(xs) == read_value(&mut &buf[..]).unwrap();
 
         eq || (!eq && xs.is_nan())
@@ -33,7 +33,7 @@ quickcheck! {
 
     fn mirror_f64_value(xs: f64) -> bool {
         let mut buf = Vec::new();
-        write_value(&mut buf, &Value::from(xs.clone())).unwrap();
+        write_value(&mut buf, &Value::from(xs)).unwrap();
         let eq = Value::from(xs) == read_value(&mut &buf[..]).unwrap();
 
         eq || (!eq && xs.is_nan())
