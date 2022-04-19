@@ -392,7 +392,7 @@ enum ExtDeserializerState {
 #[derive(Debug)]
 struct ExtDeserializer<'a, R, C> {
     rd: &'a mut R,
-    config: C,
+    _config: C,
     len: u32,
     state: ExtDeserializerState,
 }
@@ -401,7 +401,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> ExtDeserializer<'a, R
     fn new(d: &'a mut Deserializer<R, C>, len: u32) -> Self {
         ExtDeserializer {
             rd: &mut d.rd,
-            config: d.config,
+            _config: d.config,
             len,
             state: ExtDeserializerState::New,
         }

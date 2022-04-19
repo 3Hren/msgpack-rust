@@ -68,7 +68,9 @@ use std::str::{self, Utf8Error};
 use serde::de;
 use serde::{Deserialize, Serialize};
 
-pub use crate::decode::{from_read, from_read_ref, Deserializer};
+pub use crate::decode::{from_read, Deserializer};
+#[allow(deprecated)]
+pub use crate::decode::from_read_ref;
 pub use crate::encode::{to_vec, to_vec_named, Serializer};
 
 pub use crate::decode::from_slice;
