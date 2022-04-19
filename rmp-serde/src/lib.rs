@@ -108,7 +108,8 @@ impl Raw {
         Self { s: Ok(v) }
     }
 
-    /// Converts a vector of bytes to a `Raw`.
+    /// DO NOT USE. See <https://github.com/3Hren/msgpack-rust/issues/305>
+    #[deprecated(note = "This implementation is unsound and dangerous. See https://github.com/3Hren/msgpack-rust/issues/305")]
     pub fn from_utf8(v: Vec<u8>) -> Self {
         match String::from_utf8(v) {
             Ok(v) => Raw::new(v),
@@ -184,6 +185,8 @@ impl Serialize for Raw {
     {
         let s = match self.s {
             Ok(ref s) => s.as_str(),
+            // FIXME: this is invalid. It should use a newtype hack instead.
+            // https://github.com/3Hren/msgpack-rust/issues/305
             Err((ref b, ..)) => unsafe { mem::transmute(&b[..]) },
         };
 
@@ -266,7 +269,8 @@ impl<'a> RawRef<'a> {
         Self { s: Ok(v) }
     }
 
-    /// Converts a vector of bytes to a `RawRef`.
+    /// DO NOT USE. See <https://github.com/3Hren/msgpack-rust/issues/305>
+    #[deprecated(note = "This implementation is unsound and dangerous. See https://github.com/3Hren/msgpack-rust/issues/305")]
     pub fn from_utf8(v: &'a [u8]) -> Self {
         match str::from_utf8(v) {
             Ok(v) => RawRef::new(v),
@@ -326,6 +330,8 @@ impl<'a> Serialize for RawRef<'a> {
     {
         let s = match self.s {
             Ok(ref s) => s,
+            // FIXME: this is invalid. It should use a newtype hack instead.
+            // https://github.com/3Hren/msgpack-rust/issues/305
             Err((ref b, ..)) => unsafe { mem::transmute(b) },
         };
 
