@@ -58,7 +58,13 @@ pub enum ValueWriteError<E: RmpWriteErr = Error> {
     /// I/O error while writing data.
     InvalidDataWrite(E),
 }
-
+#[cfg(feature = "std")]
+impl From<std::io::Error> for ValueWriteError {
+    #[inline]
+    fn from(err: std::io::Error) -> Self {
+        ValueWriteError::InvalidDataWrite(err)
+    }
+}
 impl<E: RmpWriteErr> From<MarkerWriteError<E>> for ValueWriteError<E> {
     #[cold]
     fn from(err: MarkerWriteError<E>) -> Self {

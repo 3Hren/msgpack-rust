@@ -148,12 +148,12 @@
 //!
 //! [read_int]: decode/fn.read_int.html
 #![cfg_attr(not(feature = "std"), no_std)]
-
 extern crate alloc;
 
 
 mod marker;
 mod errors;
+#[cfg(feature = "tokio")]
 pub mod tokio;
 pub mod sync;
 pub mod decode;

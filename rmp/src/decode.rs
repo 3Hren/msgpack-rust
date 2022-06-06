@@ -39,6 +39,13 @@ pub enum NumValueReadError<E: RmpReadErr = Error> {
     OutOfRange,
 }
 
+#[cfg(feature = "std")]
+impl From<std::io::Error> for NumValueReadError<std::io::Error> {
+    #[inline]
+    fn from(err: std::io::Error) -> Self {
+        NumValueReadError::InvalidDataRead(err)
+    }
+}
 /// The error type for I/O operations on `RmpRead` and associated traits.
 ///
 /// For [std::io::Read], this is [std::io::Error]
@@ -119,7 +126,13 @@ pub enum ValueReadError<E: RmpReadErr = Error> {
     /// The type decoded isn't match with the expected one.
     TypeMismatch(Marker),
 }
-
+#[cfg(feature = "std")]
+impl From<std::io::Error> for ValueReadError<std::io::Error> {
+    #[inline]
+    fn from(err: std::io::Error) -> Self {
+        ValueReadError::InvalidDataRead(err)
+    }
+}
 #[cfg(feature = "std")]
 impl error::Error for ValueReadError {
     #[cold]

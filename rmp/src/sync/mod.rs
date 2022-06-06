@@ -1,3 +1,3 @@
-pub(crate) mod encode;
-pub(crate) mod decode;
+pub mod encode;
+pub mod decode;
 
