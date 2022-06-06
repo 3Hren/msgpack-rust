@@ -9,45 +9,31 @@
 //! non-blocking socket and it returns EWOULDBLOCK) be sure that you buffer the data externally
 //! to avoid data loss (using `BufRead` readers with manual consuming or some other way).
 
-mod dec;
-mod ext;
-mod sint;
-mod str;
-mod uint;
+pub(crate) mod dec;
+pub(crate) mod ext;
+pub(crate) mod sint;
+pub(crate) mod str;
+pub(crate) mod uint;
 
-pub use self::dec::{read_f32, read_f64};
-pub use self::ext::{
-    read_ext_meta, read_fixext1, read_fixext16, read_fixext2, read_fixext4, read_fixext8, ExtMeta,
-};
-pub use self::sint::{read_i16, read_i32, read_i64, read_i8, read_nfix};
-#[allow(deprecated)]
-// While we re-export deprecated items, we don't want to trigger warnings while compiling this crate
-pub use self::str::{read_str, read_str_from_slice, read_str_len, read_str_ref, DecodeStringError};
-pub use self::uint::{read_pfix, read_u16, read_u32, read_u64, read_u8};
 
-#[cfg(feature = "std")]
-use std::error;
-use core::fmt::{self, Display, Debug, Formatter};
+
 
 use num_traits::cast::FromPrimitive;
 
 use crate::Marker;
 
 pub mod bytes;
+
 pub use bytes::Bytes;
+pub use crate::decode::{NumValueReadError, ValueReadError, RmpReadErr};
+use crate::decode::MarkerReadError;
 
 #[doc(inline)]
 #[allow(deprecated)]
 pub use crate::errors::Error;
 
 
-/// The error type for I/O operations on `RmpRead` and associated traits.
-///
-/// For [std::io::Read], this is [std::io::Error]
-pub trait RmpReadErr: Display + Debug + crate::errors::MaybeErrBound + 'static {}
-#[cfg(feature = "std")]
-impl RmpReadErr for std::io::Error {}
-impl RmpReadErr for core::convert::Infallible {}
+
 
 macro_rules! read_byteorder_utils {
     ($($name:ident => $tp:ident),* $(,)?) => {
@@ -65,12 +51,15 @@ macro_rules! read_byteorder_utils {
         )*
     };
 }
-mod sealed{
+mod sealed {
     pub trait Sealed {}
+
     #[cfg(feature = "std")]
     impl<T: ?Sized + std::io::Read> Sealed for T {}
+
     #[cfg(not(feature = "std"))]
     impl<'a> Sealed for &'a [u8] {}
+
     impl Sealed for super::Bytes<'_> {}
 }
 
@@ -171,76 +160,6 @@ impl<T: std::io::Read> RmpRead for T {
     }
 }
 
-// An error returned from the `write_marker` and `write_fixval` functions.
-struct MarkerWriteError<E: RmpReadErr>(E);
-
-impl<E: RmpReadErr> From<E> for MarkerWriteError<E> {
-    #[cold]
-    fn from(err: E) -> Self {
-        MarkerWriteError(err)
-    }
-}
-
-
-/// An error that can occur when attempting to read a MessagePack marker from the reader.
-#[derive(Debug)]
-#[allow(deprecated)] // Needed for backwards compat
-pub struct MarkerReadError<E: RmpReadErr = Error>(pub E);
-
-/// An error which can occur when attempting to read a MessagePack value from the reader.
-#[derive(Debug)]
-#[allow(deprecated)] // Needed for backwards compat
-pub enum ValueReadError<E: RmpReadErr = Error> {
-    /// Failed to read the marker.
-    InvalidMarkerRead(E),
-    /// Failed to read the data.
-    InvalidDataRead(E),
-    /// The type decoded isn't match with the expected one.
-    TypeMismatch(Marker),
-}
-
-#[cfg(feature = "std")]
-impl error::Error for ValueReadError {
-    #[cold]
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match *self {
-            ValueReadError::InvalidMarkerRead(ref err) |
-            ValueReadError::InvalidDataRead(ref err) => Some(err),
-            ValueReadError::TypeMismatch(..) => None,
-        }
-    }
-}
-
-impl Display for ValueReadError {
-    #[cold]
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        // TODO: This should probably use formatting
-        f.write_str(match *self {
-            ValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
-            ValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
-            ValueReadError::TypeMismatch(..) => {
-                "the type decoded isn't match with the expected one"
-            }
-        })
-    }
-}
-
-impl<E: RmpReadErr> From<MarkerReadError<E>> for ValueReadError<E> {
-    #[cold]
-    fn from(err: MarkerReadError<E>) -> ValueReadError<E> {
-        match err {
-            MarkerReadError(err) => ValueReadError::InvalidMarkerRead(err),
-        }
-    }
-}
-
-impl<E: RmpReadErr> From<E> for MarkerReadError<E> {
-    #[cold]
-    fn from(err: E) -> MarkerReadError<E> {
-        MarkerReadError(err)
-    }
-}
-
 /// Attempts to read a single byte from the given reader and to decode it as a MessagePack marker.
 #[inline]
 pub fn read_marker<R: RmpRead>(rd: &mut R) -> Result<Marker, MarkerReadError<R::Error>> {
@@ -295,64 +214,6 @@ pub fn read_bool<R: RmpRead>(rd: &mut R) -> Result<bool, ValueReadError<R::Error
     }
 }
 
-/// An error which can occur when attempting to read a MessagePack numeric value from the reader.
-#[derive(Debug)]
-#[allow(deprecated)] // Used for compatibility
-pub enum NumValueReadError<E: RmpReadErr = Error> {
-    /// Failed to read the marker.
-    InvalidMarkerRead(E),
-    /// Failed to read the data.
-    InvalidDataRead(E),
-    /// The type decoded isn't match with the expected one.
-    TypeMismatch(Marker),
-    /// Out of range integral type conversion attempted.
-    OutOfRange,
-}
-
-#[cfg(feature = "std")]
-impl error::Error for NumValueReadError {
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match *self {
-            NumValueReadError::InvalidMarkerRead(ref err) |
-            NumValueReadError::InvalidDataRead(ref err) => Some(err),
-            NumValueReadError::TypeMismatch(..) |
-            NumValueReadError::OutOfRange => None,
-        }
-    }
-}
-
-impl<E: RmpReadErr> Display for NumValueReadError<E> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        f.write_str(match *self {
-            NumValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
-            NumValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
-            NumValueReadError::TypeMismatch(..) => {
-                "the type decoded isn't match with the expected one"
-            }
-            NumValueReadError::OutOfRange => "out of range integral type conversion attempted",
-        })
-    }
-}
-
-impl<E: RmpReadErr> From<MarkerReadError<E>> for NumValueReadError<E> {
-    #[cold]
-    fn from(err: MarkerReadError<E>) -> NumValueReadError<E> {
-        match err {
-            MarkerReadError(err) => NumValueReadError::InvalidMarkerRead(err),
-        }
-    }
-}
-
-impl<E: RmpReadErr> From<ValueReadError<E>> for NumValueReadError<E> {
-    #[cold]
-    fn from(err: ValueReadError<E>) -> NumValueReadError<E> {
-        match err {
-            ValueReadError::InvalidMarkerRead(err) => NumValueReadError::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err) => NumValueReadError::InvalidDataRead(err),
-            ValueReadError::TypeMismatch(err) => NumValueReadError::TypeMismatch(err),
-        }
-    }
-}
 
 /// Attempts to read up to 9 bytes from the given reader and to decode them as integral `T` value.
 ///
@@ -415,8 +276,8 @@ pub fn read_int<T: FromPrimitive, R: RmpRead>(rd: &mut R) -> Result<T, NumValueR
 // TODO: Docs.
 // NOTE: EINTR is managed internally.
 pub fn read_array_len<R>(rd: &mut R) -> Result<u32, ValueReadError<R::Error>>
-where
-    R: RmpRead,
+    where
+        R: RmpRead,
 {
     match read_marker(rd)? {
         Marker::FixArray(size) => Ok(size as u32),

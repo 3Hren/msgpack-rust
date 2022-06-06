@@ -1,5 +1,6 @@
+use crate::encode::ValueWriteError;
 use super::{RmpWrite};
-use crate::encode::{write_marker, ValueWriteError};
+use super::{write_marker};
 use crate::Marker;
 
 /// Encodes and attempts to write the most efficient binary array length implementation to the given

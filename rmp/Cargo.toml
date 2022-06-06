@@ -16,10 +16,11 @@ byteorder = { version = "1.4.2", default-features = false }
 num-traits = { version = "0.2.14", default-features = false }
 # This is macro_only ;)
 paste = "1.0"
-
+tokio = {version="1.19.1"}
 
 [features]
-default = ["std"]
+default = ["std", "sync"]
+sync = []
 std = ["byteorder/std", "num-traits/std"]
 
 [dev-dependencies]

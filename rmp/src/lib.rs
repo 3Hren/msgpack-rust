@@ -151,10 +151,13 @@
 
 extern crate alloc;
 
-pub mod decode;
-pub mod encode;
+
 mod marker;
 mod errors;
+pub mod tokio;
+pub mod sync;
+pub mod decode;
+pub mod encode;
 
 pub use crate::marker::Marker;
 
