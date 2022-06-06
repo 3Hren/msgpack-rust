@@ -1,5 +1,5 @@
 use std::io;
-use tokio::io::{AsyncWrite, AsyncWriteExt};
+use tokio::io::{AsyncWriteExt};
 use crate::encode::{MarkerWriteError, ValueWriteError};
 use crate::Marker;
 

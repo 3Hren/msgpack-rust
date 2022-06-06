@@ -16,14 +16,20 @@ pub(crate) mod str;
 pub(crate) mod uint;
 
 
-
+pub use crate::sync::decode::dec::{read_f32, read_f64};
+pub use crate::sync::decode::ext::{
+    read_ext_meta, read_fixext1, read_fixext16, read_fixext2, read_fixext4, read_fixext8,
+};
+pub use crate::sync::decode::sint::{read_i16, read_i32, read_i64, read_i8, read_nfix};
+// While we re-export deprecated items, we don't want to trigger warnings while compiling this crate
+pub use crate::sync::decode::str::{read_str, read_str_from_slice, read_str_len, read_str_ref, DecodeStringError};
+pub use crate::sync::decode::uint::{read_pfix, read_u16, read_u32, read_u64, read_u8};
 
 use num_traits::cast::FromPrimitive;
 
 use crate::Marker;
 
 pub mod bytes;
-
 pub use bytes::Bytes;
 pub use crate::decode::{NumValueReadError, ValueReadError, RmpReadErr};
 use crate::decode::MarkerReadError;

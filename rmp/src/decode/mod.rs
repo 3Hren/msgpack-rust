@@ -1,27 +1,31 @@
+pub mod ext;
+
 use core::fmt::{Debug, Display, Formatter};
 use std::{error, fmt};
 #[doc(inline)]
 #[allow(deprecated)]
 use crate::errors::Error;
 use crate::Marker;
-#[cfg(feature="sync")]
+#[cfg(feature = "sync")]
+pub use ext::ExtMeta;
+#[cfg(feature = "sync")]
 pub use crate::sync::decode::dec::{read_f32, read_f64};
-#[cfg(feature="sync")]
+#[cfg(feature = "sync")]
 pub use crate::sync::decode::ext::{
-    read_ext_meta, read_fixext1, read_fixext16, read_fixext2, read_fixext4, read_fixext8, ExtMeta,
+    read_ext_meta, read_fixext1, read_fixext16, read_fixext2, read_fixext4, read_fixext8,
 };
-#[cfg(feature="sync")]
+#[cfg(feature = "sync")]
 pub use crate::sync::decode::sint::{read_i16, read_i32, read_i64, read_i8, read_nfix};
 #[allow(deprecated)]
 // While we re-export deprecated items, we don't want to trigger warnings while compiling this crate
-#[cfg(feature="sync")]
+#[cfg(feature = "sync")]
 pub use crate::sync::decode::str::{read_str, read_str_from_slice, read_str_len, read_str_ref, DecodeStringError};
-#[cfg(feature="sync")]
+#[cfg(feature = "sync")]
 pub use crate::sync::decode::uint::{read_pfix, read_u16, read_u32, read_u64, read_u8};
 
 #[cfg(feature = "sync")]
 pub use crate::sync::decode::{
-    RmpRead, read_array_len, read_bin_len, read_bool, read_marker, read_nil, read_map_len,marker_to_len, read_int,bytes::Bytes,
+    RmpRead, read_array_len, read_bin_len, read_bool, read_marker, read_nil, read_map_len, marker_to_len, read_int, bytes::Bytes,
 };
 
 
@@ -46,12 +50,15 @@ impl From<std::io::Error> for NumValueReadError<std::io::Error> {
         NumValueReadError::InvalidDataRead(err)
     }
 }
+
 /// The error type for I/O operations on `RmpRead` and associated traits.
 ///
 /// For [std::io::Read], this is [std::io::Error]
 pub trait RmpReadErr: Display + Debug + crate::errors::MaybeErrBound + 'static {}
+
 #[cfg(feature = "std")]
 impl RmpReadErr for std::io::Error {}
+
 impl RmpReadErr for core::convert::Infallible {}
 
 #[cfg(feature = "std")]
@@ -126,6 +133,7 @@ pub enum ValueReadError<E: RmpReadErr = Error> {
     /// The type decoded isn't match with the expected one.
     TypeMismatch(Marker),
 }
+
 #[cfg(feature = "std")]
 impl From<std::io::Error> for ValueReadError<std::io::Error> {
     #[inline]
@@ -133,6 +141,7 @@ impl From<std::io::Error> for ValueReadError<std::io::Error> {
         ValueReadError::InvalidDataRead(err)
     }
 }
+
 #[cfg(feature = "std")]
 impl error::Error for ValueReadError {
     #[cold]

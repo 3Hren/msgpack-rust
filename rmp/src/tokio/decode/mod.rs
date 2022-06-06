@@ -1,3 +1,8 @@
+mod dec;
+mod ext;
+mod sint;
+mod uint;
+
 use std::io;
 use num_traits::FromPrimitive;
 use tokio::io::{AsyncRead, AsyncReadExt};

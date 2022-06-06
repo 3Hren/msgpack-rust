@@ -22,7 +22,11 @@ use crate::encode::{MarkerWriteError};
 #[allow(deprecated)]
 pub use crate::errors::Error;
 
-
+pub use crate::sync::encode::bin::{write_bin, write_bin_len};
+pub use crate::sync::encode::dec::{write_f32, write_f64};
+pub use crate::sync::encode::sint::{write_i16, write_i32, write_i64, write_i8, write_nfix, write_sint};
+pub use crate::sync::encode::str::{write_str, write_str_len};
+pub use crate::sync::encode::uint::{write_pfix, write_u16, write_u32, write_u64, write_u8, write_uint};
 
 /// Attempts to write the given marker into the writer.
 fn write_marker<W: RmpWrite>(wr: &mut W, marker: Marker) -> Result<(), MarkerWriteError<W::Error>> {
