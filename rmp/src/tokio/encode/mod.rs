@@ -1,3 +1,9 @@
+pub mod bin;
+pub mod uint;
+pub mod sint;
+pub mod dec;
+pub mod str;
+
 use std::io;
 use tokio::io::{AsyncWriteExt};
 use crate::encode::{MarkerWriteError, ValueWriteError};
