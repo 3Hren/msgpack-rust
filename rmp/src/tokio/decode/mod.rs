@@ -16,6 +16,7 @@ pub use ext::{
 pub use sint::{read_i16, read_i32, read_i64, read_i8, read_nfix};
 // While we re-export deprecated items, we don't want to trigger warnings while compiling this crate
 pub use uint::{read_pfix, read_u16, read_u32, read_u64, read_u8};
+pub use super::decode::str::{read_str, read_str_len, read_str_data};
 
 /// Attempts to read a single byte from the given reader and to decode it as a MessagePack marker.
 #[inline]
