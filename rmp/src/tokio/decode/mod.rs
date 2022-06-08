@@ -8,7 +8,13 @@ use num_traits::FromPrimitive;
 use tokio::io::{AsyncRead, AsyncReadExt};
 use crate::decode::{MarkerReadError, NumValueReadError, ValueReadError};
 use crate::Marker;
-
+pub use dec::{read_f32, read_f64};
+pub use ext::{
+    read_ext_meta, read_fixext1, read_fixext16, read_fixext2, read_fixext4, read_fixext8,
+};
+pub use sint::{read_i16, read_i32, read_i64, read_i8, read_nfix};
+// While we re-export deprecated items, we don't want to trigger warnings while compiling this crate
+pub use uint::{read_pfix, read_u16, read_u32, read_u64, read_u8};
 
 /// Attempts to read a single byte from the given reader and to decode it as a MessagePack marker.
 #[inline]
