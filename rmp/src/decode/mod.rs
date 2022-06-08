@@ -1,7 +1,11 @@
 pub mod ext;
+pub mod str;
+mod bytes;
 
 use core::fmt::{Debug, Display, Formatter};
 use std::{error, fmt};
+pub use crate::decode::str::DecodeStringError;
+pub use bytes::{BytesReadError,Bytes};
 #[doc(inline)]
 #[allow(deprecated)]
 use crate::errors::Error;
@@ -19,13 +23,13 @@ pub use crate::sync::decode::sint::{read_i16, read_i32, read_i64, read_i8, read_
 #[allow(deprecated)]
 // While we re-export deprecated items, we don't want to trigger warnings while compiling this crate
 #[cfg(feature = "sync")]
-pub use crate::sync::decode::str::{read_str, read_str_from_slice, read_str_len, read_str_ref, DecodeStringError};
+pub use crate::sync::decode::str::{read_str, read_str_from_slice, read_str_len, read_str_ref};
 #[cfg(feature = "sync")]
 pub use crate::sync::decode::uint::{read_pfix, read_u16, read_u32, read_u64, read_u8};
 
 #[cfg(feature = "sync")]
 pub use crate::sync::decode::{
-    RmpRead, read_array_len, read_bin_len, read_bool, read_marker, read_nil, read_map_len, marker_to_len, read_int, bytes::Bytes,
+    RmpRead, read_array_len, read_bin_len, read_bool, read_marker, read_nil, read_map_len, marker_to_len, read_int
 };
 
 

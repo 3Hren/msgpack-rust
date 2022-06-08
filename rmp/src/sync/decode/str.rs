@@ -1,21 +1,12 @@
+use core::fmt::{Display, Formatter};
 #[cfg(feature = "std")]
 use std::error;
-use core::fmt::{self, Display, Formatter};
-use core::str::{from_utf8, Utf8Error};
 
+use core::str::{from_utf8};
+use std::fmt;
 use super::{RmpRead, RmpReadErr, read_marker, ValueReadError};
 use crate::Marker;
-
-#[derive(Debug)]
-#[allow(deprecated)] // Only for compatibility
-pub enum DecodeStringError<'a, E: RmpReadErr = super::Error> {
-    InvalidMarkerRead(E),
-    InvalidDataRead(E),
-    TypeMismatch(Marker),
-    /// The given buffer is not large enough to accumulate the specified amount of bytes.
-    BufferSizeTooSmall(u32),
-    InvalidUtf8(&'a [u8], Utf8Error),
-}
+use crate::decode::str::DecodeStringError;
 
 #[cfg(feature = "std")]
 impl<'a, E: RmpReadErr> error::Error for DecodeStringError<'a, E> {
@@ -48,7 +39,6 @@ impl<'a, E: RmpReadErr> From<ValueReadError<E>> for DecodeStringError<'a, E> {
         }
     }
 }
-
 /// Attempts to read up to 9 bytes from the given reader and to decode them as a string `u32` size
 /// value.
 ///
@@ -110,8 +100,8 @@ fn read_str_len_with_nread<R>(rd: &mut R) -> Result<(u32, usize), ValueReadError
 /// This function is **unstable**, because it needs review.
 // TODO: Stabilize. Mark error values for each error case (in docs).
 pub fn read_str<'r, R>(rd: &mut R, buf: &'r mut [u8]) -> Result<&'r str, DecodeStringError<'r, R::Error>>
-where
-    R: RmpRead,
+    where
+        R: RmpRead,
 {
     let len = read_str_len(rd)?;
     let ulen = len as usize;
@@ -145,7 +135,7 @@ pub fn read_str_data<'r, R>(rd: &mut R,
 ///
 // TODO: Also it's possible to implement all borrowing functions for all `BufRead` implementors.
 #[deprecated(since = "0.8.6", note = "useless, use `read_str_from_slice` instead")]
-pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError<'_, super::bytes::BytesReadError>> {
+pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError<'_, crate::decode::BytesReadError>> {
     let mut cur = super::Bytes::new(rd);
     let len = read_str_len(&mut cur)?;
     Ok(&cur.remaining_slice()[..len as usize])
@@ -175,7 +165,7 @@ pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError<'_, super::byt
 /// ```
 pub fn read_str_from_slice<T: ?Sized + AsRef<[u8]>>(
     buf: &T,
-) -> Result<(&str, &[u8]), DecodeStringError<'_, super::bytes::BytesReadError>> {
+) -> Result<(&str, &[u8]), DecodeStringError<'_, crate::decode::BytesReadError>> {
     let buf = buf.as_ref();
     let (len, nread) = read_str_len_with_nread(&mut super::Bytes::new(buf))?;
     let ulen = len as usize;

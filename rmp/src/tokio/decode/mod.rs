@@ -2,6 +2,7 @@ mod dec;
 mod ext;
 mod sint;
 mod uint;
+mod str;
 
 use std::io;
 use num_traits::FromPrimitive;
