@@ -55,14 +55,13 @@
 //! ```
 //!
 //! [serde]: https://serde.rs/
-
+#![forbid(unsafe_code)]
 #![warn(missing_debug_implementations, missing_docs)]
 
 #[macro_use]
 extern crate serde;
 
 use std::fmt::{self, Display, Formatter};
-use std::mem;
 use std::str::{self, Utf8Error};
 
 use serde::de;
@@ -99,6 +98,7 @@ pub const MSGPACK_EXT_STRUCT_NAME: &str = "_ExtStruct";
 ///
 /// Regardless of validity the UTF-8 content this type will always be serialized as a string.
 #[derive(Clone, Debug, PartialEq)]
+#[doc(hidden)]
 pub struct Raw {
     s: Result<String, (Vec<u8>, Utf8Error)>,
 }
@@ -111,7 +111,7 @@ impl Raw {
     }
 
     /// DO NOT USE. See <https://github.com/3Hren/msgpack-rust/issues/305>
-    #[deprecated(note = "This implementation is unsound and dangerous. See https://github.com/3Hren/msgpack-rust/issues/305")]
+    #[deprecated(note = "This feature has been removed")]
     pub fn from_utf8(v: Vec<u8>) -> Self {
         match String::from_utf8(v) {
             Ok(v) => Raw::new(v),
@@ -185,14 +185,10 @@ impl Serialize for Raw {
     where
         S: serde::Serializer
     {
-        let s = match self.s {
-            Ok(ref s) => s.as_str(),
-            // FIXME: this is invalid. It should use a newtype hack instead.
-            // https://github.com/3Hren/msgpack-rust/issues/305
-            Err((ref b, ..)) => unsafe { mem::transmute(&b[..]) },
-        };
-
-        se.serialize_str(s)
+        match self.s {
+            Ok(ref s) => se.serialize_str(s),
+            Err((ref b, ..)) => se.serialize_bytes(b),
+        }
     }
 }
 
@@ -260,6 +256,7 @@ impl<'de> Deserialize<'de> for Raw {
 ///
 /// Regardless of validity the UTF-8 content this type will always be serialized as a string.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[doc(hidden)]
 pub struct RawRef<'a> {
     s: Result<&'a str, (&'a [u8], Utf8Error)>,
 }
@@ -271,8 +268,7 @@ impl<'a> RawRef<'a> {
         Self { s: Ok(v) }
     }
 
-    /// DO NOT USE. See <https://github.com/3Hren/msgpack-rust/issues/305>
-    #[deprecated(note = "This implementation is unsound and dangerous. See https://github.com/3Hren/msgpack-rust/issues/305")]
+    #[deprecated(note = "This feature has been removed")]
     pub fn from_utf8(v: &'a [u8]) -> Self {
         match str::from_utf8(v) {
             Ok(v) => RawRef::new(v),
@@ -330,14 +326,10 @@ impl<'a> Serialize for RawRef<'a> {
     where
         S: serde::Serializer,
     {
-        let s = match self.s {
-            Ok(ref s) => s,
-            // FIXME: this is invalid. It should use a newtype hack instead.
-            // https://github.com/3Hren/msgpack-rust/issues/305
-            Err((ref b, ..)) => unsafe { mem::transmute(b) },
-        };
-
-        se.serialize_str(s)
+        match self.s {
+            Ok(ref s) => se.serialize_str(s),
+            Err((ref b, ..)) => se.serialize_bytes(b),
+        }
     }
 }
 

@@ -337,7 +337,7 @@ fn pass_raw_invalid_utf8() {
     let mut buf = Vec::new();
     raw.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    assert_eq!(vec![0xa4, 0x92, 0xcc, 0xc8, 0x90], buf);
+    assert_eq!(vec![196, 4, 146, 204, 200, 144], buf);
 }
 
 #[test]
@@ -361,7 +361,7 @@ fn pass_raw_ref_invalid_utf8() {
     let mut buf = Vec::new();
     raw.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    assert_eq!(vec![0xa4, 0x92, 0xcc, 0xc8, 0x90], buf);
+    assert_eq!(vec![196, 4, 146, 204, 200, 144], buf);
 }
 
 #[test]

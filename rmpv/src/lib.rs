@@ -4,6 +4,7 @@
 //!
 //! ```
 //! ```
+#![forbid(unsafe_code)]
 
 #[cfg(feature = "with-serde")]
 #[macro_use]
