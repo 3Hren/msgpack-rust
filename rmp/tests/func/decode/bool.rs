@@ -7,7 +7,7 @@ fn from_bool_false() {
     let buf = [0xc2];
     let mut cur = Cursor::new(&buf[..]);
 
-    assert_eq!(false, read_bool(&mut cur).unwrap());
+    assert!(!read_bool(&mut cur).unwrap());
     assert_eq!(1, cur.position());
 }
 

@@ -42,7 +42,7 @@ impl Serialize for Value {
             }
             Value::Map(ref map) => {
                 let mut state = s.serialize_map(Some(map.len()))?;
-                for &(ref key, ref val) in map {
+                for (key, val) in map {
                     state.serialize_entry(key, val)?;
                 }
                 state.end()
@@ -696,7 +696,7 @@ impl SerializeSeq for SerializeVec {
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        self.vec.push(to_value(&value)?);
+        self.vec.push(to_value(value)?);
         Ok(())
     }
 
@@ -748,7 +748,7 @@ impl ser::SerializeTupleVariant for SerializeTupleVariant {
     fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        self.vec.push(to_value(&value)?);
+        self.vec.push(to_value(value)?);
         Ok(())
     }
 
@@ -777,7 +777,7 @@ impl ser::SerializeMap for DefaultSerializeMap {
         // expected failure.
         let key = self.next_key.take()
             .expect("`serialize_value` called before `serialize_key`");
-        self.map.push((key, to_value(&value)?));
+        self.map.push((key, to_value(value)?));
         Ok(())
     }
 
@@ -812,7 +812,7 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
     fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        self.vec.push(to_value(&value)?);
+        self.vec.push(to_value(value)?);
         Ok(())
     }
 

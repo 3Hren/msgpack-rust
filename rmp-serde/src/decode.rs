@@ -307,7 +307,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     fn read_str_data<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
         where V: Visitor<'de>
     {
-        match read_bin_data(&mut self.rd, len as u32)? {
+        match read_bin_data(&mut self.rd, len)? {
             Reference::Borrowed(buf) => {
                 match str::from_utf8(buf) {
                     Ok(s) => visitor.visit_borrowed_str(s),
@@ -384,7 +384,7 @@ fn ext_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
         Marker::FixExt16 => 16,
         Marker::Ext8 => read_u8(rd)? as u32,
         Marker::Ext16 => read_u16(rd)? as u32,
-        Marker::Ext32 => read_u32(rd)? as u32,
+        Marker::Ext32 => read_u32(rd)?,
         _ => return Err(Error::TypeMismatch(marker)),
     })
 }
@@ -625,7 +625,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
                     self.marker = None;
                     visitor.visit_enum(VariantAccess::new(self))
                 }
-                n => Err(Error::LengthMismatch(n as u32)),
+                n => Err(Error::LengthMismatch(n)),
             },
             // TODO: Check this is a string
             Err(_) => visitor.visit_enum(UnitVariantAccess::new(self)),

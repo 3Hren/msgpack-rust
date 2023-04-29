@@ -327,8 +327,8 @@ impl<'a> Serialize for RawRef<'a> {
         S: serde::Serializer,
     {
         match self.s {
-            Ok(ref s) => se.serialize_str(s),
-            Err((ref b, ..)) => se.serialize_bytes(b),
+            Ok(s) => se.serialize_str(s),
+            Err((b, ..)) => se.serialize_bytes(b),
         }
     }
 }

@@ -91,13 +91,13 @@ impl From<ValueReadError> for Error {
     }
 }
 
-impl Into<io::Error> for Error {
+impl From<Error> for io::Error {
     #[cold]
-    fn into(self) -> io::Error {
-        match self {
+    fn from(val: Error) -> Self {
+        match val {
             Error::InvalidMarkerRead(err) |
             Error::InvalidDataRead(err) => err,
-            Error::DepthLimitExceeded => io::Error::new(self.kind(), self),
+            Error::DepthLimitExceeded => io::Error::new(val.kind(), val),
         }
     }
 }

@@ -142,7 +142,7 @@ impl From<u32> for Integer {
 impl From<u64> for Integer {
     #[inline]
     fn from(n: u64) -> Self {
-        Integer { n: IntPriv::PosInt(n as u64) }
+        Integer { n: IntPriv::PosInt(n) }
     }
 }
 
@@ -190,7 +190,7 @@ impl From<i64> for Integer {
     #[inline]
     fn from(n: i64) -> Self {
         if n < 0 {
-            Integer { n: IntPriv::NegInt(n as i64) }
+            Integer { n: IntPriv::NegInt(n) }
         } else {
             Integer { n: IntPriv::PosInt(n as u64) }
         }
@@ -415,9 +415,9 @@ impl<'a> From<&'a str> for Utf8StringRef<'a> {
     }
 }
 
-impl<'a> Into<Utf8String> for Utf8StringRef<'a> {
-    fn into(self) -> Utf8String {
-        match self.s {
+impl<'a> From<Utf8StringRef<'a>> for Utf8String {
+    fn from(val: Utf8StringRef<'a>) -> Self {
+        match val.s {
             Ok(s) => Utf8String { s: Ok(s.into()) },
             Err((buf, err)) => Utf8String { s: Err((buf.into(), err)) }
         }
@@ -509,7 +509,7 @@ impl Value {
                 ValueRef::Array(val.iter().map(|v| v.as_ref()).collect())
             }
             Value::Map(ref val) => {
-                ValueRef::Map(val.iter().map(|&(ref k, ref v)| (k.as_ref(), v.as_ref())).collect())
+                ValueRef::Map(val.iter().map(|(k, v)| (k.as_ref(), v.as_ref())).collect())
             }
             Value::Ext(ty, ref buf) => ValueRef::Ext(ty, buf.as_slice()),
         }
@@ -839,7 +839,7 @@ impl Value {
     #[inline]
     pub fn as_array(&self) -> Option<&Vec<Value>> {
         if let Value::Array(ref array) = *self {
-            Some(&*array)
+            Some(array)
         } else {
             None
         }
@@ -1208,7 +1208,7 @@ impl Display for Value {
                 write!(f, "{{")?;
 
                 match vec.iter().take(1).next() {
-                    Some(&(ref k, ref v)) => {
+                    Some((k, v)) => {
                         write!(f, "{}: {}", k, v)?;
                     }
                     None => {
@@ -1216,7 +1216,7 @@ impl Display for Value {
                     }
                 }
 
-                for &(ref k, ref v) in vec.iter().skip(1) {
+                for (k, v) in vec.iter().skip(1) {
                     write!(f, ", {}: {}", k, v)?;
                 }
 
@@ -1300,7 +1300,7 @@ impl<'a> ValueRef<'a> {
                 Value::Array(val.iter().map(|v| v.to_owned()).collect())
             }
             ValueRef::Map(ref val) => {
-                Value::Map(val.iter().map(|&(ref k, ref v)| (k.to_owned(), v.to_owned())).collect())
+                Value::Map(val.iter().map(|(k, v)| (k.to_owned(), v.to_owned())).collect())
             }
             ValueRef::Ext(ty, buf) => Value::Ext(ty, buf.to_vec()),
         }
@@ -1342,7 +1342,7 @@ impl<'a> ValueRef<'a> {
     /// ```
     pub fn as_array(&self) -> Option<&Vec<ValueRef<'_>>> {
         if let ValueRef::Array(ref array) = *self {
-            Some(&*array)
+            Some(array)
         } else {
             None
         }
@@ -1556,7 +1556,7 @@ impl<'a> Display for ValueRef<'a> {
                 write!(f, "{{")?;
 
                 match vec.iter().take(1).next() {
-                    Some(&(ref k, ref v)) => {
+                    Some((k, v)) => {
                         write!(f, "{}: {}", k, v)?;
                     }
                     None => {
@@ -1564,7 +1564,7 @@ impl<'a> Display for ValueRef<'a> {
                     }
                 }
 
-                for &(ref k, ref v) in vec.iter().skip(1) {
+                for (k, v) in vec.iter().skip(1) {
                     write!(f, ", {}: {}", k, v)?;
                 }
 

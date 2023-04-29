@@ -57,7 +57,7 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
         }
         Value::Map(ref map) => {
             write_map_len(wr, map.len() as u32)?;
-            for &(ref key, ref val) in map {
+            for (key, val) in map {
                 write_value(wr, key)?;
                 write_value(wr, val)?;
             }

@@ -570,7 +570,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
         where V: Visitor<'de>
     {
         match self {
-            &ValueRef::Array(ref v) => {
+            ValueRef::Array(v) => {
                 let len = v.len();
                 let mut iter = v.iter();
                 if !(len == 1 || len == 2) {
@@ -614,7 +614,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
         where V: Visitor<'de>
     {
         match self {
-            &ValueRef::Array(ref v) => {
+            ValueRef::Array(v) => {
                 if v.is_empty() {
                     visitor.visit_unit()
                 } else {
@@ -968,7 +968,7 @@ impl<'de> de::MapAccess<'de> for MapRefDeserializer<'de> {
         where T: DeserializeSeed<'de>
     {
         match self.iter.next() {
-            Some(&(ref key, ref val)) => {
+            Some((key, val)) => {
                 self.val = Some(val);
                 seed.deserialize(key).map(Some)
             }
@@ -1040,7 +1040,7 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
     fn unit_variant(self) -> Result<(), Error> {
         // Can accept only [u32].
         match self.value {
-            Some(&ValueRef::Array(ref v)) => {
+            Some(ValueRef::Array(v)) => {
                 if v.is_empty() {
                     Ok(())
                 } else {
@@ -1057,7 +1057,7 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
     {
         // Can accept both [u32, T...] and [u32, [T]] cases.
         match self.value {
-            Some(&ValueRef::Array(ref v)) => {
+            Some(ValueRef::Array(v)) => {
                 let len = v.len();
                 let mut iter = v.iter();
                 if len > 1 {
@@ -1085,7 +1085,7 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
     {
         // Can accept [u32, [T...]].
         match self.value {
-            Some(&ValueRef::Array(ref v)) => {
+            Some(ValueRef::Array(v)) => {
                 Deserializer::deserialize_any(SeqDeserializer::new(v.iter()), visitor)
             }
             Some(v) => Err(de::Error::invalid_type(v.unexpected(), &"tuple variant")),
@@ -1097,10 +1097,10 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
         where V: Visitor<'de>,
     {
         match self.value {
-            Some(&ValueRef::Array(ref v)) => {
+            Some(ValueRef::Array(v)) => {
                 Deserializer::deserialize_any(SeqDeserializer::new(v.iter()), visitor)
             }
-            Some(&ValueRef::Map(ref v)) => {
+            Some(ValueRef::Map(v)) => {
                 Deserializer::deserialize_any(MapRefDeserializer::new(v.iter()), visitor)
             }
             Some(v) => Err(de::Error::invalid_type(v.unexpected(), &"struct variant")),

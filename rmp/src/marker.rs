@@ -151,9 +151,9 @@ impl From<u8> for Marker {
     }
 }
 
-impl Into<u8> for Marker {
+impl From<Marker> for u8 {
     #[inline]
-    fn into(self) -> u8 {
-        self.to_u8()
+    fn from(val: Marker) -> Self {
+        val.to_u8()
     }
 }
