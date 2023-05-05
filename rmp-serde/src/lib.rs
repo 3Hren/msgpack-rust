@@ -12,7 +12,7 @@
 //!     buf
 //! );
 //!
-//! assert_eq!((42, "the Answer"), rmp_serde::from_read_ref(&buf).unwrap());
+//! assert_eq!((42, "the Answer"), rmp_serde::from_slice(&buf).unwrap());
 //! ```
 //!
 //! # Type-based Serialization and Deserialization
