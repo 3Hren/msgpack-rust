@@ -1,6 +1,6 @@
 [package]
 name = "rmp-serde"
-version = "1.1.1"
+version = "1.1.2"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Serde bindings for RMP"
@@ -9,7 +9,7 @@ documentation = "https://docs.rs/rmp-serde"
 readme = "README.md"
 keywords = ["msgpack", "MessagePack", "serde", "serialization"]
 categories = ["encoding"]
-edition = "2018"
+edition = "2021"
 
 [package.metadata.release]
 tag-prefix = "{{crate_name}}/"
@@ -25,4 +25,4 @@ serde_bytes = "0.11.5"
 serde_derive = "1.0.136"
 
 [badges]
-maintenance = { status = "passively-maintained" }
+maintenance = { status = "looking-for-maintainer" }

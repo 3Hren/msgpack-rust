@@ -1,6 +1,6 @@
 [package]
 name = "rmpv"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Value variant for RMP"
@@ -9,7 +9,8 @@ documentation = "https://docs.rs/rmpv"
 readme = "README.md"
 keywords = ["msgpack", "MessagePack", "serialization"]
 categories = ["encoding"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.70"
 
 [features]
 with-serde = ["serde", "serde_bytes"]
@@ -22,3 +23,6 @@ serde = { version = "1.0.130", optional = true }
 
 [dev-dependencies]
 quickcheck = "1.0.2"
+
+[badges]
+maintenance = { status = "looking-for-maintainer" }
