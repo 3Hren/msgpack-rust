@@ -394,6 +394,14 @@ impl<'a> Utf8StringRef<'a> {
             Err(err) => err.0.into(),
         }
     }
+
+    /// Consumes this object, returning a byte slice of this string's contents no matter whether it's valid or not UTF-8.
+    pub fn into_bytes_ref(self) -> &'a [u8] {
+        match self.s {
+            Ok(s) => s.as_bytes(),
+            Err(err) => err.0,
+        }
+    }
 }
 
 impl<'a> Display for Utf8StringRef<'a> {
