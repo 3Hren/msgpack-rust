@@ -122,12 +122,7 @@ macro_rules! write_byteorder_utils {
             #[inline]
             #[doc(hidden)]
             fn $name(&mut self, val: $tp) -> Result<(), DataWriteError<Self::Error>> where Self: Sized {
-                const SIZE: usize = core::mem::size_of::<$tp>();
-                let mut buf: [u8; SIZE] = [0u8; SIZE];
-                paste::paste! {
-                    <byteorder::BigEndian as byteorder::ByteOrder>::[<write_ $tp>](&mut buf, val);
-                }
-                self.write_bytes(&buf).map_err(DataWriteError)
+                self.write_bytes(&val.to_be_bytes()).map_err(DataWriteError)
             }
         )*
     };
@@ -138,7 +133,7 @@ macro_rules! write_byteorder_utils {
 /// The methods of this trait should be considered an implementation detail (for now).
 /// It is currently sealed (can not be implemented by the user).
 ///
-/// See also [std::uo::Write] and [byteorder::WriteBytesExt]
+/// See also [std::uo::Write]
 ///
 /// Its primary implementations are [std::io::Write] and [ByteBuf].
 pub trait RmpWrite: sealed::Sealed {
