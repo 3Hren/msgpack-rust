@@ -58,9 +58,7 @@ macro_rules! read_byteorder_utils {
                 const SIZE: usize = core::mem::size_of::<$tp>();
                 let mut buf: [u8; SIZE] = [0u8; SIZE];
                 self.read_exact_buf(&mut buf).map_err(ValueReadError::InvalidDataRead)?;
-                Ok(paste::paste! {
-                    <byteorder::BigEndian as byteorder::ByteOrder>::[<read_ $tp>](&mut buf)
-                })
+                Ok($tp::from_be_bytes(buf))
             }
         )*
     };
@@ -80,7 +78,7 @@ mod sealed{
 /// The methods of this trait should be considered an implementation detail (for now).
 /// It is currently sealed (can not be implemented by the user).
 ///
-/// See also [std::io::Read] and [byteorder::ReadBytesExt]
+/// See also [std::io::Read]
 ///
 /// Its primary implementations are [std::io::Read] and [Bytes].
 pub trait RmpRead: sealed::Sealed {
