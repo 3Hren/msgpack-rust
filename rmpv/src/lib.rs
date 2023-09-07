@@ -367,7 +367,7 @@ impl<'a> Utf8StringRef<'a> {
 
     /// Returns a byte slice of this string contents no matter whether it's valid or not UTF-8.
     #[inline]
-    pub fn as_bytes(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &'a [u8] {
         match self.s {
             Ok(s) => s.as_bytes(),
             Err(ref err) => err.0,
