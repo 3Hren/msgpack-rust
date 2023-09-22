@@ -62,7 +62,9 @@ impl ser::Error for Error {
     }
 }
 
-struct Serializer;
+struct Serializer {
+  named_structs: bool
+}
 
 /// Convert a `T` into `rmpv::Value` which is an enum that can represent any valid MessagePack data.
 ///
@@ -77,7 +79,27 @@ struct Serializer;
 /// ```
 #[inline]
 pub fn to_value<T: Serialize>(value: T) -> Result<Value, Error> {
-    value.serialize(Serializer)
+    value.serialize(Serializer {
+      named_structs: false
+    })
+}
+
+/// The same as `rmpv::ext::to_value` with the variation that Structs are encoded as Value::Map
+///
+/// ```rust
+/// # use rmpv::Value;
+///
+/// struct Book { name: String }
+///
+/// let val = rmpv::ext::to_value_named(Book { name: "James".into() }).unwrap();
+///
+/// assert_eq!(Value::Map(vec![(Value::String("name"), Value::String("John Smith".into()))]), val);
+/// ```
+#[inline]
+pub fn to_value_named<T: Serialize>(value: T) -> Result<Value, Error> {
+    value.serialize(Serializer {
+      named_structs: true
+    })
 }
 
 impl ser::Serializer for Serializer {
@@ -89,7 +111,7 @@ impl ser::Serializer for Serializer {
     type SerializeTupleStruct = SerializeVec;
     type SerializeTupleVariant = SerializeTupleVariant;
     type SerializeMap = DefaultSerializeMap;
-    type SerializeStruct = SerializeVec;
+    type SerializeStruct = DefaultSerializeStruct;
     type SerializeStructVariant = SerializeStructVariant;
 
     #[inline]
@@ -221,6 +243,7 @@ impl ser::Serializer for Serializer {
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
         let se = SerializeVec {
+            named: self.named_structs,
             vec: Vec::with_capacity(len.unwrap_or(0))
         };
         Ok(se)
@@ -236,6 +259,7 @@ impl ser::Serializer for Serializer {
 
     fn serialize_tuple_variant(self, _name: &'static str, idx: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeTupleVariant, Error> {
         let se = SerializeTupleVariant {
+            named: self.named_structs,
             idx,
             vec: Vec::with_capacity(len),
         };
@@ -244,6 +268,7 @@ impl ser::Serializer for Serializer {
 
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Error> {
         let se = DefaultSerializeMap {
+            named: self.named_structs,
             map: Vec::with_capacity(len.unwrap_or(0)),
             next_key: None,
         };
@@ -251,13 +276,18 @@ impl ser::Serializer for Serializer {
     }
 
     #[inline]
-    fn serialize_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeStruct, Error> {
-        self.serialize_tuple_struct(name, len)
+    fn serialize_struct(self, _name: &'static str, len: usize) -> Result<Self::SerializeStruct, Error> {
+        let se = DefaultSerializeStruct {
+            named: self.named_structs,
+            map: Vec::with_capacity(len),
+        };
+        return Ok(se)
     }
 
     #[inline]
     fn serialize_struct_variant(self, _name: &'static str, idx: u32, _variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Error> {
         let se = SerializeStructVariant {
+            named: self.named_structs,
             idx,
             vec: Vec::with_capacity(len),
         };
@@ -665,6 +695,7 @@ impl ExtFieldSerializer {
 
 #[doc(hidden)]
 pub struct SerializeVec {
+    named: bool,
     vec: Vec<Value>,
 }
 
@@ -672,18 +703,27 @@ pub struct SerializeVec {
 /// index with a tuple of arguments.
 #[doc(hidden)]
 pub struct SerializeTupleVariant {
+    named: bool,
     idx: u32,
     vec: Vec<Value>,
 }
 
 #[doc(hidden)]
 pub struct DefaultSerializeMap {
+    named: bool,
     map: Vec<(Value, Value)>,
     next_key: Option<Value>,
 }
 
 #[doc(hidden)]
+pub struct DefaultSerializeStruct {
+    named: bool,
+    map: Vec<(Value, Value)>,
+}
+
+#[doc(hidden)]
 pub struct SerializeStructVariant {
+    named: bool,
     idx: u32,
     vec: Vec<Value>,
 }
@@ -696,7 +736,11 @@ impl SerializeSeq for SerializeVec {
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        self.vec.push(to_value(value)?);
+        let value = match self.named {
+            true => to_value_named(value)?,
+            false => to_value(value)?,
+        };
+        self.vec.push(value);
         Ok(())
     }
 
@@ -748,7 +792,11 @@ impl ser::SerializeTupleVariant for SerializeTupleVariant {
     fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        self.vec.push(to_value(value)?);
+        let value = match self.named {
+            true => to_value_named(value)?,
+            false => to_value(value)?,
+        };
+        self.vec.push(value);
         Ok(())
     }
 
@@ -777,7 +825,11 @@ impl ser::SerializeMap for DefaultSerializeMap {
         // expected failure.
         let key = self.next_key.take()
             .expect("`serialize_value` called before `serialize_key`");
-        self.map.push((key, to_value(value)?));
+        let value = match self.named {
+            true => to_value_named(value)?,
+            false => to_value(value)?,
+        };
+        self.map.push((key, value));
         Ok(())
     }
 
@@ -787,20 +839,30 @@ impl ser::SerializeMap for DefaultSerializeMap {
     }
 }
 
-impl SerializeStruct for SerializeVec {
+impl SerializeStruct for DefaultSerializeStruct {
     type Ok = Value;
     type Error = Error;
 
     #[inline]
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Error>
+    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        ser::SerializeSeq::serialize_element(self, value)
+        let value = match self.named {
+            true => to_value_named(value)?,
+            false => to_value(value)?,
+        };
+        self.map.push((to_value(key)?, value));
+        Ok(())
     }
 
     #[inline]
     fn end(self) -> Result<Value, Error> {
-        ser::SerializeSeq::end(self)
+        if self.named {
+          return Ok(Value::Map(self.map))
+        }
+
+        let stripped_keys: Vec<Value> = self.map.into_iter().map(|(_, val)| val).collect();
+        Ok(Value::Array(stripped_keys))
     }
 }
 
@@ -812,7 +874,11 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
     fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        self.vec.push(to_value(value)?);
+        let value = match self.named {
+            true => to_value_named(value)?,
+            false => to_value(value)?,
+        };
+        self.vec.push(value);
         Ok(())
     }
 
