@@ -62,7 +62,9 @@ impl ser::Error for Error {
     }
 }
 
-struct Serializer;
+struct Serializer {
+  named_structs: bool
+}
 
 /// Convert a `T` into `rmpv::Value` which is an enum that can represent any valid MessagePack data.
 ///
@@ -77,7 +79,27 @@ struct Serializer;
 /// ```
 #[inline]
 pub fn to_value<T: Serialize>(value: T) -> Result<Value, Error> {
-    value.serialize(Serializer)
+    value.serialize(Serializer {
+      named_structs: false
+    })
+}
+
+/// The same as `rmpv::ext::to_value` with the variation that Structs are encoded as Value::Map
+///
+/// ```rust
+/// # use rmpv::Value;
+///
+/// struct Book { name: String }
+///
+/// let val = rmpv::ext::to_value_named(Book { name: "James".into() }).unwrap();
+///
+/// assert_eq!(Value::Map(vec![(Value::String("name"), Value::String("John Smith".into()))]), val);
+/// ```
+#[inline]
+pub fn to_value_named<T: Serialize>(value: T) -> Result<Value, Error> {
+    value.serialize(Serializer {
+      named_structs: true
+    })
 }
 
 impl ser::Serializer for Serializer {
@@ -89,7 +111,7 @@ impl ser::Serializer for Serializer {
     type SerializeTupleStruct = SerializeVec;
     type SerializeTupleVariant = SerializeTupleVariant;
     type SerializeMap = DefaultSerializeMap;
-    type SerializeStruct = SerializeVec;
+    type SerializeStruct = DefaultSerializeStruct;
     type SerializeStructVariant = SerializeStructVariant;
 
     #[inline]
@@ -251,8 +273,12 @@ impl ser::Serializer for Serializer {
     }
 
     #[inline]
-    fn serialize_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeStruct, Error> {
-        self.serialize_tuple_struct(name, len)
+    fn serialize_struct(self, _name: &'static str, len: usize) -> Result<Self::SerializeStruct, Error> {
+        let se = DefaultSerializeStruct {
+            named: self.named_structs,
+            map: Vec::with_capacity(len),
+        };
+        return Ok(se)
     }
 
     #[inline]
@@ -683,6 +709,12 @@ pub struct DefaultSerializeMap {
 }
 
 #[doc(hidden)]
+pub struct DefaultSerializeStruct {
+    named: bool,
+    map: Vec<(Value, Value)>,
+}
+
+#[doc(hidden)]
 pub struct SerializeStructVariant {
     idx: u32,
     vec: Vec<Value>,
@@ -787,20 +819,26 @@ impl ser::SerializeMap for DefaultSerializeMap {
     }
 }
 
-impl SerializeStruct for SerializeVec {
+impl SerializeStruct for DefaultSerializeStruct {
     type Ok = Value;
     type Error = Error;
 
     #[inline]
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Error>
+    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        ser::SerializeSeq::serialize_element(self, value)
+        self.map.push((to_value(key)?, to_value(value)?));
+        Ok(())
     }
 
     #[inline]
     fn end(self) -> Result<Value, Error> {
-        ser::SerializeSeq::end(self)
+        if self.named {
+          return Ok(Value::Map(self.map))
+        }
+
+        let stripped_keys: Vec<Value> = self.map.into_iter().map(|(_, val)| val).collect();
+        Ok(Value::Array(stripped_keys))
     }
 }
 
