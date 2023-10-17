@@ -3,7 +3,10 @@
 use super::RmpWrite;
 #[cfg(not(feature = "std"))]
 use core::fmt::{self, Display, Formatter};
+#[cfg(feature="alloc")]
 use alloc::vec::Vec;
+#[cfg(feature="heapless")]
+use heapless::Vec;
 
 /// An error returned from writing to `&mut [u8]` (a byte buffer of fixed capacity) on no_std
 ///
@@ -68,6 +71,8 @@ impl<'a> RmpWrite for &'a mut [u8] {
     }
 }
 
+#[cfg(feature="heapless")]
+
 /// A wrapper around `Vec<u8>` to serialize more efficiently.
 ///
 /// This has a specialized implementation of `RmpWrite`
@@ -77,10 +82,12 @@ impl<'a> RmpWrite for &'a mut [u8] {
 /// This has the additional benefit of working on `#[no_std]`
 ///
 /// See also [serde_bytes::ByteBuf](https://docs.rs/serde_bytes/0.11/serde_bytes/struct.ByteBuf.html)
+#[cfg(feature="alloc")]
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct ByteBuf {
     bytes: Vec<u8>,
 }
+#[cfg(feature="alloc")]
 impl ByteBuf {
     /// Construct a new empty buffer
     #[inline]
@@ -120,29 +127,34 @@ impl ByteBuf {
         &self.bytes
     }
 }
+#[cfg(feature="alloc")]
 impl AsRef<[u8]> for ByteBuf {
     fn as_ref(&self) -> &[u8] {
         &self.bytes
     }
 }
+#[cfg(feature="alloc")]
 impl AsRef<Vec<u8>> for ByteBuf {
     #[inline]
     fn as_ref(&self) -> &Vec<u8> {
         &self.bytes
     }
 }
+#[cfg(feature="alloc")]
 impl AsMut<Vec<u8>> for ByteBuf {
     #[inline]
     fn as_mut(&mut self) -> &mut Vec<u8> {
         &mut self.bytes
     }
 }
+#[cfg(feature="alloc")]
 impl From<ByteBuf> for Vec<u8> {
     #[inline]
     fn from(buf: ByteBuf) -> Self {
         buf.bytes
     }
 }
+#[cfg(feature="alloc")]
 impl From<Vec<u8>> for ByteBuf {
     #[inline]
     fn from(bytes: Vec<u8>) -> Self {
@@ -150,6 +162,7 @@ impl From<Vec<u8>> for ByteBuf {
     }
 }
 
+#[cfg(feature="alloc")]
 impl RmpWrite for ByteBuf {
     type Error = core::convert::Infallible;
 
@@ -165,7 +178,7 @@ impl RmpWrite for ByteBuf {
         Ok(())
     }
 }
-#[cfg(not(feature = "std"))]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 impl<'a> RmpWrite for Vec<u8> {
     type Error = core::convert::Infallible;
 
@@ -179,6 +192,125 @@ impl<'a> RmpWrite for Vec<u8> {
     #[inline]
     fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
         self.extend_from_slice(buf);
+        Ok(())
+    }
+}
+
+#[cfg(feature="heapless")]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, Ord, PartialOrd)]
+pub struct ByteBuf<const N: usize> {
+    bytes: Vec<u8, N>,
+}
+
+#[cfg(feature="heapless")]
+impl<const N: usize> ByteBuf<N> {
+    /// Construct a new empty buffer
+    #[inline]
+    pub fn new() -> Self {
+        ByteBuf { bytes: Vec::new() }
+    }
+    /// Construct a new buffer with the specified capacity
+    ///
+    /// See [Vec::with_capacity] for details
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        assert!(capacity <= N);
+        ByteBuf { bytes: Vec::new() }
+    }
+    /// Unwrap the underlying buffer of this vector
+    #[inline]
+    pub fn into_vec(self) -> Vec<u8, N> {
+        self.bytes
+    }
+    /// Wrap the specified vector as a [ByteBuf]
+    #[inline]
+    pub fn from_vec(bytes: Vec<u8, N>) -> Self {
+        ByteBuf { bytes }
+    }
+    /// Get a reference to this type as a [Vec]
+    #[inline]
+    pub fn as_vec(&self) -> &Vec<u8, N> {
+        &self.bytes
+    }
+    /// Get a mutable reference to this type as a [Vec]
+    #[inline]
+    pub fn as_mut_vec(&mut self) -> &mut Vec<u8, N> {
+        &mut self.bytes
+    }
+    /// Get a reference to this type as a slice of bytes (`&[u8]`)
+    #[inline]
+    pub fn as_slice(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+#[cfg(feature="heapless")]
+impl<const N: usize> AsRef<[u8]> for ByteBuf<N> {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+#[cfg(feature="heapless")]
+impl<const N: usize> AsRef<Vec<u8, N>> for ByteBuf<N> {
+    #[inline]
+    fn as_ref(&self) -> &Vec<u8, N> {
+        &self.bytes
+    }
+}
+#[cfg(feature="heapless")]
+impl<const N: usize> AsMut<Vec<u8, N>> for ByteBuf<N> {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Vec<u8, N> {
+        &mut self.bytes
+    }
+}
+#[cfg(feature="heapless")]
+impl<const N: usize> From<ByteBuf<N>> for Vec<u8, N> {
+    #[inline]
+    fn from(buf: ByteBuf<N>) -> Self {
+        buf.bytes
+    }
+}
+#[cfg(feature="heapless")]
+impl<const N: usize> From<Vec<u8, N>> for ByteBuf<N> {
+    #[inline]
+    fn from(bytes: Vec<u8, N>) -> Self {
+        ByteBuf { bytes }
+    }
+}
+
+#[cfg(feature="heapless")]
+impl<const N: usize> RmpWrite for ByteBuf<N> {
+    type Error = core::convert::Infallible;
+
+    #[inline]
+    fn write_u8(&mut self, val: u8) -> Result<(), Self::Error> {
+        // TODO: Error handling
+        self.bytes.push(val).unwrap();
+        Ok(())
+    }
+
+    #[inline]
+    fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
+        // TODO: Error handling
+        self.bytes.extend_from_slice(buf).unwrap();
+        Ok(())
+    }
+}
+#[cfg(all(feature = "heapless", not(feature = "std")))]
+impl<'a, const N: usize> RmpWrite for Vec<u8, N> {
+    type Error = core::convert::Infallible;
+
+    #[inline]
+    fn write_u8(&mut self, val: u8) -> Result<(), Self::Error> {
+        // TODO: Error handling
+        self.push(val).unwrap();
+        Ok(())
+    }
+
+    #[inline]
+    fn write_bytes(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
+        // TODO: Error handling
+        self.extend_from_slice(buf).unwrap();
         Ok(())
     }
 }
