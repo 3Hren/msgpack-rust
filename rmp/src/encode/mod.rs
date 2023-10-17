@@ -110,9 +110,14 @@ mod sealed{
     impl<T: ?Sized + std::io::Write> Sealed for T {}
     #[cfg(not(feature = "std"))]
     impl Sealed for &mut [u8] {}
-    #[cfg(not(feature = "std"))]
+    #[cfg(all(feature = "alloc", not(feature = "std")))]
     impl Sealed for alloc::vec::Vec<u8> {}
+    #[cfg(all(feature = "alloc", not(feature = "std")))]
     impl Sealed for super::ByteBuf {}
+    #[cfg(all(feature = "heapless", not(feature = "std")))]
+    impl<const N: usize> Sealed for heapless::Vec<u8, N> {}
+    #[cfg(all(feature = "heapless", not(feature = "std")))]
+    impl<const N: usize> Sealed for super::ByteBuf<N> {}
 }
 
 
