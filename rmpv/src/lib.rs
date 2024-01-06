@@ -259,10 +259,10 @@ impl Utf8String {
 
     /// Returns a byte slice of this `Utf8String`'s contents.
     #[inline]
-    pub fn as_bytes(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &'a [u8] {
         match self.s {
-            Ok(ref s) => s.as_bytes(),
-            Err(ref err) => &err.0[..],
+            Ok(s) => s.as_bytes(),
+            Err((bytes, _)) => bytes,
         }
     }
 
@@ -392,14 +392,6 @@ impl<'a> Utf8StringRef<'a> {
         match self.s {
             Ok(s) => s.as_bytes().into(),
             Err(err) => err.0.into(),
-        }
-    }
-
-    /// Consumes this object, returning a byte slice of this string's contents no matter whether it's valid or not UTF-8.
-    pub fn into_bytes_ref(self) -> &'a [u8] {
-        match self.s {
-            Ok(s) => s.as_bytes(),
-            Err(err) => err.0,
         }
     }
 }
