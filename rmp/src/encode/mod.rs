@@ -13,7 +13,7 @@ pub use self::bin::{write_bin, write_bin_len};
 pub use self::dec::{write_f32, write_f64};
 pub use self::sint::{write_i16, write_i32, write_i64, write_i8, write_nfix, write_sint};
 pub use self::str::{write_str, write_str_len};
-pub use self::uint::{write_pfix, write_u16, write_u32, write_u64, write_u8, write_uint};
+pub use self::uint::{write_pfix, write_u16, write_u32, write_u64, write_u8, write_uint, write_uint8};
 
 #[cfg(feature = "std")]
 use std::error;
