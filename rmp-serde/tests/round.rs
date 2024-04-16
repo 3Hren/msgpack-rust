@@ -609,6 +609,16 @@ fn checked_seq_access_len()
         .expect_err("Input round tripped into Output; this shouldn't happen");
 }
 
+#[test]
+fn array_from_bytes() {
+    let orig = [1u8,128,255];
+    let v = rmp_serde::to_vec(orig.as_slice()).unwrap();
+    let arr: [u8; 3] = rmp_serde::from_slice(&v).unwrap();
+    assert_eq!(arr, orig);
+    let tup: (u8, u8, u8) = rmp_serde::from_slice(&v).unwrap();
+    assert_eq!(tup, (1,128,255));
+}
+
 #[ignore]
 #[test]
 fn roundtrip_some_failures() {

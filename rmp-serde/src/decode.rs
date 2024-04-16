@@ -10,6 +10,7 @@ use std::str::{self, Utf8Error};
 use byteorder::{self, ReadBytesExt};
 
 use serde;
+use serde::de::value::SeqDeserializer;
 use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Unexpected, Visitor};
 
 use rmp;
@@ -480,18 +481,11 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &'a mut Deserializer<R, C> {
-    type Error = Error;
 
-    #[inline(always)]
-    fn is_human_readable(&self) -> bool {
-        C::is_human_readable()
-    }
-
+impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     #[inline(never)]
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
-    {
+    fn deserialize_any_inner<V: Visitor<'de>>(&mut self, visitor: V, allow_bytes: bool) -> Result<V::Value, Error> {
+
         let marker = self.take_or_read_marker()?;
 
         match marker {
@@ -566,8 +560,11 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
                     _ => unreachable!()
                 }?;
                 match read_bin_data(&mut self.rd, len)? {
-                    Reference::Borrowed(buf) => visitor.visit_borrowed_bytes(buf),
-                    Reference::Copied(buf) => visitor.visit_bytes(buf),
+                    Reference::Borrowed(buf) if allow_bytes => visitor.visit_borrowed_bytes(buf),
+                    Reference::Copied(buf) if allow_bytes => visitor.visit_bytes(buf),
+                    Reference::Borrowed(buf) | Reference::Copied(buf) => {
+                        visitor.visit_seq(SeqDeserializer::new(buf.iter().copied()))
+                    },
                 }
             }
             Marker::FixExt1 |
@@ -583,6 +580,22 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             }
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
         }
+    }
+}
+
+impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &'a mut Deserializer<R, C> {
+    type Error = Error;
+
+    #[inline(always)]
+    fn is_human_readable(&self) -> bool {
+        C::is_human_readable()
+    }
+
+    #[inline(always)]
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        self.deserialize_any_inner(visitor, true)
     }
 
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -679,11 +692,31 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         visitor.visit_u128(u128::from_be_bytes(buf))
     }
 
+    #[inline]
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        self.deserialize_any_inner(visitor, false)
+    }
+
+    #[inline]
+    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        self.deserialize_any_inner(visitor, false)
+    }
+
+    #[inline]
+    fn deserialize_struct<V>(self, _: &'static str, _: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        self.deserialize_any_inner(visitor, false)
+    }
+
+    #[inline]
+    fn deserialize_tuple_struct<V>(self, _: &'static str, _: usize, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        self.deserialize_any_inner(visitor, false)
+    }
+
     forward_to_deserialize_any! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32
         f64 char str string bytes byte_buf unit
-        seq map struct identifier tuple
-        tuple_struct ignored_any
+        map identifier
+        ignored_any
     }
 }
 
