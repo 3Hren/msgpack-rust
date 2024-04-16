@@ -83,19 +83,6 @@ impl sealed::SerializerConfig for DefaultConfig {
         value.serialize(ser)
     }
 
-    #[inline]
-    fn write_variant_ident<S>(
-        ser: &mut S,
-        _variant_index: u32,
-        variant: &'static str,
-    ) -> Result<(), Error>
-    where
-        S: UnderlyingWrite,
-        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
-    {
-        ser.serialize_str(variant)
-    }
-
     #[inline(always)]
     fn is_human_readable() -> bool {
         false
@@ -144,19 +131,6 @@ where
         value.serialize(ser)
     }
 
-    #[inline]
-    fn write_variant_ident<S>(
-        ser: &mut S,
-        variant_index: u32,
-        variant: &'static str,
-    ) -> Result<(), Error>
-    where
-        S: UnderlyingWrite,
-        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
-    {
-        C::write_variant_ident(ser, variant_index, variant)
-    }
-
     #[inline(always)]
     fn is_human_readable() -> bool {
         C::is_human_readable()
@@ -198,19 +172,6 @@ where
         T: ?Sized + Serialize,
     {
         value.serialize(ser)
-    }
-
-    #[inline]
-    fn write_variant_ident<S>(
-        ser: &mut S,
-        variant_index: u32,
-        variant: &'static str,
-    ) -> Result<(), Error>
-    where
-        S: UnderlyingWrite,
-        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
-    {
-        C::write_variant_ident(ser, variant_index, variant)
     }
 
     #[inline(always)]
@@ -255,19 +216,6 @@ where
         C::write_struct_field(ser, key, value)
     }
 
-    #[inline]
-    fn write_variant_ident<S>(
-        ser: &mut S,
-        variant_index: u32,
-        variant: &'static str,
-    ) -> Result<(), Error>
-    where
-        S: UnderlyingWrite,
-        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
-    {
-        C::write_variant_ident(ser, variant_index, variant)
-    }
-
     #[inline(always)]
     fn is_human_readable() -> bool {
         true
@@ -308,19 +256,6 @@ where
         T: ?Sized + Serialize,
     {
         C::write_struct_field(ser, key, value)
-    }
-
-    #[inline]
-    fn write_variant_ident<S>(
-        ser: &mut S,
-        variant_index: u32,
-        variant: &'static str,
-    ) -> Result<(), Error>
-    where
-        S: UnderlyingWrite,
-        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
-    {
-        C::write_variant_ident(ser, variant_index, variant)
     }
 
     #[inline(always)]

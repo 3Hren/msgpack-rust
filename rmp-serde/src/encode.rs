@@ -591,7 +591,7 @@ where
     fn serialize_unit_variant(self, _name: &str, idx: u32, variant: &'static str) ->
         Result<Self::Ok, Self::Error>
     {
-        C::write_variant_ident(self, idx, variant)
+        self.serialize_str(variant)
     }
 
     fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(self, name: &'static str, value: &T) -> Result<(), Self::Error> {
@@ -609,7 +609,7 @@ where
     fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
         // encode as a map from variant idx to its attributed data, like: {idx => value}
         encode::write_map_len(&mut self.wr, 1)?;
-        C::write_variant_ident(self, idx, variant)?;
+        self.serialize_str(variant)?;
         value.serialize(self)
     }
 
@@ -637,7 +637,7 @@ where
     {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
-        C::write_variant_ident(self, idx, variant)?;
+        self.serialize_str(variant)?;
         self.serialize_tuple(len)
     }
 
@@ -652,12 +652,12 @@ where
         self.compound()
     }
 
-    fn serialize_struct_variant(self, name: &'static str, id: u32, variant: &'static str, len: usize) ->
+    fn serialize_struct_variant(self, name: &'static str, _: u32, variant: &'static str, len: usize) ->
         Result<Self::SerializeStructVariant, Error>
     {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
         encode::write_map_len(&mut self.wr, 1)?;
-        C::write_variant_ident(self, id, variant)?;
+        self.serialize_str(variant)?;
         self.serialize_struct(name, len)
     }
 }
