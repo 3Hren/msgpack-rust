@@ -6,6 +6,7 @@ use std::vec::IntoIter;
 
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
 use serde::{self, Deserialize, Deserializer};
+use serde::forward_to_deserialize_any;
 
 use crate::{IntPriv, Integer, Utf8String, Utf8StringRef, Value, ValueRef};
 

@@ -28,14 +28,9 @@
 //! # Examples
 //!
 //! ```
-//! extern crate serde;
-//! #[macro_use]
-//! extern crate serde_derive;
-//! extern crate rmp_serde as rmps;
-//!
 //! use std::collections::HashMap;
 //! use serde::{Deserialize, Serialize};
-//! use rmps::{Deserializer, Serializer};
+//! use rmp_serde::{Deserializer, Serializer};
 //!
 //! #[derive(Debug, PartialEq, Deserialize, Serialize)]
 //! struct Human {
@@ -58,8 +53,6 @@
 #![forbid(unsafe_code)]
 #![warn(missing_debug_implementations, missing_docs)]
 
-#[macro_use]
-extern crate serde;
 
 use std::fmt::{self, Display, Formatter};
 use std::str::{self, Utf8Error};
@@ -78,9 +71,16 @@ pub mod config;
 pub mod decode;
 pub mod encode;
 
+
+/// Hack used to serialize MessagePack Extension types.
+///
+/// A special [`ExtStruct`] type is used to represent
+/// extension types. This struct is renamed in serde.
+///
 /// Name of Serde newtype struct to Represent Msgpack's Ext
-/// Msgpack Ext: Ext(tag, binary)
-/// Serde data model: _ExtStruct((tag, binary))
+/// Msgpack Ext: `Ext(tag, binary)`
+/// Serde data model: `_ExtStruct((tag, binary))`
+///
 /// Example Serde impl for custom type:
 ///
 /// ```ignore

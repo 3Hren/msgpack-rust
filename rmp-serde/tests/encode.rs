@@ -4,8 +4,8 @@ use std::io::Cursor;
 
 use serde::Serialize;
 
-use crate::rmps::encode::{self, Error};
-use crate::rmps::{Raw, RawRef, Serializer};
+use rmp_serde::encode::{self, Error};
+use rmp_serde::{Raw, RawRef, Serializer};
 
 #[test]
 fn pass_null() {

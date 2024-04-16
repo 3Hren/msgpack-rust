@@ -1,14 +1,10 @@
-#[macro_use]
-extern crate serde_derive;
-extern crate rmp_serde as rmps;
-
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 use serde::Serialize;
 use serde_bytes::{ByteBuf, Bytes};
 
-use crate::rmps::Serializer;
+use rmp_serde::Serializer;
 use rmpv::encode;
 use rmpv::ext::to_value;
 use rmpv::Value;

@@ -1,9 +1,4 @@
-#[macro_use]
-extern crate serde_derive;
-
-extern crate rmp_serde as rmps;
-
-use crate::rmps::Serializer;
+use rmp_serde::Serializer;
 use serde::Serialize;
 
 #[test]
@@ -74,8 +69,8 @@ fn pass_untagged_newtype_variant() {
         C,
     }
 
-    let buf1 = rmps::to_vec(&Enum1::A(123)).unwrap();
-    let buf2 = rmps::to_vec(&Enum1::B(Enum2::C)).unwrap();
+    let buf1 = rmp_serde::to_vec(&Enum1::A(123)).unwrap();
+    let buf2 = rmp_serde::to_vec(&Enum1::B(Enum2::C)).unwrap();
 
     assert_eq!(buf1, [123]);
     // Expect: "C"

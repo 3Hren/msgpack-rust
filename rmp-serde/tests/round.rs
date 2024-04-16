@@ -1,10 +1,6 @@
-#[macro_use]
-extern crate serde_derive;
-
-use rmp_serde as rmps;
-use rmps::config::{DefaultConfig, SerializerConfig};
-use rmps::decode::ReadReader;
-use rmps::{Deserializer, Serializer};
+use rmp_serde::config::{DefaultConfig, SerializerConfig};
+use rmp_serde::decode::ReadReader;
+use rmp_serde::{Deserializer, Serializer};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::io::Cursor;
@@ -232,31 +228,31 @@ fn round_trip_untagged_enum_with_enum_associated_data() {
     }
 
     let data1_1 = Foo::A(Bar::B);
-    let bytes_1 = rmps::to_vec(&data1_1).unwrap();
-    let data1_2 = rmps::from_slice(&bytes_1).unwrap();
+    let bytes_1 = rmp_serde::to_vec(&data1_1).unwrap();
+    let data1_2 = rmp_serde::from_slice(&bytes_1).unwrap();
     assert_eq!(data1_1, data1_2);
 
     let data2_1 = Foo::A(Bar::C("Hello".into()));
-    let bytes_2 = rmps::to_vec(&data2_1).unwrap();
-    let data2_2 = rmps::from_slice(&bytes_2).unwrap();
+    let bytes_2 = rmp_serde::to_vec(&data2_1).unwrap();
+    let data2_2 = rmp_serde::from_slice(&bytes_2).unwrap();
     assert_eq!(data2_1, data2_2);
 
     let data3_1 = Foo::A(Bar::D(1, 2, 3));
-    let bytes_3 = rmps::to_vec(&data3_1).unwrap();
-    let data3_2 = rmps::from_slice(&bytes_3).unwrap();
+    let bytes_3 = rmp_serde::to_vec(&data3_1).unwrap();
+    let data3_2 = rmp_serde::from_slice(&bytes_3).unwrap();
     assert_eq!(data3_1, data3_2);
 
     let data4_1 = Foo::A(Bar::E { f1: "Hello".into() });
-    let bytes_4 = rmps::to_vec(&data4_1).unwrap();
-    let data4_2 = rmps::from_slice(&bytes_4).unwrap();
+    let bytes_4 = rmp_serde::to_vec(&data4_1).unwrap();
+    let data4_2 = rmp_serde::from_slice(&bytes_4).unwrap();
     assert_eq!(data4_1, data4_2);
 }
 
 // Checks whether deserialization and serialization can both work with structs as maps
 #[test]
 fn round_struct_as_map() {
-    use crate::rmps::decode::from_slice;
-    use crate::rmps::to_vec_named;
+    use rmp_serde::decode::from_slice;
+    use rmp_serde::to_vec_named;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Dog1 {
@@ -288,8 +284,8 @@ fn round_struct_as_map() {
 #[test]
 fn round_struct_as_map_in_vec() {
     // See: issue #205
-    use crate::rmps::decode::from_slice;
-    use crate::rmps::to_vec_named;
+    use rmp_serde::decode::from_slice;
+    use rmp_serde::to_vec_named;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Dog1 {
@@ -338,15 +334,15 @@ fn round_trip_unit_struct() {
 
     // struct-as-tuple
     {
-        let serialized: Vec<u8> = rmps::to_vec(&msg2).unwrap();
-        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = rmp_serde::to_vec(&msg2).unwrap();
+        let deserialized: Messages = rmp_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msg2);
     }
 
     // struct-as-map
     {
-        let serialized: Vec<u8> = rmps::to_vec_named(&msg2).unwrap();
-        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = rmp_serde::to_vec_named(&msg2).unwrap();
+        let deserialized: Messages = rmp_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msg2);
     }
 }
@@ -376,15 +372,15 @@ fn round_trip_unit_struct_untagged_enum() {
 
     // struct-as-tuple
     {
-        let serialized: Vec<u8> = rmps::to_vec(&msga).unwrap();
-        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = rmp_serde::to_vec(&msga).unwrap();
+        let deserialized: Messages = rmp_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msga);
     }
 
     // struct-as-map
     {
-        let serialized: Vec<u8> = rmps::to_vec_named(&msga).unwrap();
-        let deserialized: Messages = rmps::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = rmp_serde::to_vec_named(&msga).unwrap();
+        let deserialized: Messages = rmp_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msga);
     }
 }
@@ -416,8 +412,8 @@ fn round_trip_struct_with_flattened_map_field() {
         },
     };
 
-    let serialized: Vec<u8> = rmps::to_vec(&strct).unwrap();
-    let deserialized: Struct = rmps::from_slice(&serialized).unwrap();
+    let serialized: Vec<u8> = rmp_serde::to_vec(&strct).unwrap();
+    let deserialized: Struct = rmp_serde::from_slice(&serialized).unwrap();
     assert_eq!(deserialized, strct);
 }
 
@@ -446,15 +442,15 @@ fn round_trip_struct_with_flattened_struct_field() {
 
     // struct-as-tuple
     {
-        let serialized: Vec<u8> = rmps::to_vec(&strct).unwrap();
-        let deserialized: Struct = rmps::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = rmp_serde::to_vec(&strct).unwrap();
+        let deserialized: Struct = rmp_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, strct);
     }
 
     // struct-as-map
     {
-        let serialized: Vec<u8> = rmps::to_vec_named(&strct).unwrap();
-        let deserialized: Struct = rmps::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = rmp_serde::to_vec_named(&strct).unwrap();
+        let deserialized: Struct = rmp_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, strct);
     }
 }
@@ -462,7 +458,7 @@ fn round_trip_struct_with_flattened_struct_field() {
 // Checks whether deserialization and serialization can both work with enum variants as strings
 #[test]
 fn round_variant_string() {
-    use crate::rmps::decode::from_slice;
+    use rmp_serde::decode::from_slice;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     enum Animal1 {

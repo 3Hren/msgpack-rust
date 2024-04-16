@@ -22,7 +22,7 @@ rmp = { version = "0.8.11", path = "../rmp" }
 [dev-dependencies]
 rmpv = { path = "../rmpv" }
 serde_bytes = "0.11.5"
-serde_derive = "1.0.136"
+serde = { version = "1.0.136", features = ["derive"] }
 
 [badges]
 maintenance = { status = "looking-for-maintainer" }

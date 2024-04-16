@@ -12,6 +12,7 @@ use byteorder::{self, ReadBytesExt};
 use serde;
 use serde::de::value::SeqDeserializer;
 use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Unexpected, Visitor};
+use serde::forward_to_deserialize_any;
 
 use rmp;
 use rmp::decode::{self, RmpRead, DecodeStringError, MarkerReadError, NumValueReadError, ValueReadError};
@@ -1068,7 +1069,7 @@ where R: Read,
 /// # Examples
 ///
 /// ```
-/// # #[macro_use] extern crate serde_derive;
+/// use serde::Deserialize;
 ///
 /// // Encoded `["Bobby", 8]`.
 /// let buf = [0x92, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0x8];

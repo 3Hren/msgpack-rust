@@ -16,12 +16,6 @@
 //! rmp = "^0.8"
 //! ```
 //!
-//! Then, add this line to your crate root:
-//!
-//! ```rust
-//! extern crate rmp;
-//! ```
-//!
 //! ## Features
 //!
 //! - **Convenient API**

@@ -1,14 +1,9 @@
-#[macro_use]
-extern crate serde_derive;
-
-extern crate rmp_serde as rmps;
-
 use std::io::Cursor;
 
 use serde::Deserialize;
 
-use crate::rmps::decode::Error;
-use crate::rmps::Deserializer;
+use rmp_serde::decode::Error;
+use rmp_serde::Deserializer;
 
 #[test]
 fn pass_newtype() {
@@ -168,7 +163,7 @@ fn fail_enum_map_mismatch() {
         A(i32),
     }
 
-    let err: Result<Enum, _> = rmps::from_slice(&buf);
+    let err: Result<Enum, _> = rmp_serde::from_slice(&buf);
 
     match err.unwrap_err() {
         Error::LengthMismatch(2) => (),
@@ -519,7 +514,7 @@ fn pass_from_slice() {
         age: u8,
     }
 
-    assert_eq!(Person { name: "John", surname: "Smith", age: 42 }, rmps::from_slice(&buf[..]).unwrap());
+    assert_eq!(Person { name: "John", surname: "Smith", age: 42 }, rmp_serde::from_slice(&buf[..]).unwrap());
 }
 
 #[test]
@@ -533,5 +528,5 @@ fn pass_from_ref() {
         age: u8,
     }
 
-    assert_eq!(Dog { name: "Bobby", age: 8 }, rmps::from_read_ref(&buf).unwrap());
+    assert_eq!(Dog { name: "Bobby", age: 8 }, rmp_serde::from_read_ref(&buf).unwrap());
 }

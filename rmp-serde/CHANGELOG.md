@@ -53,7 +53,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 0.13.2 - 2017-04-30
 ### Changed
-- Fixed `rmps::decode::from_read` signature by marking that it can only deserialize into `DeserializeOwned`. The previous signature let try to deserialize, for example `&str` and other borrow types and it failed at runtime instead of catching it at compile time.
+- Fixed `rmp_serde::decode::from_read` signature by marking that it can only deserialize into `DeserializeOwned`. The previous signature let try to deserialize, for example `&str` and other borrow types and it failed at runtime instead of catching it at compile time.
 
 ## 0.13.1 - 2017-04-25
 ### Added

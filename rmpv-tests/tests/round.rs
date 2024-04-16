@@ -1,10 +1,7 @@
-#[macro_use]
-extern crate serde_derive;
-extern crate rmp_serde as rmps;
-
 use std::fmt::Debug;
 
 use serde::de::DeserializeOwned;
+use serde::Deserialize;
 use serde::Serialize;
 use serde_bytes::ByteBuf;
 
@@ -21,8 +18,8 @@ fn test_round<'de, T>(var: T, val: Value)
 {
     // Serialize part.
     // Test that `T` -> `[u8]` equals with serialization from `Value` -> `[u8]`.
-    let buf_from_var = rmps::to_vec(&var).unwrap();
-    let buf_from_val = rmps::to_vec(&val).unwrap();
+    let buf_from_var = rmp_serde::to_vec(&var).unwrap();
+    let buf_from_val = rmp_serde::to_vec(&val).unwrap();
     assert_eq!(buf_from_var, buf_from_val);
 
     // Test that `T` -> `Value` equals with the given `Value`.
@@ -31,11 +28,11 @@ fn test_round<'de, T>(var: T, val: Value)
 
     // Deserialize part.
     // Test that `[u8]` -> `T` equals with the given `T`.
-    let var_from_buf: T = rmps::from_slice(buf_from_var.as_slice()).unwrap();
+    let var_from_buf: T = rmp_serde::from_slice(buf_from_var.as_slice()).unwrap();
     assert_eq!(var, var_from_buf);
 
     // Test that `[u8]` -> `Value` equals with the given `Value`.
-    let val_from_buf: Value = rmps::from_slice(buf_from_var.as_slice()).unwrap();
+    let val_from_buf: Value = rmp_serde::from_slice(buf_from_var.as_slice()).unwrap();
     assert_eq!(val, val_from_buf);
 
     // Test that `Value` -> `T` equals with the given `T`.
@@ -141,7 +138,7 @@ fn pass_ext_struct() {
                     (tag, byte_buf)
                 }
             };
-            s.serialize_newtype_struct(rmps::MSGPACK_EXT_STRUCT_NAME, &value)
+            s.serialize_newtype_struct(rmp_serde::MSGPACK_EXT_STRUCT_NAME, &value)
         }
     }
 
@@ -182,7 +179,7 @@ fn pass_ext_struct() {
             where D: serde::Deserializer<'de>,
         {
             let visitor = ExtStructVisitor;
-            deserializer.deserialize_newtype_struct(rmps::MSGPACK_EXT_STRUCT_NAME, visitor)
+            deserializer.deserialize_newtype_struct(rmp_serde::MSGPACK_EXT_STRUCT_NAME, visitor)
         }
     }
 

@@ -1,7 +1,7 @@
 use super::Cursor;
 
-use crate::msgpack::decode::*;
-use crate::msgpack::Marker;
+use rmp::decode::*;
+use rmp::Marker;
 
 #[test]
 fn from_fixstr_min_read_str_len() {

@@ -1,7 +1,7 @@
 use super::Cursor;
 
-use crate::msgpack::decode::*;
-use crate::msgpack::Marker;
+use rmp::decode::*;
+use rmp::Marker;
 
 #[test]
 fn from_positive_fixnum() {

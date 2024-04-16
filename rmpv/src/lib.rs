@@ -6,10 +6,6 @@
 //! ```
 #![forbid(unsafe_code)]
 
-#[cfg(feature = "with-serde")]
-#[macro_use]
-extern crate serde;
-
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::fmt::{self, Debug, Display};

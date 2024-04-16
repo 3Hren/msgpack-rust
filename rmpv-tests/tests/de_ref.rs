@@ -1,10 +1,7 @@
-#[macro_use]
-extern crate serde_derive;
-extern crate rmp_serde as rmps;
-
 use std::collections::BTreeMap;
 
 use serde_bytes::ByteBuf;
+use serde::Deserialize;
 
 use rmpv::decode;
 use rmpv::ext::deserialize_from;
@@ -16,7 +13,7 @@ fn test_decode(buf: &[u8], v: ValueRef<'_>) {
     let val0: ValueRef<'_> = decode::read_value_ref(&mut &buf[..]).unwrap();
     assert_eq!(v, val0);
 
-    let val1: ValueRef<'_> = rmps::from_slice(buf).unwrap();
+    let val1: ValueRef<'_> = rmp_serde::from_slice(buf).unwrap();
     assert_eq!(v, val1);
 }
 
@@ -254,7 +251,7 @@ fn pass_from_slice() {
     let buf = [0x93, 0xa4, 0x4a, 0x6f, 0x68, 0x6e, 0xa5, 0x53, 0x6d, 0x69, 0x74, 0x68, 0x2a];
 
     assert_eq!(ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from("Smith"), ValueRef::from(42)]),
-        rmps::from_slice(&buf[..]).unwrap());
+        rmp_serde::from_slice(&buf[..]).unwrap());
 }
 
 #[test]
