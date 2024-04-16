@@ -52,12 +52,10 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef<'_>) -> Result<(), Error>
         ValueRef::F64(val) => {
             write_f64(wr, val)?;
         }
-        ValueRef::String(Utf8StringRef { s }) => {
-            match s {
-                Ok(val) => write_str(wr, val)?,
-                Err(err) => write_bin(wr, err.0)?,
-            }
-        }
+        ValueRef::String(Utf8StringRef { s }) => match s {
+            Ok(val) => write_str(wr, val)?,
+            Err(err) => write_bin(wr, err.0)?,
+        },
         ValueRef::Binary(val) => {
             write_bin(wr, val)?;
         }

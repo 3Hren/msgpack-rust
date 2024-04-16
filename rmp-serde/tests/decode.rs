@@ -4,9 +4,9 @@ use std::io::Cursor;
 use serde::de;
 use serde::Deserialize;
 
+use rmp::Marker;
 use rmp_serde::decode::{self, Error};
 use rmp_serde::{Deserializer, Raw, RawRef};
-use rmp::Marker;
 
 #[test]
 fn pass_nil() {

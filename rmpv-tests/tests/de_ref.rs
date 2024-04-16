@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
-use serde_bytes::ByteBuf;
 use serde::Deserialize;
+use serde_bytes::ByteBuf;
 
 use rmpv::decode;
 use rmpv::ext::deserialize_from;
@@ -152,7 +152,6 @@ fn pass_vec_from_value() {
     assert_eq!(vec!["John", "Smith"], v);
 }
 
-
 #[test]
 fn pass_map_from_value() {
     let mut map = BTreeMap::new();
@@ -161,7 +160,7 @@ fn pass_map_from_value() {
 
     let val = ValueRef::from(vec![
         (ValueRef::from("name"), ValueRef::from("John")),
-        (ValueRef::from("surname"), ValueRef::from("Smith"))
+        (ValueRef::from("surname"), ValueRef::from("Smith")),
     ]);
 
     let v: BTreeMap<&str, &str> = deserialize_from(val).unwrap();
@@ -232,7 +231,7 @@ fn pass_enum_from_value() {
     enum Enum<'a> {
         Unit,
         Newtype(&'a str),
-        Tuple(&'a str , u32),
+        Tuple(&'a str, u32),
         Struct { name: &'a str, age: u32 },
     }
 

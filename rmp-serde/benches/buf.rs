@@ -2,25 +2,23 @@
 
 extern crate test;
 
-
-
 use serde::{Deserialize, Serialize};
 
 use test::Bencher;
 
 #[bench]
 fn bench_strings_1000(bencher: &mut Bencher) {
-    bench_strings(bencher, 1000)
+    bench_strings(bencher, 1000);
 }
 
 #[bench]
 fn bench_strings_5000(bencher: &mut Bencher) {
-    bench_strings(bencher, 5000)
+    bench_strings(bencher, 5000);
 }
 
 #[bench]
 fn bench_strings_10000(bencher: &mut Bencher) {
-    bench_strings(bencher, 10000)
+    bench_strings(bencher, 10000);
 }
 
 fn bench_strings(bencher: &mut Bencher, size: usize) {
@@ -33,5 +31,5 @@ fn bench_strings(bencher: &mut Bencher, size: usize) {
 
     bencher.iter(|| {
         <Vec<String>>::deserialize(&mut rmp_serde::Deserializer::new(&buf[..])).unwrap();
-    })
+    });
 }

@@ -168,7 +168,7 @@ fn pass_ext_struct() {
             } else if tag == 2 {
                 Ok(ExtStruct::Two(data[0]))
             } else {
-                let unexp = Unexpected::Signed(tag as i64);
+                let unexp = Unexpected::Signed(i64::from(tag));
                 Err(serde::de::Error::invalid_value(unexp, &self))
             }
         }
@@ -192,6 +192,8 @@ fn pass_derive_serde_ext_struct() {
     #[serde(rename = "_ExtStruct")]
     struct ExtStruct((i8, serde_bytes::ByteBuf));
 
-    test_round(ExtStruct((2, serde_bytes::ByteBuf::from(vec![5]))),
-               Value::Ext(2, vec![5]));
+    test_round(
+        ExtStruct((2, serde_bytes::ByteBuf::from(vec![5]))),
+        Value::Ext(2, vec![5]),
+    );
 }

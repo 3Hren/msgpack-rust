@@ -17,10 +17,10 @@ mod sealed {
 
     use crate::encode::{Error, UnderlyingWrite};
 
-    /// This is the inner trait - the real SerializerConfig.
+    /// This is the inner trait - the real `SerializerConfig`.
     ///
-    /// This hack disallows external implementations and usage of SerializerConfig and thus
-    /// allows us to change SerializerConfig methods freely without breaking backwards compatibility.
+    /// This hack disallows external implementations and usage of `SerializerConfig` and thus
+    /// allows us to change `SerializerConfig` methods freely without breaking backwards compatibility.
     pub trait SerializerConfig: Copy {
         fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
         where

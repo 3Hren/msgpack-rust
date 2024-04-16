@@ -20,7 +20,7 @@ fn pack_nil_when_buffer_is_tool_small() {
 
     match write_value_ref(&mut &mut buf[..], &val) {
         Err(..) => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }
 

@@ -2,7 +2,7 @@ use std;
 use std::io::{self, Cursor, ErrorKind, Read};
 use std::str;
 
-use rmp::decode::{RmpRead, read_marker};
+use rmp::decode::{read_marker, RmpRead};
 use rmp::Marker;
 
 use super::Error;

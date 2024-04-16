@@ -90,20 +90,19 @@ impl Display for Error {
     #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::InvalidMarkerRead(ref err) => write!(fmt, "IO error while reading marker: {}", err),
-            Error::InvalidDataRead(ref err) => write!(fmt, "IO error while reading data: {}", err),
+            Error::InvalidMarkerRead(ref err) => write!(fmt, "IO error while reading marker: {err}"),
+            Error::InvalidDataRead(ref err) => write!(fmt, "IO error while reading data: {err}"),
             Error::TypeMismatch(ref actual_marker) => {
-                write!(fmt, "wrong msgpack marker {:?}", actual_marker)
+                write!(fmt, "wrong msgpack marker {actual_marker:?}")
             }
             Error::OutOfRange => fmt.write_str("numeric cast found out of range"),
             Error::LengthMismatch(expected_length) => write!(
                 fmt,
-                "array had incorrect length, expected {}",
-                expected_length
+                "array had incorrect length, expected {expected_length}"
             ),
-            Error::Uncategorized(ref msg) => write!(fmt, "uncategorized error: {}", msg),
+            Error::Uncategorized(ref msg) => write!(fmt, "uncategorized error: {msg}"),
             Error::Syntax(ref msg) => fmt.write_str(msg),
-            Error::Utf8Error(ref err) => write!(fmt, "string found to be invalid utf8: {}", err),
+            Error::Utf8Error(ref err) => write!(fmt, "string found to be invalid utf8: {err}"),
             Error::DepthLimitExceeded => fmt.write_str("depth limit exceeded"),
         }
     }
@@ -294,6 +293,7 @@ where
 
     /// Gets a reference to the underlying reader in this decoder.
     #[inline(always)]
+    #[must_use]
     pub fn get_ref(&self) -> &R {
         self.rd.whole_slice
     }
@@ -319,7 +319,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
             return Err(Error::LengthMismatch(16));
         }
 
-        let buf = match read_bin_data(&mut self.rd, len as u32)? {
+        let buf = match read_bin_data(&mut self.rd, u32::from(len))? {
             Reference::Borrowed(buf) => buf,
             Reference::Copied(buf) => buf,
         };
@@ -384,8 +384,8 @@ fn ext_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
         Marker::FixExt4 => 4,
         Marker::FixExt8 => 8,
         Marker::FixExt16 => 16,
-        Marker::Ext8 => read_u8(rd)? as u32,
-        Marker::Ext16 => read_u16(rd)? as u32,
+        Marker::Ext8 => u32::from(read_u8(rd)?),
+        Marker::Ext16 => u32::from(read_u16(rd)?),
         Marker::Ext32 => read_u32(rd)?,
         _ => return Err(Error::TypeMismatch(marker)),
     })
@@ -450,7 +450,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> fo
 }
 
 
-/// Deserializer for Ext SeqAccess
+/// Deserializer for Ext `SeqAccess`
 impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de> for &mut ExtDeserializer<'a, R, C> {
     type Error = Error;
 
@@ -482,7 +482,6 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
     }
 }
 
-
 impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     #[inline(never)]
     fn deserialize_any_inner<V: Visitor<'de>>(&mut self, visitor: V, allow_bytes: bool) -> Result<V::Value, Error> {
@@ -511,7 +510,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                     Marker::Str8 => read_u8(&mut self.rd).map(u32::from),
                     Marker::Str16 => read_u16(&mut self.rd).map(u32::from),
                     Marker::Str32 => read_u32(&mut self.rd).map(u32::from),
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }?;
                 read_str_data(&mut self.rd, len, visitor)
             }
@@ -541,7 +540,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                     Marker::FixMap(len) => len.into(),
                     Marker::Map16 => read_u16(&mut self.rd)?.into(),
                     Marker::Map32 => read_u32(&mut self.rd)?,
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 };
 
                 depth_count!(self.depth, {
@@ -558,7 +557,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                     Marker::Bin8 => read_u8(&mut self.rd).map(u32::from),
                     Marker::Bin16 => read_u16(&mut self.rd).map(u32::from),
                     Marker::Bin32 => read_u32(&mut self.rd).map(u32::from),
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }?;
                 match read_bin_data(&mut self.rd, len)? {
                     Reference::Borrowed(buf) if allow_bytes => visitor.visit_borrowed_bytes(buf),
@@ -729,10 +728,7 @@ struct SeqAccess<'a, R, C> {
 impl<'a, R: 'a, C> SeqAccess<'a, R, C> {
     #[inline]
     fn new(de: &'a mut Deserializer<R, C>, len: u32) -> Self {
-        SeqAccess {
-            de,
-            left: len,
-        }
+        SeqAccess { de, left: len }
     }
 }
 
@@ -764,10 +760,7 @@ struct MapAccess<'a, R, C> {
 
 impl<'a, R: 'a, C> MapAccess<'a, R, C> {
     fn new(de: &'a mut Deserializer<R, C>, len: u32) -> Self {
-        MapAccess {
-            de,
-            left: len,
-        }
+        MapAccess { de, left: len }
     }
 }
 
@@ -990,6 +983,7 @@ pub struct ReadRefReader<'a, R: ?Sized> {
 
 impl<'a, T> ReadRefReader<'a, T> {
     /// Returns the part that hasn't been consumed yet
+    #[must_use]
     pub fn remaining_slice(&self) -> &'a [u8] {
         self.buf
     }
@@ -1086,7 +1080,7 @@ where R: Read,
 #[allow(deprecated)]
 pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
 where
-    T: Deserialize<'a>
+    T: Deserialize<'a>,
 {
     from_read_ref(input)
 }

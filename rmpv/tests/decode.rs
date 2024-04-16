@@ -100,7 +100,7 @@ fn from_fixarray_incomplete_decode_value() {
 
     match read_value(&mut &buf[..]) {
         Err(Error::InvalidMarkerRead(..)) => {}
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }
 
@@ -369,7 +369,7 @@ fn invalid_buf_size_bin32() {
     match read_value(&mut &buf[..]) {
         Ok(_) => panic!("Unexpected success"),
         Err(Error::InvalidDataRead(_)) => { /* expected */ },
-        Err(e) => panic!("Unexpected error: {}", e),
+        Err(e) => panic!("Unexpected error: {e}"),
     }
 }
 
@@ -394,6 +394,6 @@ fn invalid_buf_size_arr() {
     match read_value(&mut &buf[..]) {
         Ok(_) => panic!("Unexpected success"),
         Err(Error::InvalidMarkerRead(_)) => { /* expected */ },
-        Err(e) => panic!("Unexpected error: {}", e),
+        Err(e) => panic!("Unexpected error: {e}"),
     }
 }

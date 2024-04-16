@@ -566,8 +566,7 @@ fn roundtrip_some() {
 ///
 /// https://github.com/3Hren/msgpack-rust/issues/287
 #[test]
-fn checked_seq_access_len()
-{
+fn checked_seq_access_len() {
     #[derive(Serialize)]
     struct Input {
         a: [&'static str; 4],
@@ -595,7 +594,8 @@ fn checked_seq_access_len()
         d: "d",
     };
 
-    data.serialize(&mut serializer).expect("failed to serialize");
+    data.serialize(&mut serializer)
+        .expect("failed to serialize");
 
     let mut deserializer = rmp_serde::Deserializer::new(
         Cursor::new(&buffer)
@@ -607,12 +607,12 @@ fn checked_seq_access_len()
 
 #[test]
 fn array_from_bytes() {
-    let orig = [1u8,128,255];
+    let orig = [1u8, 128, 255];
     let v = rmp_serde::to_vec(orig.as_slice()).unwrap();
     let arr: [u8; 3] = rmp_serde::from_slice(&v).unwrap();
     assert_eq!(arr, orig);
     let tup: (u8, u8, u8) = rmp_serde::from_slice(&v).unwrap();
-    assert_eq!(tup, (1,128,255));
+    assert_eq!(tup, (1, 128, 255));
 }
 
 #[ignore]

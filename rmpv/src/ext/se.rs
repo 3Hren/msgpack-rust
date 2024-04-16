@@ -18,20 +18,16 @@ impl Serialize for Value {
         match *self {
             Value::Nil => s.serialize_unit(),
             Value::Boolean(v) => s.serialize_bool(v),
-            Value::Integer(Integer { n }) => {
-                match n {
-                    IntPriv::PosInt(n) => s.serialize_u64(n),
-                    IntPriv::NegInt(n) => s.serialize_i64(n),
-                }
-            }
+            Value::Integer(Integer { n }) => match n {
+                IntPriv::PosInt(n) => s.serialize_u64(n),
+                IntPriv::NegInt(n) => s.serialize_i64(n),
+            },
             Value::F32(v) => s.serialize_f32(v),
             Value::F64(v) => s.serialize_f64(v),
-            Value::String(ref v) => {
-                match v.s {
-                    Ok(ref v) => s.serialize_str(v),
-                    Err(ref v) => Bytes::new(&v.0[..]).serialize(s),
-                }
-            }
+            Value::String(ref v) => match v.s {
+                Ok(ref v) => s.serialize_str(v),
+                Err(ref v) => Bytes::new(&v.0[..]).serialize(s),
+            },
             Value::Binary(ref v) => Bytes::new(&v[..]).serialize(s),
             Value::Array(ref array) => {
                 let mut state = s.serialize_seq(Some(array.len()))?;
@@ -221,7 +217,7 @@ impl ser::Serializer for Serializer {
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
         let se = SerializeVec {
-            vec: Vec::with_capacity(len.unwrap_or(0))
+            vec: Vec::with_capacity(len.unwrap_or(0)),
         };
         Ok(se)
     }
@@ -266,7 +262,7 @@ impl ser::Serializer for Serializer {
 }
 
 pub struct ExtSerializer {
-    fields_se: Option<ExtFieldSerializer>
+    fields_se: Option<ExtFieldSerializer>,
 }
 
 impl ser::Serializer for &mut ExtSerializer {
@@ -280,7 +276,6 @@ impl ser::Serializer for &mut ExtSerializer {
     type SerializeMap = ser::Impossible<(), Error>;
     type SerializeStruct = ser::Impossible<(), Error>;
     type SerializeStructVariant = ser::Impossible<(), Error>;
-
 
     #[cold]
     fn serialize_bytes(self, _val: &[u8]) -> Result<Self::Ok, Self::Error> {
@@ -442,7 +437,7 @@ impl SerializeTuple for &mut ExtSerializer {
     {
         match self.fields_se {
             Some(ref mut se) => value.serialize(&mut *se),
-            None => unreachable!()
+            None => unreachable!(),
         }
     }
 
@@ -627,13 +622,10 @@ impl ser::Serializer for &mut ExtFieldSerializer {
     }
 }
 
-
 impl ExtSerializer {
     #[inline]
     fn new() -> Self {
-        Self {
-            fields_se: None
-        }
+        Self { fields_se: None }
     }
 
     fn value(self) -> Result<Value, Error> {
@@ -649,7 +641,7 @@ impl ExtFieldSerializer {
     fn new() -> Self {
         Self {
             tag: None,
-            binary: None
+            binary: None,
         }
     }
 
@@ -818,6 +810,9 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
 
     #[inline]
     fn end(self) -> Result<Value, Error> {
-        Ok(Value::Array(vec![Value::from(self.idx), Value::Array(self.vec)]))
+        Ok(Value::Array(vec![
+            Value::from(self.idx),
+            Value::Array(self.vec),
+        ]))
     }
 }

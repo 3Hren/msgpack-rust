@@ -1,7 +1,6 @@
-
-use std::collections::BTreeMap;
 use serde::Deserialize;
 use serde_bytes::ByteBuf;
+use std::collections::BTreeMap;
 
 use rmpv::decode;
 use rmpv::ext::from_value;
@@ -31,7 +30,7 @@ fn test_stack_depth_checking() {
             Err(decode::Error::DepthLimitExceeded) => {},
             Err(err) => panic!("unexpected error: {}", err),
         }
-    }).unwrap().join().unwrap()
+    }).unwrap().join().unwrap();
 }
 
 #[test]

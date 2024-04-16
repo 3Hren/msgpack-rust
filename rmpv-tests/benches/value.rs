@@ -44,4 +44,3 @@ fn from_complex_zero_copy_decode(b: &mut Bencher) {
     });
     b.bytes = COMPLEX.len() as u64;
 }
-

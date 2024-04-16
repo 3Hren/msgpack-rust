@@ -152,15 +152,13 @@ fn serialize_struct_variant() {
 fn serialize_struct_variant_as_map() {
     #[derive(Serialize)]
     enum Enum {
-        V1 {
-            f1: u32,
-        }
+        V1 { f1: u32 },
     }
 
     let mut se = Serializer::new(Vec::new()).with_struct_map();
     Enum::V1 { f1: 42 }.serialize(&mut se).unwrap();
 
-     // Expect: {"V1" => {"f1": 42}}.
+    // Expect: {"V1" => {"f1": 42}}.
     assert_eq!(
         vec![0x81, 0xa2, 0x56, 0x31, 0x81, 0xa2, 0x66, 0x31, 0x2a],
         se.into_inner()

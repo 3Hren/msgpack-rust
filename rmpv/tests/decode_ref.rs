@@ -229,8 +229,8 @@ fn from_empty_buffer_invalid_marker_read() {
 
 #[test]
 fn from_empty_buffer_invalid_buffer_fill() {
-    use std::io::{self, Read};
     use rmpv::decode::value_ref::BorrowRead;
+    use std::io::{self, Read};
 
     struct ErrorRead;
 

@@ -94,8 +94,7 @@ fn from_complex_write_value_ref(b: &mut Bencher) {
     let mut buf = [0u8; 64];
 
     b.iter(|| {
-        let res = write_value_ref(&mut &mut buf[..], &val).unwrap();
-        test::black_box(res);
+        write_value_ref(&mut &mut buf[..], &val).unwrap();
     });
     b.bytes = buf.len() as u64;
 }
@@ -142,7 +141,7 @@ fn read_large_bin32(b: &mut Bencher, size: u32) {
         let res = read_value(&mut &buf[..]).unwrap();
         test::black_box(res);
     });
-    b.bytes = size as u64;
+    b.bytes = u64::from(size);
 }
 
 #[bench]

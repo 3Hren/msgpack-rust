@@ -1,7 +1,7 @@
 use std::cmp::min;
 use std::io::{self, Read};
 
-use rmp::decode::{RmpRead, read_marker};
+use rmp::decode::{read_marker, RmpRead};
 use rmp::Marker;
 
 use super::Error;

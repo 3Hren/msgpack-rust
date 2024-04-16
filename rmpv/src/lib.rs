@@ -299,18 +299,14 @@ impl Display for Utf8String {
 impl<'a> From<String> for Utf8String {
     #[inline]
     fn from(val: String) -> Self {
-        Utf8String {
-            s: Ok(val),
-        }
+        Utf8String { s: Ok(val) }
     }
 }
 
 impl<'a> From<&'a str> for Utf8String {
     #[inline]
     fn from(val: &str) -> Self {
-        Utf8String {
-            s: Ok(val.into()),
-        }
+        Utf8String { s: Ok(val.into()) }
     }
 }
 
@@ -405,9 +401,7 @@ impl<'a> Display for Utf8StringRef<'a> {
 impl<'a> From<&'a str> for Utf8StringRef<'a> {
     #[inline]
     fn from(val: &'a str) -> Self {
-        Utf8StringRef {
-            s: Ok(val),
-        }
+        Utf8StringRef { s: Ok(val) }
     }
 }
 
@@ -1530,7 +1524,6 @@ impl_try_from_ref!(f32, F32);
 impl_try_from_ref!(Utf8StringRef<'a>, String);
 
 impl<'a> Display for ValueRef<'a> {
-
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             ValueRef::Nil => write!(f, "nil"),

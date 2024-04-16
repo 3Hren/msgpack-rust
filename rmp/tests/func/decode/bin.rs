@@ -37,7 +37,7 @@ fn from_null_read_len() {
 
     match read_bin_len(&mut cur) {
         Err(ValueReadError::TypeMismatch(Marker::Null)) => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
     assert_eq!(1, cur.position());
 }

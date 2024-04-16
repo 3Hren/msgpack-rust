@@ -25,7 +25,7 @@ fn fail_null() {
 
     match val.serialize(&mut Serializer::new(&mut &mut buf[..])) {
         Err(Error::InvalidValueWrite(..)) => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }
 
@@ -188,7 +188,6 @@ fn pass_char() {
 
     assert_eq!([0xa1, 0x21], buf);
 }
-
 
 #[test]
 fn pass_string() {

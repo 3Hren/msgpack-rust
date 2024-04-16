@@ -188,8 +188,8 @@ fn index_into_map() {
 
 #[test]
 fn try_from_val() {
-  use rmpv::Utf8String;
-  use std::convert::TryInto;
+    use rmpv::Utf8String;
+    use std::convert::TryInto;
 
   assert_eq!(false, Value::Boolean(false).try_into().unwrap());
   assert_eq!(Utf8String::from("spook"), Value::from("spook").try_into().unwrap());

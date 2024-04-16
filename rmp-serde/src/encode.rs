@@ -16,7 +16,7 @@ use rmp::{encode, Marker};
 
 use crate::config::{
     BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig, StructMapConfig,
-    StructTupleConfig
+    StructTupleConfig,
 };
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
@@ -54,11 +54,11 @@ impl Display for Error {
     #[cold]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::InvalidValueWrite(ref err) => write!(f, "invalid value write: {}", err),
+            Error::InvalidValueWrite(ref err) => write!(f, "invalid value write: {err}"),
             Error::UnknownLength => {
                 f.write_str("attempt to serialize struct, sequence or map with unknown length")
             }
-            Error::InvalidDataModel(r) => write!(f, "serialize data model is invalid: {}", r),
+            Error::InvalidDataModel(r) => write!(f, "serialize data model is invalid: {r}"),
             Error::DepthLimitExceeded => f.write_str("depth limit exceeded"),
             Error::Syntax(ref msg) => f.write_str(msg),
         }
@@ -277,7 +277,8 @@ impl<W: Write, C> UnderlyingWrite for Serializer<W, C> {
 
 /// Part of serde serialization API.
 #[derive(Debug)]
-pub struct Compound<'a, W: 'a, C: 'a> {
+#[doc(hidden)]
+pub struct Compound<'a, W, C> {
     se: &'a mut Serializer<W, C>,
 }
 
@@ -421,7 +422,8 @@ impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound<C
 ///
 /// Otherwise, if the length is known, the elements will be encoded directly by the `Serializer`.
 #[derive(Debug)]
-pub struct MaybeUnknownLengthCompound<'a, W: 'a, C: 'a> {
+#[doc(hidden)]
+pub struct MaybeUnknownLengthCompound<'a, W, C> {
     se: &'a mut Serializer<W, C>,
     compound: Option<UnknownLengthCompound<C>>,
 }
@@ -499,15 +501,15 @@ where
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
-        self.serialize_i64(v as i64)
+        self.serialize_i64(i64::from(v))
     }
 
     fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
-        self.serialize_i64(v as i64)
+        self.serialize_i64(i64::from(v))
     }
 
     fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
-        self.serialize_i64(v as i64)
+        self.serialize_i64(i64::from(v))
     }
 
     fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
@@ -520,15 +522,15 @@ where
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
-        self.serialize_u64(v as u64)
+        self.serialize_u64(u64::from(v))
     }
 
     fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-        self.serialize_u64(v as u64)
+        self.serialize_u64(u64::from(v))
     }
 
     fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
-        self.serialize_u64(v as u64)
+        self.serialize_u64(u64::from(v))
     }
 
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
@@ -1050,7 +1052,7 @@ impl<'a, W: Write + 'a> ExtFieldSerializer<'a, W> {
 pub fn write<W, T>(wr: &mut W, val: &T) -> Result<(), Error>
 where
     W: Write + ?Sized,
-    T: Serialize + ?Sized
+    T: Serialize + ?Sized,
 {
     val.serialize(&mut Serializer::new(wr))
 }
@@ -1062,7 +1064,7 @@ where
 pub fn write_named<W, T>(wr: &mut W, val: &T) -> Result<(), Error>
 where
     W: Write + ?Sized,
-    T: Serialize + ?Sized
+    T: Serialize + ?Sized,
 {
     let mut se = Serializer::new(wr).with_struct_map();
     val.serialize(&mut se)
@@ -1075,7 +1077,7 @@ where
 #[inline]
 pub fn to_vec<T>(val: &T) -> Result<Vec<u8>, Error>
 where
-    T: Serialize + ?Sized
+    T: Serialize + ?Sized,
 {
     let mut wr = Vec::with_capacity(128);
     write(&mut wr, val)?;
@@ -1091,7 +1093,7 @@ where
 #[inline]
 pub fn to_vec_named<T>(val: &T) -> Result<Vec<u8>, Error>
 where
-    T: Serialize + ?Sized
+    T: Serialize + ?Sized,
 {
     let mut wr = Vec::with_capacity(128);
     write_named(&mut wr, val)?;
