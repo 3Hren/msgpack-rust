@@ -9,6 +9,8 @@ pub trait SerializerConfig: sealed::SerializerConfig {}
 impl<T: sealed::SerializerConfig> SerializerConfig for T {}
 
 pub(crate) mod sealed {
+    use crate::config::BytesMode;
+
     /// This is the inner trait - the real `SerializerConfig`.
     ///
     /// This hack disallows external implementations and usage of `SerializerConfig` and thus
@@ -20,6 +22,7 @@ pub(crate) mod sealed {
 
         /// String struct fields
         fn is_named(&self) -> bool;
+        fn bytes(&self) -> BytesMode;
     }
 }
 
@@ -27,6 +30,30 @@ pub(crate) mod sealed {
 pub(crate) struct RuntimeConfig {
     pub(crate) is_human_readable: bool,
     pub(crate) is_named: bool,
+    pub(crate) bytes: BytesMode,
+}
+
+/// When to encode `[u8]` as `bytes` rather than a sequence
+/// of integers. Serde without `serde_bytes` has trouble
+/// using `bytes`, and this is hack to force it. It may
+/// break some data types.
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
+pub enum BytesMode {
+    /// Use bytes only when Serde requires it
+    /// (typically only when `serde_bytes` is used)
+    #[default]
+    Normal,
+    /// Use bytes for slices, `Vec`, and a few other types that
+    /// use `Iterator` in Serde.
+    ///
+    /// This may break some implementations of `Deserialize`.
+    ///
+    /// This does not include fixed-length arrays.
+    ForceIterables,
+    /// Use bytes for everything that looks like a container of `u8`.
+    /// This breaks some implementations of `Deserialize`.
+    ForceAll,
 }
 
 impl RuntimeConfig {
@@ -34,6 +61,7 @@ impl RuntimeConfig {
         Self {
             is_human_readable: other.is_human_readable(),
             is_named: other.is_named(),
+            bytes: other.bytes(),
         }
     }
 }
@@ -47,6 +75,11 @@ impl sealed::SerializerConfig for RuntimeConfig {
     #[inline]
     fn is_named(&self) -> bool {
         self.is_named
+    }
+
+    #[inline]
+    fn bytes(&self) -> BytesMode {
+        self.bytes
     }
 }
 
@@ -70,6 +103,11 @@ impl sealed::SerializerConfig for DefaultConfig {
     #[inline(always)]
     fn is_human_readable(&self) -> bool {
         false
+    }
+
+    #[inline(always)]
+    fn bytes(&self) -> BytesMode {
+        BytesMode::default()
     }
 }
 
@@ -104,6 +142,10 @@ where
     fn is_human_readable(&self) -> bool {
         self.0.is_human_readable()
     }
+
+    fn bytes(&self) -> BytesMode {
+        self.0.bytes()
+    }
 }
 
 /// Config wrapper that overrides struct serlization by packing as a tuple without field
@@ -131,6 +173,10 @@ where
     #[inline(always)]
     fn is_human_readable(&self) -> bool {
         self.0.is_human_readable()
+    }
+
+    fn bytes(&self) -> BytesMode {
+        self.0.bytes()
     }
 }
 
@@ -160,6 +206,10 @@ where
     fn is_human_readable(&self) -> bool {
         true
     }
+
+    fn bytes(&self) -> BytesMode {
+        self.0.bytes()
+    }
 }
 
 /// Config wrapper that overrides `Serializer::is_human_readable` and
@@ -187,5 +237,9 @@ where
     #[inline(always)]
     fn is_human_readable(&self) -> bool {
         false
+    }
+
+    fn bytes(&self) -> BytesMode {
+        self.0.bytes()
     }
 }

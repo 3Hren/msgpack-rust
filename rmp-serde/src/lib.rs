@@ -66,6 +66,7 @@ pub use crate::encode::{to_vec, to_vec_named, Serializer};
 
 pub use crate::decode::from_slice;
 
+mod bytes;
 pub mod config;
 pub mod decode;
 pub mod encode;
