@@ -615,6 +615,13 @@ fn array_from_bytes() {
     assert_eq!(tup, (1, 128, 255));
 }
 
+#[test]
+fn i128_from_integers() {
+    let v = rmp_serde::to_vec([0, 1i8, -12i8, 119].as_slice()).unwrap();
+    let arr: [i128; 4] = rmp_serde::from_slice(&v).unwrap();
+    assert_eq!(arr, [0, 1i128, -12, 119]);
+}
+
 #[ignore]
 #[test]
 fn roundtrip_some_failures() {

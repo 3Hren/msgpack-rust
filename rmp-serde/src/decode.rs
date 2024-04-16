@@ -306,26 +306,41 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
         self.depth = depth;
     }
 
-    fn read_128(&mut self) -> Result<[u8; 16], Error> {
-        let marker = self.take_or_read_marker()?;
+}
 
-        if marker != Marker::Bin8 {
-            return Err(Error::TypeMismatch(marker));
-        }
+#[inline(never)]
+fn read_i128_marker<'de, R: ReadSlice<'de>>(marker: Marker, rd: &mut R) -> Result<i128, Error> {
+    Ok(match marker {
+        Marker::FixPos(val) => val.into(),
+        Marker::FixNeg(val) => val.into(),
+        Marker::U8 => rd.read_data_u8()?.into(),
+        Marker::U16 => rd.read_data_u16()?.into(),
+        Marker::U32 => rd.read_data_u32()?.into(),
+        Marker::U64 => rd.read_data_u64()?.into(),
+        Marker::I8 => rd.read_data_i8()?.into(),
+        Marker::I16 => rd.read_data_i16()?.into(),
+        Marker::I32 => rd.read_data_i32()?.into(),
+        Marker::I64 => rd.read_data_i64()?.into(),
+        Marker::Bin8 => {
+            let len = read_u8(&mut *rd)?;
+            read_128_buf(rd, len)?
+        },
+        Marker::FixArray(len) => {
+            read_128_buf(rd, len)?
+        },
+        marker => return Err(Error::TypeMismatch(marker)),
+    })
+}
 
-        let len = read_u8(&mut self.rd)?;
-
-        if len != 16 {
-            return Err(Error::LengthMismatch(16));
-        }
-
-        let buf = match read_bin_data(&mut self.rd, u32::from(len))? {
-            Reference::Borrowed(buf) => buf,
-            Reference::Copied(buf) => buf,
-        };
-
-        Ok(buf.try_into().unwrap())
+fn read_128_buf<'de, R: ReadSlice<'de>>(rd: &mut R, len: u8) -> Result<i128, Error> {
+    if len != 16 {
+        return Err(Error::LengthMismatch(16));
     }
+    let buf = match read_bin_data(rd, 16)? {
+        Reference::Borrowed(buf) => buf,
+        Reference::Copied(buf) => buf,
+    };
+    Ok(i128::from_be_bytes(buf.try_into().map_err(|_| Error::LengthMismatch(16))?))
 }
 
 fn read_str_data<'de, V, R>(rd: &mut R, len: u32, visitor: V) -> Result<V::Value, Error>
@@ -679,8 +694,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     where
         V: Visitor<'de>,
     {
-        let buf = self.read_128()?;
-        visitor.visit_i128(i128::from_be_bytes(buf))
+        visitor.visit_i128(read_i128_marker(self.take_or_read_marker()?, &mut self.rd)?)
     }
 
     #[inline]
@@ -688,8 +702,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     where
         V: Visitor<'de>,
     {
-        let buf = self.read_128()?;
-        visitor.visit_u128(u128::from_be_bytes(buf))
+        visitor.visit_u128(read_i128_marker(self.take_or_read_marker()?, &mut self.rd)? as u128)
     }
 
     #[inline]
