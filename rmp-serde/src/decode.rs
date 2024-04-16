@@ -178,7 +178,7 @@ pub struct Deserializer<R, C = DefaultConfig> {
     rd: R,
     config: C,
     marker: Option<Marker>,
-    depth: usize,
+    depth: u16,
 }
 
 impl<R: Read, C> Deserializer<R, C> {
@@ -303,7 +303,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     /// Changes the maximum nesting depth that is allowed
     #[inline(always)]
     pub fn set_max_depth(&mut self, depth: usize) {
-        self.depth = depth;
+        self.depth = depth.min(u16::MAX as _) as u16;
     }
 
 }

@@ -3,6 +3,7 @@
 use std::error;
 use std::fmt::{self, Display};
 use std::io::Write;
+use std::marker::PhantomData;
 
 use serde;
 use serde::ser::{
@@ -15,8 +16,7 @@ use rmp::encode::ValueWriteError;
 use rmp::{encode, Marker};
 
 use crate::config::{
-    BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig, StructMapConfig,
-    StructTupleConfig,
+    BinaryConfig, DefaultConfig, HumanReadableConfig, RuntimeConfig, SerializerConfig, StructMapConfig, StructTupleConfig
 };
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
@@ -114,8 +114,9 @@ pub trait UnderlyingWrite {
 #[derive(Debug)]
 pub struct Serializer<W, C = DefaultConfig> {
     wr: W,
-    config: C,
-    depth: usize,
+    depth: u16,
+    config: RuntimeConfig,
+    _back_compat_config: PhantomData<C>,
 }
 
 impl<W: Write, C> Serializer<W, C> {
@@ -145,7 +146,7 @@ impl<W: Write, C> Serializer<W, C> {
     #[doc(hidden)]
     #[inline]
     pub fn unstable_set_max_depth(&mut self, depth: usize) {
-        self.depth = depth;
+        self.depth = depth.min(u16::MAX as _) as u16;
     }
 }
 
@@ -162,7 +163,8 @@ impl<W: Write> Serializer<W, DefaultConfig> {
         Serializer {
             wr,
             depth: 1024,
-            config: DefaultConfig,
+            config: RuntimeConfig::new(DefaultConfig),
+            _back_compat_config: PhantomData,
         }
     }
 }
@@ -170,8 +172,7 @@ impl<W: Write> Serializer<W, DefaultConfig> {
 impl<'a, W: Write + 'a, C> Serializer<W, C> {
     #[inline]
     fn compound(&'a mut self) -> Result<Compound<'a, W, C>, Error> {
-        let c = Compound { se: self };
-        Ok(c)
+        Ok(Compound { se: self })
     }
 }
 
@@ -200,11 +201,12 @@ impl<W: Write, C> Serializer<W, C> {
     /// requirements.
     #[inline]
     pub fn with_struct_map(self) -> Serializer<W, StructMapConfig<C>> {
-        let Serializer { wr, depth, config } = self;
+        let Serializer { wr, depth, config, _back_compat_config: _ } = self;
         Serializer {
             wr,
             depth,
-            config: StructMapConfig::new(config),
+            config: RuntimeConfig::new(StructMapConfig::new(config)),
+            _back_compat_config: PhantomData,
         }
     }
 
@@ -215,11 +217,12 @@ impl<W: Write, C> Serializer<W, C> {
     /// representation.
     #[inline]
     pub fn with_struct_tuple(self) -> Serializer<W, StructTupleConfig<C>> {
-        let Serializer { wr, depth, config } = self;
+        let Serializer { wr, depth, config, _back_compat_config: _ } = self;
         Serializer {
             wr,
             depth,
-            config: StructTupleConfig::new(config),
+            config: RuntimeConfig::new(StructTupleConfig::new(config)),
+            _back_compat_config: PhantomData,
         }
     }
 
@@ -232,11 +235,12 @@ impl<W: Write, C> Serializer<W, C> {
     /// versions of `rmp-serde`.
     #[inline]
     pub fn with_human_readable(self) -> Serializer<W, HumanReadableConfig<C>> {
-        let Serializer { wr, depth, config } = self;
+        let Serializer { wr, depth, config, _back_compat_config: _ } = self;
         Serializer {
             wr,
             depth,
-            config: HumanReadableConfig::new(config),
+            config: RuntimeConfig::new(HumanReadableConfig::new(config)),
+            _back_compat_config: PhantomData,
         }
     }
 
@@ -247,11 +251,12 @@ impl<W: Write, C> Serializer<W, C> {
     /// representation.
     #[inline]
     pub fn with_binary(self) -> Serializer<W, BinaryConfig<C>> {
-        let Serializer { wr, depth, config } = self;
+        let Serializer { wr, depth, config, _back_compat_config: _ } = self;
         Serializer {
             wr,
             depth,
-            config: BinaryConfig::new(config),
+            config: RuntimeConfig::new(BinaryConfig::new(config)),
+            _back_compat_config: PhantomData,
         }
     }
 }
@@ -350,7 +355,7 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStruct for Compound<'a, W,
     fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
         Result<(), Self::Error>
     {
-        if self.se.config.is_named() {
+        if self.se.config.is_named {
             encode::write_str(self.se.get_mut(), key)?;
         }
         value.serialize(&mut *self.se)
@@ -384,7 +389,7 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
     fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
         Result<(), Self::Error>
     {
-        if self.se.config.is_named() {
+        if self.se.config.is_named {
             encode::write_str(self.se.get_mut(), key)?;
             value.serialize(&mut *self.se)
         } else {
@@ -401,15 +406,20 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
 /// Contains a `Serializer` for sequences and maps whose length is not yet known
 /// and a counter for the number of elements that are encoded by the `Serializer`.
 #[derive(Debug)]
-struct UnknownLengthCompound<C> {
-    se: Serializer<Vec<u8>, C>,
+struct UnknownLengthCompound {
+    se: Serializer<Vec<u8>, DefaultConfig>,
     elem_count: u32,
 }
 
-impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound<C> {
+impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound {
     fn from(se: &Serializer<W, C>) -> Self {
         Self {
-            se: Serializer { wr: Vec::with_capacity(128), config: se.config, depth: se.depth },
+            se: Serializer {
+                wr: Vec::with_capacity(128),
+                config: RuntimeConfig::new(se.config),
+                depth: se.depth,
+                _back_compat_config: PhantomData,
+            },
             elem_count: 0
         }
     }
@@ -434,7 +444,7 @@ impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound<C
 #[doc(hidden)]
 pub struct MaybeUnknownLengthCompound<'a, W, C> {
     se: &'a mut Serializer<W, C>,
-    compound: Option<UnknownLengthCompound<C>>,
+    compound: Option<UnknownLengthCompound>,
 }
 
 impl<'a, W: Write + 'a, C: SerializerConfig> SerializeSeq for MaybeUnknownLengthCompound<'a, W, C> {
@@ -500,8 +510,9 @@ where
     type SerializeStruct = Compound<'a, W, C>;
     type SerializeStructVariant = Compound<'a, W, C>;
 
+    #[inline]
     fn is_human_readable(&self) -> bool {
-        self.config.is_human_readable()
+        self.config.is_human_readable
     }
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
@@ -657,7 +668,7 @@ where
     fn serialize_struct(self, _name: &'static str, len: usize) ->
         Result<Self::SerializeStruct, Self::Error>
     {
-        if self.config.is_named() {
+        if self.config.is_named {
             encode::write_map_len(self.get_mut(), len as u32)?;
         } else {
             encode::write_array_len(self.get_mut(), len as u32)?;
@@ -1079,7 +1090,9 @@ where
     W: Write + ?Sized,
     T: Serialize + ?Sized,
 {
-    let mut se = Serializer::new(wr).with_struct_map();
+    let mut se = Serializer::new(wr);
+    // Avoids another monomorphisation of `StructMapConfig`
+    se.config = RuntimeConfig::new(StructMapConfig::new(se.config));
     val.serialize(&mut se)
 }
 

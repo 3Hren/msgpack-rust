@@ -23,6 +23,33 @@ mod sealed {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+pub(crate) struct RuntimeConfig {
+    pub(crate) is_human_readable: bool,
+    pub(crate) is_named: bool,
+}
+
+impl RuntimeConfig {
+    pub(crate) fn new(other: impl sealed::SerializerConfig) -> Self {
+        Self {
+            is_human_readable: other.is_human_readable(),
+            is_named: other.is_named(),
+        }
+    }
+}
+
+impl sealed::SerializerConfig for RuntimeConfig {
+    #[inline]
+    fn is_human_readable(&self) -> bool {
+        self.is_human_readable
+    }
+
+    #[inline]
+    fn is_named(&self) -> bool {
+        self.is_named
+    }
+}
+
 /// The default serializer/deserializer configuration.
 ///
 /// This configuration:
