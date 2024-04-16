@@ -305,37 +305,6 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
         self.depth = depth;
     }
 
-    fn read_str_data<V>(&mut self, len: u32, visitor: V) -> Result<V::Value, Error>
-        where V: Visitor<'de>
-    {
-        match read_bin_data(&mut self.rd, len)? {
-            Reference::Borrowed(buf) => {
-                match str::from_utf8(buf) {
-                    Ok(s) => visitor.visit_borrowed_str(s),
-                    Err(err) => {
-                        // Allow to unpack invalid UTF-8 bytes into a byte array.
-                        match visitor.visit_borrowed_bytes::<Error>(buf) {
-                            Ok(buf) => Ok(buf),
-                            Err(..) => Err(Error::Utf8Error(err)),
-                        }
-                    }
-                }
-            }
-            Reference::Copied(buf) => {
-                match str::from_utf8(buf) {
-                    Ok(s) => visitor.visit_str(s),
-                    Err(err) => {
-                        // Allow to unpack invalid UTF-8 bytes into a byte array.
-                        match visitor.visit_bytes::<Error>(buf) {
-                            Ok(buf) => Ok(buf),
-                            Err(..) => Err(Error::Utf8Error(err)),
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     fn read_128(&mut self) -> Result<[u8; 16], Error> {
         let marker = self.take_or_read_marker()?;
 
@@ -355,6 +324,37 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
         };
 
         Ok(buf.try_into().unwrap())
+    }
+}
+
+fn read_str_data<'de, V, R>(rd: &mut R, len: u32, visitor: V) -> Result<V::Value, Error>
+    where V: Visitor<'de>, R: ReadSlice<'de>
+{
+    match read_bin_data(rd, len)? {
+        Reference::Borrowed(buf) => {
+            match str::from_utf8(buf) {
+                Ok(s) => visitor.visit_borrowed_str(s),
+                Err(err) => {
+                    // Allow to unpack invalid UTF-8 bytes into a byte array.
+                    match visitor.visit_borrowed_bytes::<Error>(buf) {
+                        Ok(buf) => Ok(buf),
+                        Err(..) => Err(Error::Utf8Error(err)),
+                    }
+                }
+            }
+        }
+        Reference::Copied(buf) => {
+            match str::from_utf8(buf) {
+                Ok(s) => visitor.visit_str(s),
+                Err(err) => {
+                    // Allow to unpack invalid UTF-8 bytes into a byte array.
+                    match visitor.visit_bytes::<Error>(buf) {
+                        Ok(buf) => Ok(buf),
+                        Err(..) => Err(Error::Utf8Error(err)),
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -512,7 +512,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                     Marker::Str32 => read_u32(&mut self.rd).map(u32::from),
                     _ => unreachable!()
                 }?;
-                self.read_str_data(len, visitor)
+                read_str_data(&mut self.rd, len, visitor)
             }
             Marker::FixArray(_) |
             Marker::Array16 |
