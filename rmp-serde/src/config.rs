@@ -8,7 +8,7 @@ pub trait SerializerConfig: sealed::SerializerConfig {}
 
 impl<T: sealed::SerializerConfig> SerializerConfig for T {}
 
-mod sealed {
+pub(crate) mod sealed {
     /// This is the inner trait - the real `SerializerConfig`.
     ///
     /// This hack disallows external implementations and usage of `SerializerConfig` and thus

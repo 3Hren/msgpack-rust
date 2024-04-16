@@ -1,9 +1,11 @@
 //! Generic MessagePack deserialization.
 
+use crate::config::sealed::SerializerConfig as _;
 use std::convert::TryInto;
 use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::io::{self, Cursor, ErrorKind, Read};
+use std::marker::PhantomData;
 use std::num::TryFromIntError;
 use std::str::{self, Utf8Error};
 
@@ -176,7 +178,8 @@ impl From<TryFromIntError> for Error {
 #[derive(Debug)]
 pub struct Deserializer<R, C = DefaultConfig> {
     rd: R,
-    config: C,
+    _config: PhantomData<C>,
+    is_human_readable: bool,
     marker: Option<Marker>,
     depth: u16,
 }
@@ -206,7 +209,8 @@ impl<R: Read> Deserializer<ReadReader<R>, DefaultConfig> {
     pub fn new(rd: R) -> Self {
         Self {
             rd: ReadReader::new(rd),
-            config: DefaultConfig,
+            _config: PhantomData,
+            is_human_readable: DefaultConfig.is_human_readable(),
             // Cached marker in case of deserializing optional values.
             marker: None,
             depth: 1024,
@@ -242,10 +246,11 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
     /// versions of `rmp-serde`.
     #[inline]
     pub fn with_human_readable(self) -> Deserializer<R, HumanReadableConfig<C>> {
-        let Deserializer { rd, config, marker, depth } = self;
+        let Deserializer { rd, _config: _, is_human_readable: _, marker, depth } = self;
         Deserializer {
             rd,
-            config: HumanReadableConfig::new(config),
+            is_human_readable: true,
+            _config: PhantomData,
             marker,
             depth,
         }
@@ -258,10 +263,11 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
     /// representation.
     #[inline]
     pub fn with_binary(self) -> Deserializer<R, BinaryConfig<C>> {
-        let Deserializer { rd, config, marker, depth } = self;
+        let Deserializer { rd, _config: _, is_human_readable: _, marker, depth } = self;
         Deserializer {
             rd,
-            config: BinaryConfig::new(config),
+            is_human_readable: false,
+            _config: PhantomData,
             marker,
             depth,
         }
@@ -285,7 +291,8 @@ where
     pub fn from_read_ref(rd: &'de R) -> Self {
         Deserializer {
             rd: ReadRefReader::new(rd),
-            config: DefaultConfig,
+            is_human_readable: DefaultConfig.is_human_readable(),
+            _config: PhantomData,
             marker: None,
             depth: 1024,
         }
@@ -416,7 +423,7 @@ enum ExtDeserializerState {
 #[derive(Debug)]
 struct ExtDeserializer<'a, R, C> {
     rd: &'a mut R,
-    _config: C,
+    _config: PhantomData<C>,
     len: u32,
     state: ExtDeserializerState,
 }
@@ -425,7 +432,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> ExtDeserializer<'a, R
     fn new(d: &'a mut Deserializer<R, C>, len: u32) -> Self {
         ExtDeserializer {
             rd: &mut d.rd,
-            _config: d.config,
+            _config: d._config,
             len,
             state: ExtDeserializerState::New,
         }
@@ -603,7 +610,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
 
     #[inline(always)]
     fn is_human_readable(&self) -> bool {
-        self.config.is_human_readable()
+        self.is_human_readable
     }
 
     #[inline(always)]
