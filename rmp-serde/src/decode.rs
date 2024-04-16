@@ -603,7 +603,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
 
     #[inline(always)]
     fn is_human_readable(&self) -> bool {
-        C::is_human_readable()
+        self.config.is_human_readable()
     }
 
     #[inline(always)]

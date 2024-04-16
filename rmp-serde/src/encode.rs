@@ -350,7 +350,10 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStruct for Compound<'a, W,
     fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
         Result<(), Self::Error>
     {
-        C::write_struct_field(&mut *self.se, key, value)
+        if self.se.config.is_named() {
+            encode::write_str(self.se.get_mut(), key)?;
+        }
+        value.serialize(&mut *self.se)
     }
 
     #[inline(always)]
@@ -381,7 +384,12 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
     fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
         Result<(), Self::Error>
     {
-        C::write_struct_field(&mut *self.se, key, value)
+        if self.se.config.is_named() {
+            encode::write_str(self.se.get_mut(), key)?;
+            value.serialize(&mut *self.se)
+        } else {
+            value.serialize(&mut *self.se)
+        }
     }
 
     #[inline(always)]
@@ -397,6 +405,7 @@ struct UnknownLengthCompound<C> {
     se: Serializer<Vec<u8>, C>,
     elem_count: u32,
 }
+
 impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound<C> {
     fn from(se: &Serializer<W, C>) -> Self {
         Self {
@@ -492,7 +501,7 @@ where
     type SerializeStructVariant = Compound<'a, W, C>;
 
     fn is_human_readable(&self) -> bool {
-        C::is_human_readable()
+        self.config.is_human_readable()
     }
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
@@ -588,7 +597,7 @@ where
         Ok(())
     }
 
-    fn serialize_unit_variant(self, _name: &str, idx: u32, variant: &'static str) ->
+    fn serialize_unit_variant(self, _name: &str, _: u32, variant: &'static str) ->
         Result<Self::Ok, Self::Error>
     {
         self.serialize_str(variant)
@@ -606,7 +615,7 @@ where
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, idx: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
+    fn serialize_newtype_variant<T: ?Sized + serde::Serialize>(self, _name: &'static str, _: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error> {
         // encode as a map from variant idx to its attributed data, like: {idx => value}
         encode::write_map_len(&mut self.wr, 1)?;
         self.serialize_str(variant)?;
@@ -632,7 +641,7 @@ where
         self.compound()
     }
 
-    fn serialize_tuple_variant(self, _name: &'static str, idx: u32, variant: &'static str, len: usize) ->
+    fn serialize_tuple_variant(self, _name: &'static str, _: u32, variant: &'static str, len: usize) ->
         Result<Self::SerializeTupleVariant, Error>
     {
         // encode as a map from variant idx to a sequence of its attributed data, like: {idx => [v1,...,vN]}
@@ -648,7 +657,11 @@ where
     fn serialize_struct(self, _name: &'static str, len: usize) ->
         Result<Self::SerializeStruct, Self::Error>
     {
-        C::write_struct_len(self, len)?;
+        if self.config.is_named() {
+            encode::write_map_len(self.get_mut(), len as u32)?;
+        } else {
+            encode::write_array_len(self.get_mut(), len as u32)?;
+        }
         self.compound()
     }
 
