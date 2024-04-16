@@ -437,7 +437,10 @@ impl SerializeTuple for &mut ExtSerializer {
     {
         match self.fields_se {
             Some(ref mut se) => value.serialize(&mut *se),
-            None => unreachable!(),
+            None => {
+                debug_assert!(false);
+                Err(Error::Syntax(String::new()))
+            }
         }
     }
 

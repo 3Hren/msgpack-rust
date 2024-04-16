@@ -691,7 +691,8 @@ impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtDeserializer<'de> {
                 Cow::Borrowed(data) => visitor.visit_borrowed_bytes(data),
             }
         } else {
-            unreachable!("ext seq only has two elements");
+            debug_assert!(false, "ext seq only has two elements");
+            Err(Error::Syntax(String::new()))
         }
     }
 
