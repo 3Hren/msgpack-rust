@@ -178,13 +178,13 @@ impl<'a, W: Write + 'a, C> Serializer<W, C> {
 
 impl<'a, W: Write + 'a, C: SerializerConfig> Serializer<W, C> {
     #[inline]
-    fn maybe_unknown_len_compound<F>(&'a mut self, len: Option<usize>, f: F) -> Result<MaybeUnknownLengthCompound<'a, W, C>, Error>
+    fn maybe_unknown_len_compound<F>(&'a mut self, len: Option<u32>, f: F) -> Result<MaybeUnknownLengthCompound<'a, W, C>, Error>
     where F: Fn(&mut W, u32) -> Result<Marker, ValueWriteError>
     {
         Ok(MaybeUnknownLengthCompound {
             compound: match len {
                 Some(len) => {
-                    f(&mut self.wr, len as u32)?;
+                    f(&mut self.wr, len)?;
                     None
                 }
                 None => Some(UnknownLengthCompound::from(&*self)),
@@ -633,8 +633,9 @@ where
         value.serialize(self)
     }
 
+    #[inline]
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Error> {
-        self.maybe_unknown_len_compound(len, |wr, len| encode::write_array_len(wr, len))
+        self.maybe_unknown_len_compound(len.map(|len| len as u32), |wr, len| encode::write_array_len(wr, len))
     }
 
     //TODO: normal compund
@@ -661,8 +662,9 @@ where
         self.serialize_tuple(len)
     }
 
+    #[inline]
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Error> {
-        self.maybe_unknown_len_compound(len, |wr, len| encode::write_map_len(wr, len))
+        self.maybe_unknown_len_compound(len.map(|len| len as u32), |wr, len| encode::write_map_len(wr, len))
     }
 
     fn serialize_struct(self, _name: &'static str, len: usize) ->
