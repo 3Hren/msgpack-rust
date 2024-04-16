@@ -1,6 +1,6 @@
 [package]
 name = "rmp-serde"
-version = "1.1.2"
+version = "1.2.0"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Serde bindings for RMP"
@@ -17,7 +17,7 @@ tag-prefix = "{{crate_name}}/"
 [dependencies]
 byteorder = "1.4.3"
 serde = "1.0.136"
-rmp = { version = "0.8.11", path = "../rmp" }
+rmp = { version = "0.8.13", path = "../rmp" }
 
 [dev-dependencies]
 rmpv = { path = "../rmpv" }

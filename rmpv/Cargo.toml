@@ -1,6 +1,6 @@
 [package]
 name = "rmpv"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
 description = "Value variant for RMP"
@@ -17,12 +17,15 @@ with-serde = ["serde", "serde_bytes"]
 
 [dependencies]
 serde_bytes = { version = "0.11.5", optional = true }
-rmp = { version = "0.8.11", path = "../rmp" }
+rmp = { version = "0.8.13", path = "../rmp" }
 num-traits = "0.2.14"
 serde = { version = "1.0.130", optional = true }
 
 [dev-dependencies]
 quickcheck = "1.0.2"
+
+[package.metadata.release]
+tag-prefix = "{{crate_name}}/"
 
 [badges]
 maintenance = { status = "looking-for-maintainer" }
