@@ -63,7 +63,7 @@ fn read_bin_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Vec<u8
     if bytes_read != len {
         return Err(Error::InvalidDataRead(io::Error::new(
             io::ErrorKind::UnexpectedEof,
-            format!("Expected {} bytes, read {} bytes", len, bytes_read),
+            format!("Expected {len} bytes, read {bytes_read} bytes"),
         )));
     }
 

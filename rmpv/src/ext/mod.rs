@@ -20,7 +20,7 @@ impl Display for Error {
     #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::Syntax(ref err) => write!(fmt, "error while decoding value: {}", err),
+            Error::Syntax(ref err) => write!(fmt, "error while decoding value: {err}"),
         }
     }
 }
@@ -41,7 +41,7 @@ impl ValueExt for Value {
                 IntPriv::PosInt(v) => Unexpected::Unsigned(v),
                 IntPriv::NegInt(v) => Unexpected::Signed(v),
             },
-            Value::F32(v) => Unexpected::Float(v as f64),
+            Value::F32(v) => Unexpected::Float(f64::from(v)),
             Value::F64(v) => Unexpected::Float(v),
             Value::String(ref v) => match v.s {
                 Ok(ref v) => Unexpected::Str(v),
@@ -65,7 +65,7 @@ impl<'a> ValueExt for ValueRef<'a> {
                 IntPriv::PosInt(v) => Unexpected::Unsigned(v),
                 IntPriv::NegInt(v) => Unexpected::Signed(v),
             },
-            ValueRef::F32(v) => Unexpected::Float(v as f64),
+            ValueRef::F32(v) => Unexpected::Float(f64::from(v)),
             ValueRef::F64(v) => Unexpected::Float(v),
             ValueRef::String(ref v) => match v.s {
                 Ok(v) => Unexpected::Str(v),

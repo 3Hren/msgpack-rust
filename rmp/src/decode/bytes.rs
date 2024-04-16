@@ -57,7 +57,8 @@ impl<'a> Bytes<'a> {
     ///
     /// This sets the internal position to zero.
     #[inline]
-    #[must_use] pub fn new(bytes: &'a [u8]) -> Self {
+    #[must_use]
+    pub fn new(bytes: &'a [u8]) -> Self {
         Bytes { bytes, current_position: 0 }
     }
     /// Get a reference to the remaining bytes in the buffer.

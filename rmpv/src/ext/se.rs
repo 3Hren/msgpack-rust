@@ -54,7 +54,7 @@ impl Serialize for Value {
 impl ser::Error for Error {
     #[cold]
     fn custom<T: Display>(msg: T) -> Self {
-        Error::Syntax(format!("{}", msg))
+        Error::Syntax(format!("{msg}"))
     }
 }
 
@@ -95,17 +95,17 @@ impl ser::Serializer for Serializer {
 
     #[inline]
     fn serialize_i8(self, val: i8) -> Result<Self::Ok, Self::Error> {
-        self.serialize_i64(val as i64)
+        self.serialize_i64(i64::from(val))
     }
 
     #[inline]
     fn serialize_i16(self, val: i16) -> Result<Self::Ok, Self::Error> {
-        self.serialize_i64(val as i64)
+        self.serialize_i64(i64::from(val))
     }
 
     #[inline]
     fn serialize_i32(self, val: i32) -> Result<Self::Ok, Self::Error> {
-        self.serialize_i64(val as i64)
+        self.serialize_i64(i64::from(val))
     }
 
     #[inline]
@@ -115,17 +115,17 @@ impl ser::Serializer for Serializer {
 
     #[inline]
     fn serialize_u8(self, val: u8) -> Result<Self::Ok, Self::Error> {
-        self.serialize_u64(val as u64)
+        self.serialize_u64(u64::from(val))
     }
 
     #[inline]
     fn serialize_u16(self, val: u16) -> Result<Self::Ok, Self::Error> {
-        self.serialize_u64(val as u64)
+        self.serialize_u64(u64::from(val))
     }
 
     #[inline]
     fn serialize_u32(self, val: u32) -> Result<Self::Ok, Self::Error> {
-        self.serialize_u64(val as u64)
+        self.serialize_u64(u64::from(val))
     }
 
     #[inline]

@@ -17,7 +17,7 @@ use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Unexpected
 use serde::forward_to_deserialize_any;
 
 use rmp;
-use rmp::decode::{self, RmpRead, DecodeStringError, MarkerReadError, NumValueReadError, ValueReadError};
+use rmp::decode::{self, DecodeStringError, MarkerReadError, NumValueReadError, RmpRead, ValueReadError};
 use rmp::Marker;
 
 use crate::config::{BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig};
@@ -312,7 +312,6 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     pub fn set_max_depth(&mut self, depth: usize) {
         self.depth = depth.min(u16::MAX as _) as u16;
     }
-
 }
 
 #[inline(never)]
@@ -381,7 +380,7 @@ fn read_str_data<'de, V, R>(rd: &mut R, len: u32, visitor: V) -> Result<V::Value
     }
 }
 
-fn read_bin_data<'a, 'de, R: ReadSlice<'de>>(rd: &'a mut R, len: u32) -> Result<Reference<'de,'a, [u8]>, Error> {
+fn read_bin_data<'a, 'de, R: ReadSlice<'de>>(rd: &'a mut R, len: u32) -> Result<Reference<'de, 'a, [u8]>, Error> {
     rd.read_slice(len as usize).map_err(Error::InvalidDataRead)
 }
 
@@ -466,11 +465,10 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> fo
     {
         match self.state {
             ExtDeserializerState::New | ExtDeserializerState::ReadTag => Ok(Some(seed.deserialize(self)?)),
-            ExtDeserializerState::ReadBinary => Ok(None)
+            ExtDeserializerState::ReadBinary => Ok(None),
         }
     }
 }
-
 
 /// Deserializer for Ext `SeqAccess`
 impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de> for &mut ExtDeserializer<'a, R, C> {

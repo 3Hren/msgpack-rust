@@ -157,8 +157,8 @@ fn monadic_index() {
     ]);
 
     assert_eq!("value", val[0][0].as_str().unwrap());
-    assert_eq!(true,    val[0][1].as_bool().unwrap());
-    assert_eq!(false,   val[1].as_bool().unwrap());
+    assert!(val[0][1].as_bool().unwrap());
+    assert!(!val[1].as_bool().unwrap());
 
     assert!(val[0][0][0].is_nil());
     assert!(val[2].is_nil());

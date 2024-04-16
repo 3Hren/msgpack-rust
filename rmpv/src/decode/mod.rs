@@ -34,7 +34,7 @@ fn decrement_depth(depth: usize) -> Result<usize, Error> {
 
 impl Error {
     #[cold]
-    pub fn kind(&self) -> ErrorKind {
+    #[must_use] pub fn kind(&self) -> ErrorKind {
         match *self {
             Error::InvalidMarkerRead(ref err) => err.kind(),
             Error::InvalidDataRead(ref err) => err.kind(),
@@ -59,10 +59,10 @@ impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::InvalidMarkerRead(ref err) => {
-                write!(fmt, "I/O error while reading marker byte: {}", err)
+                write!(fmt, "I/O error while reading marker byte: {err}")
             }
             Error::InvalidDataRead(ref err) => {
-                write!(fmt, "I/O error while reading non-marker bytes: {}", err)
+                write!(fmt, "I/O error while reading non-marker bytes: {err}")
             }
             Error::DepthLimitExceeded => {
                 write!(fmt, "depth limit exceeded")

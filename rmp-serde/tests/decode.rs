@@ -23,7 +23,7 @@ fn fail_nil_from_reserved() {
     let res: Result<(), Error> = Deserialize::deserialize(&mut de);
     match res.err() {
         Some(Error::TypeMismatch(Marker::Reserved)) => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }
 
@@ -46,7 +46,7 @@ fn fail_bool_from_fixint() {
     let res: Result<bool, Error> = Deserialize::deserialize(&mut deserializer);
     match res.err().unwrap() {
         Error::Syntax(..) => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }
 
@@ -80,7 +80,7 @@ fn fail_u32_from_u64() {
     let res: Result<u32, Error> = Deserialize::deserialize(&mut de);
     match res.err().unwrap() {
         Error::Syntax(..) => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }
 
@@ -249,7 +249,7 @@ fn fail_tuple_len_mismatch() {
 
     match actual.err().unwrap() {
         Error::LengthMismatch(1) => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }
 
@@ -298,7 +298,7 @@ fn fail_option_u8_from_reserved() {
     let actual: Result<Option<u8>, Error> = Deserialize::deserialize(&mut de);
     match actual.err() {
         Some(Error::TypeMismatch(Marker::Reserved)) => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }
 
@@ -564,6 +564,6 @@ fn fail_depth_limit() {
     let res = Nested::deserialize(&mut reader);
     match res.err().unwrap() {
         decode::Error::DepthLimitExceeded => (),
-        other => panic!("unexpected result: {:?}", other),
+        other => panic!("unexpected result: {other:?}"),
     }
 }

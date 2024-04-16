@@ -47,22 +47,22 @@ fn pass_bool() {
 #[test]
 fn pass_uint() {
     test_decode(&[0x00], Value::from(u8::min_value()));
-    test_decode(&[0xcc, 0xff], Value::from(u8::max_value()));
-    test_decode(&[0xcd, 0xff, 0xff], Value::from(u16::max_value()));
-    test_decode(&[0xce, 0xff, 0xff, 0xff, 0xff], Value::from(u32::max_value()));
-    test_decode(&[0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], Value::from(u64::max_value()));
+    test_decode(&[0xcc, 0xff], Value::from(u8::MAX));
+    test_decode(&[0xcd, 0xff, 0xff], Value::from(u16::MAX));
+    test_decode(&[0xce, 0xff, 0xff, 0xff, 0xff], Value::from(u32::MAX));
+    test_decode(&[0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], Value::from(u64::MAX));
 }
 
 #[test]
 fn pass_sint() {
     test_decode(&[0xd0, 0x80], Value::from(i8::min_value()));
-    test_decode(&[0x7f], Value::from(i8::max_value()));
+    test_decode(&[0x7f], Value::from(i8::MAX));
     test_decode(&[0xd1, 0x80, 0x00], Value::from(i16::min_value()));
-    test_decode(&[0xcd, 0x7f, 0xff], Value::from(i16::max_value()));
+    test_decode(&[0xcd, 0x7f, 0xff], Value::from(i16::MAX));
     test_decode(&[0xd2, 0x80, 0x00, 0x00, 0x00], Value::from(i32::min_value()));
-    test_decode(&[0xce, 0x7f, 0xff, 0xff, 0xff], Value::from(i32::max_value()));
+    test_decode(&[0xce, 0x7f, 0xff, 0xff, 0xff], Value::from(i32::MAX));
     test_decode(&[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], Value::from(i64::min_value()));
-    test_decode(&[0xcf, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], Value::from(i64::max_value()));
+    test_decode(&[0xcf, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], Value::from(i64::MAX));
 }
 
 #[test]
@@ -106,22 +106,22 @@ fn pass_value_map() {
 #[test]
 fn pass_uint_from_value() {
     assert_eq!(i8::min_value(), from_value(Value::from(i8::min_value())).unwrap());
-    assert_eq!(i8::max_value(), from_value(Value::from(i8::max_value())).unwrap());
+    assert_eq!(i8::MAX, from_value(Value::from(i8::MAX)).unwrap());
     assert_eq!(i16::min_value(), from_value(Value::from(i16::min_value())).unwrap());
-    assert_eq!(i16::max_value(), from_value(Value::from(i16::max_value())).unwrap());
+    assert_eq!(i16::MAX, from_value(Value::from(i16::MAX)).unwrap());
     assert_eq!(i32::min_value(), from_value(Value::from(i32::min_value())).unwrap());
-    assert_eq!(i32::max_value(), from_value(Value::from(i32::max_value())).unwrap());
+    assert_eq!(i32::MAX, from_value(Value::from(i32::MAX)).unwrap());
     assert_eq!(i64::min_value(), from_value(Value::from(i64::min_value())).unwrap());
-    assert_eq!(i64::max_value(), from_value(Value::from(i64::max_value())).unwrap());
+    assert_eq!(i64::MAX, from_value(Value::from(i64::MAX)).unwrap());
 }
 
 #[test]
 fn pass_sint_from_value() {
     assert_eq!(0, from_value(Value::from(0)).unwrap());
-    assert_eq!(u8::max_value(), from_value(Value::from(u8::max_value())).unwrap());
-    assert_eq!(u16::max_value(), from_value(Value::from(u16::max_value())).unwrap());
-    assert_eq!(u32::max_value(), from_value(Value::from(u32::max_value())).unwrap());
-    assert_eq!(u64::max_value(), from_value(Value::from(u64::max_value())).unwrap());
+    assert_eq!(u8::MAX, from_value(Value::from(u8::MAX)).unwrap());
+    assert_eq!(u16::MAX, from_value(Value::from(u16::MAX)).unwrap());
+    assert_eq!(u32::MAX, from_value(Value::from(u32::MAX)).unwrap());
+    assert_eq!(u64::MAX, from_value(Value::from(u64::MAX)).unwrap());
 }
 
 #[test]

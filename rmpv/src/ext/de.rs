@@ -31,7 +31,7 @@ pub fn deserialize_from<'de, T, D>(val: D) -> Result<T, Error>
 impl de::Error for Error {
     #[cold]
     fn custom<T: Display>(msg: T) -> Self {
-        Error::Syntax(format!("{}", msg))
+        Error::Syntax(format!("{msg}"))
     }
 }
 
@@ -408,20 +408,16 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
         match self {
             ValueRef::Nil => visitor.visit_unit(),
             ValueRef::Boolean(v) => visitor.visit_bool(v),
-            ValueRef::Integer(Integer { n }) => {
-                match n {
-                    IntPriv::PosInt(v) => visitor.visit_u64(v),
-                    IntPriv::NegInt(v) => visitor.visit_i64(v)
-                }
-            }
+            ValueRef::Integer(Integer { n }) => match n {
+                IntPriv::PosInt(v) => visitor.visit_u64(v),
+                IntPriv::NegInt(v) => visitor.visit_i64(v),
+            },
             ValueRef::F32(v) => visitor.visit_f32(v),
             ValueRef::F64(v) => visitor.visit_f64(v),
-            ValueRef::String(v) => {
-                match v.s {
-                    Ok(v) => visitor.visit_borrowed_str(v),
-                    Err(v) => visitor.visit_borrowed_bytes(v.0),
-                }
-            }
+            ValueRef::String(v) => match v.s {
+                Ok(v) => visitor.visit_borrowed_str(v),
+                Err(v) => visitor.visit_borrowed_bytes(v.0),
+            },
             ValueRef::Binary(v) => visitor.visit_borrowed_bytes(v),
             ValueRef::Array(v) => {
                 let len = v.len();
@@ -673,7 +669,7 @@ impl<'a, 'de: 'a> Deserializer<'de> for ExtDeserializer<'de> {
     }
 }
 
-/// Deserializer for Ext SeqAccess elements
+/// Deserializer for Ext `SeqAccess` elements
 impl<'a, 'de: 'a> Deserializer<'de> for &'a mut ExtDeserializer<'de> {
     type Error = Error;
 
@@ -988,7 +984,7 @@ pub struct EnumRefDeserializer<'de> {
 }
 
 impl<'de> EnumRefDeserializer<'de> {
-    pub fn new(id: u32, value: Option<&'de ValueRef<'de>>) -> Self {
+    #[must_use] pub fn new(id: u32, value: Option<&'de ValueRef<'de>>) -> Self {
         Self { id, value }
     }
 }

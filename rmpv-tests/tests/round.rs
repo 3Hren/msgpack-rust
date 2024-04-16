@@ -54,22 +54,22 @@ fn pass_bool() {
 #[test]
 fn pass_uint() {
     test_round(u8::min_value(), Value::from(u8::min_value()));
-    test_round(u8::max_value(), Value::from(u8::max_value()));
-    test_round(u16::max_value(), Value::from(u16::max_value()));
-    test_round(u32::max_value(), Value::from(u32::max_value()));
-    test_round(u64::max_value(), Value::from(u64::max_value()));
+    test_round(u8::MAX, Value::from(u8::MAX));
+    test_round(u16::MAX, Value::from(u16::MAX));
+    test_round(u32::MAX, Value::from(u32::MAX));
+    test_round(u64::MAX, Value::from(u64::MAX));
 }
 
 #[test]
 fn pass_sint() {
     test_round(i8::min_value(), Value::from(i8::min_value()));
-    test_round(i8::max_value(), Value::from(i8::max_value()));
+    test_round(i8::MAX, Value::from(i8::MAX));
     test_round(i16::min_value(), Value::from(i16::min_value()));
-    test_round(i16::max_value(), Value::from(i16::max_value()));
+    test_round(i16::MAX, Value::from(i16::MAX));
     test_round(i32::min_value(), Value::from(i32::min_value()));
-    test_round(i32::max_value(), Value::from(i32::max_value()));
+    test_round(i32::MAX, Value::from(i32::MAX));
     test_round(i64::min_value(), Value::from(i64::min_value()));
-    test_round(i64::max_value(), Value::from(i64::max_value()));
+    test_round(i64::MAX, Value::from(i64::MAX));
 }
 
 #[test]

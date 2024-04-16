@@ -90,8 +90,11 @@ impl ByteBuf {
     ///
     /// See [`Vec::with_capacity`] for details
     #[inline]
-    #[must_use] pub fn with_capacity(capacity: usize) -> Self {
-        ByteBuf { bytes: Vec::with_capacity(capacity) }
+    #[must_use]
+    pub fn with_capacity(capacity: usize) -> Self {
+        ByteBuf {
+            bytes: Vec::with_capacity(capacity),
+        }
     }
     /// Unwrap the underlying buffer of this vector
     #[inline]

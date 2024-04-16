@@ -8,7 +8,7 @@ use rmp::encode::{
 use super::Error;
 use crate::{IntPriv, Integer, Utf8StringRef, ValueRef};
 
-/// Encodes and attempts to write the given non-owning ValueRef into the Write.
+/// Encodes and attempts to write the given non-owning `ValueRef` into the Write.
 ///
 /// # Errors
 ///
