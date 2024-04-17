@@ -1,48 +1,45 @@
 # RMP - Rust MessagePack
 
-RMP is a pure Rust [MessagePack](http://msgpack.org) implementation.
+RMP is a complete pure-Rust [MessagePack](http://msgpack.org) implementation. MessagePack a compact self-describing binary serialization format.
 
-[![Build Status](https://travis-ci.org/3Hren/msgpack-rust.svg?branch=master)](https://travis-ci.org/3Hren/msgpack-rust)
-[![Coverage Status][coveralls-img]][coveralls-url]
+This project consists of three crates:
 
-This repository consists of three separate crates: the RMP core and two implementations to ease serializing and
-deserializing Rust structs.
-
- crates.rs                                 | API Documentation               |
--------------------------------------------|---------------------------------|
- [![rmp][crates-rmp-img]][crates-rmp-url]     | [RMP][rmp-docs-url]             |
- [![rmps][crates-rmps-img]][crates-rmps-url]   | [RMP Serde][rmps-docs-url]      |
- [![rmpv][crates-rmpv-img]][crates-rmpv-url]   | [RMP Value][rmpv-docs-url]      |
+* [RMP-Serde][crates-rmps-url] ([Documentation][rmps-docs-url]) — easy serializing/deserializing via [Serde](https://serde.rs).
+* [RMP-Value][crates-rmpv-url] ([Documentation][rmpv-docs-url]) — a universal `Value` enum that can hold any MessagePack type. Allows deserializing arbitrary messages without a known schema.
+* [RMP][crates-rmp-url] ([Documentation][rmp-docs-url]) — low-level functions for reading/writing encoded data.
 
 ## Features
 
-- **Convenient API**
+- **Convenient and powerful APIs**
 
-  RMP is designed to be lightweight and straightforward. There are low-level API, which gives you
-  full control on data encoding/decoding process and makes no heap allocations. On the other hand
-  there are high-level API, which provides you convenient interface using Rust standard library and
-  compiler reflection, allowing to encode/decode structures using `derive` attribute.
+  RMP is designed to be lightweight and straightforward. There is a high-level API with support for Serde,
+  which provides you convenient interface for encode/decode Rust's data structures using `derive` attribute.
+  There are also low-level APIs, which give you full control over data encoding/decoding process,
+  with no-std support and without heap allocations.
 
 - **Zero-copy value decoding**
 
-  RMP allows to decode bytes from a buffer in a zero-copy manner easily and blazingly fast, while Rust
-  static checks guarantees that the data will be valid as long as the buffer lives.
+  RMP allows to decode bytes from a buffer in a zero-copy manner. Parsing is implemented in safe Rust.
 
-- **Clear error handling**
-
-  RMP's error system guarantees that you never receive an error enum with unreachable variant.
-
-- **Robust and tested**
+- **Robust, stable and tested**
 
   This project is developed using TDD and CI, so any found bugs will be fixed without breaking
   existing functionality.
 
+## Why MessagePack?
+
+Smaller and simpler to parse than JSON. Supports the same types as JSON, plus binary data, all float values, and 64-bit numbers.
+Encoded data is self-describing and extensible, without requiring a schema definition.
+
 ## Requirements
 
-- Rust 1.53.0 or later
+- Rust 1.56.0 or later
 
 [rustc-serialize]: https://github.com/rust-lang-nursery/rustc-serialize
 [serde]: https://github.com/serde-rs/serde
+
+[ci-img]: https://github.com/3Hren/msgpack-rust/actions/workflows/ci.yml/badge.svg
+[ci-url]: https://github.com/3Hren/msgpack-rust/actions/workflows/ci.yml
 
 [coveralls-img]: https://coveralls.io/repos/3Hren/msgpack-rust/badge.svg?branch=master&service=github
 [coveralls-url]: https://coveralls.io/github/3Hren/msgpack-rust?branch=master
@@ -51,11 +48,9 @@ deserializing Rust structs.
 [rmps-docs-url]: https://docs.rs/rmp-serde
 [rmpv-docs-url]: https://docs.rs/rmpv
 
-[crates-rmp-img]: https://img.shields.io/crates/v/rmp.svg
 [crates-rmp-url]: https://lib.rs/crates/rmp
-
-[crates-rmps-img]: https://img.shields.io/crates/v/rmp-serde.svg
 [crates-rmps-url]: https://lib.rs/crates/rmp-serde
-
-[crates-rmpv-img]: https://img.shields.io/crates/v/rmpv.svg
 [crates-rmpv-url]: https://lib.rs/crates/rmpv
+
+
+[![Build][ci-img]][ci-url] [![Coverage Status][coveralls-img]][coveralls-url]

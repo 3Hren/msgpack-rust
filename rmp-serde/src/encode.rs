@@ -268,6 +268,14 @@ impl<W: Write, C> Serializer<W, C> {
     /// This reduces overhead of binary data, but it may break
     /// decodnig of some Serde types that happen to contain `[u8]`s,
     /// but don't implement Serde's `visit_bytes`.
+    ///
+    /// ```rust
+    /// use serde::ser::Serialize;
+    /// let mut msgpack_data = Vec::new();
+    /// let mut serializer = rmp_serde::Serializer::new(&mut msgpack_data)
+    ///     .with_bytes(rmp_serde::config::BytesMode::ForceAll);
+    /// vec![255u8; 100].serialize(&mut serializer).unwrap();
+    /// ```
     #[inline]
     pub fn with_bytes(mut self, mode: BytesMode) -> Serializer<W, C> {
         self.config.bytes = mode;
