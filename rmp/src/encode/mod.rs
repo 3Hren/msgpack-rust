@@ -257,18 +257,19 @@ impl<E: RmpWriteErr> Display for ValueWriteError<E> {
 /// marker or the data.
 pub fn write_array_len<W: RmpWrite>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError<W::Error>> {
     let marker = if len < 16 {
-        write_marker(wr, Marker::FixArray(len as u8))?;
         Marker::FixArray(len as u8)
     } else if len <= u16::MAX as u32 {
-        write_marker(wr, Marker::Array16)?;
-        wr.write_data_u16(len as u16)?;
         Marker::Array16
     } else {
-        write_marker(wr, Marker::Array32)?;
-        wr.write_data_u32(len)?;
         Marker::Array32
     };
 
+    write_marker(wr, marker)?;
+    if marker == Marker::Array16 {
+        wr.write_data_u16(len as u16)?;
+    } else if marker == Marker::Array32 {
+        wr.write_data_u32(len)?;
+    }
     Ok(marker)
 }
 
@@ -281,18 +282,19 @@ pub fn write_array_len<W: RmpWrite>(wr: &mut W, len: u32) -> Result<Marker, Valu
 /// marker or the data.
 pub fn write_map_len<W: RmpWrite>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError<W::Error>> {
     let marker = if len < 16 {
-        write_marker(wr, Marker::FixMap(len as u8))?;
         Marker::FixMap(len as u8)
     } else if len <= u16::MAX as u32 {
-        write_marker(wr, Marker::Map16)?;
-        wr.write_data_u16(len as u16)?;
         Marker::Map16
     } else {
-        write_marker(wr, Marker::Map32)?;
-        wr.write_data_u32(len)?;
         Marker::Map32
     };
 
+    write_marker(wr, marker)?;
+    if marker == Marker::Map16 {
+        wr.write_data_u16(len as u16)?;
+    } else if marker == Marker::Map32 {
+        wr.write_data_u32(len)?;
+    }
     Ok(marker)
 }
 
@@ -310,42 +312,24 @@ pub fn write_map_len<W: RmpWrite>(wr: &mut W, len: u32) -> Result<Marker, ValueW
 /// 2-byte type information.
 pub fn write_ext_meta<W: RmpWrite>(wr: &mut W, len: u32, ty: i8) -> Result<Marker, ValueWriteError<W::Error>> {
     let marker = match len {
-        1 => {
-            write_marker(wr, Marker::FixExt1)?;
-            Marker::FixExt1
-        }
-        2 => {
-            write_marker(wr, Marker::FixExt2)?;
-            Marker::FixExt2
-        }
-        4 => {
-            write_marker(wr, Marker::FixExt4)?;
-            Marker::FixExt4
-        }
-        8 => {
-            write_marker(wr, Marker::FixExt8)?;
-            Marker::FixExt8
-        }
-        16 => {
-            write_marker(wr, Marker::FixExt16)?;
-            Marker::FixExt16
-        }
-        len if len < 256 => {
-            write_marker(wr, Marker::Ext8)?;
-            wr.write_data_u8(len as u8)?;
-            Marker::Ext8
-        }
-        len if len < 65536 => {
-            write_marker(wr, Marker::Ext16)?;
-            wr.write_data_u16(len as u16)?;
-            Marker::Ext16
-        }
-        len => {
-            write_marker(wr, Marker::Ext32)?;
-            wr.write_data_u32(len)?;
-            Marker::Ext32
-        }
+        1 => Marker::FixExt1,
+        2 => Marker::FixExt2,
+        4 => Marker::FixExt4,
+        8 => Marker::FixExt8,
+        16 => Marker::FixExt16,
+        0..=255 => Marker::Ext8,
+        256..=65535 => Marker::Ext16,
+        _ => Marker::Ext32,
     };
+    write_marker(wr, marker)?;
+
+    if marker == Marker::Ext8 {
+        wr.write_data_u8(len as u8)?;
+    } else if marker == Marker::Ext16 {
+        wr.write_data_u16(len as u16)?;
+    } else if marker == Marker::Ext32 {
+        wr.write_data_u32(len)?;
+    }
 
     wr.write_data_i8(ty)?;
 
