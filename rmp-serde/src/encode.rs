@@ -1219,9 +1219,9 @@ pub fn to_vec<T>(val: &T) -> Result<Vec<u8>, Error>
 where
     T: Serialize + ?Sized,
 {
-    let mut wr = Vec::with_capacity(128);
+    let mut wr = FallibleWriter(Vec::new());
     write(&mut wr, val)?;
-    Ok(wr)
+    Ok(wr.0)
 }
 
 /// Serializes data structure into byte vector as a map
@@ -1235,7 +1235,29 @@ pub fn to_vec_named<T>(val: &T) -> Result<Vec<u8>, Error>
 where
     T: Serialize + ?Sized,
 {
-    let mut wr = Vec::with_capacity(128);
+    let mut wr = FallibleWriter(Vec::new());
     write_named(&mut wr, val)?;
-    Ok(wr)
+    Ok(wr.0)
+}
+
+#[repr(transparent)]
+struct FallibleWriter(Vec<u8>);
+
+impl Write for FallibleWriter {
+    #[inline(always)]
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.write_all(buf)?;
+        Ok(buf.len())
+    }
+
+    #[inline]
+    fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
+        self.0.try_reserve(buf.len()).map_err(|_| std::io::ErrorKind::OutOfMemory)?;
+        self.0.extend_from_slice(buf);
+        Ok(())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
 }
