@@ -6,4 +6,5 @@ mod func {
     mod decode;
     mod encode;
     mod mirror;
+    mod est;
 }
