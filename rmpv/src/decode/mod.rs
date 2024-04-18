@@ -24,12 +24,9 @@ pub enum Error {
     DepthLimitExceeded,
 }
 
-fn decrement_depth(depth: usize) -> Result<usize, Error> {
-    if depth == 0 {
-        Err(Error::DepthLimitExceeded)
-    } else {
-        Ok(depth - 1)
-    }
+#[inline]
+fn decrement_depth(depth: u16) -> Result<u16, Error> {
+    depth.checked_sub(1).ok_or(Error::DepthLimitExceeded)
 }
 
 impl Error {

@@ -10,7 +10,7 @@ use crate::{Utf8String, Value};
 // See https://github.com/3Hren/msgpack-rust/issues/151
 const PREALLOC_MAX: usize = 64 * 1024; // 64 KiB
 
-fn read_array_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<Value>, Error> {
+fn read_array_data<R: Read>(rd: &mut R, mut len: usize, depth: u16) -> Result<Vec<Value>, Error> {
     let depth = super::decrement_depth(depth)?;
 
     // Note: Do not preallocate a Vec of size `len`.
@@ -25,7 +25,7 @@ fn read_array_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<
     Ok(vec)
 }
 
-fn read_map_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<Vec<(Value, Value)>, Error> {
+fn read_map_data<R: Read>(rd: &mut R, mut len: usize, depth: u16) -> Result<Vec<(Value, Value)>, Error> {
     let depth = super::decrement_depth(depth)?;
 
     // Note: Do not preallocate a Vec of size `len`.
@@ -40,7 +40,7 @@ fn read_map_data<R: Read>(rd: &mut R, mut len: usize, depth: usize) -> Result<Ve
     Ok(vec)
 }
 
-fn read_str_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8String, Error> {
+fn read_str_data<R: Read>(rd: &mut R, len: usize, depth: u16) -> Result<Utf8String, Error> {
     let depth = super::decrement_depth(depth)?;
 
     match String::from_utf8(read_bin_data(rd, len, depth)?) {
@@ -55,7 +55,7 @@ fn read_str_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Utf8St
     }
 }
 
-fn read_bin_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Vec<u8>, Error> {
+fn read_bin_data<R: Read>(rd: &mut R, len: usize, depth: u16) -> Result<Vec<u8>, Error> {
     let _depth = super::decrement_depth(depth)?;
 
     let mut buf = Vec::with_capacity(min(len, PREALLOC_MAX));
@@ -70,7 +70,7 @@ fn read_bin_data<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<Vec<u8
     Ok(buf)
 }
 
-fn read_ext_body<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, Vec<u8>), Error> {
+fn read_ext_body<R: Read>(rd: &mut R, len: usize, depth: u16) -> Result<(i8, Vec<u8>), Error> {
     let depth = super::decrement_depth(depth)?;
 
     let ty = rd.read_data_i8()?;
@@ -79,7 +79,8 @@ fn read_ext_body<R: Read>(rd: &mut R, len: usize, depth: usize) -> Result<(i8, V
     Ok((ty, vec))
 }
 
-fn read_value_inner<R>(rd: &mut R, depth: usize) -> Result<Value, Error> where R: Read {
+#[inline(never)]
+fn read_value_inner<R>(rd: &mut R, depth: u16) -> Result<Value, Error> where R: Read {
     let depth = super::decrement_depth(depth)?;
     let val = match read_marker(rd)? {
         Marker::Null => Value::Nil,
@@ -216,11 +217,11 @@ fn read_value_inner<R>(rd: &mut R, depth: usize) -> Result<Value, Error> where R
 /// [`Error::DepthLimitExceeded`] is returned if this function recurses
 /// [`MAX_DEPTH`](super::MAX_DEPTH) times. To configure the maximum recursion depth, use
 /// [`read_value_with_max_depth`] instead.
-#[inline(never)]
+#[inline]
 pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
     where R: Read
 {
-    read_value_inner(rd, super::MAX_DEPTH)
+    read_value_inner(rd, super::MAX_DEPTH as _)
 }
 
 /// Attempts to read bytes from the given reader and interpret them as a [`Value`].
@@ -234,9 +235,9 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, Error>
 /// [`Error::DepthLimitExceeded`] is returned if this function recurses
 /// `max_depth` times. If the default [`MAX_DEPTH`](super::MAX_DEPTH) is sufficient or you do not
 /// need recursion depth checking for your data, consider using [`read_value`] instead.
-#[inline(never)]
+#[inline]
 pub fn read_value_with_max_depth<R>(rd: &mut R, max_depth: usize) -> Result<Value, Error>
     where R: Read
 {
-    read_value_inner(rd, max_depth)
+    read_value_inner(rd, max_depth.min(u16::MAX as usize) as u16)
 }
