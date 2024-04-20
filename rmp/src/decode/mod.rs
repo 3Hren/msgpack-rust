@@ -20,6 +20,9 @@ mod est;
 #[cfg(feature = "std")]
 pub use est::{MessageLen, LenError};
 
+#[cfg(feature = "async")]
+pub mod future;
+
 pub use self::dec::{read_f32, read_f64};
 pub use self::ext::{
     read_ext_meta, read_fixext1, read_fixext16, read_fixext2, read_fixext4, read_fixext8, ExtMeta,
