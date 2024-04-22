@@ -1,9 +1,4 @@
 //! Contains Value and `ValueRef` structs and its conversion traits.
-//!
-//! # Examples
-//!
-//! ```
-//! ```
 #![forbid(unsafe_code)]
 
 use std::borrow::Cow;

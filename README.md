@@ -28,12 +28,13 @@ This project consists of three crates:
 
 ## Why MessagePack?
 
-Smaller and simpler to parse than JSON. Supports the same types as JSON, plus binary data, all float values, and 64-bit numbers.
-Encoded data is self-describing and extensible, without requiring a schema definition.
+It's smaller and much simpler to parse than JSON. The encoded data is self-describing and extensible, without using any schema definitions. It supports the same data types as JSON, plus binary data, non-string map keys, all float values, and 64-bit numbers. Msgpack values use `<lenght><data>` encoding, so they can be safely concatenated and read from a stream.
+
+MessagePack is similar to CBOR, but has simpler data types (no bignums, decimal floats, dates, or indefinite-length sets, etc.)
 
 ## Requirements
 
-- Rust 1.56.0 or later
+- An up-to-date stable version of [Rust](https://www.rust-lang.org), preferably from [rustup](https://rustup.rs).
 
 [rustc-serialize]: https://github.com/rust-lang-nursery/rustc-serialize
 [serde]: https://github.com/serde-rs/serde
