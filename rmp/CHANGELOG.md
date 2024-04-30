@@ -10,6 +10,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
    - Needed because `std::io::Read` (and Write) are missing on `#![no_std]`
 - Introduces new `Bytes` and `ByteBuf` wrappers, that implement RmpRead/RmpWrite for no\_std targets.
 
+### Fixed
+- Fixed grammar in `TypeMismatch` error messages.
+
 ## 0.8.6 - 2017-04-23
 ### Added
 - New `rmp::decode::read_str_from_slice` function for zero-copy reading strings from slices.

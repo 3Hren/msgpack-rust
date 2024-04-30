@@ -216,7 +216,7 @@ impl Display for ValueReadError {
             ValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
             ValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
             ValueReadError::TypeMismatch(..) => {
-                "the type decoded isn't match with the expected one"
+                "the type decoded does not match the expected one"
             }
         })
     }
@@ -324,7 +324,7 @@ impl<E: RmpReadErr> Display for NumValueReadError<E> {
             NumValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
             NumValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
             NumValueReadError::TypeMismatch(..) => {
-                "the type decoded isn't match with the expected one"
+                "the type decoded does not match the expected one"
             }
             NumValueReadError::OutOfRange => "out of range integral type conversion attempted",
         })
