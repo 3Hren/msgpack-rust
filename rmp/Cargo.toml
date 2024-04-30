@@ -21,6 +21,10 @@ paste = "1.0"
 default = ["std"]
 std = ["byteorder/std", "num-traits/std"]
 
+[[example]]
+name = "inspect"
+required-features = ["std"]
+
 [dev-dependencies]
 quickcheck = "1.0.2"
 
