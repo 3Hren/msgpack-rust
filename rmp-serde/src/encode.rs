@@ -266,7 +266,7 @@ impl<W: Write, C> Serializer<W, C> {
     /// as a sequence of variable-size integers.
     ///
     /// This reduces overhead of binary data, but it may break
-    /// decodnig of some Serde types that happen to contain `[u8]`s,
+    /// decoding of some Serde types that happen to contain `[u8]`s,
     /// but don't implement Serde's `visit_bytes`.
     ///
     /// ```rust
