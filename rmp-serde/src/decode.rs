@@ -437,7 +437,7 @@ fn read_bin_len<'de, R>(rd: &mut R, marker: Marker) -> Result<u32, Error>
     match marker {
         Marker::Bin8 => read_u8(rd).map(u32::from),
         Marker::Bin16 => read_u16(rd).map(u32::from),
-        Marker::Bin32 => read_u32(rd).map(u32::from),
+        Marker::Bin32 => read_u32(rd),
         _ => Err(Error::TypeMismatch(Marker::Reserved)),
     }
 }
@@ -458,9 +458,11 @@ fn read_bin_data<'a, 'de, R: ReadSlice<'de>>(rd: &'a mut R, marker: Marker) -> R
     read_bin_content(rd, len)
 }
 
-#[inline(never)]
 fn read_bin_content<'a, 'de, R: ReadSlice<'de>>(rd: &'a mut R, len: u32) -> Result<Reference<'de, 'a, [u8]>, Error> {
-    rd.read_slice(len as usize).map_err(Error::InvalidDataRead)
+    match rd.read_slice(len as usize) {
+        Ok(b) => Ok(b),
+        Err(e) => Err(Error::InvalidDataRead(e)),
+    }
 }
 
 fn read_u8<R: Read>(rd: &mut R) -> Result<u8, Error> {
@@ -477,7 +479,6 @@ fn read_u16<R: Read>(rd: &mut R) -> Result<u16, Error> {
     }
 }
 
-#[inline(never)]
 fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
     match rd.read_u32::<byteorder::BigEndian>() {
         Ok(v) => Ok(v),
