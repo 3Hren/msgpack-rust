@@ -365,7 +365,7 @@ fn read_str_len<'de, R>(rd: &mut R, marker: Marker) -> Result<u32, Error>
         Marker::FixStr(len) => Ok(len.into()),
         Marker::Str8 => read_u8(rd).map(u32::from),
         Marker::Str16 => read_u16(rd).map(u32::from),
-        Marker::Str32 => read_u32(rd).map(u32::from),
+        Marker::Str32 => read_u32(rd),
         _ => Err(Error::TypeMismatch(Marker::Reserved)),
     }
 }
