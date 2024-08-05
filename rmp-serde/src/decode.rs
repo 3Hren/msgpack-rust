@@ -359,27 +359,6 @@ fn read_128_buf<'de, R: ReadSlice<'de>>(rd: &mut R, len: u8) -> Result<i128, Err
     Ok(i128::from_be_bytes(buf.try_into().map_err(|_| Error::LengthMismatch(16))?))
 }
 
-fn visit_str_data<'de, V>(visitor: V, data: StrData<'de, '_>) -> Result<V::Value, Error> where V: Visitor<'de> {
-    match data {
-        StrData::Str(s) => visitor.visit_str(s),
-        StrData::StrError(err, buf) => {
-            // Allow to unpack invalid UTF-8 bytes into a byte array.
-            match visitor.visit_bytes::<Error>(buf) {
-                Ok(buf) => Ok(buf),
-                Err(..) => Err(Error::Utf8Error(err)),
-            }            
-        },
-        StrData::BorrowedStr(s) => visitor.visit_borrowed_str(s),
-        StrData::BorrowedStrError(err, buf) => {
-            // Allow to unpack invalid UTF-8 bytes into a byte array.
-            match visitor.visit_borrowed_bytes::<Error>(buf) {
-                Ok(buf) => Ok(buf),
-                Err(..) => Err(Error::Utf8Error(err)),
-            }
-        },
-    }
-}
-
 fn read_str_len<'de, R>(rd: &mut R, marker: Marker) -> Result<u32, Error> 
     where R: ReadSlice<'de>{
     match marker {
@@ -419,6 +398,27 @@ fn read_str_data<'de, 'r, R>(rd: &'r mut R, marker: Marker) -> Result<StrData<'d
                 }
             }
         }
+    }
+}
+
+fn visit_str_data<'de, V>(visitor: V, data: StrData<'de, '_>) -> Result<V::Value, Error> where V: Visitor<'de> {
+    match data {
+        StrData::Str(s) => visitor.visit_str(s),
+        StrData::StrError(err, buf) => {
+            // Allow to unpack invalid UTF-8 bytes into a byte array.
+            match visitor.visit_bytes::<Error>(buf) {
+                Ok(buf) => Ok(buf),
+                Err(..) => Err(Error::Utf8Error(err)),
+            }            
+        },
+        StrData::BorrowedStr(s) => visitor.visit_borrowed_str(s),
+        StrData::BorrowedStrError(err, buf) => {
+            // Allow to unpack invalid UTF-8 bytes into a byte array.
+            match visitor.visit_borrowed_bytes::<Error>(buf) {
+                Ok(buf) => Ok(buf),
+                Err(..) => Err(Error::Utf8Error(err)),
+            }
+        },
     }
 }
 
