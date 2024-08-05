@@ -104,7 +104,10 @@ pub trait RmpRead: sealed::Sealed {
     #[inline]
     #[doc(hidden)]
     fn read_data_u8(&mut self) -> Result<u8, ValueReadError<Self::Error>> {
-        self.read_u8().map_err(ValueReadError::InvalidDataRead)
+        match self.read_u8() {
+            Ok(v) => Ok(v),
+            Err(e) => Err(ValueReadError::InvalidDataRead(e)),
+        }
     }
     /// Read a single (signed) byte from this stream.
     #[inline]
