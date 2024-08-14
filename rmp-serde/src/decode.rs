@@ -195,14 +195,14 @@ pub struct Deserializer<R, C = DefaultConfig> {
 }
 
 impl<R: Read, C> Deserializer<R, C> {
-    #[inline]
+    #[inline(never)]
     fn take_or_read_marker(&mut self) -> Result<Marker, MarkerReadError> {
         self.marker
-            .take()
-            .map_or_else(|| rmp::decode::read_marker(&mut self.rd), Ok)
+        .take()
+        .map_or_else(|| rmp::decode::read_marker(&mut self.rd), Ok)
     }
-
-    #[inline]
+    
+    #[inline(never)]
     fn peek_or_read_marker(&mut self) -> Result<Marker, MarkerReadError> {
         if let Some(m) = self.marker {
             Ok(m)
@@ -659,32 +659,58 @@ fn any_num<'de, R: ReadSlice<'de>, V: Visitor<'de>>(rd: &mut R, visitor: V, mark
     }
 }
 
+enum MarkerClass{
+    AnyNumber,
+    Array,
+    String,
+    Map,
+    Bin,
+    Ext,
+    Reserved,
+}
+
+#[inline(never)]
+fn classify_any_marker(marker: Marker) -> MarkerClass {
+    match marker {
+        Marker::Null
+        | Marker::True
+        | Marker::False
+        | Marker::FixPos(_)
+        | Marker::FixNeg(_)
+        | Marker::U8
+        | Marker::U16
+        | Marker::U32
+        | Marker::U64
+        | Marker::I8
+        | Marker::I16
+        | Marker::I32
+        | Marker::I64
+        | Marker::F32
+        | Marker::F64 => MarkerClass::AnyNumber,
+        Marker::FixStr(_) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
+            MarkerClass::String
+        }
+        Marker::FixArray(_) | Marker::Array16 | Marker::Array32 => MarkerClass::Array,
+        Marker::FixMap(_) | Marker::Map16 | Marker::Map32 => MarkerClass::Map,
+        Marker::Bin8 | Marker::Bin16 | Marker::Bin32 => MarkerClass::Bin,
+        Marker::FixExt1
+        | Marker::FixExt2
+        | Marker::FixExt4
+        | Marker::FixExt8
+        | Marker::FixExt16
+        | Marker::Ext8
+        | Marker::Ext16
+        | Marker::Ext32 => MarkerClass::Ext,
+        Marker::Reserved => MarkerClass::Reserved,
+    }
+}
+
 impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     fn any_inner<V: Visitor<'de>>(&mut self, visitor: V, allow_bytes: bool) -> Result<V::Value, Error> {
         let marker = tri!(self.take_or_read_marker());
-        match marker {
-            Marker::Null |
-            Marker::True |
-            Marker::False |
-            Marker::FixPos(_) |
-            Marker::FixNeg(_) |
-            Marker::U8 |
-            Marker::U16 |
-            Marker::U32 |
-            Marker::U64 |
-            Marker::I8 |
-            Marker::I16 |
-            Marker::I32 |
-            Marker::I64 |
-            Marker::F32 |
-            Marker::F64 => any_num(&mut self.rd, visitor, marker),
-            Marker::FixStr(_) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
-                let data = tri!(read_str_data(&mut self.rd, marker));
-                visit_str_data(visitor, data)
-            }
-            Marker::FixArray(_) |
-            Marker::Array16 |
-            Marker::Array32 => {
+        match classify_any_marker(marker) {
+            MarkerClass::AnyNumber => any_num(&mut self.rd, visitor, marker),
+            MarkerClass::Array => {
                 let len = tri!(read_array_len(&mut self.rd, marker));
                 depth_count!(self.depth, {
                     let mut seq = SeqAccess::new(self, len);
@@ -694,10 +720,12 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                         excess => Err(Error::LengthMismatch(len - excess)),
                     }
                 })
-            }
-            Marker::FixMap(_) |
-            Marker::Map16 |
-            Marker::Map32 => {
+            },
+            MarkerClass::String => {
+                let data = tri!(read_str_data(&mut self.rd, marker));
+                visit_str_data(visitor, data)
+            },
+            MarkerClass::Map => {
                 let len = tri!(read_map_len(&mut self.rd, marker));
                 depth_count!(self.depth, {
                     let mut seq = MapAccess::new(self, len);
@@ -707,8 +735,8 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                         excess => Err(Error::LengthMismatch(len - excess)),
                     }
                 })
-            }
-            Marker::Bin8 | Marker::Bin16 | Marker::Bin32 => {
+            },
+            MarkerClass::Bin => {
                 match tri!(read_bin_data(&mut self.rd, marker)) {
                     Reference::Borrowed(buf) if allow_bytes => visitor.visit_borrowed_bytes(buf),
                     Reference::Copied(buf) if allow_bytes => visitor.visit_bytes(buf),
@@ -716,19 +744,12 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                         visitor.visit_seq(SeqDeserializer::new(buf.iter().copied()))
                     },
                 }
-            }
-            Marker::FixExt1 |
-            Marker::FixExt2 |
-            Marker::FixExt4 |
-            Marker::FixExt8 |
-            Marker::FixExt16 |
-            Marker::Ext8 |
-            Marker::Ext16 |
-            Marker::Ext32 => {
+            },
+            MarkerClass::Ext => {
                 let len = tri!(ext_len(&mut self.rd, marker));
                 depth_count!(self.depth, visitor.visit_newtype_struct(ExtDeserializer::new(self, len)))
-            }
-            Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
+            },
+            MarkerClass::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
         }
     }
 }
