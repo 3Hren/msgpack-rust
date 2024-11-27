@@ -76,4 +76,26 @@ impl Timestamp {
             Some(Self { size: 96, secs, nsecs })
         }
     }
+
+    /// Turns the data into a u128
+    #[inline]
+    pub fn into_u128(self) -> u128 {
+        ((self.size as u128) << 96) |
+        ((self.secs as u128) << 32) |
+        (self.nsecs as u128)
+    }
+
+    /// Turns the data into a u128
+    #[inline]
+    pub fn from_u128(data: u128) -> Option<Self> {
+        let nsecs = (data & u32::MAX as u128) as u32;
+        let secs = ((data >> 32) & u64::MAX as u128) as i64;
+        let size = ((data >> 96) & u8::MAX as u128) as u8;
+        match size {
+            32 => Some(Timestamp::from_32(secs as u32)),
+            64 => Timestamp::from_64(secs, nsecs),
+            96 => Timestamp::from_96(secs, nsecs),
+            _ => None,
+        }
+    }
 }

@@ -21,7 +21,7 @@ use rmp::decode::{self, DecodeStringError, MarkerReadError, NumValueReadError, R
 use rmp::Marker;
 
 use crate::config::{BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig};
-use crate::MSGPACK_EXT_STRUCT_NAME;
+use crate::{MSGPACK_EXT_STRUCT_NAME, MSGPACK_TIMESTAMP_STRUCT_NAME};
 
 /// Enum representing errors that can occur while decoding MessagePack data.
 #[derive(Debug)]
@@ -698,6 +698,11 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             return visitor.visit_newtype_struct(ext_de);
         }
 
+        if name == MSGPACK_TIMESTAMP_STRUCT_NAME {
+            let ts_de = TimestampDeserializer::new(&mut self.rd);
+            return ts_de.deserialize_any(visitor);
+        }
+
         visitor.visit_newtype_struct(self)
     }
 
@@ -1190,4 +1195,35 @@ where
 {
     let mut de = Deserializer::from_read_ref(rd);
     Deserialize::deserialize(&mut de)
+}
+
+#[derive(Debug)]
+pub(crate) struct TimestampDeserializer<'a, R> {
+    rd: &'a mut R,
+}
+
+impl<'a, R: Read> TimestampDeserializer<'a, R> {
+    pub(crate) fn new(rd: &'a mut R) -> Self {
+        Self {
+            rd,
+        }
+    }
+}
+
+impl<'de, 'a, R: Read> de::Deserializer<'de> for TimestampDeserializer<'a, R> {
+    type Error = Error;
+
+    fn deserialize_any<V>(mut self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de> {
+        let ts = rmp::decode::read_timestamp(&mut self.rd)?;
+
+        visitor.visit_u128(ts.into_u128())
+    }
+
+    forward_to_deserialize_any! {
+        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit option
+        seq bytes byte_buf map unit_struct newtype_struct
+        struct identifier tuple enum ignored_any tuple_struct
+    }
 }
