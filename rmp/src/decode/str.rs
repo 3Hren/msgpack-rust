@@ -143,7 +143,7 @@ pub fn read_str_data<'r, R>(rd: &mut R,
 
 /// Attempts to read and decode a string value from the reader, returning a borrowed slice from it.
 ///
-// TODO: Also it's possible to implement all borrowing functions for all `BufRead` implementors.
+// TODO: Also it's possible to implement all borrowing functions for all `BufRead` implementers.
 #[deprecated(since = "0.8.6", note = "useless, use `read_str_from_slice` instead")]
 pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError<'_, super::bytes::BytesReadError>> {
     let mut cur = super::Bytes::new(rd);
