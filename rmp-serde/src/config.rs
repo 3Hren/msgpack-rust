@@ -1,6 +1,6 @@
 //! Change MessagePack behavior with configuration wrappers.
 
-/// Represents configuration that dicatates what the serializer does.
+/// Represents configuration that dictates what the serializer does.
 ///
 /// Implemented as an empty trait depending on a hidden trait in order to allow changing the
 /// methods of this trait without breaking backwards compatibility.
@@ -148,7 +148,7 @@ where
     }
 }
 
-/// Config wrapper that overrides struct serlization by packing as a tuple without field
+/// Config wrapper that overrides struct serialization by packing as a tuple without field
 /// names.
 #[derive(Copy, Clone, Debug)]
 pub struct StructTupleConfig<C>(C);

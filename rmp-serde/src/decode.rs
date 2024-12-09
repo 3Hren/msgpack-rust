@@ -645,7 +645,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     {
         // # Important
         //
-        // If a nested Option `o ∈ { Option<Opion<t>>, Option<Option<Option<t>>>, ..., Option<Option<...Option<t>...> }`
+        // If a nested Option `o ∈ { Option<Option<t>>, Option<Option<Option<t>>>, ..., Option<Option<...Option<t>...> }`
         // is visited for the first time, the marker (read from the underlying Reader) will determine
         // `o`'s innermost type `t`.
         // For subsequent visits of `o` the marker will not be re-read again but kept until type `t`
@@ -654,7 +654,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         // # Note
         //
         // Round trips of Options where `Option<t> = None` such as `Some(None)` will fail because
-        // they are just seriialized as `nil`. The serialization format has probably to be changed
+        // they are just serialized as `nil`. The serialization format has probably to be changed
         // to solve this. But as serde_json behaves the same, I think it's not worth doing this.
         let marker = self.take_or_read_marker()?;
 
