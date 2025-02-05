@@ -757,10 +757,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
         // than as 'nil'.
         match self.take_or_read_marker()? {
             Marker::Null | Marker::FixArray(0) => visitor.visit_unit(),
-            marker => {
-                self.marker = Some(marker);
-                self.deserialize_any(visitor)
-            }
+            marker => Err(Error::TypeMismatch(marker)),
         }
     }
 
