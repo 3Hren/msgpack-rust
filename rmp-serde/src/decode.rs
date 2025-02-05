@@ -808,9 +808,39 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             array, binary_seq)
     }
 
+    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        let marker = self.take_or_read_marker()?;
+        make_marker_match!(&mut self.rd, visitor, marker, self;
+            array, string, binary_bytes)
+    }
+
+    fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        let marker = self.take_or_read_marker()?;
+        make_marker_match!(&mut self.rd, visitor, marker, self;
+            array, string, binary_bytes)
+    }
+
+    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        let marker = self.take_or_read_marker()?;
+        make_marker_match!(&mut self.rd, visitor, marker, self;
+            array, string, binary_bytes)
+    }
+
+    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        let marker = self.take_or_read_marker()?;
+        make_marker_match!(&mut self.rd, visitor, marker, self;
+            array, string, binary_bytes)
+    }
+
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        let marker = self.take_or_read_marker()?;
+        make_marker_match!(&mut self.rd, visitor, marker, self;
+            map)
+    }
+
     forward_to_deserialize_any! {
-        bytes byte_buf unit
-        map identifier str string char
+        unit
+        identifier char
         ignored_any
     }
 
