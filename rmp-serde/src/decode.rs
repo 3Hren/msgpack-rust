@@ -817,6 +817,12 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             array, string, binary_bytes)
     }
 
+    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        let marker = self.take_or_read_marker()?;
+        make_marker_match!(&mut self.rd, visitor, marker, self;
+            array, string, binary_bytes)
+    }
+
     fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
         let marker = self.take_or_read_marker()?;
         make_marker_match!(&mut self.rd, visitor, marker, self;
@@ -835,10 +841,19 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
             map)
     }
 
+    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        let marker = self.take_or_read_marker()?;
+        make_marker_match!(&mut self.rd, visitor, marker, self;
+            unit)
+    }
+
     forward_to_deserialize_any! {
-        unit
-        identifier char
         ignored_any
+    }
+
+    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+        let marker = self.take_or_read_marker()?;
+        any_num(&mut self.rd, visitor, marker)
     }
 
     fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
