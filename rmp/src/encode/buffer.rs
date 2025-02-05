@@ -51,14 +51,9 @@ impl<'a> RmpWrite for &'a mut [u8] {
         let to_write = buf.len();
         let remaining = self.len();
         if to_write <= remaining {
-            self[..to_write].copy_from_slice(buf);
-            unsafe {
-                //Cant use split_at or re-borrowing due to lifetime errors :(
-                *self = core::slice::from_raw_parts_mut(
-                    self.as_mut_ptr().add(to_write),
-                    remaining - to_write,
-                )
-            }
+            let (a, b) = core::mem::take(self).split_at_mut(to_write);
+            a.copy_from_slice(buf);
+            *self = b;
             Ok(())
         } else {
             Err(FixedBufCapacityOverflow { _priv: () })
