@@ -668,6 +668,27 @@ fn roundtrip_some_failures() {
     assert_roundtrips(Some(None::<()>));
 }
 
+#[test]
+fn roundtrip_i128_and_u128() {
+    assert_roundtrips(i8::MIN as i128);
+    assert_roundtrips(i16::MIN as i128);
+    assert_roundtrips(i32::MIN as i128);
+    assert_roundtrips(i64::MIN as i128);
+    assert_roundtrips(i128::MIN);
+
+    assert_roundtrips(i8::MAX as i128);
+    assert_roundtrips(i16::MAX as i128);
+    assert_roundtrips(i32::MAX as i128);
+    assert_roundtrips(i64::MAX as i128);
+    assert_roundtrips(i128::MAX);
+
+    assert_roundtrips(u8::MAX as u128);
+    assert_roundtrips(u16::MAX as u128);
+    assert_roundtrips(u32::MAX as u128);
+    assert_roundtrips(u64::MAX as u128);
+    assert_roundtrips(u128::MAX);
+}
+
 #[cfg(test)]
 #[track_caller]
 fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {

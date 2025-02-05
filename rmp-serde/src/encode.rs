@@ -608,7 +608,12 @@ where
     }
 
     fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
-        self.serialize_bytes(&v.to_be_bytes())
+        if let Ok(v_i64) = i64::try_from(v) {
+            encode::write_sint(&mut self.wr, v_i64)?;
+        } else {
+            self.serialize_bytes(&v.to_be_bytes())?;
+        }
+        Ok(())
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
@@ -629,7 +634,12 @@ where
     }
 
     fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
-        self.serialize_bytes(&v.to_be_bytes())
+        if let Ok(v_u64) = u64::try_from(v) {
+            encode::write_uint(&mut self.wr, v_u64)?;
+        } else {
+            self.serialize_bytes(&v.to_be_bytes())?;
+        }
+        Ok(())
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
