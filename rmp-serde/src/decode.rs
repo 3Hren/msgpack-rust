@@ -784,28 +784,28 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> f
     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
         let marker = self.take_or_read_marker()?;
         make_marker_match!(&mut self.rd, visitor, marker, self;
-            array, map, binary_seq, ext)
+            array, binary_seq)
     }
 
     #[inline]
     fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
         let marker = self.take_or_read_marker()?;
         make_marker_match!(&mut self.rd, visitor, marker, self;
-            array, map, binary_seq, ext)
+            array, map, binary_seq)
     }
 
     #[inline]
     fn deserialize_struct<V>(self, _: &'static str, _: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
         let marker = self.take_or_read_marker()?;
         make_marker_match!(&mut self.rd, visitor, marker, self;
-            array, map, binary_seq, ext)
+            array, map)
     }
 
     #[inline]
     fn deserialize_tuple_struct<V>(self, _: &'static str, _: usize, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
         let marker = self.take_or_read_marker()?;
         make_marker_match!(&mut self.rd, visitor, marker, self;
-            unit, string, array, map, binary_seq, ext)
+            array, binary_seq)
     }
 
     forward_to_deserialize_any! {
