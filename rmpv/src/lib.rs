@@ -8,8 +8,6 @@ use std::iter::FromIterator;
 use std::ops::Index;
 use std::str::Utf8Error;
 
-use num_traits::NumCast;
-
 pub mod decode;
 pub mod encode;
 
@@ -73,7 +71,7 @@ impl Integer {
     #[must_use]
     pub fn as_i64(&self) -> Option<i64> {
         match self.n {
-            IntPriv::PosInt(n) => NumCast::from(n),
+            IntPriv::PosInt(n) => n.try_into().ok(),
             IntPriv::NegInt(n) => Some(n),
         }
     }
@@ -84,7 +82,7 @@ impl Integer {
     pub fn as_u64(&self) -> Option<u64> {
         match self.n {
             IntPriv::PosInt(n) => Some(n),
-            IntPriv::NegInt(n) => NumCast::from(n),
+            IntPriv::NegInt(n) => n.try_into().ok(),
         }
     }
 
@@ -93,8 +91,8 @@ impl Integer {
     #[must_use]
     pub fn as_f64(&self) -> Option<f64> {
         match self.n {
-            IntPriv::PosInt(n) => NumCast::from(n),
-            IntPriv::NegInt(n) => NumCast::from(n),
+            IntPriv::PosInt(n) => Some(n as _),
+            IntPriv::NegInt(n) => Some(n as _),
         }
     }
 }
