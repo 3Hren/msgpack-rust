@@ -16,34 +16,34 @@ impl Serialize for Value {
         where S: ser::Serializer
     {
         match *self {
-            Value::Nil => s.serialize_unit(),
-            Value::Boolean(v) => s.serialize_bool(v),
-            Value::Integer(Integer { n }) => match n {
+            Self::Nil => s.serialize_unit(),
+            Self::Boolean(v) => s.serialize_bool(v),
+            Self::Integer(Integer { n }) => match n {
                 IntPriv::PosInt(n) => s.serialize_u64(n),
                 IntPriv::NegInt(n) => s.serialize_i64(n),
             },
-            Value::F32(v) => s.serialize_f32(v),
-            Value::F64(v) => s.serialize_f64(v),
-            Value::String(ref v) => match v.s {
+            Self::F32(v) => s.serialize_f32(v),
+            Self::F64(v) => s.serialize_f64(v),
+            Self::String(ref v) => match v.s {
                 Ok(ref v) => s.serialize_str(v),
                 Err(ref v) => Bytes::new(&v.0[..]).serialize(s),
             },
-            Value::Binary(ref v) => Bytes::new(&v[..]).serialize(s),
-            Value::Array(ref array) => {
+            Self::Binary(ref v) => Bytes::new(&v[..]).serialize(s),
+            Self::Array(ref array) => {
                 let mut state = s.serialize_seq(Some(array.len()))?;
                 for item in array {
                     state.serialize_element(item)?;
                 }
                 state.end()
             }
-            Value::Map(ref map) => {
+            Self::Map(ref map) => {
                 let mut state = s.serialize_map(Some(map.len()))?;
                 for (key, val) in map {
                     state.serialize_entry(key, val)?;
                 }
                 state.end()
             }
-            Value::Ext(ty, ref buf) => {
+            Self::Ext(ty, ref buf) => {
                 let value = (ty, Bytes::new(&buf[..]));
                 s.serialize_newtype_struct(MSGPACK_EXT_STRUCT_NAME, &value)
             }
@@ -54,7 +54,7 @@ impl Serialize for Value {
 impl ser::Error for Error {
     #[cold]
     fn custom<T: Display>(msg: T) -> Self {
-        Error::Syntax(format!("{msg}"))
+        Self::Syntax(format!("{msg}"))
     }
 }
 
@@ -435,12 +435,11 @@ impl SerializeTuple for &mut ExtSerializer {
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
         where T: Serialize
     {
-        match self.fields_se {
-            Some(ref mut se) => value.serialize(&mut *se),
-            None => {
-                debug_assert!(false);
-                Err(Error::Syntax(String::new()))
-            }
+        if let Some(se) = &mut self.fields_se {
+            value.serialize(se)
+        } else {
+            debug_assert!(false);
+            Err(Error::Syntax(String::new()))
         }
     }
 
@@ -487,7 +486,6 @@ impl ser::Serializer for &mut ExtFieldSerializer {
             Err(<Error as ser::Error>::custom("expected i8 and bytes"))
         }
     }
-
 
     #[inline]
     fn serialize_bool(self, _val: bool) -> Result<Self::Ok, Self::Error> {
@@ -627,7 +625,7 @@ impl ser::Serializer for &mut ExtFieldSerializer {
 
 impl ExtSerializer {
     #[inline]
-    fn new() -> Self {
+    const fn new() -> Self {
         Self { fields_se: None }
     }
 
@@ -641,7 +639,7 @@ impl ExtSerializer {
 
 impl ExtFieldSerializer {
     #[inline]
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             tag: None,
             binary: None,

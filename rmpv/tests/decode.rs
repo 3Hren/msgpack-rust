@@ -27,7 +27,7 @@ fn from_bin8_decode_value() {
         0x08,
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
 
-    let expected = Value::Binary(vec!(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08));
+    let expected = Value::Binary(vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]);
 
     assert_eq!(expected, read_value(&mut &buf[..]).unwrap());
 }
@@ -39,7 +39,7 @@ fn from_bin16_decode_value() {
         0x00, 0x08,
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
 
-    let expected = Value::Binary(vec!(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08));
+    let expected = Value::Binary(vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]);
 
     assert_eq!(expected, read_value(&mut &buf[..]).unwrap());
 }
@@ -51,7 +51,7 @@ fn from_bin32_decode_value() {
         0x00, 0x00, 0x00, 0x08,
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
 
-    let expected = Value::Binary(vec!(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08));
+    let expected = Value::Binary(vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]);
 
     assert_eq!(expected, read_value(&mut &buf[..]).unwrap());
 }
@@ -68,7 +68,6 @@ fn from_f64_decode_value() {
     assert_eq!(Value::F64(::std::f64::NEG_INFINITY), read_value(&mut &buf[..]).unwrap());
 }
 
-
 #[test]
 fn from_strfix_decode_value() {
     let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
@@ -82,11 +81,7 @@ fn from_fixarray_decode_value() {
         0x00, 0x2a, 0xf7
     ];
 
-    let expected = Value::Array(vec![
-        Value::from(0),
-        Value::from(42),
-        Value::from(-9),
-    ]);
+    let expected = Value::Array(vec![Value::from(0), Value::from(42), Value::from(-9)]);
 
     assert_eq!(expected, read_value(&mut &buf[..]).unwrap());
 }
@@ -136,7 +131,6 @@ fn from_array16_decode_value() {
 
     assert_eq!(expected, read_value(&mut &buf[..]).unwrap());
 }
-
 
 #[test]
 fn from_array32_decode_value() {
@@ -242,22 +236,28 @@ fn from_fixext16_decode_value() {
 #[test]
 fn from_ext8_decode_value() {
     let buf = [0xc7, 0x04, 0x01, 0x02, 0x03, 0x04, 0x05];
-    assert_eq!(Value::Ext(1, vec![2, 3, 4, 5]),
-               read_value(&mut &buf[..]).unwrap());
+    assert_eq!(
+        Value::Ext(1, vec![2, 3, 4, 5]),
+        read_value(&mut &buf[..]).unwrap()
+    );
 }
 
 #[test]
 fn from_ext16_decode_value() {
     let buf = [0xc8, 0x00, 0x04, 0x01, 0x02, 0x03, 0x04, 0x05];
-    assert_eq!(Value::Ext(1, vec![2, 3, 4, 5]),
-               read_value(&mut &buf[..]).unwrap());
+    assert_eq!(
+        Value::Ext(1, vec![2, 3, 4, 5]),
+        read_value(&mut &buf[..]).unwrap()
+    );
 }
 
 #[test]
 fn from_ext32_decode_value() {
     let buf = [0xc9, 0x00, 0x00, 0x00, 0x04, 0x01, 0x02, 0x03, 0x04, 0x05];
-    assert_eq!(Value::Ext(1, vec![2, 3, 4, 5]),
-               read_value(&mut &buf[..]).unwrap());
+    assert_eq!(
+        Value::Ext(1, vec![2, 3, 4, 5]),
+        read_value(&mut &buf[..]).unwrap()
+    );
 }
 
 #[test]
@@ -303,8 +303,10 @@ fn from_str16_decode_value() {
         0x45
     ];
 
-    assert_eq!(Value::String("B123456789012345678901234567890E".into()),
-        read_value(&mut &buf[..]).unwrap());
+    assert_eq!(
+        Value::String("B123456789012345678901234567890E".into()),
+        read_value(&mut &buf[..]).unwrap()
+    );
 }
 
 #[test]
@@ -336,8 +338,10 @@ fn from_str32_decode_value() {
         0x45
     ];
 
-    assert_eq!(Value::String("B123456789012345678901234567890E".into()),
-        read_value(&mut &buf[..]).unwrap());
+    assert_eq!(
+        Value::String("B123456789012345678901234567890E".into()),
+        read_value(&mut &buf[..]).unwrap()
+    );
 }
 
 #[test]

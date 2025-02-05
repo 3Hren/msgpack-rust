@@ -297,8 +297,10 @@ fn pass_struct_as_tuple_using_double_ext() {
 
     dog.serialize(&mut se).unwrap();
 
-    assert_eq!(vec![0x92, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0x08],
-               se.into_inner());
+    assert_eq!(
+        vec![0x92, 0xa5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0x08],
+        se.into_inner()
+    );
 }
 
 #[test]

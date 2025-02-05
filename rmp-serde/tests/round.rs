@@ -531,8 +531,8 @@ fn roundtrip_vec() {
     assert_roundtrips(vec![] as Vec<u8>);
     assert_roundtrips(vec![] as Vec<()>);
     assert_roundtrips(vec![] as Vec<Vec<()>>);
-    assert_roundtrips(vec![vec![1u128,2,3]]);
-    assert_roundtrips(vec![vec![Some(3u16),None,Some(10000)]]);
+    assert_roundtrips(vec![vec![1u128, 2, 3]]);
+    assert_roundtrips(vec![vec![Some(3u16), None, Some(10000)]]);
 }
 
 #[test]
@@ -700,10 +700,7 @@ fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deseri
     assert_roundtrips_config(
         &val,
         ".with_human_readable().with_struct_map()",
-        |s| {
-            s.with_human_readable()
-                .with_struct_map()
-        },
+        |s| s.with_human_readable().with_struct_map(),
         |d| d.with_human_readable(),
     );
     assert_roundtrips_config(

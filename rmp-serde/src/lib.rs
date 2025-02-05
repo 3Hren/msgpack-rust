@@ -64,7 +64,7 @@ impl Raw {
     #[must_use]
     pub fn from_utf8(v: Vec<u8>) -> Self {
         match String::from_utf8(v) {
-            Ok(v) => Raw::new(v),
+            Ok(v) => Self::new(v),
             Err(err) => {
                 let e = err.utf8_error();
                 Self {
@@ -151,7 +151,7 @@ impl Serialize for Raw {
 
 struct RawVisitor;
 
-impl<'de> de::Visitor<'de> for RawVisitor {
+impl de::Visitor<'_> for RawVisitor {
     type Value = Raw;
 
     #[cold]
@@ -257,10 +257,7 @@ impl<'a> RawRef<'a> {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> Option<&str> {
-        match self.s {
-            Ok(s) => Some(s),
-            Err(..) => None,
-        }
+        self.s.ok()
     }
 
     /// Returns the underlying `Utf8Error` if the raw contains invalid UTF-8 sequence, or
@@ -285,7 +282,7 @@ impl<'a> RawRef<'a> {
     }
 }
 
-impl<'a> Serialize for RawRef<'a> {
+impl Serialize for RawRef<'_> {
     fn serialize<S>(&self, se: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,

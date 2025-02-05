@@ -24,16 +24,14 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), Error>
         Value::Boolean(val) => {
             write_bool(wr, val).map_err(Error::InvalidMarkerWrite)?;
         }
-        Value::Integer(Integer { n }) => {
-            match n {
-                IntPriv::PosInt(n) => {
-                    write_uint(wr, n)?;
-                }
-                IntPriv::NegInt(n) => {
-                    write_sint(wr, n)?;
-                }
+        Value::Integer(Integer { n }) => match n {
+            IntPriv::PosInt(n) => {
+                write_uint(wr, n)?;
             }
-        }
+            IntPriv::NegInt(n) => {
+                write_sint(wr, n)?;
+            }
+        },
         Value::F32(val) => {
             write_f32(wr, val)?;
         }

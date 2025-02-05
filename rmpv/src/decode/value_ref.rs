@@ -76,7 +76,10 @@ fn read_map_data<'a, R>(rd: &mut R, mut len: usize, depth: u16) -> Result<Vec<(V
     let mut vec = Vec::new();
 
     while len > 0 {
-        vec.push((read_value_ref_inner(rd, depth)?, read_value_ref_inner(rd, depth)?));
+        vec.push((
+            read_value_ref_inner(rd, depth)?,
+            read_value_ref_inner(rd, depth)?,
+        ));
         len -= 1;
     }
 

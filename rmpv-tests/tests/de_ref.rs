@@ -73,8 +73,10 @@ fn pass_bin() {
 
 #[test]
 fn pass_array() {
-    test_decode(&[0x92, 0xa2, 0x6c, 0x65, 0xa4, 0x73, 0x68, 0x69, 0x74],
-                ValueRef::Array(vec![ValueRef::from("le"), ValueRef::from("shit")]));
+    test_decode(
+        &[0x92, 0xa2, 0x6c, 0x65, 0xa4, 0x73, 0x68, 0x69, 0x74],
+        ValueRef::Array(vec![ValueRef::from("le"), ValueRef::from("shit")]),
+    );
 }
 
 #[test]
@@ -148,7 +150,11 @@ fn pass_bin_from_value() {
 
 #[test]
 fn pass_vec_from_value() {
-    let v: Vec<&str> = deserialize_from(ValueRef::from(vec![ValueRef::from("John"), ValueRef::from("Smith")])).unwrap();
+    let v: Vec<&str> = deserialize_from(ValueRef::from(vec![
+        ValueRef::from("John"),
+        ValueRef::from("Smith"),
+    ]))
+    .unwrap();
     assert_eq!(vec!["John", "Smith"], v);
 }
 
@@ -173,18 +179,29 @@ fn pass_option_from_value() {
     assert_eq!(None::<i32>, deserialize_from(ValueRef::Nil).unwrap());
     // TODO: assert_eq!(Some(None::<i32>), from_value(ValueRef::Nil).unwrap());
     assert_eq!(Some(42), deserialize_from(ValueRef::from(42)).unwrap());
-    assert_eq!(Some(Some(42)), deserialize_from(ValueRef::from(42)).unwrap());
+    assert_eq!(
+        Some(Some(42)),
+        deserialize_from(ValueRef::from(42)).unwrap()
+    );
 }
 
 #[test]
 fn pass_seq_from_value() {
-    let v: Vec<u64> = deserialize_from(ValueRef::Array(vec![ValueRef::from(0), ValueRef::from(42)])).unwrap();
+    let v: Vec<u64> = deserialize_from(ValueRef::Array(vec![
+        ValueRef::from(0),
+        ValueRef::from(42),
+    ]))
+    .unwrap();
     assert_eq!(vec![0, 42], v);
 }
 
 #[test]
 fn pass_tuple_from_value() {
-    let v: (&str, u8) = deserialize_from(ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from(42)])).unwrap();
+    let v: (&str, u8) = deserialize_from(ValueRef::Array(vec![
+        ValueRef::from("John"),
+        ValueRef::from(42),
+    ]))
+    .unwrap();
     assert_eq!(("John", 42), v);
 }
 
@@ -201,7 +218,10 @@ fn pass_newtype_struct_from_value() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Newtype<'a>(&'a str);
 
-    assert_eq!(Newtype("John"), deserialize_from(ValueRef::from("John")).unwrap());
+    assert_eq!(
+        Newtype("John"),
+        deserialize_from(ValueRef::from("John")).unwrap()
+    );
 }
 
 #[test]
@@ -209,8 +229,14 @@ fn pass_tuple_struct_from_value() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Newtype<'a>(&'a str, u8);
 
-    assert_eq!(Newtype("John", 42),
-        deserialize_from(ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from(42)])).unwrap());
+    assert_eq!(
+        Newtype("John", 42),
+        deserialize_from(ValueRef::Array(vec![
+            ValueRef::from("John"),
+            ValueRef::from(42)
+        ]))
+        .unwrap()
+    );
 }
 
 #[test]
@@ -218,11 +244,20 @@ fn pass_struct_from_value() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Struct<'a> {
         name: &'a str,
-        age: u8
+        age: u8,
     }
 
-    assert_eq!(Struct { name: "John", age: 42 },
-        deserialize_from(ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from(42)])).unwrap());
+    assert_eq!(
+        Struct {
+            name: "John",
+            age: 42
+        },
+        deserialize_from(ValueRef::Array(vec![
+            ValueRef::from("John"),
+            ValueRef::from(42)
+        ]))
+        .unwrap()
+    );
 }
 
 #[test]
@@ -249,8 +284,14 @@ fn pass_enum_from_value() {
 fn pass_from_slice() {
     let buf = [0x93, 0xa4, 0x4a, 0x6f, 0x68, 0x6e, 0xa5, 0x53, 0x6d, 0x69, 0x74, 0x68, 0x2a];
 
-    assert_eq!(ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from("Smith"), ValueRef::from(42)]),
-        rmp_serde::from_slice(&buf[..]).unwrap());
+    assert_eq!(
+        ValueRef::Array(vec![
+            ValueRef::from("John"),
+            ValueRef::from("Smith"),
+            ValueRef::from(42)
+        ]),
+        rmp_serde::from_slice(&buf[..]).unwrap()
+    );
 }
 
 #[test]
@@ -294,6 +335,8 @@ fn pass_from_ext() {
         }
     }
 
-    assert_eq!(ExtRefStruct(42, &[255]),
-        deserialize_from(ValueRef::Ext(42, &[255])).unwrap());
+    assert_eq!(
+        ExtRefStruct(42, &[255]),
+        deserialize_from(ValueRef::Ext(42, &[255])).unwrap()
+    );
 }

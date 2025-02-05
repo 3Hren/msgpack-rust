@@ -31,11 +31,12 @@ fn decrement_depth(depth: u16) -> Result<u16, Error> {
 
 impl Error {
     #[cold]
-    #[must_use] pub fn kind(&self) -> ErrorKind {
+    #[must_use]
+    pub fn kind(&self) -> ErrorKind {
         match *self {
-            Error::InvalidMarkerRead(ref err) => err.kind(),
-            Error::InvalidDataRead(ref err) => err.kind(),
-            Error::DepthLimitExceeded => ErrorKind::Unsupported,
+            Self::InvalidMarkerRead(ref err) => err.kind(),
+            Self::InvalidDataRead(ref err) => err.kind(),
+            Self::DepthLimitExceeded => ErrorKind::Unsupported,
         }
     }
 }
@@ -44,9 +45,9 @@ impl error::Error for Error {
     #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            Error::InvalidMarkerRead(ref err) => Some(err),
-            Error::InvalidDataRead(ref err) => Some(err),
-            Error::DepthLimitExceeded => None,
+            Self::InvalidMarkerRead(ref err) => Some(err),
+            Self::InvalidDataRead(ref err) => Some(err),
+            Self::DepthLimitExceeded => None,
         }
     }
 }
@@ -55,13 +56,13 @@ impl Display for Error {
     #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::InvalidMarkerRead(ref err) => {
+            Self::InvalidMarkerRead(ref err) => {
                 write!(fmt, "I/O error while reading marker byte: {err}")
             }
-            Error::InvalidDataRead(ref err) => {
+            Self::InvalidDataRead(ref err) => {
                 write!(fmt, "I/O error while reading non-marker bytes: {err}")
             }
-            Error::DepthLimitExceeded => {
+            Self::DepthLimitExceeded => {
                 write!(fmt, "depth limit exceeded")
             }
         }
@@ -70,19 +71,19 @@ impl Display for Error {
 
 impl From<MarkerReadError> for Error {
     #[cold]
-    fn from(err: MarkerReadError) -> Error {
-        Error::InvalidMarkerRead(err.0)
+    fn from(err: MarkerReadError) -> Self {
+        Self::InvalidMarkerRead(err.0)
     }
 }
 
 impl From<ValueReadError> for Error {
     #[cold]
-    fn from(err: ValueReadError) -> Error {
+    fn from(err: ValueReadError) -> Self {
         match err {
-            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+            ValueReadError::InvalidMarkerRead(err) => Self::InvalidMarkerRead(err),
+            ValueReadError::InvalidDataRead(err) => Self::InvalidDataRead(err),
             ValueReadError::TypeMismatch(..) => {
-                Error::InvalidMarkerRead(io::Error::new(ErrorKind::Other, "type mismatch"))
+                Self::InvalidMarkerRead(io::Error::new(ErrorKind::Other, "type mismatch"))
             }
         }
     }
@@ -94,7 +95,7 @@ impl From<Error> for io::Error {
         match val {
             Error::InvalidMarkerRead(err) |
             Error::InvalidDataRead(err) => err,
-            Error::DepthLimitExceeded => io::Error::new(val.kind(), val),
+            Error::DepthLimitExceeded => Self::new(val.kind(), val),
         }
     }
 }

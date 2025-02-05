@@ -15,7 +15,7 @@ use crate::Marker;
 pub fn write_bin_len<W: RmpWrite>(wr: &mut W, len: u32) -> Result<Marker, ValueWriteError<W::Error>> {
     let marker = if len < 256 {
         Marker::Bin8
-    } else if len <= u16::MAX as u32 {
+    } else if u16::try_from(len).is_ok() {
         Marker::Bin16
     } else {
         Marker::Bin32

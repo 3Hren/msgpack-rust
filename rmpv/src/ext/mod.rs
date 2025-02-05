@@ -20,7 +20,7 @@ impl Display for Error {
     #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::Syntax(ref err) => write!(fmt, "error while decoding value: {err}"),
+            Self::Syntax(ref err) => write!(fmt, "error while decoding value: {err}"),
         }
     }
 }
@@ -35,27 +35,27 @@ impl ValueExt for Value {
     #[cold]
     fn unexpected(&self) -> Unexpected<'_> {
         match *self {
-            Value::Nil => Unexpected::Unit,
-            Value::Boolean(v) => Unexpected::Bool(v),
-            Value::Integer(Integer { n }) => match n {
+            Self::Nil => Unexpected::Unit,
+            Self::Boolean(v) => Unexpected::Bool(v),
+            Self::Integer(Integer { n }) => match n {
                 IntPriv::PosInt(v) => Unexpected::Unsigned(v),
                 IntPriv::NegInt(v) => Unexpected::Signed(v),
             },
-            Value::F32(v) => Unexpected::Float(f64::from(v)),
-            Value::F64(v) => Unexpected::Float(v),
-            Value::String(ref v) => match v.s {
+            Self::F32(v) => Unexpected::Float(f64::from(v)),
+            Self::F64(v) => Unexpected::Float(v),
+            Self::String(ref v) => match v.s {
                 Ok(ref v) => Unexpected::Str(v),
                 Err(ref v) => Unexpected::Bytes(&v.0[..]),
             },
-            Value::Binary(ref v) => Unexpected::Bytes(v),
-            Value::Array(..) => Unexpected::Seq,
-            Value::Map(..) => Unexpected::Map,
-            Value::Ext(..) => Unexpected::Seq,
+            Self::Binary(ref v) => Unexpected::Bytes(v),
+            Self::Array(..) => Unexpected::Seq,
+            Self::Map(..) => Unexpected::Map,
+            Self::Ext(..) => Unexpected::Seq,
         }
     }
 }
 
-impl<'a> ValueExt for ValueRef<'a> {
+impl ValueExt for ValueRef<'_> {
     #[cold]
     fn unexpected(&self) -> Unexpected<'_> {
         match *self {
