@@ -15,6 +15,11 @@ mod sint;
 mod str;
 mod uint;
 
+#[cfg(feature = "std")]
+mod est;
+#[cfg(feature = "std")]
+pub use est::{MessageLen, LenError};
+
 pub use self::dec::{read_f32, read_f64};
 pub use self::ext::{
     read_ext_meta, read_fixext1, read_fixext16, read_fixext2, read_fixext4, read_fixext8, ExtMeta,
@@ -178,7 +183,7 @@ struct MarkerWriteError<E: RmpReadErr>(E);
 impl<E: RmpReadErr> From<E> for MarkerWriteError<E> {
     #[cold]
     fn from(err: E) -> Self {
-        MarkerWriteError(err)
+        Self(err)
     }
 }
 
@@ -204,9 +209,9 @@ impl error::Error for ValueReadError {
     #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            ValueReadError::InvalidMarkerRead(ref err) |
-            ValueReadError::InvalidDataRead(ref err) => Some(err),
-            ValueReadError::TypeMismatch(..) => None,
+            Self::InvalidMarkerRead(ref err) |
+            Self::InvalidDataRead(ref err) => Some(err),
+            Self::TypeMismatch(..) => None,
         }
     }
 }
@@ -216,28 +221,26 @@ impl Display for ValueReadError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         // TODO: This should probably use formatting
         f.write_str(match *self {
-            ValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
-            ValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
-            ValueReadError::TypeMismatch(..) => {
-                "the type decoded isn't match with the expected one"
-            }
+            Self::InvalidMarkerRead(..) => "failed to read MessagePack marker",
+            Self::InvalidDataRead(..) => "failed to read MessagePack data",
+            Self::TypeMismatch(..) => "the type decoded isn't match with the expected one",
         })
     }
 }
 
 impl<E: RmpReadErr> From<MarkerReadError<E>> for ValueReadError<E> {
     #[cold]
-    fn from(err: MarkerReadError<E>) -> ValueReadError<E> {
+    fn from(err: MarkerReadError<E>) -> Self {
         match err {
-            MarkerReadError(err) => ValueReadError::InvalidMarkerRead(err),
+            MarkerReadError(err) => Self::InvalidMarkerRead(err),
         }
     }
 }
 
 impl<E: RmpReadErr> From<E> for MarkerReadError<E> {
     #[cold]
-    fn from(err: E) -> MarkerReadError<E> {
-        MarkerReadError(err)
+    fn from(err: E) -> Self {
+        Self(err)
     }
 }
 
@@ -313,10 +316,10 @@ pub enum NumValueReadError<E: RmpReadErr = Error> {
 impl error::Error for NumValueReadError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            NumValueReadError::InvalidMarkerRead(ref err) |
-            NumValueReadError::InvalidDataRead(ref err) => Some(err),
-            NumValueReadError::TypeMismatch(..) |
-            NumValueReadError::OutOfRange => None,
+            Self::InvalidMarkerRead(ref err) |
+            Self::InvalidDataRead(ref err) => Some(err),
+            Self::TypeMismatch(..) |
+            Self::OutOfRange => None,
         }
     }
 }
@@ -324,32 +327,30 @@ impl error::Error for NumValueReadError {
 impl<E: RmpReadErr> Display for NumValueReadError<E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         f.write_str(match *self {
-            NumValueReadError::InvalidMarkerRead(..) => "failed to read MessagePack marker",
-            NumValueReadError::InvalidDataRead(..) => "failed to read MessagePack data",
-            NumValueReadError::TypeMismatch(..) => {
-                "the type decoded isn't match with the expected one"
-            }
-            NumValueReadError::OutOfRange => "out of range integral type conversion attempted",
+            Self::InvalidMarkerRead(..) => "failed to read MessagePack marker",
+            Self::InvalidDataRead(..) => "failed to read MessagePack data",
+            Self::TypeMismatch(..) => "the type decoded isn't match with the expected one",
+            Self::OutOfRange => "out of range integral type conversion attempted",
         })
     }
 }
 
 impl<E: RmpReadErr> From<MarkerReadError<E>> for NumValueReadError<E> {
     #[cold]
-    fn from(err: MarkerReadError<E>) -> NumValueReadError<E> {
+    fn from(err: MarkerReadError<E>) -> Self {
         match err {
-            MarkerReadError(err) => NumValueReadError::InvalidMarkerRead(err),
+            MarkerReadError(err) => Self::InvalidMarkerRead(err),
         }
     }
 }
 
 impl<E: RmpReadErr> From<ValueReadError<E>> for NumValueReadError<E> {
     #[cold]
-    fn from(err: ValueReadError<E>) -> NumValueReadError<E> {
+    fn from(err: ValueReadError<E>) -> Self {
         match err {
-            ValueReadError::InvalidMarkerRead(err) => NumValueReadError::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err) => NumValueReadError::InvalidDataRead(err),
-            ValueReadError::TypeMismatch(err) => NumValueReadError::TypeMismatch(err),
+            ValueReadError::InvalidMarkerRead(err) => Self::InvalidMarkerRead(err),
+            ValueReadError::InvalidDataRead(err) => Self::InvalidDataRead(err),
+            ValueReadError::TypeMismatch(err) => Self::TypeMismatch(err),
         }
     }
 }

@@ -31,7 +31,7 @@ pub fn deserialize_from<'de, T, D>(val: D) -> Result<T, Error>
 impl de::Error for Error {
     #[cold]
     fn custom<T: Display>(msg: T) -> Self {
-        Error::Syntax(format!("{msg}"))
+        Self::Syntax(format!("{msg}"))
     }
 }
 
@@ -313,20 +313,20 @@ impl<'de> Deserializer<'de> for Value {
         where V: Visitor<'de>
     {
         match self {
-            Value::Nil => visitor.visit_unit(),
-            Value::Boolean(v) => visitor.visit_bool(v),
-            Value::Integer(Integer { n }) => match n {
+            Self::Nil => visitor.visit_unit(),
+            Self::Boolean(v) => visitor.visit_bool(v),
+            Self::Integer(Integer { n }) => match n {
                 IntPriv::PosInt(v) => visitor.visit_u64(v),
                 IntPriv::NegInt(v) => visitor.visit_i64(v),
             },
-            Value::F32(v) => visitor.visit_f32(v),
-            Value::F64(v) => visitor.visit_f64(v),
-            Value::String(v) => match v.s {
+            Self::F32(v) => visitor.visit_f32(v),
+            Self::F64(v) => visitor.visit_f64(v),
+            Self::String(v) => match v.s {
                 Ok(v) => visitor.visit_string(v),
                 Err(v) => visitor.visit_byte_buf(v.0),
             },
-            Value::Binary(v) => visitor.visit_byte_buf(v),
-            Value::Array(v) => {
+            Self::Binary(v) => visitor.visit_byte_buf(v),
+            Self::Array(v) => {
                 let len = v.len();
                 let mut de = SeqDeserializer::new(v.into_iter());
                 let seq = visitor.visit_seq(&mut de)?;
@@ -336,7 +336,7 @@ impl<'de> Deserializer<'de> for Value {
                     Err(de::Error::invalid_length(len, &"fewer elements in array"))
                 }
             }
-            Value::Map(v) => {
+            Self::Map(v) => {
                 let len = v.len();
                 let mut de = MapDeserializer::new(v.into_iter());
                 let map = visitor.visit_map(&mut de)?;
@@ -346,7 +346,7 @@ impl<'de> Deserializer<'de> for Value {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
             }
-            Value::Ext(tag, data) => {
+            Self::Ext(tag, data) => {
                 let de = ExtDeserializer::new_owned(tag, data);
                 visitor.visit_newtype_struct(de)
             }
@@ -373,7 +373,7 @@ impl<'de> Deserializer<'de> for Value {
     {
         if name == MSGPACK_EXT_STRUCT_NAME {
             match self {
-                Value::Ext(tag, data) => {
+                Self::Ext(tag, data) => {
                     let ext_de = ExtDeserializer::new_owned(tag, data);
                     return visitor.visit_newtype_struct(ext_de);
                 }
@@ -543,7 +543,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        if let ValueRef::Nil = *self {
+        if *self == ValueRef::Nil {
             visitor.visit_none()
         } else {
             visitor.visit_some(self)
@@ -621,14 +621,14 @@ struct ExtDeserializer<'de> {
 }
 
 impl<'de> ExtDeserializer<'de> {
-    fn new_owned(tag: i8, data: Vec<u8>) -> Self {
+    const fn new_owned(tag: i8, data: Vec<u8>) -> Self {
         ExtDeserializer {
             tag: Some(tag),
             data: Some(Cow::Owned(data)),
         }
     }
 
-    fn new_ref(tag: i8, data: &'de [u8]) -> Self {
+    const fn new_ref(tag: i8, data: &'de [u8]) -> Self {
         ExtDeserializer {
             tag: Some(tag),
             data: Some(Cow::Borrowed(data)),
@@ -704,7 +704,7 @@ struct SeqDeserializer<I> {
 }
 
 impl<I> SeqDeserializer<I> {
-    fn new(iter: I) -> Self {
+    const fn new(iter: I) -> Self {
         Self { iter }
     }
 }
@@ -762,7 +762,7 @@ struct MapDeserializer<I, U> {
 }
 
 impl<I, U> MapDeserializer<I, U> {
-    fn new(iter: I) -> Self {
+    const fn new(iter: I) -> Self {
         Self { val: None, iter }
     }
 }
@@ -821,7 +821,7 @@ struct EnumDeserializer<U> {
 }
 
 impl<U> EnumDeserializer<U> {
-    pub fn new(id: u32, value: Option<U>) -> Self {
+    pub const fn new(id: u32, value: Option<U>) -> Self {
         Self { id, value }
     }
 }
@@ -849,13 +849,11 @@ impl<'de, U: ValueBase<'de> + ValueExt> de::VariantAccess<'de> for VariantDeseri
     fn unit_variant(self) -> Result<(), Error> {
         // Can accept only [u32].
         match self.value {
-            Some(v) => {
-                match v.into_iter() {
-                    Ok(ref v) if v.len() == 0 => Ok(()),
-                    Ok(..) => Err(de::Error::invalid_value(Unexpected::Seq, &"empty array")),
-                    Err(v) => Err(de::Error::invalid_value(v.unexpected(), &"empty array")),
-                }
-            }
+            Some(v) => match v.into_iter() {
+                Ok(ref v) if v.len() == 0 => Ok(()),
+                Ok(..) => Err(de::Error::invalid_value(Unexpected::Seq, &"empty array")),
+                Err(v) => Err(de::Error::invalid_value(v.unexpected(), &"empty array")),
+            },
             None => Ok(()),
         }
     }
@@ -895,13 +893,14 @@ impl<'de, U: ValueBase<'de> + ValueExt> de::VariantAccess<'de> for VariantDeseri
     {
         // Can accept [u32, [T...]].
         match self.value {
-            Some(v) => {
-                match v.into_iter() {
-                    Ok(v) => Deserializer::deserialize_any(SeqDeserializer::new(v), visitor),
-                    Err(v) => Err(de::Error::invalid_type(v.unexpected(), &"tuple variant")),
-                }
-            }
-            None => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"tuple variant"))
+            Some(v) => match v.into_iter() {
+                Ok(v) => Deserializer::deserialize_any(SeqDeserializer::new(v), visitor),
+                Err(v) => Err(de::Error::invalid_type(v.unexpected(), &"tuple variant")),
+            },
+            None => Err(de::Error::invalid_type(
+                Unexpected::UnitVariant,
+                &"tuple variant",
+            )),
         }
     }
 
@@ -909,18 +908,17 @@ impl<'de, U: ValueBase<'de> + ValueExt> de::VariantAccess<'de> for VariantDeseri
         where V: Visitor<'de>,
     {
         match self.value {
-            Some(v) => {
-                match v.into_iter() {
-                    Ok(iter) => Deserializer::deserialize_any(SeqDeserializer::new(iter), visitor),
-                    Err(v) => {
-                        match v.into_map_iter() {
-                            Ok(iter) => Deserializer::deserialize_any(MapDeserializer::new(iter), visitor),
-                            Err(v) => Err(de::Error::invalid_type(v.unexpected(), &"struct variant")),
-                        }
-                    }
-                }
-            }
-            None => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"struct variant"))
+            Some(v) => match v.into_iter() {
+                Ok(iter) => Deserializer::deserialize_any(SeqDeserializer::new(iter), visitor),
+                Err(v) => match v.into_map_iter() {
+                    Ok(iter) => Deserializer::deserialize_any(MapDeserializer::new(iter), visitor),
+                    Err(v) => Err(de::Error::invalid_type(v.unexpected(), &"struct variant")),
+                },
+            },
+            None => Err(de::Error::invalid_type(
+                Unexpected::UnitVariant,
+                &"struct variant",
+            )),
         }
     }
 }
@@ -931,7 +929,7 @@ pub struct MapRefDeserializer<'de> {
 }
 
 impl<'de> MapRefDeserializer<'de> {
-    fn new(iter: Iter<'de, (ValueRef<'de>, ValueRef<'de>)>) -> Self {
+    const fn new(iter: Iter<'de, (ValueRef<'de>, ValueRef<'de>)>) -> Self {
         Self { val: None, iter }
     }
 }
@@ -984,7 +982,8 @@ pub struct EnumRefDeserializer<'de> {
 }
 
 impl<'de> EnumRefDeserializer<'de> {
-    #[must_use] pub fn new(id: u32, value: Option<&'de ValueRef<'de>>) -> Self {
+    #[must_use]
+    pub fn new(id: u32, value: Option<&'de ValueRef<'de>>) -> Self {
         Self { id, value }
     }
 }
@@ -1130,13 +1129,6 @@ trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
     }
 
     #[inline]
-    fn deserialize_newtype_struct<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
-    {
-        visitor.visit_newtype_struct(self)
-    }
-
-    #[inline]
     fn deserialize_unit_struct<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
@@ -1153,25 +1145,21 @@ trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
     }
 }
 
-impl<'de> ValueBase<'de> for Value {
-    type Item = Value;
-    type Iter = IntoIter<Value>;
-    type MapIter = IntoIter<(Value, Value)>;
+impl ValueBase<'_> for Value {
+    type Item = Self;
+    type Iter = IntoIter<Self>;
+    type MapIter = IntoIter<(Self, Self)>;
     type MapDeserializer = MapDeserializer<Self::MapIter, Self::Item>;
 
     #[inline]
     fn is_nil(&self) -> bool {
-        if let Value::Nil = *self {
-            true
-        } else {
-            false
-        }
+        *self == Self::Nil
     }
 
     #[inline]
     fn into_iter(self) -> Result<Self::Iter, Self::Item> {
         match self {
-            Value::Array(v) => Ok(v.into_iter()),
+            Self::Array(v) => Ok(v.into_iter()),
             other => Err(other),
         }
     }
@@ -1179,31 +1167,27 @@ impl<'de> ValueBase<'de> for Value {
     #[inline]
     fn into_map_iter(self) -> Result<Self::MapIter, Self::Item> {
         match self {
-            Value::Map(v) => Ok(v.into_iter()),
+            Self::Map(v) => Ok(v.into_iter()),
             other => Err(other),
         }
     }
 }
 
 impl<'de> ValueBase<'de> for ValueRef<'de> {
-    type Item = ValueRef<'de>;
-    type Iter = IntoIter<ValueRef<'de>>;
-    type MapIter = IntoIter<(ValueRef<'de>, ValueRef<'de>)>;
+    type Item = Self;
+    type Iter = IntoIter<Self>;
+    type MapIter = IntoIter<(Self, Self)>;
     type MapDeserializer = MapDeserializer<Self::MapIter, Self::Item>;
 
     #[inline]
     fn is_nil(&self) -> bool {
-        if let ValueRef::Nil = *self {
-            true
-        } else {
-            false
-        }
+        *self == Self::Nil
     }
 
     #[inline]
     fn into_iter(self) -> Result<Self::Iter, Self::Item> {
         match self {
-            ValueRef::Array(v) => Ok(v.into_iter()),
+            Self::Array(v) => Ok(v.into_iter()),
             other => Err(other),
         }
     }
@@ -1211,7 +1195,7 @@ impl<'de> ValueBase<'de> for ValueRef<'de> {
     #[inline]
     fn into_map_iter(self) -> Result<Self::MapIter, Self::Item> {
         match self {
-            ValueRef::Map(v) => Ok(v.into_iter()),
+            Self::Map(v) => Ok(v.into_iter()),
             other => Err(other),
         }
     }

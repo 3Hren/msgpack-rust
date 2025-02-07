@@ -8,8 +8,6 @@ use std::iter::FromIterator;
 use std::ops::Index;
 use std::str::Utf8Error;
 
-use num_traits::NumCast;
-
 pub mod decode;
 pub mod encode;
 
@@ -51,7 +49,7 @@ impl Integer {
     /// Returns `true` if the integer can be represented as `i64`.
     #[inline]
     #[must_use]
-    pub fn is_i64(&self) -> bool {
+    pub const fn is_i64(&self) -> bool {
         match self.n {
             IntPriv::PosInt(n) => n <= std::i64::MAX as u64,
             IntPriv::NegInt(..) => true,
@@ -61,7 +59,7 @@ impl Integer {
     /// Returns `true` if the integer can be represented as `u64`.
     #[inline]
     #[must_use]
-    pub fn is_u64(&self) -> bool {
+    pub const fn is_u64(&self) -> bool {
         match self.n {
             IntPriv::PosInt(..) => true,
             IntPriv::NegInt(..) => false,
@@ -73,7 +71,7 @@ impl Integer {
     #[must_use]
     pub fn as_i64(&self) -> Option<i64> {
         match self.n {
-            IntPriv::PosInt(n) => NumCast::from(n),
+            IntPriv::PosInt(n) => n.try_into().ok(),
             IntPriv::NegInt(n) => Some(n),
         }
     }
@@ -84,7 +82,7 @@ impl Integer {
     pub fn as_u64(&self) -> Option<u64> {
         match self.n {
             IntPriv::PosInt(n) => Some(n),
-            IntPriv::NegInt(n) => NumCast::from(n),
+            IntPriv::NegInt(n) => n.try_into().ok(),
         }
     }
 
@@ -93,8 +91,8 @@ impl Integer {
     #[must_use]
     pub fn as_f64(&self) -> Option<f64> {
         match self.n {
-            IntPriv::PosInt(n) => NumCast::from(n),
-            IntPriv::NegInt(n) => NumCast::from(n),
+            IntPriv::PosInt(n) => Some(n as _),
+            IntPriv::NegInt(n) => Some(n as _),
         }
     }
 }
@@ -117,35 +115,35 @@ impl Display for Integer {
 impl From<u8> for Integer {
     #[inline]
     fn from(n: u8) -> Self {
-        Integer { n: IntPriv::PosInt(n as u64) }
+        Self { n: IntPriv::PosInt(u64::from(n)) }
     }
 }
 
 impl From<u16> for Integer {
     #[inline]
     fn from(n: u16) -> Self {
-        Integer { n: IntPriv::PosInt(n as u64) }
+        Self { n: IntPriv::PosInt(u64::from(n)) }
     }
 }
 
 impl From<u32> for Integer {
     #[inline]
     fn from(n: u32) -> Self {
-        Integer { n: IntPriv::PosInt(n as u64) }
+        Self { n: IntPriv::PosInt(u64::from(n)) }
     }
 }
 
 impl From<u64> for Integer {
     #[inline]
     fn from(n: u64) -> Self {
-        Integer { n: IntPriv::PosInt(n) }
+        Self { n: IntPriv::PosInt(n) }
     }
 }
 
 impl From<usize> for Integer {
     #[inline]
     fn from(n: usize) -> Self {
-        Integer { n: IntPriv::PosInt(n as u64) }
+        Self { n: IntPriv::PosInt(n as u64) }
     }
 }
 
@@ -153,9 +151,9 @@ impl From<i8> for Integer {
     #[inline]
     fn from(n: i8) -> Self {
         if n < 0 {
-            Integer { n: IntPriv::NegInt(n as i64) }
+            Self { n: IntPriv::NegInt(i64::from(n)) }
         } else {
-            Integer { n: IntPriv::PosInt(n as u64) }
+            Self { n: IntPriv::PosInt(n as u64) }
         }
     }
 }
@@ -164,9 +162,9 @@ impl From<i16> for Integer {
     #[inline]
     fn from(n: i16) -> Self {
         if n < 0 {
-            Integer { n: IntPriv::NegInt(n as i64) }
+            Self { n: IntPriv::NegInt(i64::from(n)) }
         } else {
-            Integer { n: IntPriv::PosInt(n as u64) }
+            Self { n: IntPriv::PosInt(n as u64) }
         }
     }
 }
@@ -175,9 +173,9 @@ impl From<i32> for Integer {
     #[inline]
     fn from(n: i32) -> Self {
         if n < 0 {
-            Integer { n: IntPriv::NegInt(n as i64) }
+            Self { n: IntPriv::NegInt(i64::from(n)) }
         } else {
-            Integer { n: IntPriv::PosInt(n as u64) }
+            Self { n: IntPriv::PosInt(n as u64) }
         }
     }
 }
@@ -186,9 +184,9 @@ impl From<i64> for Integer {
     #[inline]
     fn from(n: i64) -> Self {
         if n < 0 {
-            Integer { n: IntPriv::NegInt(n) }
+            Self { n: IntPriv::NegInt(n) }
         } else {
-            Integer { n: IntPriv::PosInt(n as u64) }
+            Self { n: IntPriv::PosInt(n as u64) }
         }
     }
 }
@@ -197,9 +195,9 @@ impl From<isize> for Integer {
     #[inline]
     fn from(n: isize) -> Self {
         if n < 0 {
-            Integer { n: IntPriv::NegInt(n as i64) }
+            Self { n: IntPriv::NegInt(n as i64) }
         } else {
-            Integer { n: IntPriv::PosInt(n as u64) }
+            Self { n: IntPriv::PosInt(n as u64) }
         }
     }
 }
@@ -307,21 +305,21 @@ impl Display for Utf8String {
 impl<'a> From<String> for Utf8String {
     #[inline]
     fn from(val: String) -> Self {
-        Utf8String { s: Ok(val) }
+        Self { s: Ok(val) }
     }
 }
 
-impl<'a> From<&'a str> for Utf8String {
+impl From<&str> for Utf8String {
     #[inline]
     fn from(val: &str) -> Self {
-        Utf8String { s: Ok(val.into()) }
+        Self { s: Ok(val.into()) }
     }
 }
 
 impl<'a> From<Cow<'a, str>> for Utf8String {
     #[inline]
     fn from(val: Cow<'a, str>) -> Self {
-        Utf8String {
+        Self {
             s: Ok(val.into_owned()),
         }
     }
@@ -352,10 +350,7 @@ impl<'a> Utf8StringRef<'a> {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> Option<&str> {
-        match self.s {
-            Ok(s) => Some(s),
-            Err(..) => None,
-        }
+        self.s.ok()
     }
 
     /// Returns the underlying `Utf8Error` if the string contains invalud UTF-8 sequence, or
@@ -372,7 +367,7 @@ impl<'a> Utf8StringRef<'a> {
     /// Returns a byte slice of this string contents no matter whether it's valid or not UTF-8.
     #[inline]
     #[must_use]
-    pub fn as_bytes(&self) -> &[u8] {
+    pub const fn as_bytes(&self) -> &[u8] {
         match self.s {
             Ok(s) => s.as_bytes(),
             Err(ref err) => err.0,
@@ -404,11 +399,11 @@ impl<'a> Utf8StringRef<'a> {
     }
 }
 
-impl<'a> Display for Utf8StringRef<'a> {
+impl Display for Utf8StringRef<'_> {
     #[cold]
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self.s {
-            Ok(ref s) => Debug::fmt(&s, fmt),
+            Ok(s) => Debug::fmt(&&s, fmt),
             Err(ref err) => Debug::fmt(&err.0, fmt),
         }
     }
@@ -424,8 +419,10 @@ impl<'a> From<&'a str> for Utf8StringRef<'a> {
 impl<'a> From<Utf8StringRef<'a>> for Utf8String {
     fn from(val: Utf8StringRef<'a>) -> Self {
         match val.s {
-            Ok(s) => Utf8String { s: Ok(s.into()) },
-            Err((buf, err)) => Utf8String { s: Err((buf.into(), err)) },
+            Ok(s) => Self { s: Ok(s.into()) },
+            Err((buf, err)) => Self {
+                s: Err((buf.into(), err)),
+            },
         }
     }
 }
@@ -505,20 +502,20 @@ impl Value {
     #[must_use]
     pub fn as_ref(&self) -> ValueRef<'_> {
         match *self {
-            Value::Nil => ValueRef::Nil,
-            Value::Boolean(val) => ValueRef::Boolean(val),
-            Value::Integer(val) => ValueRef::Integer(val),
-            Value::F32(val) => ValueRef::F32(val),
-            Value::F64(val) => ValueRef::F64(val),
-            Value::String(ref val) => ValueRef::String(val.as_ref()),
-            Value::Binary(ref val) => ValueRef::Binary(val.as_slice()),
-            Value::Array(ref val) => {
+            Self::Nil => ValueRef::Nil,
+            Self::Boolean(val) => ValueRef::Boolean(val),
+            Self::Integer(val) => ValueRef::Integer(val),
+            Self::F32(val) => ValueRef::F32(val),
+            Self::F64(val) => ValueRef::F64(val),
+            Self::String(ref val) => ValueRef::String(val.as_ref()),
+            Self::Binary(ref val) => ValueRef::Binary(val.as_slice()),
+            Self::Array(ref val) => {
                 ValueRef::Array(val.iter().map(|v| v.as_ref()).collect())
             }
-            Value::Map(ref val) => {
+            Self::Map(ref val) => {
                 ValueRef::Map(val.iter().map(|(k, v)| (k.as_ref(), v.as_ref())).collect())
             }
-            Value::Ext(ty, ref buf) => ValueRef::Ext(ty, buf.as_slice()),
+            Self::Ext(ty, ref buf) => ValueRef::Ext(ty, buf.as_slice()),
         }
     }
 
@@ -533,8 +530,8 @@ impl Value {
     /// ```
     #[inline]
     #[must_use]
-    pub fn is_nil(&self) -> bool {
-        if let Value::Nil = *self {
+    pub const fn is_nil(&self) -> bool {
+        if let Self::Nil = *self {
             true
         } else {
             false
@@ -572,7 +569,7 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn is_i64(&self) -> bool {
-        if let Value::Integer(ref v) = *self {
+        if let Self::Integer(ref v) = *self {
             v.is_i64()
         } else {
             false
@@ -594,7 +591,7 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn is_u64(&self) -> bool {
-        if let Value::Integer(ref v) = *self {
+        if let Self::Integer(ref v) = *self {
             v.is_u64()
         } else {
             false
@@ -616,7 +613,7 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn is_f32(&self) -> bool {
-        if let Value::F32(..) = *self {
+        if let Self::F32(..) = *self {
             true
         } else {
             false
@@ -638,7 +635,7 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn is_f64(&self) -> bool {
-        if let Value::F64(..) = *self {
+        if let Self::F64(..) = *self {
             true
         } else {
             false
@@ -661,7 +658,7 @@ impl Value {
     #[must_use]
     pub fn is_number(&self) -> bool {
         match *self {
-            Value::Integer(..) | Value::F32(..) | Value::F64(..) => true,
+            Self::Integer(..) | Self::F32(..) | Self::F64(..) => true,
             _ => false,
         }
     }
@@ -725,8 +722,8 @@ impl Value {
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_bool(&self) -> Option<bool> {
-        if let Value::Boolean(val) = *self {
+    pub const fn as_bool(&self) -> Option<bool> {
+        if let Self::Boolean(val) = *self {
             Some(val)
         } else {
             None
@@ -749,7 +746,7 @@ impl Value {
     #[must_use]
     pub fn as_i64(&self) -> Option<i64> {
         match *self {
-            Value::Integer(ref n) => n.as_i64(),
+            Self::Integer(ref n) => n.as_i64(),
             _ => None,
         }
     }
@@ -771,7 +768,7 @@ impl Value {
     #[must_use]
     pub fn as_u64(&self) -> Option<u64> {
         match *self {
-            Value::Integer(ref n) => n.as_u64(),
+            Self::Integer(ref n) => n.as_u64(),
             _ => None,
         }
     }
@@ -795,9 +792,9 @@ impl Value {
     #[must_use]
     pub fn as_f64(&self) -> Option<f64> {
         match *self {
-            Value::Integer(ref n) => n.as_f64(),
-            Value::F32(n) => Some(From::from(n)),
-            Value::F64(n) => Some(n),
+            Self::Integer(ref n) => n.as_f64(),
+            Self::F32(n) => Some(From::from(n)),
+            Self::F64(n) => Some(n),
             _ => None,
         }
     }
@@ -817,7 +814,7 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> Option<&str> {
-        if let Value::String(ref val) = *self {
+        if let Self::String(ref val) = *self {
             val.as_str()
         } else {
             None
@@ -838,9 +835,9 @@ impl Value {
     /// ```
     #[must_use]
     pub fn as_slice(&self) -> Option<&[u8]> {
-        if let Value::Binary(ref val) = *self {
+        if let Self::Binary(ref val) = *self {
             Some(val)
-        } else if let Value::String(ref val) = *self {
+        } else if let Self::String(ref val) = *self {
             Some(val.as_bytes())
         } else {
             None
@@ -863,8 +860,8 @@ impl Value {
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_array(&self) -> Option<&Vec<Value>> {
-        if let Value::Array(ref array) = *self {
+    pub fn as_array(&self) -> Option<&Vec<Self>> {
+        if let Self::Array(ref array) = *self {
             Some(array)
         } else {
             None
@@ -891,8 +888,8 @@ impl Value {
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_map(&self) -> Option<&Vec<(Value, Value)>> {
-        if let Value::Map(ref map) = *self {
+    pub fn as_map(&self) -> Option<&Vec<(Self, Self)>> {
+        if let Self::Map(ref map) = *self {
             Some(map)
         } else {
             None
@@ -914,8 +911,8 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn as_ext(&self) -> Option<(i8, &[u8])> {
-        if let Value::Ext(ty, ref buf) = *self {
-            Some((ty, buf))
+        if let Self::Ext(ty, buf) = self {
+            Some((*ty, buf))
         } else {
             None
         }
@@ -926,27 +923,25 @@ static NIL: Value = Value::Nil;
 static NIL_REF: ValueRef<'static> = ValueRef::Nil;
 
 impl Index<usize> for Value {
-    type Output = Value;
+    type Output = Self;
 
-    fn index(&self, index: usize) -> &Value {
+    fn index(&self, index: usize) -> &Self {
         self.as_array().and_then(|v| v.get(index)).unwrap_or(&NIL)
     }
 }
 
 impl Index<&str> for Value {
-    type Output = Value;
-    fn index(&self, index: &str) -> &Value {
-        if let Value::Map(ref map) = *self {
-            if let Some(found) = map.iter().find(
-                |(key, _val)|  {
-                if let Value::String(ref strval) = *key {
+    type Output = Self;
+    fn index(&self, index: &str) -> &Self {
+        if let Self::Map(ref map) = *self {
+            if let Some(found) = map.iter().find(|(key, _val)| {
+                if let Self::String(ref strval) = *key {
                     if let Some(s) = strval.as_str() {
                         if s == index { return true; }
                     }
                 }
                 false
-                })
-            {
+            }) {
                 return &found.1;
             }
         }
@@ -957,147 +952,147 @@ impl Index<&str> for Value {
 impl From<bool> for Value {
     #[inline]
     fn from(v: bool) -> Self {
-        Value::Boolean(v)
+        Self::Boolean(v)
     }
 }
 
 impl From<u8> for Value {
     #[inline]
     fn from(v: u8) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<u16> for Value {
     #[inline]
     fn from(v: u16) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<u32> for Value {
     #[inline]
     fn from(v: u32) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<u64> for Value {
     #[inline]
     fn from(v: u64) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<usize> for Value {
     #[inline]
     fn from(v: usize) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<i8> for Value {
     #[inline]
     fn from(v: i8) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<i16> for Value {
     #[inline]
     fn from(v: i16) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<i32> for Value {
     #[inline]
     fn from(v: i32) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<i64> for Value {
     #[inline]
     fn from(v: i64) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<isize> for Value {
     #[inline]
     fn from(v: isize) -> Self {
-        Value::Integer(From::from(v))
+        Self::Integer(From::from(v))
     }
 }
 
 impl From<f32> for Value {
     #[inline]
     fn from(v: f32) -> Self {
-        Value::F32(v)
+        Self::F32(v)
     }
 }
 
 impl From<f64> for Value {
     #[inline]
     fn from(v: f64) -> Self {
-        Value::F64(v)
+        Self::F64(v)
     }
 }
 
 impl From<String> for Value {
     #[inline]
     fn from(v: String) -> Self {
-        Value::String(Utf8String::from(v))
+        Self::String(Utf8String::from(v))
     }
 }
 
-impl<'a> From<&'a str> for Value {
+impl From<&str> for Value {
     #[inline]
     fn from(v: &str) -> Self {
-        Value::String(Utf8String::from(v))
+        Self::String(Utf8String::from(v))
     }
 }
 
 impl<'a> From<Cow<'a, str>> for Value {
     #[inline]
     fn from(v: Cow<'a, str>) -> Self {
-        Value::String(Utf8String::from(v))
+        Self::String(Utf8String::from(v))
     }
 }
 
 impl From<Vec<u8>> for Value {
     #[inline]
     fn from(v: Vec<u8>) -> Self {
-        Value::Binary(v)
+        Self::Binary(v)
     }
 }
 
-impl<'a> From<&'a [u8]> for Value {
+impl From<&[u8]> for Value {
     #[inline]
     fn from(v: &[u8]) -> Self {
-        Value::Binary(v.into())
+        Self::Binary(v.into())
     }
 }
 
 impl<'a> From<Cow<'a, [u8]>> for Value {
     #[inline]
     fn from(v: Cow<'a, [u8]>) -> Self {
-        Value::Binary(v.into_owned())
+        Self::Binary(v.into_owned())
     }
 }
 
-impl From<Vec<Value>> for Value {
+impl From<Vec<Self>> for Value {
     #[inline]
-    fn from(v: Vec<Value>) -> Self {
-        Value::Array(v)
+    fn from(v: Vec<Self>) -> Self {
+        Self::Array(v)
     }
 }
 
-impl From<Vec<(Value, Value)>> for Value {
+impl From<Vec<(Self, Self)>> for Value {
     #[inline]
-    fn from(v: Vec<(Value, Value)>) -> Self {
-        Value::Map(v)
+    fn from(v: Vec<(Self, Self)>) -> Self {
+        Self::Map(v)
     }
 }
 
@@ -1105,74 +1100,68 @@ impl From<Vec<(Value, Value)>> for Value {
 /// [`Array`](crate::Value::Array), rather than a
 /// [`Binary`](crate::Value::Binary)
 impl<V> FromIterator<V> for Value
-where V: Into<Value> {
-  fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
-    let v: Vec<Value> = iter.into_iter().map(|v| v.into()).collect();
-    Value::Array(v)
-  }
+where
+    V: Into<Self>,
+{
+    fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
+        let v: Vec<Value> = iter.into_iter().map(|v| v.into()).collect();
+        Self::Array(v)
+    }
 }
 
 impl TryFrom<Value> for u64 {
-  type Error = Value;
+    type Error = Value;
 
-  fn try_from(val: Value) -> Result<Self, Self::Error> {
-      match val {
-        Value::Integer(n) => {
-          match n.as_u64() {
-            Some(i) => Ok(i),
-            None => Err(val)
-          }
+    fn try_from(val: Value) -> Result<Self, Self::Error> {
+        match val {
+            Value::Integer(n) => match n.as_u64() {
+                Some(i) => Ok(i),
+                None => Err(val),
+            },
+            v => Err(v),
         }
-        v => Err(v),
-      }
-  }
+    }
 }
 
 impl TryFrom<Value> for i64 {
-  type Error = Value;
+    type Error = Value;
 
-  fn try_from(val: Value) -> Result<Self, Self::Error> {
-      match val {
-        Value::Integer(n) => {
-          match n.as_i64() {
-            Some(i) => Ok(i),
-            None => Err(val)
-          }
+    fn try_from(val: Value) -> Result<Self, Self::Error> {
+        match val {
+            Value::Integer(n) => match n.as_i64() {
+                Some(i) => Ok(i),
+                None => Err(val),
+            },
+            v => Err(v),
         }
-        v => Err(v),
-      }
-  }
+    }
 }
 
 impl TryFrom<Value> for f64 {
-  type Error = Value;
+    type Error = Value;
 
-  fn try_from(val: Value) -> Result<Self, Self::Error> {
-      match val {
-        Value::Integer(n) => {
-          match n.as_f64() {
-            Some(i) => Ok(i),
-            None => Err(val)
-          }
+    fn try_from(val: Value) -> Result<Self, Self::Error> {
+        match val {
+            Value::Integer(n) => match n.as_f64() {
+                Some(i) => Ok(i),
+                None => Err(val),
+            },
+            Value::F32(n) => Ok(From::from(n)),
+            Value::F64(n) => Ok(n),
+            v => Err(v),
         }
-        Value::F32(n) => Ok(From::from(n)),
-        Value::F64(n) => Ok(n),
-        v => Err(v),
-      }
-  }
+    }
 }
 
 impl TryFrom<Value> for String {
-  type Error = Value;
+    type Error = Value;
 
-  fn try_from(val: Value) -> Result<Self, Self::Error> {
-    match val {
-      Value::String(Utf8String{ s: Ok(u)}) => {
-        Ok(u)
-      }
-      _ => Err(val)
+    fn try_from(val: Value) -> Result<Self, Self::Error> {
+        match val {
+            Value::String(Utf8String { s: Ok(u) }) => Ok(u),
+            _ => Err(val),
+        }
     }
-  }
 }
 // The following impl was left out intentionally, see
 // https://github.com/3Hren/msgpack-rust/pull/228#discussion_r359513925
@@ -1190,18 +1179,18 @@ impl TryFrom<Value> for (i8, Vec<u8>) {
 */
 
 macro_rules! impl_try_from {
-  ($t: ty, $p: ident) => {
-    impl TryFrom<Value> for $t {
-      type Error = Value;
+    ($t: ty, $p: ident) => {
+        impl TryFrom<Value> for $t {
+            type Error = Value;
 
-      fn try_from(val: Value) -> Result<$t, Self::Error> {
-        match val {
-          Value::$p(v) => Ok(v),
-          v => Err(v)
+            fn try_from(val: Value) -> Result<$t, Self::Error> {
+                match val {
+                    Value::$p(v) => Ok(v),
+                    v => Err(v),
+                }
+            }
         }
-      }
-    }
-  };
+    };
 }
 
 impl_try_from!(bool, Boolean);
@@ -1215,14 +1204,14 @@ impl Display for Value {
     #[cold]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Value::Nil => f.write_str("nil"),
-            Value::Boolean(val) => Display::fmt(&val, f),
-            Value::Integer(ref val) => Display::fmt(&val, f),
-            Value::F32(val) => Display::fmt(&val, f),
-            Value::F64(val) => Display::fmt(&val, f),
-            Value::String(ref val) => Display::fmt(&val, f),
-            Value::Binary(ref val) => Debug::fmt(&val, f),
-            Value::Array(ref vec) => {
+            Self::Nil => f.write_str("nil"),
+            Self::Boolean(val) => Display::fmt(&val, f),
+            Self::Integer(ref val) => Display::fmt(&val, f),
+            Self::F32(val) => Display::fmt(&val, f),
+            Self::F64(val) => Display::fmt(&val, f),
+            Self::String(ref val) => Display::fmt(&val, f),
+            Self::Binary(ref val) => Debug::fmt(&val, f),
+            Self::Array(ref vec) => {
                 // TODO: This can be slower than naive implementation. Need benchmarks for more
                 // information.
                 let res = vec.iter()
@@ -1232,7 +1221,7 @@ impl Display for Value {
 
                 write!(f, "[{res}]")
             }
-            Value::Map(ref vec) => {
+            Self::Map(ref vec) => {
                 write!(f, "{{")?;
 
                 match vec.iter().take(1).next() {
@@ -1250,7 +1239,7 @@ impl Display for Value {
 
                 write!(f, "}}")
             }
-            Value::Ext(ty, ref data) => {
+            Self::Ext(ty, ref data) => {
                 write!(f, "[{ty}, {data:?}]")
             }
         }
@@ -1284,7 +1273,7 @@ pub enum ValueRef<'a> {
     Ext(i8, &'a [u8]),
 }
 
-impl<'a> ValueRef<'a> {
+impl ValueRef<'_> {
     /// Converts the current non-owning value to an owned Value.
     ///
     /// This is achieved by deep copying all underlying structures and borrowed buffers.
@@ -1382,7 +1371,7 @@ impl<'a> ValueRef<'a> {
 
     #[inline]
     #[must_use]
-    pub fn into_array(self) -> Option<Vec<ValueRef<'a>>> {
+    pub fn into_array(self) -> Option<Vec<Self>> {
         if let ValueRef::Array(array) = self {
             Some(array)
         } else {
@@ -1391,84 +1380,84 @@ impl<'a> ValueRef<'a> {
     }
 }
 
-impl<'a> From<u8> for ValueRef<'a> {
+impl From<u8> for ValueRef<'_> {
     #[inline]
     fn from(v: u8) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<u16> for ValueRef<'a> {
+impl From<u16> for ValueRef<'_> {
     #[inline]
     fn from(v: u16) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<u32> for ValueRef<'a> {
+impl From<u32> for ValueRef<'_> {
     #[inline]
     fn from(v: u32) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<u64> for ValueRef<'a> {
+impl From<u64> for ValueRef<'_> {
     #[inline]
     fn from(v: u64) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<usize> for ValueRef<'a> {
+impl From<usize> for ValueRef<'_> {
     #[inline]
     fn from(v: usize) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<i8> for ValueRef<'a> {
+impl From<i8> for ValueRef<'_> {
     #[inline]
     fn from(v: i8) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<i16> for ValueRef<'a> {
+impl From<i16> for ValueRef<'_> {
     #[inline]
     fn from(v: i16) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<i32> for ValueRef<'a> {
+impl From<i32> for ValueRef<'_> {
     #[inline]
     fn from(v: i32) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<i64> for ValueRef<'a> {
+impl From<i64> for ValueRef<'_> {
     #[inline]
     fn from(v: i64) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<isize> for ValueRef<'a> {
+impl From<isize> for ValueRef<'_> {
     #[inline]
     fn from(v: isize) -> Self {
         ValueRef::Integer(From::from(v))
     }
 }
 
-impl<'a> From<f32> for ValueRef<'a> {
+impl From<f32> for ValueRef<'_> {
     #[inline]
     fn from(v: f32) -> Self {
         ValueRef::F32(v)
     }
 }
 
-impl<'a> From<f64> for ValueRef<'a> {
+impl From<f64> for ValueRef<'_> {
     #[inline]
     fn from(v: f64) -> Self {
         ValueRef::F64(v)
@@ -1489,9 +1478,9 @@ impl<'a> From<&'a [u8]> for ValueRef<'a> {
     }
 }
 
-impl<'a> From<Vec<ValueRef<'a>>> for ValueRef<'a> {
+impl From<Vec<Self>> for ValueRef<'_> {
     #[inline]
-    fn from(v: Vec<ValueRef<'a>>) -> Self {
+    fn from(v: Vec<Self>) -> Self {
         ValueRef::Array(v)
     }
 }
@@ -1500,15 +1489,17 @@ impl<'a> From<Vec<ValueRef<'a>>> for ValueRef<'a> {
 /// [`Array`](crate::Value::Array), rather than a
 /// [`Binary`](crate::Value::Binary)
 impl<'a, V> FromIterator<V> for ValueRef<'a>
-where V: Into<ValueRef<'a>> {
-  fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
-    let v: Vec<ValueRef<'a>> = iter.into_iter().map(|v| v.into()).collect();
-    ValueRef::Array(v)
-  }
+where
+    V: Into<Self>,
+{
+    fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
+        let v: Vec<ValueRef<'a>> = iter.into_iter().map(|v| v.into()).collect();
+        ValueRef::Array(v)
+    }
 }
 
-impl<'a> From<Vec<(ValueRef<'a>, ValueRef<'a>)>> for ValueRef<'a> {
-    fn from(v: Vec<(ValueRef<'a>, ValueRef<'a>)>) -> Self {
+impl From<Vec<(Self, Self)>> for ValueRef<'_> {
+    fn from(v: Vec<(Self, Self)>) -> Self {
         ValueRef::Map(v)
     }
 }
@@ -1543,18 +1534,18 @@ impl<'a> TryFrom<ValueRef<'a>> for (i8, &'a[u8]) {
 */
 
 macro_rules! impl_try_from_ref {
-  ($t: ty, $p: ident) => {
-    impl<'a> TryFrom<ValueRef<'a>> for $t {
-      type Error = ValueRef<'a>;
+    ($t: ty, $p: ident) => {
+        impl<'a> TryFrom<ValueRef<'a>> for $t {
+            type Error = ValueRef<'a>;
 
-      fn try_from(val: ValueRef<'a>) -> Result<$t, Self::Error> {
-        match val {
-          ValueRef::$p(v) => Ok(v),
-          v => Err(v)
+            fn try_from(val: ValueRef<'a>) -> Result<$t, Self::Error> {
+                match val {
+                    ValueRef::$p(v) => Ok(v),
+                    v => Err(v),
+                }
+            }
         }
-      }
-    }
-  };
+    };
 }
 
 impl_try_from_ref!(bool, Boolean);
@@ -1564,7 +1555,7 @@ impl_try_from_ref!(&'a [u8], Binary);
 impl_try_from_ref!(f32, F32);
 impl_try_from_ref!(Utf8StringRef<'a>, String);
 
-impl<'a> Display for ValueRef<'a> {
+impl Display for ValueRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             ValueRef::Nil => write!(f, "nil"),
@@ -1573,7 +1564,7 @@ impl<'a> Display for ValueRef<'a> {
             ValueRef::F32(val) => Display::fmt(&val, f),
             ValueRef::F64(val) => Display::fmt(&val, f),
             ValueRef::String(ref val) => Display::fmt(&val, f),
-            ValueRef::Binary(ref val) => Debug::fmt(&val, f),
+            ValueRef::Binary(val) => Debug::fmt(&&val, f),
             ValueRef::Array(ref vec) => {
                 let res = vec.iter()
                     .map(|val| format!("{val}"))

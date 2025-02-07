@@ -50,110 +50,110 @@ impl Marker {
     /// Construct a msgpack marker from a single byte.
     #[must_use]
     #[inline]
-    pub fn from_u8(n: u8) -> Marker {
+    pub const fn from_u8(n: u8) -> Self {
         match n {
-            0x00 ..= 0x7f => Marker::FixPos(n),
-            0x80 ..= 0x8f => Marker::FixMap(n & FIXMAP_SIZE),
-            0x90 ..= 0x9f => Marker::FixArray(n & FIXARRAY_SIZE),
-            0xa0 ..= 0xbf => Marker::FixStr(n & FIXSTR_SIZE),
-            0xc0 => Marker::Null,
+            0x00..=0x7f => Self::FixPos(n),
+            0x80..=0x8f => Self::FixMap(n & FIXMAP_SIZE),
+            0x90..=0x9f => Self::FixArray(n & FIXARRAY_SIZE),
+            0xa0..=0xbf => Self::FixStr(n & FIXSTR_SIZE),
+            0xc0 => Self::Null,
             // Marked in MessagePack spec as never used.
-            0xc1 => Marker::Reserved,
-            0xc2 => Marker::False,
-            0xc3 => Marker::True,
-            0xc4 => Marker::Bin8,
-            0xc5 => Marker::Bin16,
-            0xc6 => Marker::Bin32,
-            0xc7 => Marker::Ext8,
-            0xc8 => Marker::Ext16,
-            0xc9 => Marker::Ext32,
-            0xca => Marker::F32,
-            0xcb => Marker::F64,
-            0xcc => Marker::U8,
-            0xcd => Marker::U16,
-            0xce => Marker::U32,
-            0xcf => Marker::U64,
-            0xd0 => Marker::I8,
-            0xd1 => Marker::I16,
-            0xd2 => Marker::I32,
-            0xd3 => Marker::I64,
-            0xd4 => Marker::FixExt1,
-            0xd5 => Marker::FixExt2,
-            0xd6 => Marker::FixExt4,
-            0xd7 => Marker::FixExt8,
-            0xd8 => Marker::FixExt16,
-            0xd9 => Marker::Str8,
-            0xda => Marker::Str16,
-            0xdb => Marker::Str32,
-            0xdc => Marker::Array16,
-            0xdd => Marker::Array32,
-            0xde => Marker::Map16,
-            0xdf => Marker::Map32,
-            0xe0 ..= 0xff => Marker::FixNeg(n as i8),
+            0xc1 => Self::Reserved,
+            0xc2 => Self::False,
+            0xc3 => Self::True,
+            0xc4 => Self::Bin8,
+            0xc5 => Self::Bin16,
+            0xc6 => Self::Bin32,
+            0xc7 => Self::Ext8,
+            0xc8 => Self::Ext16,
+            0xc9 => Self::Ext32,
+            0xca => Self::F32,
+            0xcb => Self::F64,
+            0xcc => Self::U8,
+            0xcd => Self::U16,
+            0xce => Self::U32,
+            0xcf => Self::U64,
+            0xd0 => Self::I8,
+            0xd1 => Self::I16,
+            0xd2 => Self::I32,
+            0xd3 => Self::I64,
+            0xd4 => Self::FixExt1,
+            0xd5 => Self::FixExt2,
+            0xd6 => Self::FixExt4,
+            0xd7 => Self::FixExt8,
+            0xd8 => Self::FixExt16,
+            0xd9 => Self::Str8,
+            0xda => Self::Str16,
+            0xdb => Self::Str32,
+            0xdc => Self::Array16,
+            0xdd => Self::Array32,
+            0xde => Self::Map16,
+            0xdf => Self::Map32,
+            0xe0..=0xff => Self::FixNeg(n as i8),
         }
     }
 
     /// Converts a marker object into a single-byte representation.
     #[must_use]
     #[inline]
-    pub fn to_u8(&self) -> u8 {
+    pub const fn to_u8(&self) -> u8 {
         match *self {
-            Marker::FixPos(val)   => val,
-            Marker::FixNeg(val)   => val as u8,
+            Self::FixPos(val)   => val,
+            Self::FixNeg(val)   => val as u8,
 
-            Marker::Null          => 0xc0,
+            Self::Null          => 0xc0,
 
-            Marker::True          => 0xc3,
-            Marker::False         => 0xc2,
+            Self::True          => 0xc3,
+            Self::False         => 0xc2,
 
-            Marker::U8            => 0xcc,
-            Marker::U16           => 0xcd,
-            Marker::U32           => 0xce,
-            Marker::U64           => 0xcf,
+            Self::U8            => 0xcc,
+            Self::U16           => 0xcd,
+            Self::U32           => 0xce,
+            Self::U64           => 0xcf,
 
-            Marker::I8            => 0xd0,
-            Marker::I16           => 0xd1,
-            Marker::I32           => 0xd2,
-            Marker::I64           => 0xd3,
+            Self::I8            => 0xd0,
+            Self::I16           => 0xd1,
+            Self::I32           => 0xd2,
+            Self::I64           => 0xd3,
 
-            Marker::F32           => 0xca,
-            Marker::F64           => 0xcb,
+            Self::F32           => 0xca,
+            Self::F64           => 0xcb,
 
-            Marker::FixStr(len)   => 0xa0 | (len & FIXSTR_SIZE),
-            Marker::Str8          => 0xd9,
-            Marker::Str16         => 0xda,
-            Marker::Str32         => 0xdb,
+            Self::FixStr(len)   => 0xa0 | (len & FIXSTR_SIZE),
+            Self::Str8          => 0xd9,
+            Self::Str16         => 0xda,
+            Self::Str32         => 0xdb,
 
-            Marker::Bin8          => 0xc4,
-            Marker::Bin16         => 0xc5,
-            Marker::Bin32         => 0xc6,
+            Self::Bin8          => 0xc4,
+            Self::Bin16         => 0xc5,
+            Self::Bin32         => 0xc6,
 
-            Marker::FixArray(len) => 0x90 | (len & FIXARRAY_SIZE),
-            Marker::Array16       => 0xdc,
-            Marker::Array32       => 0xdd,
+            Self::FixArray(len) => 0x90 | (len & FIXARRAY_SIZE),
+            Self::Array16       => 0xdc,
+            Self::Array32       => 0xdd,
 
-            Marker::FixMap(len)   => 0x80 | (len & FIXMAP_SIZE),
-            Marker::Map16         => 0xde,
-            Marker::Map32         => 0xdf,
+            Self::FixMap(len)   => 0x80 | (len & FIXMAP_SIZE),
+            Self::Map16         => 0xde,
+            Self::Map32         => 0xdf,
 
-            Marker::FixExt1       => 0xd4,
-            Marker::FixExt2       => 0xd5,
-            Marker::FixExt4       => 0xd6,
-            Marker::FixExt8       => 0xd7,
-            Marker::FixExt16      => 0xd8,
-            Marker::Ext8          => 0xc7,
-            Marker::Ext16         => 0xc8,
-            Marker::Ext32         => 0xc9,
+            Self::FixExt1       => 0xd4,
+            Self::FixExt2       => 0xd5,
+            Self::FixExt4       => 0xd6,
+            Self::FixExt8       => 0xd7,
+            Self::FixExt16      => 0xd8,
+            Self::Ext8          => 0xc7,
+            Self::Ext16         => 0xc8,
+            Self::Ext32         => 0xc9,
 
-            Marker::Reserved      => 0xc1,
+            Self::Reserved      => 0xc1,
         }
     }
 }
 
 impl From<u8> for Marker {
     #[inline(always)]
-    fn from(val: u8) -> Marker {
-        Marker::from_u8(val)
+    fn from(val: u8) -> Self {
+        Self::from_u8(val)
     }
 }
 

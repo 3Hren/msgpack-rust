@@ -184,7 +184,7 @@ fn from_unsigned_invalid_marker_read_int() {
 
     match read_int::<u64, _>(&mut cur) {
         Err(NumValueReadError::TypeMismatch(Marker::Null)) => (),
-        other => panic!("unexpected result: {other:?}")
+        other => panic!("unexpected result: {other:?}"),
     }
     assert_eq!(1, cur.position());
 }
@@ -196,7 +196,7 @@ fn from_unsigned_invalid_unknown_marker_read_int() {
 
     match read_int::<u64, _>(&mut cur) {
         Err(NumValueReadError::TypeMismatch(Marker::Reserved)) => (),
-        other => panic!("unexpected result: {other:?}")
+        other => panic!("unexpected result: {other:?}"),
     }
     assert_eq!(1, cur.position());
 }

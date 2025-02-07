@@ -1,8 +1,8 @@
-/// Hacky serializer that only allows `u8`
+//! Hacky serializer that only allows `u8`
 
-use std::fmt;
 use serde::ser::Impossible;
 use serde::Serialize;
+use std::fmt;
 
 pub(crate) struct OnlyBytes;
 pub(crate) struct Nope;

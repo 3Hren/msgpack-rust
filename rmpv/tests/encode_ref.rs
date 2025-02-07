@@ -102,13 +102,11 @@ fn pass_pack_bin() {
 fn pass_pack_array() {
     check_packed_eq(
         &vec![0x93, 0x01, 0x02, 0x03],
-        &ValueRef::Array(
-            vec![
-                ValueRef::from(1),
-                ValueRef::from(2),
-                ValueRef::from(3)
-            ]
-        )
+        &ValueRef::Array(vec![
+            ValueRef::from(1),
+            ValueRef::from(2),
+            ValueRef::from(3),
+        ]),
     );
 }
 

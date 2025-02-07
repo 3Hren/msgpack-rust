@@ -14,7 +14,7 @@ pub fn write_str_len<W: RmpWrite>(wr: &mut W, len: u32) -> Result<Marker, ValueW
         Marker::FixStr(len as u8)
     } else if len < 256 {
         Marker::Str8
-    } else if len <= u16::MAX as u32 {
+    } else if u16::try_from(len).is_ok() {
         Marker::Str16
     } else {
         Marker::Str32
