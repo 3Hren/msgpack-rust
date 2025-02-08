@@ -36,7 +36,7 @@ use std::error;
 
 use num_traits::cast::FromPrimitive;
 
-use crate::Marker;
+use crate::{Marker, Timestamp};
 
 pub mod bytes;
 pub use bytes::Bytes;
@@ -245,6 +245,79 @@ impl<E: RmpReadErr> From<E> for MarkerReadError<E> {
 #[inline]
 pub fn read_marker<R: RmpRead>(rd: &mut R) -> Result<Marker, MarkerReadError<R::Error>> {
     Ok(Marker::from_u8(rd.read_u8()?))
+}
+
+/// Attempts to read an Extension struct from the given reader and to decode it as a Timestamp value.
+///
+/// According to the MessagePack specification, there are 3 types of Timestamp, 32, 64, and 96.
+///
+/// # Errors
+///
+/// This function will return `ValueReadError` on any I/O error while reading the Timestamp,
+/// except the EINTR, which is handled internally.
+///
+/// It also returns `ValueReadError::TypeMismatch` if the actual type is not equal with the
+/// expected one, indicating you with the actual type.
+///
+/// # Note
+///
+/// This function will silently retry on every EINTR received from the underlying `Read` until
+/// successful read.
+///
+/// # Examples
+///
+/// ```
+/// use rmp::Timestamp;
+///
+/// // FixExt4 with a type of -1 (0xff)
+/// let mut buf1 = [0xd6, 0xff, 0x66, 0xc1, 0xde, 0x7c];
+/// // FixExt8 with a type of -1 (0xff)
+/// let mut buf2 = [0xd7, 0xff, 0xee, 0x6b, 0x27, 0xfc, 0x66, 0xc1, 0xde, 0x7c];
+/// // Ext8 with a size of 12 (0x0c) and a type of -1 (0xff)
+/// let mut buf3 = [0xc7, 0x0c, 0xff, 0x3b, 0x9a, 0xc9, 0xff, 0x00, 0x00, 0x00, 0x00, 0x66, 0xc1, 0xde, 0x7c];
+///
+/// let ts1_expected = Timestamp::from_32(0x66c1de7c);
+/// let ts2_expected = Timestamp::from_64(0x66c1de7c, 0x3b9ac9ff).unwrap();
+/// let ts3_expected = Timestamp::from_96(0x66c1de7c, 0x3b9ac9ff).unwrap();
+///
+/// let ts1_result = rmp::decode::read_timestamp(&mut buf1.as_slice()).unwrap();
+/// let ts2_result = rmp::decode::read_timestamp(&mut buf2.as_slice()).unwrap();
+/// let ts3_result = rmp::decode::read_timestamp(&mut buf3.as_slice()).unwrap();
+///
+/// assert_eq!(ts1_expected, ts1_result);
+/// assert_eq!(ts2_expected, ts2_result);
+/// assert_eq!(ts3_expected, ts3_result);
+/// ```
+pub fn read_timestamp<R: RmpRead>(rd: &mut R) -> Result<Timestamp, ValueReadError<R::Error>> {
+    let marker = read_marker(rd)?;
+    let prefix = rd.read_data_i8()?;
+    match (marker, prefix) {
+        // timestamp 32
+        (Marker::FixExt4, -1) => {
+            let secs = rd.read_data_u32()?;
+            Ok(Timestamp::from_32(secs))
+        },
+        // timestamp 64
+        (Marker::FixExt8, -1) => {
+            let data = rd.read_data_u64()?;
+            Timestamp::from_combined_64(data)
+                .ok_or(ValueReadError::TypeMismatch(Marker::Reserved))
+        },
+        // timestamp 96
+        (Marker::Ext8, 12) => {
+            let prefix = rd.read_data_i8()?;
+            if prefix == -1 {
+                let nsecs = rd.read_data_u32()?;
+                let secs = rd.read_data_i64()?;
+                Timestamp::from_96(secs, nsecs)
+                    .ok_or(ValueReadError::TypeMismatch(Marker::Reserved))
+            } else {
+                Err(ValueReadError::TypeMismatch(Marker::Reserved))
+            }
+        },
+        (Marker::Ext8 | Marker::FixExt4 | Marker::FixExt8, _) => Err(ValueReadError::TypeMismatch(Marker::Reserved)),
+        (marker, _) => Err(ValueReadError::TypeMismatch(marker)),
+    }
 }
 
 /// Attempts to read a single byte from the given reader and to decode it as a nil value.

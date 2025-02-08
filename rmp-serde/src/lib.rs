@@ -40,6 +40,7 @@ pub mod encode;
 ///            Value::Ext(2, vec![5]));
 /// ```
 pub const MSGPACK_EXT_STRUCT_NAME: &str = "_ExtStruct";
+pub(crate) const MSGPACK_TIMESTAMP_STRUCT_NAME: &str = "_TimestampForInternalUseOnly";
 
 /// Helper that allows both to encode and decode strings no matter whether they contain valid or
 /// invalid UTF-8.
@@ -330,5 +331,52 @@ impl<'de> Deserialize<'de> for RawRef<'de> {
         where D: de::Deserializer<'de>
     {
         de.deserialize_any(RawRefVisitor)
+    }
+}
+
+/// This is a wrapper for `rmp::Timestamp` which is only used for serde.
+///
+/// This maps to the serde data model as follows:
+///
+/// `struct _TimestampForInternalUseOnly(u128);`
+///
+/// This will encode enough information for the Serializer and Deserializer
+/// to properly manage the data to and from the msgpack format.
+///
+/// This wrapper should ONLY be used with the msgpack Serializer and Deserializer
+/// from this library.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct TimestampSerde(pub rmp::Timestamp);
+
+impl Serialize for TimestampSerde {
+    fn serialize<S>(&self, se: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        se.serialize_newtype_struct(MSGPACK_TIMESTAMP_STRUCT_NAME, &self.0.into_u128())
+    }
+}
+
+impl<'de> Deserialize<'de> for TimestampSerde {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        struct TimestampVisitor;
+
+        impl de::Visitor<'_> for TimestampVisitor {
+            type Value = TimestampSerde;
+            
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("A valid TimestampSerde")
+            }
+            
+            fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
+                where
+                    E: de::Error, {
+                    Ok(TimestampSerde(rmp::Timestamp::from_u128(v).ok_or_else(|| de::Error::custom("invalid TimestampSerde"))?))
+            }
+        }
+        deserializer.deserialize_newtype_struct(MSGPACK_TIMESTAMP_STRUCT_NAME, TimestampVisitor)
     }
 }
