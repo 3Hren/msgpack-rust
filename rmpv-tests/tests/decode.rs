@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use serde_bytes::ByteBuf;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use rmpv::decode;
 use rmpv::ext::from_value;
@@ -310,4 +310,60 @@ fn pass_tuple_struct_from_ext() {
         ExtStruct(42, vec![255]),
         from_value(Value::Ext(42, vec![255])).unwrap()
     );
+}
+
+#[derive(Debug, PartialEq)]
+enum MightFail<T>{
+    Ok(T),
+    Failed,
+}
+
+impl<'de, T:serde::de::Deserialize<'de>> serde::de::Deserialize<'de> for MightFail<T> {
+    fn deserialize<D>(deserializer: D) -> Result<MightFail<T>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        match T::deserialize(deserializer){
+            Ok(v) => Ok(MightFail::Ok(v)),
+            Err(_) => Ok(MightFail::Failed),
+        }
+    }
+}
+
+#[test]
+fn pass_failing_elements() {
+    let buffer = rmp_serde::to_vec(&(42,
+        41,
+        "hi there",
+        43,
+        (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+        4.52,
+        4,
+        1u64 << 63,
+        "hi", // test fixed string
+        65,
+        (1,2,3), // test fixed arrays
+        &[0xcc, 0x80][..], // test bin
+        HashMap::from([("a", 1), ("b", 2), ("c", 3)]), // test fixed map
+        HashMap::from([("a", 1), ("b", 2), ("c", 3), ("d", 4), ("e", 5), ("f", 6), ("g", 7), ("h", 8), ("i", 9), ("j", 10), ("k", 11), ("l", 12), ("m", 13), ("n", 14), ("o", 15), ("p", 16)]), // test map
+        66,
+    )).unwrap();
+    let deserialized: Vec<MightFail<i32>> = rmp_serde::from_slice(&buffer).unwrap();
+    assert_eq!(deserialized, vec![
+        MightFail::Ok(42),
+        MightFail::Ok(41),
+        MightFail::Failed,
+        MightFail::Ok(43),
+        MightFail::Failed,
+        MightFail::Failed,
+        MightFail::Ok(4),
+        MightFail::Failed,
+        MightFail::Failed,
+        MightFail::Ok(65),
+        MightFail::Failed,
+        MightFail::Failed,
+        MightFail::Failed,
+        MightFail::Failed,
+        MightFail::Ok(66),
+    ]);
 }
