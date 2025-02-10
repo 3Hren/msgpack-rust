@@ -332,7 +332,10 @@ fn read_i128_marker<'de, R: ReadSlice<'de>>(marker: Marker, rd: &mut R) -> Resul
             read_128_buf(rd, len)?
         },
         Marker::FixArray(len) => read_128_buf(rd, len)?,
-        marker => return Err(Error::TypeMismatch(marker)),
+        marker => {
+            consume_unexpected_value(rd, marker)?;
+            return Err(Error::TypeMismatch(marker))
+        },
     })
 }
 
@@ -396,7 +399,7 @@ fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
         .map_err(Error::InvalidDataRead)
 }
 
-fn ext_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
+fn ext_len<'de, R: Read + ReadSlice<'de>>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
     Ok(match marker {
         Marker::FixExt1 => 1,
         Marker::FixExt2 => 2,
@@ -406,7 +409,10 @@ fn ext_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
         Marker::Ext8 => u32::from(read_u8(rd)?),
         Marker::Ext16 => u32::from(read_u16(rd)?),
         Marker::Ext32 => read_u32(rd)?,
-        _ => return Err(Error::TypeMismatch(marker)),
+        _ => {
+            consume_unexpected_value(rd, marker)?;
+            return Err(Error::TypeMismatch(marker))
+        }
     })
 }
 
@@ -521,8 +527,75 @@ fn any_num<'de, R: ReadSlice<'de>, V: Visitor<'de>>(rd: &mut R, visitor: V, mark
         Marker::I64 => visitor.visit_i64(rd.read_data_i64()?),
         Marker::F32 => visitor.visit_f32(rd.read_data_f32()?),
         Marker::F64 => visitor.visit_f64(rd.read_data_f64()?),
-        other_marker => Err(Error::TypeMismatch(other_marker)),
+        other_marker => {
+            consume_unexpected_value(rd, marker)?;
+            Err(Error::TypeMismatch(other_marker))
+        },
     }
+}
+
+fn consume_unexpected_values<'de, R: ReadSlice<'de>>(rd: &mut R, count: usize) -> Result<(), Error>{
+    for _ in 0..count {
+        let marker = rmp::decode::read_marker(rd)?;
+        consume_unexpected_value(rd, marker)?;
+    }
+    Ok(())
+}
+
+fn consume_unexpected_value<'de, R: ReadSlice<'de>>(rd: &mut R, marker: Marker) -> Result<(), Error> {
+    // This function is for when we read a marker that indicates a type we don't expect to see.
+    // but in order for future reads to be correct, we need to consume the data indicated by the marker.
+    // note that the only errors we expect to arise from here are invalid data reads,
+    // which the decoder is generally unable to recover from
+    match marker {
+        Marker::Null => (),
+        Marker::True | Marker::False => (),
+        Marker::FixPos(_) | Marker::FixNeg(_) => (),
+        Marker::U8 => {rd.read_data_u8()?;}
+        Marker::U16 => {rd.read_data_u16()?;}
+        Marker::U32 => {rd.read_data_u32()?;}
+        Marker::U64 => {rd.read_data_u64()?;}
+        Marker::I8 => {rd.read_data_i8()?;}
+        Marker::I16 => {rd.read_data_i16()?;}
+        Marker::I32 => {rd.read_data_i32()?;}
+        Marker::I64 => {rd.read_data_i64()?;}
+        Marker::F32 => {rd.read_data_f32()?;}
+        Marker::F64 => {rd.read_data_f64()?;}
+        Marker::FixStr(len) => {rd.read_slice(len as usize).map_err(Error::InvalidDataRead)?;}
+        Marker::Str8 | Marker::Bin8 => {let len = rd.read_data_u8()?; rd.read_slice(len as usize).map_err(Error::InvalidDataRead)?;}
+        Marker::Str16 | Marker::Bin16 => {let len = rd.read_data_u16()?; rd.read_slice(len as usize).map_err(Error::InvalidDataRead)?;}
+        Marker::Str32 | Marker::Bin32 => {let len = rd.read_data_u32()?; rd.read_slice(len as usize).map_err(Error::InvalidDataRead)?;}
+        Marker::FixArray(len)  => {
+            consume_unexpected_values(rd, len as usize)?
+        }
+        Marker::Array16 => {
+            let len = rd.read_data_u16()?;
+            consume_unexpected_values(rd, len as usize)?
+        }
+        Marker::Array32 => {
+            let len = rd.read_data_u32()?;
+            consume_unexpected_values(rd, len as usize)?
+        }
+        Marker::FixMap(len) => {
+            consume_unexpected_values(rd, len as usize * 2)?
+        }
+        Marker::Map16 => {
+            let len = rd.read_data_u16()?;
+            consume_unexpected_values(rd, len as usize * 2)?
+        }
+        Marker::Map32 => {
+            let len = rd.read_data_u32()?;
+            consume_unexpected_values(rd, len as usize * 2)?
+        }
+        Marker::FixExt1 | Marker::FixExt2 | Marker::FixExt4 | Marker::FixExt8 | Marker::FixExt16 |
+        Marker::Ext8 | Marker::Ext16 | Marker::Ext32
+         => {
+            let len = ext_len(rd, marker)?;
+            rd.read_slice(len as usize + 1).map_err(Error::InvalidDataRead)?;
+        }
+        Marker::Reserved => (),
+    };
+    Ok(())
 }
 
 impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
