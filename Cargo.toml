@@ -1,8 +1,5 @@
 [workspace]
 resolver = "2"
 members = [
-    "rmp",
     "rmp-serde",
-    "rmpv",
-    "rmpv-tests"
 ]
