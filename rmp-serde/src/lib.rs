@@ -166,14 +166,16 @@ impl de::Visitor<'_> for RawVisitor {
 
     #[inline]
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         Ok(Raw { s: Ok(v.into()) })
     }
 
     #[inline]
     fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         let s = match str::from_utf8(v) {
             Ok(s) => Ok(s.into()),
@@ -185,7 +187,8 @@ impl de::Visitor<'_> for RawVisitor {
 
     #[inline]
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         let s = match String::from_utf8(v) {
             Ok(s) => Ok(s),
@@ -202,7 +205,8 @@ impl de::Visitor<'_> for RawVisitor {
 impl<'de> Deserialize<'de> for Raw {
     #[inline]
     fn deserialize<D>(de: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         de.deserialize_any(RawVisitor)
     }
@@ -231,11 +235,7 @@ impl<'a> RawRef<'a> {
     pub fn from_utf8(v: &'a [u8]) -> Self {
         match str::from_utf8(v) {
             Ok(v) => RawRef::new(v),
-            Err(err) => {
-                Self {
-                    s: Err((v, err))
-                }
-            }
+            Err(err) => Self { s: Err((v, err)) },
         }
     }
 
@@ -306,14 +306,16 @@ impl<'de> de::Visitor<'de> for RawRefVisitor {
 
     #[inline]
     fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         Ok(RawRef { s: Ok(v) })
     }
 
     #[inline]
     fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         let s = match str::from_utf8(v) {
             Ok(s) => Ok(s),
@@ -327,7 +329,8 @@ impl<'de> de::Visitor<'de> for RawRefVisitor {
 impl<'de> Deserialize<'de> for RawRef<'de> {
     #[inline]
     fn deserialize<D>(de: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         de.deserialize_any(RawRefVisitor)
     }

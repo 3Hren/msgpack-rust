@@ -1,6 +1,6 @@
-use rmp_serde::config::{DefaultConfig, SerializerConfig};
-use rmp_serde::decode::ReadReader;
-use rmp_serde::{Deserializer, Serializer};
+use messpack_serde::config::{DefaultConfig, SerializerConfig};
+use messpack_serde::decode::ReadReader;
+use messpack_serde::{Deserializer, Serializer};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::io::Cursor;
@@ -24,18 +24,18 @@ fn issue_250() {
         pub b: String,
     }
 
-    let v = rmp_serde::to_vec(&Example::HasValue { x: 3 }).unwrap();
+    let v = messpack_serde::to_vec(&Example::HasValue { x: 3 }).unwrap();
 
     // Fails unwrap with Syntax("invalid type: sequence,
     // expected struct variant Example::HasValue")
-    let ex: Example = rmp_serde::from_slice(&v).unwrap();
+    let ex: Example = messpack_serde::from_slice(&v).unwrap();
     assert_eq!(Example::HasValue { x: 3 }, ex);
 
-    let v = rmp_serde::to_vec(&Example::Unit1).unwrap();
+    let v = messpack_serde::to_vec(&Example::Unit1).unwrap();
 
     // Fails unwrap with Syntax("invalid length 1,
     // expected adjacently tagged enum Example")
-    let ex: Example = rmp_serde::from_slice(&v).unwrap();
+    let ex: Example = messpack_serde::from_slice(&v).unwrap();
     assert_eq!(Example::Unit1, ex);
 }
 
@@ -228,31 +228,31 @@ fn round_trip_untagged_enum_with_enum_associated_data() {
     }
 
     let data1_1 = Foo::A(Bar::B);
-    let bytes_1 = rmp_serde::to_vec(&data1_1).unwrap();
-    let data1_2 = rmp_serde::from_slice(&bytes_1).unwrap();
+    let bytes_1 = messpack_serde::to_vec(&data1_1).unwrap();
+    let data1_2 = messpack_serde::from_slice(&bytes_1).unwrap();
     assert_eq!(data1_1, data1_2);
 
     let data2_1 = Foo::A(Bar::C("Hello".into()));
-    let bytes_2 = rmp_serde::to_vec(&data2_1).unwrap();
-    let data2_2 = rmp_serde::from_slice(&bytes_2).unwrap();
+    let bytes_2 = messpack_serde::to_vec(&data2_1).unwrap();
+    let data2_2 = messpack_serde::from_slice(&bytes_2).unwrap();
     assert_eq!(data2_1, data2_2);
 
     let data3_1 = Foo::A(Bar::D(1, 2, 3));
-    let bytes_3 = rmp_serde::to_vec(&data3_1).unwrap();
-    let data3_2 = rmp_serde::from_slice(&bytes_3).unwrap();
+    let bytes_3 = messpack_serde::to_vec(&data3_1).unwrap();
+    let data3_2 = messpack_serde::from_slice(&bytes_3).unwrap();
     assert_eq!(data3_1, data3_2);
 
     let data4_1 = Foo::A(Bar::E { f1: "Hello".into() });
-    let bytes_4 = rmp_serde::to_vec(&data4_1).unwrap();
-    let data4_2 = rmp_serde::from_slice(&bytes_4).unwrap();
+    let bytes_4 = messpack_serde::to_vec(&data4_1).unwrap();
+    let data4_2 = messpack_serde::from_slice(&bytes_4).unwrap();
     assert_eq!(data4_1, data4_2);
 }
 
 // Checks whether deserialization and serialization can both work with structs as maps
 #[test]
 fn round_struct_as_map() {
-    use rmp_serde::decode::from_slice;
-    use rmp_serde::to_vec_named;
+    use messpack_serde::decode::from_slice;
+    use messpack_serde::to_vec_named;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Dog1 {
@@ -284,8 +284,8 @@ fn round_struct_as_map() {
 #[test]
 fn round_struct_as_map_in_vec() {
     // See: issue #205
-    use rmp_serde::decode::from_slice;
-    use rmp_serde::to_vec_named;
+    use messpack_serde::decode::from_slice;
+    use messpack_serde::to_vec_named;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct Dog1 {
@@ -334,15 +334,15 @@ fn round_trip_unit_struct() {
 
     // struct-as-tuple
     {
-        let serialized: Vec<u8> = rmp_serde::to_vec(&msg2).unwrap();
-        let deserialized: Messages = rmp_serde::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = messpack_serde::to_vec(&msg2).unwrap();
+        let deserialized: Messages = messpack_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msg2);
     }
 
     // struct-as-map
     {
-        let serialized: Vec<u8> = rmp_serde::to_vec_named(&msg2).unwrap();
-        let deserialized: Messages = rmp_serde::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = messpack_serde::to_vec_named(&msg2).unwrap();
+        let deserialized: Messages = messpack_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msg2);
     }
 }
@@ -372,15 +372,15 @@ fn round_trip_unit_struct_untagged_enum() {
 
     // struct-as-tuple
     {
-        let serialized: Vec<u8> = rmp_serde::to_vec(&msga).unwrap();
-        let deserialized: Messages = rmp_serde::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = messpack_serde::to_vec(&msga).unwrap();
+        let deserialized: Messages = messpack_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msga);
     }
 
     // struct-as-map
     {
-        let serialized: Vec<u8> = rmp_serde::to_vec_named(&msga).unwrap();
-        let deserialized: Messages = rmp_serde::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = messpack_serde::to_vec_named(&msga).unwrap();
+        let deserialized: Messages = messpack_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, msga);
     }
 }
@@ -412,8 +412,8 @@ fn round_trip_struct_with_flattened_map_field() {
         },
     };
 
-    let serialized: Vec<u8> = rmp_serde::to_vec(&strct).unwrap();
-    let deserialized: Struct = rmp_serde::from_slice(&serialized).unwrap();
+    let serialized: Vec<u8> = messpack_serde::to_vec(&strct).unwrap();
+    let deserialized: Struct = messpack_serde::from_slice(&serialized).unwrap();
     assert_eq!(deserialized, strct);
 }
 
@@ -442,15 +442,15 @@ fn round_trip_struct_with_flattened_struct_field() {
 
     // struct-as-tuple
     {
-        let serialized: Vec<u8> = rmp_serde::to_vec(&strct).unwrap();
-        let deserialized: Struct = rmp_serde::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = messpack_serde::to_vec(&strct).unwrap();
+        let deserialized: Struct = messpack_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, strct);
     }
 
     // struct-as-map
     {
-        let serialized: Vec<u8> = rmp_serde::to_vec_named(&strct).unwrap();
-        let deserialized: Struct = rmp_serde::from_slice(&serialized).unwrap();
+        let serialized: Vec<u8> = messpack_serde::to_vec_named(&strct).unwrap();
+        let deserialized: Struct = messpack_serde::from_slice(&serialized).unwrap();
         assert_eq!(deserialized, strct);
     }
 }
@@ -458,7 +458,7 @@ fn round_trip_struct_with_flattened_struct_field() {
 // Checks whether deserialization and serialization can both work with enum variants as strings
 #[test]
 fn round_variant_string() {
-    use rmp_serde::decode::from_slice;
+    use messpack_serde::decode::from_slice;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     enum Animal1 {
@@ -477,17 +477,19 @@ fn round_variant_string() {
     // use helper macro so that we can test many combinations at once. Needs to be a macro to deal
     // with the serializer owning a reference to the Vec.
     macro_rules! do_test {
-        ($ser:expr) => {
-            {
-                let animal1 = Animal1::Dog { breed: "Pitbull".to_owned() };
-                let expected = Animal2::Dog { breed: "Pitbull".to_owned() };
-                let mut buf = Vec::new();
-                animal1.serialize(&mut $ser(&mut buf)).unwrap();
+        ($ser:expr) => {{
+            let animal1 = Animal1::Dog {
+                breed: "Pitbull".to_owned(),
+            };
+            let expected = Animal2::Dog {
+                breed: "Pitbull".to_owned(),
+            };
+            let mut buf = Vec::new();
+            animal1.serialize(&mut $ser(&mut buf)).unwrap();
 
-                let deserialized: Animal2 = from_slice(&buf).unwrap();
-                assert_eq!(deserialized, expected);
-            }
-        }
+            let deserialized: Animal2 = from_slice(&buf).unwrap();
+            assert_eq!(deserialized, expected);
+        }};
     }
 
     do_test!(Serializer::new);
@@ -510,23 +512,23 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 fn roundtrip_tuples_arrays() {
     assert_roundtrips(Some::<[u8; 0]>([]));
     assert_roundtrips(Some(Some::<[u8; 0]>([])));
-    assert_roundtrips((1i32,100,1000,10000,100000,1000000,10000000));
-    assert_roundtrips((0u8,1u8,11u8,111u8,255u8));
-    assert_roundtrips((0u8,1i8,11u16,111i32,255i64));
-    assert_roundtrips((0i8,1,11,111,-1,-11,-111));
+    assert_roundtrips((1i32, 100, 1000, 10000, 100000, 1000000, 10000000));
+    assert_roundtrips((0u8, 1u8, 11u8, 111u8, 255u8));
+    assert_roundtrips((0u8, 1i8, 11u16, 111i32, 255i64));
+    assert_roundtrips((0i8, 1, 11, 111, -1, -11, -111));
     assert_roundtrips((0u128, 1111111u128));
 
-    assert_roundtrips([1i32,100,1000,10000,100000,1000000,10000000]);
-    assert_roundtrips([0u8,1,11,111,255]);
-    assert_roundtrips([0i8,1,11,111,-1,-11,-111]);
+    assert_roundtrips([1i32, 100, 1000, 10000, 100000, 1000000, 10000000]);
+    assert_roundtrips([0u8, 1, 11, 111, 255]);
+    assert_roundtrips([0i8, 1, 11, 111, -1, -11, -111]);
     assert_roundtrips([(0u128, 1111111u128)]);
 }
 
 #[test]
 fn roundtrip_vec() {
-    assert_roundtrips(vec![1i32,100,1000,10000,100000,1000000,10000000]);
-    assert_roundtrips(vec![0u8,1,11,111,255]);
-    assert_roundtrips(vec![0i8,1,11,111,-1,-11,-111]);
+    assert_roundtrips(vec![1i32, 100, 1000, 10000, 100000, 1000000, 10000000]);
+    assert_roundtrips(vec![0u8, 1, 11, 111, 255]);
+    assert_roundtrips(vec![0i8, 1, 11, 111, -1, -11, -111]);
     assert_roundtrips(vec![(0u8, 1u8)]);
     assert_roundtrips(vec![(0u8, 1u32)]);
     assert_roundtrips(vec![] as Vec<String>);
@@ -540,9 +542,17 @@ fn roundtrip_vec() {
 #[test]
 fn roundtrip_hashsets() {
     use std::collections::HashSet;
-    assert_roundtrips([1i32,100,1000,10000,100000,1000000,10000000].into_iter().collect::<HashSet<_>>());
-    assert_roundtrips([0u8,1,11,111,255].into_iter().collect::<HashSet<_>>());
-    assert_roundtrips([0i8,1,11,111,-1,-11,-111].into_iter().collect::<HashSet<_>>());
+    assert_roundtrips(
+        [1i32, 100, 1000, 10000, 100000, 1000000, 10000000]
+            .into_iter()
+            .collect::<HashSet<_>>(),
+    );
+    assert_roundtrips([0u8, 1, 11, 111, 255].into_iter().collect::<HashSet<_>>());
+    assert_roundtrips(
+        [0i8, 1, 11, 111, -1, -11, -111]
+            .into_iter()
+            .collect::<HashSet<_>>(),
+    );
 }
 
 #[test]
@@ -620,9 +630,7 @@ fn checked_seq_access_len() {
     }
 
     let mut buffer = Vec::new();
-    let mut serializer = Serializer::new(&mut buffer)
-        .with_binary()
-        .with_struct_map();
+    let mut serializer = Serializer::new(&mut buffer).with_binary().with_struct_map();
 
     // The bug is basically that Output will successfully deserialize from input
     // because the [String; 0] deserializer doesn't drain the SeqAccess, and
@@ -636,9 +644,7 @@ fn checked_seq_access_len() {
     data.serialize(&mut serializer)
         .expect("failed to serialize");
 
-    let mut deserializer = rmp_serde::Deserializer::new(
-        Cursor::new(&buffer)
-    ).with_binary();
+    let mut deserializer = messpack_serde::Deserializer::new(Cursor::new(&buffer)).with_binary();
 
     Output::deserialize(&mut deserializer)
         .expect_err("Input round tripped into Output; this shouldn't happen");
@@ -647,17 +653,17 @@ fn checked_seq_access_len() {
 #[test]
 fn array_from_bytes() {
     let orig = [1u8, 128, 255];
-    let v = rmp_serde::to_vec(orig.as_slice()).unwrap();
-    let arr: [u8; 3] = rmp_serde::from_slice(&v).unwrap();
+    let v = messpack_serde::to_vec(orig.as_slice()).unwrap();
+    let arr: [u8; 3] = messpack_serde::from_slice(&v).unwrap();
     assert_eq!(arr, orig);
-    let tup: (u8, u8, u8) = rmp_serde::from_slice(&v).unwrap();
+    let tup: (u8, u8, u8) = messpack_serde::from_slice(&v).unwrap();
     assert_eq!(tup, (1, 128, 255));
 }
 
 #[test]
 fn i128_from_integers() {
-    let v = rmp_serde::to_vec([0, 1i8, -12i8, 119].as_slice()).unwrap();
-    let arr: [i128; 4] = rmp_serde::from_slice(&v).unwrap();
+    let v = messpack_serde::to_vec([0, 1i8, -12i8, 119].as_slice()).unwrap();
+    let arr: [i128; 4] = messpack_serde::from_slice(&v).unwrap();
     assert_eq!(arr, [0, 1i128, -12, 119]);
 }
 
@@ -671,16 +677,11 @@ fn roundtrip_some_failures() {
 #[cfg(test)]
 #[track_caller]
 fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>>(val: T) {
-    use rmp_serde::config::BytesMode;
+    use messpack_serde::config::BytesMode;
 
     assert_roundtrips_config(&val, "default", |s| s, |d| d);
     assert_roundtrips_config(&val, ".with_struct_map()", |s| s.with_struct_map(), |d| d);
-    assert_roundtrips_config(
-        &val,
-        ".with_struct_map()",
-        |s| s.with_struct_map(),
-        |d| d,
-    );
+    assert_roundtrips_config(&val, ".with_struct_map()", |s| s.with_struct_map(), |d| d);
     assert_roundtrips_config(
         &val,
         ".with_human_readable()",

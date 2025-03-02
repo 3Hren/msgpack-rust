@@ -6,8 +6,8 @@ use serde::de;
 use serde::Deserialize;
 
 use rmp::Marker;
-use rmp_serde::decode::{self, Error};
-use rmp_serde::{Deserializer, Raw, RawRef};
+use messpack_serde::decode::{self, Error};
+use messpack_serde::{Deserializer, Raw, RawRef};
 
 #[test]
 fn pass_nil() {
@@ -58,7 +58,10 @@ fn pass_u64() {
 
     let mut de = Deserializer::new(cur);
 
-    assert_eq!(18446744073709551615u64, Deserialize::deserialize(&mut de).unwrap());
+    assert_eq!(
+        18446744073709551615u64,
+        Deserialize::deserialize(&mut de).unwrap()
+    );
 }
 
 #[test]
@@ -132,7 +135,10 @@ fn pass_i64() {
 
     let mut de = Deserializer::new(cur);
 
-    assert_eq!(9223372036854775807i64, Deserialize::deserialize(&mut de).unwrap());
+    assert_eq!(
+        9223372036854775807i64,
+        Deserialize::deserialize(&mut de).unwrap()
+    );
 }
 
 #[test]
@@ -219,7 +225,9 @@ fn pass_u32_as_f64() {
 
 #[test]
 fn pass_string() {
-    let buf = [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let buf = [
+        0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+    ];
     let cur = Cursor::new(&buf[..]);
 
     let mut de = Deserializer::new(cur);
@@ -380,7 +388,9 @@ fn pass_bin8_into_bytebuf_regression_growing_buffer() {
     use serde_bytes::ByteBuf;
 
     // Try to deserialize large buf and a small buf
-    let buf = [0x92, 0xc4, 0x04, 0x71, 0x75, 0x75, 0x78, 0xc4, 0x03, 0x62, 0x61, 0x72];
+    let buf = [
+        0x92, 0xc4, 0x04, 0x71, 0x75, 0x75, 0x78, 0xc4, 0x03, 0x62, 0x61, 0x72,
+    ];
     let cur = Cursor::new(&buf[..]);
 
     let mut de = Deserializer::new(cur);
@@ -400,7 +410,8 @@ fn test_deserialize_numeric() {
 
     impl<'de> de::Deserialize<'de> for FloatOrInteger {
         fn deserialize<D>(de: D) -> Result<FloatOrInteger, D::Error>
-            where D: de::Deserializer<'de>
+        where
+            D: de::Deserializer<'de>,
         {
             struct FloatOrIntegerVisitor;
 
@@ -481,13 +492,16 @@ fn pass_deserializer_cursor_position() {
 
 #[test]
 fn pass_from() {
-    assert_eq!(2147483647, decode::from_read(&[0xd2, 0x7f, 0xff, 0xff, 0xff][..]).unwrap());
+    assert_eq!(
+        2147483647,
+        decode::from_read(&[0xd2, 0x7f, 0xff, 0xff, 0xff][..]).unwrap()
+    );
 }
 
 #[test]
 fn pass_raw_valid_utf8() {
     let buf = vec![0xa3, 0x6b, 0x65, 0x79];
-    let raw: Raw = rmp_serde::from_slice(&buf[..]).unwrap();
+    let raw: Raw = messpack_serde::from_slice(&buf[..]).unwrap();
 
     assert!(raw.is_str());
     assert_eq!("key", raw.as_str().unwrap());
@@ -499,7 +513,7 @@ fn pass_raw_invalid_utf8() {
     // >>> msgpack.dumps(msgpack.dumps([200, []]))
     // '\xa4\x92\xcc\xc8\x90'
     let buf = vec![0xa4, 0x92, 0xcc, 0xc8, 0x90];
-    let raw: Raw = rmp_serde::from_slice(&buf[..]).unwrap();
+    let raw: Raw = messpack_serde::from_slice(&buf[..]).unwrap();
 
     assert!(raw.is_err());
     assert_eq!(0, raw.as_err().unwrap().valid_up_to());
@@ -509,7 +523,7 @@ fn pass_raw_invalid_utf8() {
 #[test]
 fn pass_raw_ref_valid_utf8() {
     let buf = vec![0xa3, 0x6b, 0x65, 0x79];
-    let raw: RawRef<'_> = rmp_serde::from_slice(&buf[..]).unwrap();
+    let raw: RawRef<'_> = messpack_serde::from_slice(&buf[..]).unwrap();
 
     assert!(raw.is_str());
     assert_eq!("key", raw.as_str().unwrap());
@@ -521,7 +535,7 @@ fn pass_raw_ref_invalid_utf8() {
     // >>> msgpack.dumps(msgpack.dumps([200, []]))
     // '\xa4\x92\xcc\xc8\x90'
     let buf = vec![0xa4, 0x92, 0xcc, 0xc8, 0x90];
-    let raw: RawRef<'_> = rmp_serde::from_slice(&buf[..]).unwrap();
+    let raw: RawRef<'_> = messpack_serde::from_slice(&buf[..]).unwrap();
 
     assert!(raw.is_err());
     assert_eq!(0, raw.as_err().unwrap().valid_up_to());
@@ -531,7 +545,7 @@ fn pass_raw_ref_invalid_utf8() {
 #[test]
 fn fail_str_invalid_utf8() {
     let buf = vec![0xa4, 0x92, 0xcc, 0xc8, 0x90];
-    let err: Result<String, decode::Error> = rmp_serde::from_slice(&buf[..]);
+    let err: Result<String, decode::Error> = messpack_serde::from_slice(&buf[..]);
 
     assert!(err.is_err());
     match err.err().unwrap() {
@@ -550,7 +564,8 @@ fn fail_depth_limit() {
 
     impl<'de> de::Deserialize<'de> for Nested {
         fn deserialize<D>(de: D) -> Result<Self, D::Error>
-            where D: de::Deserializer<'de>
+        where
+            D: de::Deserializer<'de>,
         {
             let nested = Vec::deserialize(de)?;
             Ok(Nested { sub: nested })
@@ -560,7 +575,7 @@ fn fail_depth_limit() {
     for _ in 0..100 {
         data.push(0x91u8);
     }
-    let mut reader = rmp_serde::Deserializer::new(Cursor::new(data));
+    let mut reader = messpack_serde::Deserializer::new(Cursor::new(data));
     reader.set_max_depth(100);
     let res = Nested::deserialize(&mut reader);
     match res.err().unwrap() {
@@ -570,17 +585,17 @@ fn fail_depth_limit() {
 }
 
 #[derive(Debug, PartialEq)]
-enum MightFail<T>{
+enum MightFail<T> {
     Ok(T),
     Failed,
 }
 
-impl<'de, T:serde::de::Deserialize<'de>> serde::de::Deserialize<'de> for MightFail<T> {
+impl<'de, T: serde::de::Deserialize<'de>> serde::de::Deserialize<'de> for MightFail<T> {
     fn deserialize<D>(deserializer: D) -> Result<MightFail<T>, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        match T::deserialize(deserializer){
+        match T::deserialize(deserializer) {
             Ok(v) => Ok(MightFail::Ok(v)),
             Err(_) => Ok(MightFail::Failed),
         }
@@ -589,41 +604,62 @@ impl<'de, T:serde::de::Deserialize<'de>> serde::de::Deserialize<'de> for MightFa
 
 #[test]
 fn pass_failing_elements() {
-    let buffer = rmp_serde::to_vec(&(
+    let buffer = messpack_serde::to_vec(&(
         42,
         41,
         "hi there",
         43,
-        (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+        (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16),
         4.52,
         4,
         1u64 << 63,
         "hi", // test fixed string
         65,
-        (1,2,3), // test fixed arrays
-        &[0xcc, 0x80][..], // test bin
+        (1, 2, 3),                                     // test fixed arrays
+        &[0xcc, 0x80][..],                             // test bin
         HashMap::from([("a", 1), ("b", 2), ("c", 3)]), // test fixed map
-        HashMap::from([("a", 1), ("b", 2), ("c", 3), ("d", 4), ("e", 5), ("f", 6), ("g", 7), ("h", 8), ("i", 9), ("j", 10), ("k", 11), ("l", 12), ("m", 13), ("n", 14), ("o", 15), ("p", 16)]), // test map
+        HashMap::from([
+            ("a", 1),
+            ("b", 2),
+            ("c", 3),
+            ("d", 4),
+            ("e", 5),
+            ("f", 6),
+            ("g", 7),
+            ("h", 8),
+            ("i", 9),
+            ("j", 10),
+            ("k", 11),
+            ("l", 12),
+            ("m", 13),
+            ("n", 14),
+            ("o", 15),
+            ("p", 16),
+        ]), // test map
         66,
-    )).unwrap();
-    let deserialized: Vec<MightFail<i32>> = rmp_serde::from_slice(&buffer).unwrap();
-    assert_eq!(deserialized, vec![
-        MightFail::Ok(42),
-        MightFail::Ok(41),
-        MightFail::Failed,
-        MightFail::Ok(43),
-        MightFail::Failed,
-        MightFail::Failed,
-        MightFail::Ok(4),
-        MightFail::Failed,
-        MightFail::Failed,
-        MightFail::Ok(65),
-        MightFail::Failed,
-        MightFail::Failed,
-        MightFail::Failed,
-        MightFail::Failed,
-        MightFail::Ok(66),
-    ]);
+    ))
+    .unwrap();
+    let deserialized: Vec<MightFail<i32>> = messpack_serde::from_slice(&buffer).unwrap();
+    assert_eq!(
+        deserialized,
+        vec![
+            MightFail::Ok(42),
+            MightFail::Ok(41),
+            MightFail::Failed,
+            MightFail::Ok(43),
+            MightFail::Failed,
+            MightFail::Failed,
+            MightFail::Ok(4),
+            MightFail::Failed,
+            MightFail::Failed,
+            MightFail::Ok(65),
+            MightFail::Failed,
+            MightFail::Failed,
+            MightFail::Failed,
+            MightFail::Failed,
+            MightFail::Ok(66),
+        ]
+    );
 }
 
 #[test]
@@ -637,34 +673,42 @@ fn pass_failing_enum() {
         Qux(Vec<i32>),
     }
 
-    let buffer = rmp_serde::to_vec(&(
+    let buffer = messpack_serde::to_vec(&(
         ("Foo", 42),
         ("Bar", 41),
         ("Baz", vec![HashMap::from([("a", 1), ("b", 2), ("c", 3)])]),
         ("Foo", 43),
         ("Bar", 44),
-        ("Qux", (1,2,3,4, "hi", 5,6,7)),
+        ("Qux", (1, 2, 3, 4, "hi", 5, 6, 7)),
         ("Foo", 45),
         ("Bar", 46),
         ("Baz", HashMap::from([("a", 1), ("b", 2), ("c", 3)])),
         ("Foo", 43, 44), // three-tuple is invalid
         ("Foo", 49),
         ("Bar", 50),
-    )).unwrap();
-    let deserialized: Vec<MightFail<MyEnum>> = rmp_serde::from_slice(&buffer).unwrap();
+    ))
+    .unwrap();
+    let deserialized: Vec<MightFail<MyEnum>> = messpack_serde::from_slice(&buffer).unwrap();
 
-    assert_eq!(deserialized, vec![
-        MightFail::Ok(MyEnum::Foo(42)),
-        MightFail::Ok(MyEnum::Bar(41)),
-        MightFail::Failed,
-        MightFail::Ok(MyEnum::Foo(43)),
-        MightFail::Ok(MyEnum::Bar(44)),
-        MightFail::Failed,
-        MightFail::Ok(MyEnum::Foo(45)),
-        MightFail::Ok(MyEnum::Bar(46)),
-        MightFail::Ok(MyEnum::Baz(HashMap::from([("a".into(), 1), ("b".into(), 2), ("c".into(), 3)]))),
-        MightFail::Failed,
-        MightFail::Ok(MyEnum::Foo(49)),
-        MightFail::Ok(MyEnum::Bar(50)),
-    ]);
+    assert_eq!(
+        deserialized,
+        vec![
+            MightFail::Ok(MyEnum::Foo(42)),
+            MightFail::Ok(MyEnum::Bar(41)),
+            MightFail::Failed,
+            MightFail::Ok(MyEnum::Foo(43)),
+            MightFail::Ok(MyEnum::Bar(44)),
+            MightFail::Failed,
+            MightFail::Ok(MyEnum::Foo(45)),
+            MightFail::Ok(MyEnum::Bar(46)),
+            MightFail::Ok(MyEnum::Baz(HashMap::from([
+                ("a".into(), 1),
+                ("b".into(), 2),
+                ("c".into(), 3)
+            ]))),
+            MightFail::Failed,
+            MightFail::Ok(MyEnum::Foo(49)),
+            MightFail::Ok(MyEnum::Bar(50)),
+        ]
+    );
 }

@@ -13,11 +13,16 @@ use byteorder::{self, ReadBytesExt};
 
 use serde;
 use serde::de::value::SeqDeserializer;
-use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, IgnoredAny, MapAccess as _, SeqAccess as _, Unexpected, Visitor};
+use serde::de::{
+    self, Deserialize, DeserializeOwned, DeserializeSeed, IgnoredAny, MapAccess as _,
+    SeqAccess as _, Unexpected, Visitor,
+};
 use serde::forward_to_deserialize_any;
 
 use rmp;
-use rmp::decode::{self, DecodeStringError, MarkerReadError, NumValueReadError, RmpRead, ValueReadError};
+use rmp::decode::{
+    self, DecodeStringError, MarkerReadError, NumValueReadError, RmpRead, ValueReadError,
+};
 use rmp::Marker;
 
 use crate::config::{BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig};
@@ -156,7 +161,9 @@ impl From<DecodeStringError<'_>> for Error {
             DecodeStringError::InvalidMarkerRead(err) => Self::InvalidMarkerRead(err),
             DecodeStringError::InvalidDataRead(err) => Self::InvalidDataRead(err),
             DecodeStringError::TypeMismatch(marker) => Self::TypeMismatch(marker),
-            DecodeStringError::BufferSizeTooSmall(..) => Self::Uncategorized("BufferSizeTooSmall".to_string()),
+            DecodeStringError::BufferSizeTooSmall(..) => {
+                Self::Uncategorized("BufferSizeTooSmall".to_string())
+            }
             DecodeStringError::InvalidUtf8(..) => Self::Uncategorized("InvalidUtf8".to_string()),
         }
     }
@@ -246,7 +253,13 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
     /// versions of `rmp-serde`.
     #[inline]
     pub fn with_human_readable(self) -> Deserializer<R, HumanReadableConfig<C>> {
-        let Self { rd, _config: _, is_human_readable: _, marker, depth } = self;
+        let Self {
+            rd,
+            _config: _,
+            is_human_readable: _,
+            marker,
+            depth,
+        } = self;
         Deserializer {
             rd,
             is_human_readable: true,
@@ -263,7 +276,13 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
     /// representation.
     #[inline]
     pub fn with_binary(self) -> Deserializer<R, BinaryConfig<C>> {
-        let Self { rd, _config: _, is_human_readable: _, marker, depth } = self;
+        let Self {
+            rd,
+            _config: _,
+            is_human_readable: _,
+            marker,
+            depth,
+        } = self;
         Deserializer {
             rd,
             is_human_readable: false,
@@ -330,12 +349,12 @@ fn read_i128_marker<'de, R: ReadSlice<'de>>(marker: Marker, rd: &mut R) -> Resul
         Marker::Bin8 => {
             let len = read_u8(&mut *rd)?;
             read_128_buf(rd, len)?
-        },
+        }
         Marker::FixArray(len) => read_128_buf(rd, len)?,
         marker => {
             consume_unexpected_value(rd, marker)?;
-            return Err(Error::TypeMismatch(marker))
-        },
+            return Err(Error::TypeMismatch(marker));
+        }
     })
 }
 
@@ -347,11 +366,15 @@ fn read_128_buf<'de, R: ReadSlice<'de>>(rd: &mut R, len: u8) -> Result<i128, Err
         Reference::Borrowed(buf) => buf,
         Reference::Copied(buf) => buf,
     };
-    Ok(i128::from_be_bytes(buf.try_into().map_err(|_| Error::LengthMismatch(16))?))
+    Ok(i128::from_be_bytes(
+        buf.try_into().map_err(|_| Error::LengthMismatch(16))?,
+    ))
 }
 
 fn read_str_data<'de, V, R>(rd: &mut R, len: u32, visitor: V) -> Result<V::Value, Error>
-    where V: Visitor<'de>, R: ReadSlice<'de>
+where
+    V: Visitor<'de>,
+    R: ReadSlice<'de>,
 {
     match read_bin_data(rd, len)? {
         Reference::Borrowed(buf) => {
@@ -381,7 +404,10 @@ fn read_str_data<'de, V, R>(rd: &mut R, len: u32, visitor: V) -> Result<V::Value
     }
 }
 
-fn read_bin_data<'a, 'de, R: ReadSlice<'de>>(rd: &'a mut R, len: u32) -> Result<Reference<'de, 'a, [u8]>, Error> {
+fn read_bin_data<'a, 'de, R: ReadSlice<'de>>(
+    rd: &'a mut R,
+    len: u32,
+) -> Result<Reference<'de, 'a, [u8]>, Error> {
     rd.read_slice(len as usize).map_err(Error::InvalidDataRead)
 }
 
@@ -411,7 +437,7 @@ fn ext_len<'de, R: Read + ReadSlice<'de>>(rd: &mut R, marker: Marker) -> Result<
         Marker::Ext32 => read_u32(rd)?,
         _ => {
             consume_unexpected_value(rd, marker)?;
-            return Err(Error::TypeMismatch(marker))
+            return Err(Error::TypeMismatch(marker));
         }
     })
 }
@@ -442,12 +468,15 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> ExtDeserializer<'a, R
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de> for ExtDeserializer<'a, R, C> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
+    for ExtDeserializer<'a, R, C>
+{
     type Error = Error;
 
     #[inline(always)]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         visitor.visit_seq(self)
     }
@@ -459,7 +488,9 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> for ExtDeserializer<'a, R, C> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de>
+    for ExtDeserializer<'a, R, C>
+{
     type Error = Error;
 
     #[inline]
@@ -468,18 +499,23 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> fo
         T: DeserializeSeed<'de>,
     {
         match self.state {
-            ExtDeserializerState::New | ExtDeserializerState::ReadTag => Ok(Some(seed.deserialize(self)?)),
+            ExtDeserializerState::New | ExtDeserializerState::ReadTag => {
+                Ok(Some(seed.deserialize(self)?))
+            }
             ExtDeserializerState::ReadBinary => Ok(None),
         }
     }
 }
 
 /// Deserializer for Ext `SeqAccess`
-impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de> for &mut ExtDeserializer<'a, R, C> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
+    for &mut ExtDeserializer<'a, R, C>
+{
     type Error = Error;
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         match self.state {
             ExtDeserializerState::New => {
@@ -488,7 +524,10 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
                 visitor.visit_i8(tag)
             }
             ExtDeserializerState::ReadTag => {
-                let data = self.rd.read_slice(self.len as usize).map_err(Error::InvalidDataRead)?;
+                let data = self
+                    .rd
+                    .read_slice(self.len as usize)
+                    .map_err(Error::InvalidDataRead)?;
                 self.state = ExtDeserializerState::ReadBinary;
                 match data {
                     Reference::Borrowed(bytes) => visitor.visit_borrowed_bytes(bytes),
@@ -498,7 +537,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
             ExtDeserializerState::ReadBinary => {
                 debug_assert!(false);
                 Err(Error::TypeMismatch(Marker::Reserved))
-            },
+            }
         }
     }
 
@@ -510,11 +549,14 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
 }
 
 #[inline(never)]
-fn any_num<'de, R: ReadSlice<'de>, V: Visitor<'de>>(rd: &mut R, visitor: V, marker: Marker) -> Result<V::Value, Error> {
+fn any_num<'de, R: ReadSlice<'de>, V: Visitor<'de>>(
+    rd: &mut R,
+    visitor: V,
+    marker: Marker,
+) -> Result<V::Value, Error> {
     match marker {
         Marker::Null => visitor.visit_unit(),
-        Marker::True |
-        Marker::False => visitor.visit_bool(marker == Marker::True),
+        Marker::True | Marker::False => visitor.visit_bool(marker == Marker::True),
         Marker::FixPos(val) => visitor.visit_u8(val),
         Marker::FixNeg(val) => visitor.visit_i8(val),
         Marker::U8 => visitor.visit_u8(rd.read_data_u8()?),
@@ -530,11 +572,14 @@ fn any_num<'de, R: ReadSlice<'de>, V: Visitor<'de>>(rd: &mut R, visitor: V, mark
         other_marker => {
             consume_unexpected_value(rd, marker)?;
             Err(Error::TypeMismatch(other_marker))
-        },
+        }
     }
 }
 
-fn consume_unexpected_values<'de, R: ReadSlice<'de>>(rd: &mut R, count: usize) -> Result<(), Error>{
+fn consume_unexpected_values<'de, R: ReadSlice<'de>>(
+    rd: &mut R,
+    count: usize,
+) -> Result<(), Error> {
     for _ in 0..count {
         let marker = rmp::decode::read_marker(rd)?;
         consume_unexpected_value(rd, marker)?;
@@ -542,7 +587,10 @@ fn consume_unexpected_values<'de, R: ReadSlice<'de>>(rd: &mut R, count: usize) -
     Ok(())
 }
 
-fn consume_unexpected_value<'de, R: ReadSlice<'de>>(rd: &mut R, marker: Marker) -> Result<(), Error> {
+fn consume_unexpected_value<'de, R: ReadSlice<'de>>(
+    rd: &mut R,
+    marker: Marker,
+) -> Result<(), Error> {
     // This function is for when we read a marker that indicates a type we don't expect to see.
     // but in order for future reads to be correct, we need to consume the data indicated by the marker.
     // note that the only errors we expect to arise from here are invalid data reads,
@@ -551,23 +599,56 @@ fn consume_unexpected_value<'de, R: ReadSlice<'de>>(rd: &mut R, marker: Marker) 
         Marker::Null => (),
         Marker::True | Marker::False => (),
         Marker::FixPos(_) | Marker::FixNeg(_) => (),
-        Marker::U8 => {rd.read_data_u8()?;}
-        Marker::U16 => {rd.read_data_u16()?;}
-        Marker::U32 => {rd.read_data_u32()?;}
-        Marker::U64 => {rd.read_data_u64()?;}
-        Marker::I8 => {rd.read_data_i8()?;}
-        Marker::I16 => {rd.read_data_i16()?;}
-        Marker::I32 => {rd.read_data_i32()?;}
-        Marker::I64 => {rd.read_data_i64()?;}
-        Marker::F32 => {rd.read_data_f32()?;}
-        Marker::F64 => {rd.read_data_f64()?;}
-        Marker::FixStr(len) => {rd.read_slice(len as usize).map_err(Error::InvalidDataRead)?;}
-        Marker::Str8 | Marker::Bin8 => {let len = rd.read_data_u8()?; rd.read_slice(len as usize).map_err(Error::InvalidDataRead)?;}
-        Marker::Str16 | Marker::Bin16 => {let len = rd.read_data_u16()?; rd.read_slice(len as usize).map_err(Error::InvalidDataRead)?;}
-        Marker::Str32 | Marker::Bin32 => {let len = rd.read_data_u32()?; rd.read_slice(len as usize).map_err(Error::InvalidDataRead)?;}
-        Marker::FixArray(len)  => {
-            consume_unexpected_values(rd, len as usize)?
+        Marker::U8 => {
+            rd.read_data_u8()?;
         }
+        Marker::U16 => {
+            rd.read_data_u16()?;
+        }
+        Marker::U32 => {
+            rd.read_data_u32()?;
+        }
+        Marker::U64 => {
+            rd.read_data_u64()?;
+        }
+        Marker::I8 => {
+            rd.read_data_i8()?;
+        }
+        Marker::I16 => {
+            rd.read_data_i16()?;
+        }
+        Marker::I32 => {
+            rd.read_data_i32()?;
+        }
+        Marker::I64 => {
+            rd.read_data_i64()?;
+        }
+        Marker::F32 => {
+            rd.read_data_f32()?;
+        }
+        Marker::F64 => {
+            rd.read_data_f64()?;
+        }
+        Marker::FixStr(len) => {
+            rd.read_slice(len as usize)
+                .map_err(Error::InvalidDataRead)?;
+        }
+        Marker::Str8 | Marker::Bin8 => {
+            let len = rd.read_data_u8()?;
+            rd.read_slice(len as usize)
+                .map_err(Error::InvalidDataRead)?;
+        }
+        Marker::Str16 | Marker::Bin16 => {
+            let len = rd.read_data_u16()?;
+            rd.read_slice(len as usize)
+                .map_err(Error::InvalidDataRead)?;
+        }
+        Marker::Str32 | Marker::Bin32 => {
+            let len = rd.read_data_u32()?;
+            rd.read_slice(len as usize)
+                .map_err(Error::InvalidDataRead)?;
+        }
+        Marker::FixArray(len) => consume_unexpected_values(rd, len as usize)?,
         Marker::Array16 => {
             let len = rd.read_data_u16()?;
             consume_unexpected_values(rd, len as usize)?
@@ -576,9 +657,7 @@ fn consume_unexpected_value<'de, R: ReadSlice<'de>>(rd: &mut R, marker: Marker) 
             let len = rd.read_data_u32()?;
             consume_unexpected_values(rd, len as usize)?
         }
-        Marker::FixMap(len) => {
-            consume_unexpected_values(rd, len as usize * 2)?
-        }
+        Marker::FixMap(len) => consume_unexpected_values(rd, len as usize * 2)?,
         Marker::Map16 => {
             let len = rd.read_data_u16()?;
             consume_unexpected_values(rd, len as usize * 2)?
@@ -587,11 +666,17 @@ fn consume_unexpected_value<'de, R: ReadSlice<'de>>(rd: &mut R, marker: Marker) 
             let len = rd.read_data_u32()?;
             consume_unexpected_values(rd, len as usize * 2)?
         }
-        Marker::FixExt1 | Marker::FixExt2 | Marker::FixExt4 | Marker::FixExt8 | Marker::FixExt16 |
-        Marker::Ext8 | Marker::Ext16 | Marker::Ext32
-         => {
+        Marker::FixExt1
+        | Marker::FixExt2
+        | Marker::FixExt4
+        | Marker::FixExt8
+        | Marker::FixExt16
+        | Marker::Ext8
+        | Marker::Ext16
+        | Marker::Ext32 => {
             let len = ext_len(rd, marker)?;
-            rd.read_slice(len as usize + 1).map_err(Error::InvalidDataRead)?;
+            rd.read_slice(len as usize + 1)
+                .map_err(Error::InvalidDataRead)?;
         }
         Marker::Reserved => (),
     };
@@ -599,24 +684,28 @@ fn consume_unexpected_value<'de, R: ReadSlice<'de>>(rd: &mut R, marker: Marker) 
 }
 
 impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
-    fn any_inner<V: Visitor<'de>>(&mut self, visitor: V, allow_bytes: bool) -> Result<V::Value, Error> {
+    fn any_inner<V: Visitor<'de>>(
+        &mut self,
+        visitor: V,
+        allow_bytes: bool,
+    ) -> Result<V::Value, Error> {
         let marker = self.take_or_read_marker()?;
         match marker {
-            Marker::Null |
-            Marker::True |
-            Marker::False |
-            Marker::FixPos(_) |
-            Marker::FixNeg(_) |
-            Marker::U8 |
-            Marker::U16 |
-            Marker::U32 |
-            Marker::U64 |
-            Marker::I8 |
-            Marker::I16 |
-            Marker::I32 |
-            Marker::I64 |
-            Marker::F32 |
-            Marker::F64 => any_num(&mut self.rd, visitor, marker),
+            Marker::Null
+            | Marker::True
+            | Marker::False
+            | Marker::FixPos(_)
+            | Marker::FixNeg(_)
+            | Marker::U8
+            | Marker::U16
+            | Marker::U32
+            | Marker::U64
+            | Marker::I8
+            | Marker::I16
+            | Marker::I32
+            | Marker::I64
+            | Marker::F32
+            | Marker::F64 => any_num(&mut self.rd, visitor, marker),
             Marker::FixStr(_) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
                 let len = match marker {
                     Marker::FixStr(len) => Ok(len.into()),
@@ -627,9 +716,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                 }?;
                 read_str_data(&mut self.rd, len, visitor)
             }
-            Marker::FixArray(_) |
-            Marker::Array16 |
-            Marker::Array32 => {
+            Marker::FixArray(_) | Marker::Array16 | Marker::Array32 => {
                 let len = match marker {
                     Marker::FixArray(len) => len.into(),
                     Marker::Array16 => read_u16(&mut self.rd)?.into(),
@@ -639,7 +726,9 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
 
                 depth_count!(self.depth, {
                     let mut seq = SeqAccess::new(self, len);
-                    fn exhaust_seq_access<'a, R: ReadSlice<'a>, C: SerializerConfig>(seq: &mut SeqAccess<R, C>) {
+                    fn exhaust_seq_access<'a, R: ReadSlice<'a>, C: SerializerConfig>(
+                        seq: &mut SeqAccess<R, C>,
+                    ) {
                         // we need to exhaust the sequence to keep the reader in a consistent state
                         while let Ok(Some(_)) = seq.next_element::<IgnoredAny>() {}
                     }
@@ -651,13 +740,11 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                         excess => {
                             exhaust_seq_access(&mut seq);
                             Err(Error::LengthMismatch(len - excess))
-                        },
+                        }
                     }
                 })
             }
-            Marker::FixMap(_) |
-            Marker::Map16 |
-            Marker::Map32 => {
+            Marker::FixMap(_) | Marker::Map16 | Marker::Map32 => {
                 let len = match marker {
                     Marker::FixMap(len) => len.into(),
                     Marker::Map16 => read_u16(&mut self.rd)?.into(),
@@ -667,7 +754,9 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
 
                 depth_count!(self.depth, {
                     let mut seq = MapAccess::new(self, len);
-                    fn exhaust_map_access<'a, R: ReadSlice<'a>, C: SerializerConfig>(seq: &mut MapAccess<R, C>) {
+                    fn exhaust_map_access<'a, R: ReadSlice<'a>, C: SerializerConfig>(
+                        seq: &mut MapAccess<R, C>,
+                    ) {
                         // we need to exhaust the map to keep the reader in a consistent state
                         while let Ok(Some(_)) = seq.next_entry::<IgnoredAny, IgnoredAny>() {}
                     }
@@ -679,7 +768,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                         excess => {
                             exhaust_map_access(&mut seq);
                             Err(Error::LengthMismatch(len - excess))
-                        },
+                        }
                     }
                 })
             }
@@ -695,26 +784,31 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                     Reference::Copied(buf) if allow_bytes => visitor.visit_bytes(buf),
                     Reference::Borrowed(buf) | Reference::Copied(buf) => {
                         visitor.visit_seq(SeqDeserializer::new(buf.iter().copied()))
-                    },
+                    }
                 }
             }
-            Marker::FixExt1 |
-            Marker::FixExt2 |
-            Marker::FixExt4 |
-            Marker::FixExt8 |
-            Marker::FixExt16 |
-            Marker::Ext8 |
-            Marker::Ext16 |
-            Marker::Ext32 => {
+            Marker::FixExt1
+            | Marker::FixExt2
+            | Marker::FixExt4
+            | Marker::FixExt8
+            | Marker::FixExt16
+            | Marker::Ext8
+            | Marker::Ext16
+            | Marker::Ext32 => {
                 let len = ext_len(&mut self.rd, marker)?;
-                depth_count!(self.depth, visitor.visit_newtype_struct(ExtDeserializer::new(self, len)))
+                depth_count!(
+                    self.depth,
+                    visitor.visit_newtype_struct(ExtDeserializer::new(self, len))
+                )
             }
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
         }
     }
 }
 
-impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &mut Deserializer<R, C> {
+impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de>
+    for &mut Deserializer<R, C>
+{
     type Error = Error;
 
     #[inline(always)]
@@ -724,13 +818,15 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
 
     #[inline(always)]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         self.any_inner(visitor, true)
     }
 
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         // # Important
         //
@@ -756,8 +852,14 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
         }
     }
 
-    fn deserialize_enum<V>(self, _name: &str, _variants: &[&str], visitor: V) -> Result<V::Value, Error>
-        where V: Visitor<'de>
+    fn deserialize_enum<V>(
+        self,
+        _name: &str,
+        _variants: &[&str],
+        visitor: V,
+    ) -> Result<V::Value, Error>
+    where
+        V: Visitor<'de>,
     {
         let marker = self.peek_or_read_marker()?;
         match rmp::decode::marker_to_len(&mut self.rd, marker) {
@@ -776,8 +878,13 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
         }
     }
 
-    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value, Error>
-        where V: Visitor<'de>
+    fn deserialize_newtype_struct<V>(
+        self,
+        name: &'static str,
+        visitor: V,
+    ) -> Result<V::Value, Error>
+    where
+        V: Visitor<'de>,
     {
         if name == MSGPACK_EXT_STRUCT_NAME {
             let marker = self.take_or_read_marker()?;
@@ -790,8 +897,13 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
         visitor.visit_newtype_struct(self)
     }
 
-    fn deserialize_unit_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    fn deserialize_unit_struct<V>(
+        self,
+        _name: &'static str,
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
     {
         // We need to special case this so that [] is treated as a unit struct when asked for,
         // but as a sequence otherwise. This is because we serialize unit structs as [] rather
@@ -822,22 +934,44 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
     }
 
     #[inline]
-    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         self.any_inner(visitor, false)
     }
 
     #[inline]
-    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         self.any_inner(visitor, false)
     }
 
     #[inline]
-    fn deserialize_struct<V>(self, _: &'static str, _: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_struct<V>(
+        self,
+        _: &'static str,
+        _: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         self.any_inner(visitor, false)
     }
 
     #[inline]
-    fn deserialize_tuple_struct<V>(self, _: &'static str, _: usize, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_tuple_struct<V>(
+        self,
+        _: &'static str,
+        _: usize,
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         self.any_inner(visitor, false)
     }
 
@@ -847,57 +981,90 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
         ignored_any
     }
 
-    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
 
-    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor<'de> {
+    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         let marker = self.take_or_read_marker()?;
         any_num(&mut self.rd, visitor, marker)
     }
@@ -915,12 +1082,15 @@ impl<'a, R: 'a, C> SeqAccess<'a, R, C> {
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de> for SeqAccess<'a, R, C> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::SeqAccess<'de>
+    for SeqAccess<'a, R, C>
+{
     type Error = Error;
 
     #[inline]
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
-        where T: DeserializeSeed<'de>
+    where
+        T: DeserializeSeed<'de>,
     {
         if self.left > 0 {
             self.left -= 1;
@@ -948,12 +1118,15 @@ impl<'a, R: 'a, C> MapAccess<'a, R, C> {
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de> for MapAccess<'a, R, C> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de>
+    for MapAccess<'a, R, C>
+{
     type Error = Error;
 
     #[inline]
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
-        where K: DeserializeSeed<'de>
+    where
+        K: DeserializeSeed<'de>,
     {
         if self.left > 0 {
             self.left -= 1;
@@ -965,7 +1138,8 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::MapAccess<'de> fo
 
     #[inline]
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
-        where V: DeserializeSeed<'de>
+    where
+        V: DeserializeSeed<'de>,
     {
         seed.deserialize(&mut *self.de)
     }
@@ -1062,13 +1236,16 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de> for Varian
 
     #[inline]
     fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self), Error>
-        where V: de::DeserializeSeed<'de>,
+    where
+        V: de::DeserializeSeed<'de>,
     {
         Ok((seed.deserialize(&mut *self.de)?, self))
     }
 }
 
-impl<'de, R: ReadSlice<'de>, C: SerializerConfig> de::VariantAccess<'de> for VariantAccess<'_, R, C> {
+impl<'de, R: ReadSlice<'de>, C: SerializerConfig> de::VariantAccess<'de>
+    for VariantAccess<'_, R, C>
+{
     type Error = Error;
 
     #[inline]
@@ -1079,21 +1256,28 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> de::VariantAccess<'de> for Var
 
     #[inline]
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
-        where T: DeserializeSeed<'de>
+    where
+        T: DeserializeSeed<'de>,
     {
         seed.deserialize(self.de)
     }
 
     #[inline]
     fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         de::Deserializer::deserialize_tuple(self.de, len, visitor)
     }
 
     #[inline]
-    fn struct_variant<V>(self, fields: &'static [&'static str], visitor: V) -> Result<V::Value, Error>
-        where V: Visitor<'de>
+    fn struct_variant<V>(
+        self,
+        fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Error>
+    where
+        V: Visitor<'de>,
     {
         de::Deserializer::deserialize_tuple(self.de, fields.len(), visitor)
     }
@@ -1137,7 +1321,11 @@ impl<'de, R: Read> ReadSlice<'de> for ReadReader<R> {
     #[inline]
     fn read_slice<'a>(&'a mut self, len: usize) -> Result<Reference<'de, 'a, [u8]>, io::Error> {
         self.buf.clear();
-        let read = self.rd.by_ref().take(len as u64).read_to_end(&mut self.buf)?;
+        let read = self
+            .rd
+            .by_ref()
+            .take(len as u64)
+            .read_to_end(&mut self.buf)?;
         if read != len {
             return Err(io::ErrorKind::UnexpectedEof.into());
         }
@@ -1213,9 +1401,15 @@ fn test_as_ref_reader() {
     let mut rd = ReadRefReader::new(&buf);
 
     assert_eq!(rd.read_slice(1).unwrap(), Reference::Borrowed(&[0][..]));
-    assert_eq!(rd.read_slice(6).unwrap(), Reference::Borrowed(&[1, 2, 3, 4, 5, 6][..]));
+    assert_eq!(
+        rd.read_slice(6).unwrap(),
+        Reference::Borrowed(&[1, 2, 3, 4, 5, 6][..])
+    );
     assert!(rd.read_slice(5).is_err());
-    assert_eq!(rd.read_slice(4).unwrap(), Reference::Borrowed(&[7, 8, 9, 10][..]));
+    assert_eq!(
+        rd.read_slice(4).unwrap(),
+        Reference::Borrowed(&[7, 8, 9, 10][..])
+    );
 }
 
 /// Deserialize an instance of type `T` from an I/O stream of MessagePack.
@@ -1227,8 +1421,9 @@ fn test_as_ref_reader() {
 /// decides that something is wrong with the data, for example required struct fields are missing.
 #[inline]
 pub fn from_read<R, T>(rd: R) -> Result<T, Error>
-where R: Read,
-      T: DeserializeOwned
+where
+    R: Read,
+    T: DeserializeOwned,
 {
     Deserialize::deserialize(&mut Deserializer::new(rd))
 }
@@ -1258,7 +1453,7 @@ where R: Read,
 ///    age: u8,
 /// }
 ///
-/// assert_eq!(Dog { name: "Bobby", age: 8 }, rmp_serde::from_slice(&buf).unwrap());
+/// assert_eq!(Dog { name: "Bobby", age: 8 }, messpack_serde::from_slice(&buf).unwrap());
 /// ```
 #[inline(always)]
 #[allow(deprecated)]

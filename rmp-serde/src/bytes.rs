@@ -7,8 +7,7 @@ use std::fmt;
 pub(crate) struct OnlyBytes;
 pub(crate) struct Nope;
 
-impl std::error::Error for Nope {
-}
+impl std::error::Error for Nope {}
 
 impl std::fmt::Display for Nope {
     fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -105,7 +104,8 @@ impl serde::Serializer for OnlyBytes {
         Err(Nope)
     }
 
-    fn serialize_some<T: ?Sized>(self, _: &T) -> Result<u8, Nope> where T: Serialize {
+    fn serialize_some<T: ?Sized + Serialize>(self, _: &T) -> Result<u8, Nope>
+    {
         Err(Nope)
     }
 
@@ -121,11 +121,19 @@ impl serde::Serializer for OnlyBytes {
         Err(Nope)
     }
 
-    fn serialize_newtype_struct<T: ?Sized>(self, _: &'static str, _: &T) -> Result<u8, Nope> where T: Serialize {
+    fn serialize_newtype_struct<T: ?Sized + Serialize>(self, _: &'static str, _: &T) -> Result<u8, Nope>
+    {
         Err(Nope)
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, _: &'static str, _: u32, _: &'static str, _: &T) -> Result<u8, Nope> where T: Serialize {
+    fn serialize_newtype_variant<T: ?Sized + Serialize>(
+        self,
+        _: &'static str,
+        _: u32,
+        _: &'static str,
+        _: &T,
+    ) -> Result<u8, Nope>
+    {
         Err(Nope)
     }
 
@@ -137,11 +145,21 @@ impl serde::Serializer for OnlyBytes {
         Err(Nope)
     }
 
-    fn serialize_tuple_struct(self, _: &'static str, _: usize) -> Result<Self::SerializeTupleStruct, Nope> {
+    fn serialize_tuple_struct(
+        self,
+        _: &'static str,
+        _: usize,
+    ) -> Result<Self::SerializeTupleStruct, Nope> {
         Err(Nope)
     }
 
-    fn serialize_tuple_variant(self, _: &'static str, _: u32, _: &'static str, _: usize) -> Result<Self::SerializeTupleVariant, Nope> {
+    fn serialize_tuple_variant(
+        self,
+        _: &'static str,
+        _: u32,
+        _: &'static str,
+        _: usize,
+    ) -> Result<Self::SerializeTupleVariant, Nope> {
         Err(Nope)
     }
 
@@ -153,19 +171,35 @@ impl serde::Serializer for OnlyBytes {
         Err(Nope)
     }
 
-    fn serialize_struct_variant(self, _: &'static str, _: u32, _: &'static str, _: usize) -> Result<Self::SerializeStructVariant, Nope> {
+    fn serialize_struct_variant(
+        self,
+        _: &'static str,
+        _: u32,
+        _: &'static str,
+        _: usize,
+    ) -> Result<Self::SerializeStructVariant, Nope> {
         Err(Nope)
     }
 
-    fn collect_seq<I>(self, _: I) -> Result<u8, Nope> where I: IntoIterator, <I as IntoIterator>::Item: Serialize {
+    fn collect_seq<I>(self, _: I) -> Result<u8, Nope>
+    where
+        I: IntoIterator,
+        <I as IntoIterator>::Item: Serialize,
+    {
         Err(Nope)
     }
 
-    fn collect_map<K, V, I>(self, _: I) -> Result<u8, Nope> where K: Serialize, V: Serialize, I: IntoIterator<Item = (K, V)> {
+    fn collect_map<K, V, I>(self, _: I) -> Result<u8, Nope>
+    where
+        K: Serialize,
+        V: Serialize,
+        I: IntoIterator<Item = (K, V)>,
+    {
         Err(Nope)
     }
 
-    fn collect_str<T: ?Sized>(self, _: &T) -> Result<u8, Nope> where T: fmt::Display {
+    fn collect_str<T: ?Sized + fmt::Display>(self, _: &T) -> Result<u8, Nope>
+    {
         Err(Nope)
     }
 }

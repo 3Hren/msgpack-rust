@@ -1,4 +1,0 @@
-# Rustfmt makes too many mistakes to be applied unconditionally to the whole code.
-# Please don't apply rustfmt to code in this project. Disable rustfmt in your editor.
-disable_all_formatting = true
-ignore = ["/"]

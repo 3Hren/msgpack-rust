@@ -12,19 +12,15 @@ jobs:
                 rust:
                     - stable
                     - beta
+                    - nightly
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions-rs/toolchain@v1
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@master
               with:
-                  profile: minimal
                   toolchain: ${{ matrix.rust }}
-                  override: true
-            - uses: actions-rs/cargo@v1
-              with:
-                  command: test
-                  args: --all --all-features
-            - uses: actions-rs/cargo@v1
-              with:
-                  command: test
-                  # Test no_std support
-                  args: -p rmp --no-default-features
+            - name: test
+              run: cargo test --all-features
+            - name: fmt
+              run: cargo fmt --all -- --check
+            - name: clippy
+              run: cargo clippy --all --all-features -- -D warnings

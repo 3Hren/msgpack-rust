@@ -27,9 +27,10 @@ fn bench_strings(bencher: &mut Bencher, size: usize) {
         .collect();
 
     let mut buf = Vec::new();
-    vec.serialize(&mut rmp_serde::Serializer::new(&mut buf)).unwrap();
+    vec.serialize(&mut messpack_serde::Serializer::new(&mut buf))
+        .unwrap();
 
     bencher.iter(|| {
-        <Vec<String>>::deserialize(&mut rmp_serde::Deserializer::new(&buf[..])).unwrap();
+        <Vec<String>>::deserialize(&mut messpack_serde::Deserializer::new(&buf[..])).unwrap();
     });
 }

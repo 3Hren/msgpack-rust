@@ -1,19 +1,21 @@
-extern crate rmp_serde as rmps;
+extern crate messpack_serde as rmps;
 
 use std::io::Cursor;
 
 use rmps::config::BytesMode;
 use serde::Serialize;
 
-use rmp_serde::encode::{self, Error};
-use rmp_serde::{Raw, RawRef, Serializer};
+use messpack_serde::encode::{self, Error};
+use messpack_serde::{Raw, RawRef, Serializer};
 
 #[test]
 fn pass_null() {
     let mut buf = [0x00];
 
     let val = ();
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xc0], buf);
 }
@@ -53,7 +55,9 @@ fn pass_usize() {
     let mut buf = [0x00, 0x00];
 
     let val = 255usize;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xcc, 0xff], buf);
 }
@@ -63,7 +67,9 @@ fn pass_u8() {
     let mut buf = [0x00, 0x00];
 
     let val = 255u8;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xcc, 0xff], buf);
 }
@@ -73,7 +79,9 @@ fn pass_u16() {
     let mut buf = [0x00, 0x00, 0x00];
 
     let val = 65535u16;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xcd, 0xff, 0xff], buf);
 }
@@ -83,7 +91,9 @@ fn pass_u32() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = 4294967295u32;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xce, 0xff, 0xff, 0xff, 0xff], buf);
 }
@@ -93,7 +103,9 @@ fn pass_u64() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = 18446744073709551615u64;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], buf);
 }
@@ -103,7 +115,9 @@ fn pass_isize() {
     let mut buf = [0x00, 0x00];
 
     let val = -128isize;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xd0, 0x80], buf);
 }
@@ -113,7 +127,9 @@ fn pass_i8() {
     let mut buf = [0x00, 0x00];
 
     let val = -128i8;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xd0, 0x80], buf);
 }
@@ -123,7 +139,9 @@ fn pass_i16() {
     let mut buf = [0x00, 0x00, 0x00];
 
     let val = -32768i16;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xd1, 0x80, 0x00], buf);
 }
@@ -133,7 +151,9 @@ fn pass_i32() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = -2147483648i32;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xd2, 0x80, 0x00, 0x00, 0x00], buf);
 }
@@ -143,7 +163,9 @@ fn pass_i64() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = -9223372036854775808i64;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }
@@ -154,18 +176,20 @@ fn pass_i64_most_effective() {
 
     // This value can be represented using 2 bytes although it's i64.
     let val = 128i64;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .unwrap();
 
     assert_eq!([0xcc, 0x80], buf);
 }
-
 
 #[test]
 fn pass_f32() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = 3.4028234e38_f32;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xca, 0x7f, 0x7f, 0xff, 0xff], buf);
 }
@@ -175,7 +199,9 @@ fn pass_f64() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = 42f64;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xcb, 0x40, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }
@@ -185,19 +211,28 @@ fn pass_char() {
     let mut buf = [0x00, 0x00];
 
     let val = '!';
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xa1, 0x21], buf);
 }
 
 #[test]
 fn pass_string() {
-    let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut buf = [
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
 
     let val = "le message";
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
-    assert_eq!([0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65], buf);
+    assert_eq!(
+        [0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65],
+        buf
+    );
 }
 
 #[test]
@@ -205,7 +240,9 @@ fn pass_tuple() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = (42u32, 100500u32);
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94], buf);
 }
@@ -215,7 +252,9 @@ fn pass_tuple_not_bytes() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = (42u32, 100500u32);
-    val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll)).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll))
+        .ok()
+        .unwrap();
 
     assert_eq!([0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94], buf);
 }
@@ -225,7 +264,9 @@ fn pass_tuple_bytes() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = (1u8, 100u8, 200u8, 254u8);
-    val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll)).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll))
+        .ok()
+        .unwrap();
 
     assert_eq!([196, 4, 1, 100, 200, 254], buf);
 }
@@ -235,8 +276,12 @@ fn pass_hash_array_bytes() {
     use std::collections::HashSet;
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    let val = [[255u8; 3], [1u8; 3]].into_iter().collect::<HashSet<[u8;3]>>();
-    val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll)).ok().unwrap();
+    let val = [[255u8; 3], [1u8; 3]]
+        .into_iter()
+        .collect::<HashSet<[u8; 3]>>();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll))
+        .ok()
+        .unwrap();
 }
 
 #[test]
@@ -244,7 +289,9 @@ fn pass_tuple_low_bytes() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = (1u8, 2, 3, 127);
-    val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll)).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll))
+        .ok()
+        .unwrap();
 
     assert_eq!([148, 1, 2, 3, 127], buf);
 }
@@ -254,7 +301,9 @@ fn pass_option_some() {
     let mut buf = [0x00];
 
     let val = Some(100u32);
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0x64], buf);
 }
@@ -264,7 +313,9 @@ fn pass_option_none() {
     let mut buf = [0x00];
 
     let val: Option<u32> = None;
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0xc0], buf);
 }
@@ -274,7 +325,9 @@ fn pass_seq() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     let val = vec!["le", "shit"];
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     assert_eq!([0x92, 0xa2, 0x6c, 0x65, 0xa4, 0x73, 0x68, 0x69, 0x74], buf);
 }
@@ -283,12 +336,16 @@ fn pass_seq() {
 fn pass_map() {
     use std::collections::BTreeMap;
 
-    let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut buf = [
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
 
     let mut val = BTreeMap::new();
     val.insert(0u8, "le");
     val.insert(1u8, "shit");
-    val.serialize(&mut Serializer::new(&mut &mut buf[..])).ok().unwrap();
+    val.serialize(&mut Serializer::new(&mut &mut buf[..]))
+        .ok()
+        .unwrap();
 
     let out = [
         0x82, // 2 (size)
@@ -323,7 +380,10 @@ fn pass_encoding_struct_into_vec() {
 
     val.serialize(&mut Serializer::new(&mut buf)).unwrap();
 
-    assert_eq!(vec![0x92, 0x2a, 0xaa, 0x74, 0x68, 0x65, 0x20, 0x41, 0x6e, 0x73, 0x77, 0x65, 0x72], buf);
+    assert_eq!(
+        vec![0x92, 0x2a, 0xaa, 0x74, 0x68, 0x65, 0x20, 0x41, 0x6e, 0x73, 0x77, 0x65, 0x72],
+        buf
+    );
 }
 
 #[test]
@@ -407,5 +467,5 @@ fn pass_raw_ref_invalid_utf8() {
 
 #[test]
 fn serializer_one_type_arg() {
-    let _s: rmp_serde::Serializer<&mut dyn std::io::Write>;
+    let _s: messpack_serde::Serializer<&mut dyn std::io::Write>;
 }

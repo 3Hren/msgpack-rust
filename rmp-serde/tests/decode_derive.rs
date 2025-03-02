@@ -2,8 +2,8 @@ use std::io::Cursor;
 
 use serde::Deserialize;
 
-use rmp_serde::decode::Error;
-use rmp_serde::Deserializer;
+use messpack_serde::decode::Error;
+use messpack_serde::Deserializer;
 
 #[test]
 fn pass_newtype() {
@@ -63,7 +63,13 @@ fn pass_struct() {
     let mut de = Deserializer::new(cur);
     let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
 
-    assert_eq!(Decoded { id: 42, value: 100500 }, actual);
+    assert_eq!(
+        Decoded {
+            id: 42,
+            value: 100500
+        },
+        actual
+    );
 }
 
 #[test]
@@ -89,7 +95,11 @@ fn pass_struct_from_map() {
     // It appears no special behavior is needed for deserializing structs encoded as maps.
     let mut de = Deserializer::new(cur);
     let actual: Struct = Deserialize::deserialize(&mut de).unwrap();
-    let expected = Struct { et: "voila".into(), le: 0, shit: 1 };
+    let expected = Struct {
+        et: "voila".into(),
+        le: 0,
+        shit: 1,
+    };
 
     assert_eq!(expected, actual);
 }
@@ -163,7 +173,7 @@ fn fail_enum_map_mismatch() {
         A(i32),
     }
 
-    let err: Result<Enum, _> = rmp_serde::from_slice(&buf);
+    let err: Result<Enum, _> = messpack_serde::from_slice(&buf);
 
     match err.unwrap_err() {
         Error::LengthMismatch(2) => (),
@@ -214,7 +224,9 @@ fn pass_struct_enum_with_arg() {
 #[test]
 fn pass_newtype_variant() {
     // The encoded bytearray is: {0 => 'le message'}.
-    let buf = [0x81, 0x0, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65];
+    let buf = [
+        0x81, 0x0, 0xaa, 0x6c, 0x65, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+    ];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -294,7 +306,9 @@ fn fail_internally_tagged_enum_tuple() {
 
 #[test]
 fn pass_internally_tagged_enum_struct() {
-    let buf = [130, 161, 116, 163, 70, 111, 111, 165, 118, 97, 108, 117, 101, 123];
+    let buf = [
+        130, 161, 116, 163, 70, 111, 111, 165, 118, 97, 108, 117, 101, 123,
+    ];
     let cur = Cursor::new(&buf[..]);
 
     #[derive(Debug, PartialEq, Deserialize)]
@@ -344,7 +358,13 @@ fn pass_struct_with_nested_options() {
     let mut de = Deserializer::new(cur);
     let actual: Struct = Deserialize::deserialize(&mut de).unwrap();
 
-    assert_eq!(Struct { f1: None, f2: Some(Some(13)) }, actual);
+    assert_eq!(
+        Struct {
+            f1: None,
+            f2: Some(Some(13))
+        },
+        actual
+    );
     assert_eq!(buf.len() as u64, de.get_ref().position());
 }
 
@@ -354,9 +374,10 @@ fn pass_struct_with_flattened_map_field() {
 
     // The encoded bytearray is: { "f1": 0, "f2": { "german": "Hallo Welt!" }, "english": "Hello World!" }.
     let buf = [
-        0x83, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x81, 0xA6, 0x67, 0x65, 0x72, 0x6D, 0x61, 0x6E, 0xAB,
-        0x48, 0x61, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x65, 0x6C, 0x74, 0x21, 0xA7, 0x65, 0x6E, 0x67, 0x6C, 0x69,
-        0x73, 0x68, 0xAC, 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64, 0x21,
+        0x83, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x81, 0xA6, 0x67, 0x65, 0x72, 0x6D, 0x61,
+        0x6E, 0xAB, 0x48, 0x61, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x65, 0x6C, 0x74, 0x21, 0xA7, 0x65,
+        0x6E, 0x67, 0x6C, 0x69, 0x73, 0x68, 0xAC, 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F,
+        0x72, 0x6C, 0x64, 0x21,
     ];
     let cur = Cursor::new(&buf[..]);
 
@@ -417,8 +438,8 @@ fn pass_struct_with_flattened_struct_field() {
     {
         // The encoded bytearray is: { "f1": 0, "f2": [8, 13], "f4": 21, "f5": 34 }.
         let buf = [
-            0x84, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x92, 0x08, 0x0D, 0xA2, 0x66, 0x34, 0x15, 0xA2, 0x66, 0x35,
-            0x22,
+            0x84, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x92, 0x08, 0x0D, 0xA2, 0x66, 0x34,
+            0x15, 0xA2, 0x66, 0x35, 0x22,
         ];
         let cur = Cursor::new(&buf[..]);
 
@@ -433,8 +454,8 @@ fn pass_struct_with_flattened_struct_field() {
     {
         // The encoded bytearray is: { "f1": 0, "f2": { "f4": 8, "f5": 13 }, "f4": 21, "f5": 34 }.
         let buf = [
-            0x84, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x82, 0xA2, 0x66, 0x34, 0x08,
-            0xA2, 0x66, 0x35, 0x0D, 0xA2, 0x66, 0x34, 0x15, 0xA2, 0x66, 0x35, 0x22,
+            0x84, 0xA2, 0x66, 0x31, 0x00, 0xA2, 0x66, 0x32, 0x82, 0xA2, 0x66, 0x34, 0x08, 0xA2,
+            0x66, 0x35, 0x0D, 0xA2, 0x66, 0x34, 0x15, 0xA2, 0x66, 0x35, 0x22,
         ];
         let cur = Cursor::new(&buf[..]);
 
@@ -446,10 +467,11 @@ fn pass_struct_with_flattened_struct_field() {
     }
 }
 
-
 #[test]
 fn pass_from_slice() {
-    let buf = [0x93, 0xa4, 0x4a, 0x6f, 0x68, 0x6e, 0xa5, 0x53, 0x6d, 0x69, 0x74, 0x68, 0x2a];
+    let buf = [
+        0x93, 0xa4, 0x4a, 0x6f, 0x68, 0x6e, 0xa5, 0x53, 0x6d, 0x69, 0x74, 0x68, 0x2a,
+    ];
 
     #[derive(Debug, PartialEq, Deserialize)]
     struct Person<'a> {
@@ -458,7 +480,14 @@ fn pass_from_slice() {
         age: u8,
     }
 
-    assert_eq!(Person { name: "John", surname: "Smith", age: 42 }, rmp_serde::from_slice(&buf[..]).unwrap());
+    assert_eq!(
+        Person {
+            name: "John",
+            surname: "Smith",
+            age: 42
+        },
+        messpack_serde::from_slice(&buf[..]).unwrap()
+    );
 }
 
 #[test]
@@ -472,5 +501,11 @@ fn pass_from_ref() {
         age: u8,
     }
 
-    assert_eq!(Dog { name: "Bobby", age: 8 }, rmp_serde::from_read_ref(&buf).unwrap());
+    assert_eq!(
+        Dog {
+            name: "Bobby",
+            age: 8
+        },
+        messpack_serde::from_read_ref(&buf).unwrap()
+    );
 }
