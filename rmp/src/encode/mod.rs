@@ -121,7 +121,7 @@ macro_rules! write_byteorder_utils {
             fn $name(&mut self, val: $tp) -> Result<(), DataWriteError<Self::Error>> where Self: Sized {
                 const SIZE: usize = core::mem::size_of::<$tp>();
                 let mut buf: [u8; SIZE] = [0u8; SIZE];
-                paste::paste! {
+                pastey::paste! {
                     <byteorder::BigEndian as byteorder::ByteOrder>::[<write_ $tp>](&mut buf, val);
                 }
                 self.write_bytes(&buf).map_err(DataWriteError)

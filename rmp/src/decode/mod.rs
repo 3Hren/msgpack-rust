@@ -62,7 +62,7 @@ macro_rules! read_byteorder_utils {
                 const SIZE: usize = core::mem::size_of::<$tp>();
                 let mut buf: [u8; SIZE] = [0u8; SIZE];
                 self.read_exact_buf(&mut buf).map_err(ValueReadError::InvalidDataRead)?;
-                Ok(paste::paste! {
+                Ok(pastey::paste! {
                     <byteorder::BigEndian as byteorder::ByteOrder>::[<read_ $tp>](&mut buf)
                 })
             }
@@ -148,7 +148,7 @@ pub trait RmpRead: sealed::Sealed {
 
 macro_rules! wrap_data_funcs_for_compatibility {
     ($($tp:ident),* $(,)?) => {
-        $(paste::paste! {
+        $(pastey::paste! {
             #[cfg(feature = "std")]
             #[doc(hidden)]
             #[deprecated(note = "internal function. rmpv & rmp-serde need to switch to RmpRead")]
