@@ -219,7 +219,7 @@ impl<E: RmpWriteErr> From<DataWriteError<E>> for ValueWriteError<E> {
     }
 }
 
-#[cfg(feature = "std")] // Backwards compatbility ;)
+#[cfg(feature = "std")] // Backwards compatibility ;)
 impl From<ValueWriteError<Self>> for std::io::Error {
     #[cold]
     fn from(err: ValueWriteError<Self>) -> Self {

@@ -134,7 +134,7 @@ pub trait RmpRead: sealed::Sealed {
  * HACK: rmpv & rmp-erde used the internal read_data_* functions.
  *
  * Since adding no_std support moved these functions to the RmpRead trait,
- * this broke compatiblity  (despite changing no public APIs).
+ * this broke compatibility  (despite changing no public APIs).
  *
  * In theory, we could update rmpv and rmp-serde to use the new APIS,
  * but that would be needless churn (and might surprise users who just want to update rmp proper).

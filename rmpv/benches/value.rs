@@ -124,7 +124,7 @@ fn from_complex_read_value_ref_to_owned(b: &mut Bencher) {
 
 /// Read a single large bin32 value.
 fn read_large_bin32(b: &mut Bencher, size: u32) {
-    // Creat buffer, fill it with bytes
+    // Create buffer, fill it with bytes
     let mut buf = Vec::with_capacity(size as usize);
     buf.resize(size as usize, 42);
 
@@ -171,7 +171,7 @@ fn read_bin32_100mib(b: &mut Bencher) {
 
 /// Read a flat array containing positive 32-bit unsigned integers.
 fn read_large_array(b: &mut Bencher, element_count: usize) {
-    // Creat buffer, fill it with bytes
+    // Create buffer, fill it with bytes
     let size = element_count * 5 /* uint32 size */ + 5 /* array overhead */;
     let mut buf = Vec::with_capacity(size);
     buf.resize(size, 0);

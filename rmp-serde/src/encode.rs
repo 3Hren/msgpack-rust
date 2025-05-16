@@ -31,7 +31,7 @@ pub enum Error {
     //TODO: This can be removed at some point
     /// Failed to serialize struct, sequence or map, because its length is unknown.
     UnknownLength,
-    /// Invalid Data model, i.e. Serialize trait is not implmented correctly
+    /// Invalid Data model, i.e. Serialize trait is not implemented correctly
     InvalidDataModel(&'static str),
     /// Depth limit exceeded
     DepthLimitExceeded,
@@ -266,7 +266,7 @@ impl<W: Write, C> Serializer<W, C> {
     /// as a sequence of variable-size integers.
     ///
     /// This reduces overhead of binary data, but it may break
-    /// decodnig of some Serde types that happen to contain `[u8]`s,
+    /// decoding of some Serde types that happen to contain `[u8]`s,
     /// but don't implement Serde's `visit_bytes`.
     ///
     /// ```rust
@@ -507,7 +507,7 @@ impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound {
 /// For the described case a `UnknownLengthCompound` is used to encode the elements. On `end()`
 /// the counted length and the encoded elements will be written to the `Serializer`. A caveat is,
 /// that structs that contain flattened fields arem always written as a map, even when compact
-/// representaion is desired.
+/// representation is desired.
 ///
 /// Otherwise, if the length is known, the elements will be encoded directly by the `Serializer`.
 #[derive(Debug)]
