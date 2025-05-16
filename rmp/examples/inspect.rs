@@ -1,6 +1,6 @@
+use rmp::{decode::*, Marker};
 use std::fmt;
 use std::io::{self, Read};
-use rmp::{decode::*, Marker};
 
 fn main() {
     let path = std::env::args_os().nth(1).expect("Specify path to a file with msgpack content");
@@ -29,16 +29,16 @@ fn dump(indent: &mut Indent, rd: &mut &[u8]) -> Result<(), Box<dyn std::error::E
         Marker::FixStr(len) => print!("Str0(\"{}\")", read_str_data(len.into(), rd)?),
         Marker::Str8 => print!("Str8(\"{}\")", read_str_data(rd.read_data_u8()?.into(), rd)?),
         Marker::Str16 => print!("Str16(\"{}\")", read_str_data(rd.read_data_u16()?.into(), rd)?),
-        Marker::Str32 => print!("Str32(\"{}\")", read_str_data(rd.read_data_u32()?.into(), rd)?),
+        Marker::Str32 => print!("Str32(\"{}\")", read_str_data(rd.read_data_u32()?, rd)?),
         Marker::Bin8 => print!("Bin8({})", HexDump(&read_bin_data(rd.read_data_u8()?.into(), rd)?)),
         Marker::Bin16 => print!("Bin16({})", HexDump(&read_bin_data(rd.read_data_u16()?.into(), rd)?)),
-        Marker::Bin32 => print!("Bin32({})", HexDump(&read_bin_data(rd.read_data_u32()?.into(), rd)?)),
+        Marker::Bin32 => print!("Bin32({})", HexDump(&read_bin_data(rd.read_data_u32()?, rd)?)),
         Marker::FixArray(len) => dump_array(indent, 0, len.into(), rd)?,
         Marker::Array16 => dump_array(indent, 16, rd.read_data_u16()?.into(), rd)?,
-        Marker::Array32 => dump_array(indent, 32, rd.read_data_u32()?.into(), rd)?,
+        Marker::Array32 => dump_array(indent, 32, rd.read_data_u32()?, rd)?,
         Marker::FixMap(len) => dump_map(indent, 0, len.into(), rd)?,
         Marker::Map16 => dump_map(indent, 16, rd.read_data_u16()?.into(), rd)?,
-        Marker::Map32 => dump_map(indent, 32, rd.read_data_u32()?.into(), rd)?,
+        Marker::Map32 => dump_map(indent, 32, rd.read_data_u32()?, rd)?,
         Marker::FixExt1 => todo!(),
         Marker::FixExt2 => todo!(),
         Marker::FixExt4 => todo!(),
@@ -85,8 +85,8 @@ fn read_str_data<R: Read>(len: u32, rd: &mut R) -> Result<String, io::Error> {
 }
 
 fn read_bin_data<R: Read>(len: u32, rd: &mut R) -> Result<Vec<u8>, io::Error> {
-    let mut buf = Vec::with_capacity(len.min(1<<16) as usize);
-    let bytes_read = rd.take(len as u64).read_to_end(&mut buf)?;
+    let mut buf = Vec::with_capacity(len.min(1 << 16) as usize);
+    let bytes_read = rd.take(u64::from(len)).read_to_end(&mut buf)?;
     if bytes_read != len as usize {
         return Err(io::ErrorKind::UnexpectedEof.into());
     }
@@ -100,7 +100,7 @@ impl Indent {
         self.start = false;
     }
 
-    pub fn ind(&mut self) {
+    pub const fn ind(&mut self) {
         self.i += 1;
     }
 
@@ -109,7 +109,7 @@ impl Indent {
         self.start = true;
     }
 
-    pub fn out(&mut self) {
+    pub const fn out(&mut self) {
         self.i -= 1;
     }
 }
@@ -132,4 +132,3 @@ impl fmt::Display for HexDump<'_> {
         Ok(())
     }
 }
-

@@ -43,11 +43,11 @@ impl error::Error for Error {
     #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            Error::InvalidValueWrite(ref err) => Some(err),
-            Error::UnknownLength => None,
-            Error::InvalidDataModel(_) => None,
-            Error::DepthLimitExceeded => None,
-            Error::Syntax(..) => None,
+            Self::InvalidValueWrite(ref err) => Some(err),
+            Self::UnknownLength => None,
+            Self::InvalidDataModel(_) => None,
+            Self::DepthLimitExceeded => None,
+            Self::Syntax(..) => None,
         }
     }
 }
@@ -56,29 +56,29 @@ impl Display for Error {
     #[cold]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::InvalidValueWrite(ref err) => write!(f, "invalid value write: {err}"),
-            Error::UnknownLength => {
+            Self::InvalidValueWrite(ref err) => write!(f, "invalid value write: {err}"),
+            Self::UnknownLength => {
                 f.write_str("attempt to serialize struct, sequence or map with unknown length")
             }
-            Error::InvalidDataModel(r) => write!(f, "serialize data model is invalid: {r}"),
-            Error::DepthLimitExceeded => f.write_str("depth limit exceeded"),
-            Error::Syntax(ref msg) => f.write_str(msg),
+            Self::InvalidDataModel(r) => write!(f, "serialize data model is invalid: {r}"),
+            Self::DepthLimitExceeded => f.write_str("depth limit exceeded"),
+            Self::Syntax(ref msg) => f.write_str(msg),
         }
     }
 }
 
 impl From<ValueWriteError> for Error {
     #[cold]
-    fn from(err: ValueWriteError) -> Error {
-        Error::InvalidValueWrite(err)
+    fn from(err: ValueWriteError) -> Self {
+        Self::InvalidValueWrite(err)
     }
 }
 
 impl serde::ser::Error for Error {
     /// Raised when there is general error when deserializing a type.
     #[cold]
-    fn custom<T: Display>(msg: T) -> Error {
-        Error::Syntax(msg.to_string())
+    fn custom<T: Display>(msg: T) -> Self {
+        Self::Syntax(msg.to_string())
     }
 }
 
@@ -162,7 +162,7 @@ impl<W: Write> Serializer<W, DefaultConfig> {
     /// and enums using the most compact representation.
     #[inline]
     pub fn new(wr: W) -> Self {
-        Serializer {
+        Self {
             wr,
             depth: 1024,
             config: RuntimeConfig::new(DefaultConfig),
@@ -173,7 +173,7 @@ impl<W: Write> Serializer<W, DefaultConfig> {
 
 impl<'a, W: Write + 'a, C> Serializer<W, C> {
     #[inline]
-    fn compound(&'a mut self) -> Result<Compound<'a, W, C>, Error> {
+    const fn compound(&'a mut self) -> Result<Compound<'a, W, C>, Error> {
         Ok(Compound { se: self })
     }
 }
@@ -203,7 +203,7 @@ impl<W: Write, C> Serializer<W, C> {
     /// requirements.
     #[inline]
     pub fn with_struct_map(self) -> Serializer<W, StructMapConfig<C>> {
-        let Serializer { wr, depth, config, _back_compat_config: _ } = self;
+        let Self { wr, depth, config, _back_compat_config: _ } = self;
         Serializer {
             wr,
             depth,
@@ -219,7 +219,7 @@ impl<W: Write, C> Serializer<W, C> {
     /// representation.
     #[inline]
     pub fn with_struct_tuple(self) -> Serializer<W, StructTupleConfig<C>> {
-        let Serializer { wr, depth, config, _back_compat_config: _ } = self;
+        let Self { wr, depth, config, _back_compat_config: _ } = self;
         Serializer {
             wr,
             depth,
@@ -237,7 +237,7 @@ impl<W: Write, C> Serializer<W, C> {
     /// versions of `rmp-serde`.
     #[inline]
     pub fn with_human_readable(self) -> Serializer<W, HumanReadableConfig<C>> {
-        let Serializer { wr, depth, config, _back_compat_config: _ } = self;
+        let Self { wr, depth, config, _back_compat_config: _ } = self;
         Serializer {
             wr,
             depth,
@@ -253,7 +253,7 @@ impl<W: Write, C> Serializer<W, C> {
     /// representation.
     #[inline]
     pub fn with_binary(self) -> Serializer<W, BinaryConfig<C>> {
-        let Serializer { wr, depth, config, _back_compat_config: _ } = self;
+        let Self { wr, depth, config, _back_compat_config: _ } = self;
         Serializer {
             wr,
             depth,
@@ -277,7 +277,7 @@ impl<W: Write, C> Serializer<W, C> {
     /// vec![255u8; 100].serialize(&mut serializer).unwrap();
     /// ```
     #[inline]
-    pub fn with_bytes(mut self, mode: BytesMode) -> Serializer<W, C> {
+    pub const fn with_bytes(mut self, mode: BytesMode) -> Self {
         self.config.bytes = mode;
         self
     }
@@ -418,9 +418,11 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStruct for Compound<'a, W,
     type Error = Error;
 
     #[inline]
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
+    fn serialize_field<T: ?Sized + Serialize>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error> {
         if self.se.config.is_named {
             encode::write_str(self.se.get_mut(), key)?;
         }
@@ -452,9 +454,11 @@ impl<'a, W: Write + 'a, C: SerializerConfig> SerializeStructVariant for Compound
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) ->
-        Result<(), Self::Error>
-    {
+    fn serialize_field<T: ?Sized + Serialize>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error> {
         if self.se.config.is_named {
             encode::write_str(self.se.get_mut(), key)?;
             value.serialize(&mut *self.se)
@@ -486,7 +490,7 @@ impl<W, C: SerializerConfig> From<&Serializer<W, C>> for UnknownLengthCompound {
                 depth: se.depth,
                 _back_compat_config: PhantomData,
             },
-            elem_count: 0
+            elem_count: 0,
         }
     }
 }
@@ -714,9 +718,11 @@ where
         })
     }
 
-    fn serialize_tuple_struct(self, _name: &'static str, len: usize) ->
-        Result<Self::SerializeTupleStruct, Self::Error>
-    {
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeTupleStruct, Self::Error> {
         encode::write_array_len(&mut self.wr, len as u32)?;
 
         self.compound()
@@ -737,9 +743,11 @@ where
         self.maybe_unknown_len_compound(len.map(|len| len as u32), |wr, len| encode::write_map_len(wr, len))
     }
 
-    fn serialize_struct(self, _name: &'static str, len: usize) ->
-        Result<Self::SerializeStruct, Self::Error>
-    {
+    fn serialize_struct(
+        self,
+        _name: &'static str,
+        len: usize,
+    ) -> Result<Self::SerializeStruct, Self::Error> {
         if self.config.is_named {
             encode::write_map_len(self.get_mut(), len as u32)?;
         } else {
@@ -760,7 +768,7 @@ where
     fn collect_seq<I>(self, iter: I) -> Result<Self::Ok, Self::Error> where I: IntoIterator, I::Item: Serialize {
         let iter = iter.into_iter();
         let len = match iter.size_hint() {
-            (lo, Some(hi)) if lo == hi && lo <= u32::MAX as usize => Some(lo as u32),
+            (lo, Some(hi)) if lo == hi && u32::try_from(lo).is_ok() => Some(lo as u32),
             _ => None,
         };
 
@@ -777,7 +785,7 @@ where
         if might_be_a_bytes_iter && self.config.bytes != BytesMode::Normal {
             if let Some(len) = len {
                 // The `OnlyBytes` serializer emits `Err` for everything except `u8`
-                if iter.peek().map_or(false, |item| item.serialize(OnlyBytes).is_ok()) {
+                if iter.peek().is_some_and(|item| item.serialize(OnlyBytes).is_ok()) {
                     return self.bytes_from_iter(iter, len);
                 }
             }
@@ -796,7 +804,7 @@ impl<W: Write, C: SerializerConfig> Serializer<W, C> {
             self.wr.write(std::slice::from_ref(&item.serialize(OnlyBytes)
                 .map_err(|_| Error::InvalidDataModel("BytesMode"))?))
                 .map_err(ValueWriteError::InvalidDataWrite)?;
-             Ok(())
+            Ok(())
         })
     }
 }
@@ -1161,11 +1169,11 @@ impl<'a, W: Write + 'a> ExtSerializer<'a, W> {
     }
 
     #[inline]
-    fn end(self) -> Result<(), Error> {
-        if !self.tuple_received {
-            Err(Error::InvalidDataModel("expected tuple"))
-        } else {
+    const fn end(self) -> Result<(), Error> {
+        if self.tuple_received {
             self.fields_se.end()
+        } else {
+            Err(Error::InvalidDataModel("expected tuple"))
         }
     }
 }
@@ -1181,7 +1189,7 @@ impl<'a, W: Write + 'a> ExtFieldSerializer<'a, W> {
     }
 
     #[inline]
-    fn end(self) -> Result<(), Error> {
+    const fn end(self) -> Result<(), Error> {
         if self.finish {
             Ok(())
         } else {

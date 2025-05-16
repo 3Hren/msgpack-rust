@@ -19,18 +19,21 @@ fn test_decode(buf: &[u8], v: Value) {
 #[test]
 fn test_stack_depth_checking() {
     std::thread::Builder::new()
-    .name("test_stack_depth_checking".into())
-    .stack_size(10_000_000)
-    .spawn(|| {
-        let mut buf: Vec<u8> = (0..decode::MAX_DEPTH).map(|_| 0x91).collect();
-        buf.push(0xc3);
+        .name("test_stack_depth_checking".into())
+        .stack_size(10_000_000)
+        .spawn(|| {
+            let mut buf: Vec<u8> = (0..decode::MAX_DEPTH).map(|_| 0x91).collect();
+            buf.push(0xc3);
 
-        match decode::read_value(&mut &buf[..]) {
-            Ok(_) => panic!("expected max stack depth to be exceeded"),
-            Err(decode::Error::DepthLimitExceeded) => {},
-            Err(err) => panic!("unexpected error: {}", err),
-        }
-    }).unwrap().join().unwrap();
+            match decode::read_value(&mut &buf[..]) {
+                Ok(_) => panic!("expected max stack depth to be exceeded"),
+                Err(decode::Error::DepthLimitExceeded) => {},
+                Err(err) => panic!("unexpected error: {}", err),
+            }
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
@@ -89,8 +92,10 @@ fn pass_bin() {
 
 #[test]
 fn pass_array() {
-    test_decode(&[0x92, 0xa2, 0x6c, 0x65, 0xa4, 0x73, 0x68, 0x69, 0x74],
-        Value::Array(vec![Value::from("le"), Value::from("shit")]));
+    test_decode(
+        &[0x92, 0xa2, 0x6c, 0x65, 0xa4, 0x73, 0x68, 0x69, 0x74],
+        Value::Array(vec![Value::from("le"), Value::from("shit")]),
+    );
 }
 
 #[test]
@@ -169,7 +174,7 @@ fn pass_map_from_value() {
 
     let val = Value::from(vec![
         (Value::from("name"), Value::from("John")),
-        (Value::from("surname"), Value::from("Smith"))
+        (Value::from("surname"), Value::from("Smith")),
     ]);
 
     let v: BTreeMap<String, String> = from_value(val).unwrap();
@@ -210,7 +215,10 @@ fn pass_newtype_struct_from_value() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Newtype(String);
 
-    assert_eq!(Newtype("John".into()), from_value(Value::from("John")).unwrap());
+    assert_eq!(
+        Newtype("John".into()),
+        from_value(Value::from("John")).unwrap()
+    );
 }
 
 #[test]
@@ -218,8 +226,10 @@ fn pass_tuple_struct_from_value() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Newtype(String, u8);
 
-    assert_eq!(Newtype("John".into(), 42),
-        from_value(Value::Array(vec![Value::from("John"), Value::from(42)])).unwrap());
+    assert_eq!(
+        Newtype("John".into(), 42),
+        from_value(Value::Array(vec![Value::from("John"), Value::from(42)])).unwrap()
+    );
 }
 
 #[test]
@@ -227,7 +237,7 @@ fn pass_struct_from_value() {
     #[derive(Debug, PartialEq, Deserialize)]
     struct Struct {
         name: String,
-        age: u8
+        age: u8,
     }
 
     assert_eq!(Struct { name: "John".into(), age: 42 },
@@ -296,6 +306,8 @@ fn pass_tuple_struct_from_ext() {
         }
     }
 
-    assert_eq!(ExtStruct(42, vec![255]),
-        from_value(Value::Ext(42, vec![255])).unwrap());
+    assert_eq!(
+        ExtStruct(42, vec![255]),
+        from_value(Value::Ext(42, vec![255])).unwrap()
+    );
 }

@@ -508,6 +508,8 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 #[test]
 fn roundtrip_tuples_arrays() {
+    assert_roundtrips(Some::<[u8; 0]>([]));
+    assert_roundtrips(Some(Some::<[u8; 0]>([])));
     assert_roundtrips((1i32,100,1000,10000,100000,1000000,10000000));
     assert_roundtrips((0u8,1u8,11u8,111u8,255u8));
     assert_roundtrips((0u8,1i8,11u16,111i32,255i64));
@@ -531,8 +533,8 @@ fn roundtrip_vec() {
     assert_roundtrips(vec![] as Vec<u8>);
     assert_roundtrips(vec![] as Vec<()>);
     assert_roundtrips(vec![] as Vec<Vec<()>>);
-    assert_roundtrips(vec![vec![1u128,2,3]]);
-    assert_roundtrips(vec![vec![Some(3u16),None,Some(10000)]]);
+    assert_roundtrips(vec![vec![1u128, 2, 3]]);
+    assert_roundtrips(vec![vec![Some(3u16), None, Some(10000)]]);
 }
 
 #[test]
@@ -700,10 +702,7 @@ fn assert_roundtrips<T: PartialEq + std::fmt::Debug + Serialize + for<'a> Deseri
     assert_roundtrips_config(
         &val,
         ".with_human_readable().with_struct_map()",
-        |s| {
-            s.with_human_readable()
-                .with_struct_map()
-        },
+        |s| s.with_human_readable().with_struct_map(),
         |d| d.with_human_readable(),
     );
     assert_roundtrips_config(

@@ -124,8 +124,8 @@ pub struct StructMapConfig<C>(C);
 impl<C> StructMapConfig<C> {
     /// Creates a `StructMapConfig` inheriting unchanged configuration options from the given configuration.
     #[inline]
-    pub fn new(inner: C) -> Self {
-        StructMapConfig(inner)
+    pub const fn new(inner: C) -> Self {
+        Self(inner)
     }
 }
 
@@ -156,8 +156,8 @@ pub struct StructTupleConfig<C>(C);
 impl<C> StructTupleConfig<C> {
     /// Creates a `StructTupleConfig` inheriting unchanged configuration options from the given configuration.
     #[inline]
-    pub fn new(inner: C) -> Self {
-        StructTupleConfig(inner)
+    pub const fn new(inner: C) -> Self {
+        Self(inner)
     }
 }
 
@@ -188,7 +188,7 @@ pub struct HumanReadableConfig<C>(C);
 impl<C> HumanReadableConfig<C> {
     /// Creates a `HumanReadableConfig` inheriting unchanged configuration options from the given configuration.
     #[inline]
-    pub fn new(inner: C) -> Self {
+    pub const fn new(inner: C) -> Self {
         Self(inner)
     }
 }
@@ -220,7 +220,7 @@ pub struct BinaryConfig<C>(C);
 impl<C> BinaryConfig<C> {
     /// Creates a `BinaryConfig` inheriting unchanged configuration options from the given configuration.
     #[inline(always)]
-    pub fn new(inner: C) -> Self {
+    pub const fn new(inner: C) -> Self {
         Self(inner)
     }
 }

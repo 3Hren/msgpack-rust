@@ -193,8 +193,10 @@ fn from_str16() {
 
     let mut slice = &buf[..];
 
-    assert_eq!(ValueRef::from("B123456789012345678901234567890E"),
-        read_value_ref(&mut slice).ok().unwrap());
+    assert_eq!(
+        ValueRef::from("B123456789012345678901234567890E"),
+        read_value_ref(&mut slice).ok().unwrap()
+    );
 }
 
 #[test]
@@ -211,8 +213,10 @@ fn from_str32() {
 
     let mut slice = &buf[..];
 
-    assert_eq!(ValueRef::from("B123456789012345678901234567890E"),
-        read_value_ref(&mut slice).ok().unwrap());
+    assert_eq!(
+        ValueRef::from("B123456789012345678901234567890E"),
+        read_value_ref(&mut slice).ok().unwrap()
+    );
 }
 
 #[test]
@@ -305,8 +309,10 @@ fn from_bin8() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Binary(&[0, 1, 2, 3, 4]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Binary(&[0, 1, 2, 3, 4]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -315,8 +321,10 @@ fn from_bin16() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Binary(&[0, 1, 2, 3, 4]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Binary(&[0, 1, 2, 3, 4]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -325,8 +333,10 @@ fn from_bin32() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Binary(&[0, 1, 2, 3, 4]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Binary(&[0, 1, 2, 3, 4]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -347,8 +357,10 @@ fn from_fixext1() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Ext(42, &[255]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Ext(42, &[255]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -369,8 +381,10 @@ fn from_fixext2() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Ext(42, &[255, 238]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Ext(42, &[255, 238]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -379,8 +393,10 @@ fn from_fixext4() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Ext(42, &[255, 238, 221, 204]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -389,8 +405,10 @@ fn from_fixext8() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204, 187, 170, 153, 136]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Ext(42, &[255, 238, 221, 204, 187, 170, 153, 136]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -413,8 +431,10 @@ fn from_ext8() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Ext(42, &[255, 238, 221, 204]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -423,8 +443,10 @@ fn from_ext16() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Ext(42, &[255, 238, 221, 204]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -433,8 +455,10 @@ fn from_ext32() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Ext(42, &[255, 238, 221, 204]),
-        read_value_ref(&mut rd).ok().unwrap());
+    assert_eq!(
+        ValueRef::Ext(42, &[255, 238, 221, 204]),
+        read_value_ref(&mut rd).ok().unwrap()
+    );
 }
 
 #[test]
@@ -444,7 +468,7 @@ fn from_fixmap() {
         0x2a, // 42
         0xce, 0x0, 0x1, 0x88, 0x94, // 100500
         0xa3, 0x6b, 0x65, 0x79, // 'key'
-        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // 'value'
+        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65, // 'value'
     ];
     let mut rd = &buf[..];
 
@@ -542,7 +566,7 @@ fn from_fixmap_using_cursor() {
         0x2a, // 42
         0xce, 0x0, 0x1, 0x88, 0x94, // 100500
         0xa3, 0x6b, 0x65, 0x79, // 'key'
-        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65 // 'value'
+        0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65, // 'value'
     ];
     let mut rd = Cursor::new(&buf[..]);
 
@@ -568,43 +592,29 @@ fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
     ValueRef::Array(vec![
         ValueRef::Nil,
         ValueRef::from(42),
-        ValueRef::Array(vec![
-            ValueRef::from("le message"),
-        ]),
+        ValueRef::Array(vec![ValueRef::from("le message")]),
         ValueRef::Map(vec![
             (
                 ValueRef::from("map"),
                 ValueRef::Array(vec![
                     ValueRef::Boolean(true),
-                    ValueRef::Map(vec![
-                        (
-                            ValueRef::from(42),
-                            ValueRef::from(100500)
-                        )
-                    ])
-                ])
+                    ValueRef::Map(vec![(
+                        ValueRef::from(42),
+                        ValueRef::from(100500),
+                    )]),
+                ]),
             ),
-            (
-                ValueRef::from("key"),
-                ValueRef::from("value")
-            )
+            (ValueRef::from("key"), ValueRef::from("value")),
         ]),
         ValueRef::Array(vec![
             ValueRef::from(1),
             ValueRef::from(2),
             ValueRef::from(3),
         ]),
-        ValueRef::Map(vec![
-            (
-                ValueRef::from("key"),
-                ValueRef::Map(vec![
-                    (
-                        ValueRef::from("k1"),
-                        ValueRef::from("v1")
-                    )
-                ])
-            )
-        ])
+        ValueRef::Map(vec![(
+            ValueRef::from("key"),
+            ValueRef::Map(vec![(ValueRef::from("k1"), ValueRef::from("v1"))]),
+        )]),
     ])
 }
 
@@ -645,43 +655,22 @@ fn into_owned() {
     let expected = Value::Array(vec![
         Value::Nil,
         Value::from(42),
-        Value::Array(vec![
-            Value::from("le message"),
-        ]),
+        Value::Array(vec![Value::from("le message")]),
         Value::Map(vec![
             (
                 Value::from("map"),
                 Value::Array(vec![
                     Value::Boolean(true),
-                    Value::Map(vec![
-                        (
-                            Value::from(42),
-                            Value::from(100500)
-                        )
-                    ])
-                ])
+                    Value::Map(vec![(Value::from(42), Value::from(100500))]),
+                ]),
             ),
-            (
-                Value::from("key"),
-                Value::from("value")
-            )
+            (Value::from("key"), Value::from("value")),
         ]),
-        Value::Array(vec![
-            Value::from(1),
-            Value::from(2),
-            Value::from(3),
-        ]),
-        Value::Map(vec![
-            (
-                Value::from("key"),
-                Value::Map(vec![
-                    (
-                        Value::from("k1"),
-                        Value::from("v1")
-                    )
-                ])
-            )
-        ])
+        Value::Array(vec![Value::from(1), Value::from(2), Value::from(3)]),
+        Value::Map(vec![(
+            Value::from("key"),
+            Value::Map(vec![(Value::from("k1"), Value::from("v1"))]),
+        )]),
     ]);
 
     assert_eq!(expected, val.to_owned());

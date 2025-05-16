@@ -144,7 +144,10 @@ fn pass_pack_uint_u8() {
 fn pass_pack_uint_u16() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    assert_eq!(Marker::U16, write_uint(&mut &mut buf[..], 65535).ok().unwrap());
+    assert_eq!(
+        Marker::U16,
+        write_uint(&mut &mut buf[..], 65535).ok().unwrap()
+    );
 
     assert_eq!([0xcd, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }
@@ -153,7 +156,10 @@ fn pass_pack_uint_u16() {
 fn pass_pack_uint_u32() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    assert_eq!(Marker::U32, write_uint(&mut &mut buf[..], 4294967295).ok().unwrap());
+    assert_eq!(
+        Marker::U32,
+        write_uint(&mut &mut buf[..], 4294967295).ok().unwrap()
+    );
 
     assert_eq!([0xce, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00], buf);
 }
@@ -171,7 +177,10 @@ fn pass_pack_uint_u64() {
 fn pass_pack_sint_fix() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    assert_eq!(Marker::FixNeg(-32), write_sint(&mut &mut buf[..], -32).ok().unwrap());
+    assert_eq!(
+        Marker::FixNeg(-32),
+        write_sint(&mut &mut buf[..], -32).ok().unwrap()
+    );
 
     assert_eq!([0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }
@@ -180,7 +189,10 @@ fn pass_pack_sint_fix() {
 fn pass_pack_sint_i8_min() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    assert_eq!(Marker::I8, write_sint(&mut &mut buf[..], -128).ok().unwrap());
+    assert_eq!(
+        Marker::I8,
+        write_sint(&mut &mut buf[..], -128).ok().unwrap()
+    );
 
     assert_eq!([0xd0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], buf);
 }

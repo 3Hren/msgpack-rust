@@ -83,8 +83,10 @@ fn pass_bin() {
 
 #[test]
 fn pass_array() {
-    test_encode(Value::Array(vec![Value::from("le"), Value::from("shit")]),
-        &[0x92, 0xa2, 0x6c, 0x65, 0xa4, 0x73, 0x68, 0x69, 0x74]);
+    test_encode(
+        Value::Array(vec![Value::from("le"), Value::from("shit")]),
+        &[0x92, 0xa2, 0x6c, 0x65, 0xa4, 0x73, 0x68, 0x69, 0x74],
+    );
 }
 
 #[test]
@@ -150,8 +152,10 @@ fn pass_bin_to_value() {
 
 #[test]
 fn pass_vec_to_value() {
-    assert_eq!(Value::from(vec![Value::from("John"), Value::from("Smith")]),
-        to_value(vec!["John", "Smith"]).unwrap());
+    assert_eq!(
+        Value::from(vec![Value::from("John"), Value::from("Smith")]),
+        to_value(vec!["John", "Smith"]).unwrap()
+    );
 }
 
 #[test]
@@ -160,10 +164,13 @@ fn pass_map_to_value() {
     map.insert("name", "John");
     map.insert("surname", "Smith");
 
-    assert_eq!(Value::from(vec![
-        (Value::from("name"), Value::from("John")),
-        (Value::from("surname"), Value::from("Smith"))
-    ]), to_value(map).unwrap());
+    assert_eq!(
+        Value::from(vec![
+            (Value::from("name"), Value::from("John")),
+            (Value::from("surname"), Value::from("Smith"))
+        ]),
+        to_value(map).unwrap()
+    );
 }
 
 #[test]
@@ -176,14 +183,18 @@ fn pass_option_to_value() {
 
 #[test]
 fn pass_seq_to_value() {
-    assert_eq!(Value::Array(vec![Value::from(0), Value::from(42)]),
-        to_value([0, 42]).unwrap());
+    assert_eq!(
+        Value::Array(vec![Value::from(0), Value::from(42)]),
+        to_value([0, 42]).unwrap()
+    );
 }
 
 #[test]
 fn pass_tuple_to_value() {
-    assert_eq!(Value::Array(vec![Value::from("John"), Value::from(42)]),
-        to_value(("John", 42)).unwrap());
+    assert_eq!(
+        Value::Array(vec![Value::from("John"), Value::from(42)]),
+        to_value(("John", 42)).unwrap()
+    );
 }
 
 #[test]
@@ -207,8 +218,10 @@ fn pass_tuple_struct_to_value() {
     #[derive(Debug, PartialEq, Serialize)]
     struct Newtype(String, u8);
 
-    assert_eq!(Value::Array(vec![Value::from("John"), Value::from(42)]),
-        to_value(Newtype("John".into(), 42)).unwrap());
+    assert_eq!(
+        Value::Array(vec![Value::from("John"), Value::from(42)]),
+        to_value(Newtype("John".into(), 42)).unwrap()
+    );
 }
 
 #[test]
@@ -216,7 +229,7 @@ fn pass_struct_to_value() {
     #[derive(Debug, PartialEq, Serialize)]
     struct Struct {
         name: String,
-        age: u8
+        age: u8,
     }
 
     assert_eq!(Value::Array(vec![Value::from("John"), Value::from(42)]),
@@ -251,6 +264,8 @@ fn pass_ext_struct_to_value() {
     #[serde(rename = "_ExtStruct")]
     struct ExtStruct((i8, ByteBuf));
 
-    assert_eq!(Value::Ext(5, vec![10]),
-        to_value(ExtStruct((5, ByteBuf::from(vec![10])))).unwrap());
+    assert_eq!(
+        Value::Ext(5, vec![10]),
+        to_value(ExtStruct((5, ByteBuf::from(vec![10])))).unwrap()
+    );
 }

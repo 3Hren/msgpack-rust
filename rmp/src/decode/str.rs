@@ -1,7 +1,7 @@
-#[cfg(feature = "std")]
-use std::error;
 use core::fmt::{self, Display, Formatter};
 use core::str::{from_utf8, Utf8Error};
+#[cfg(feature = "std")]
+use std::error;
 
 use super::{read_marker, RmpRead, RmpReadErr, ValueReadError};
 use crate::Marker;
@@ -18,7 +18,7 @@ pub enum DecodeStringError<'a, E: RmpReadErr = super::Error> {
 }
 
 #[cfg(feature = "std")]
-impl<'a, E: RmpReadErr> error::Error for DecodeStringError<'a, E> {
+impl<E: RmpReadErr> error::Error for DecodeStringError<'_, E> {
     #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
@@ -31,16 +31,16 @@ impl<'a, E: RmpReadErr> error::Error for DecodeStringError<'a, E> {
     }
 }
 
-impl<'a, E: RmpReadErr> Display for DecodeStringError<'a, E> {
+impl<E: RmpReadErr> Display for DecodeStringError<'_, E> {
     #[cold]
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         f.write_str("error while decoding string")
     }
 }
 
-impl<'a, E: RmpReadErr> From<ValueReadError<E>> for DecodeStringError<'a, E> {
+impl<E: RmpReadErr> From<ValueReadError<E>> for DecodeStringError<'_, E> {
     #[cold]
-    fn from(err: ValueReadError<E>) -> DecodeStringError<'a, E> {
+    fn from(err: ValueReadError<E>) -> Self {
         match err {
             ValueReadError::InvalidMarkerRead(err) => DecodeStringError::InvalidMarkerRead(err),
             ValueReadError::InvalidDataRead(err) => DecodeStringError::InvalidDataRead(err),

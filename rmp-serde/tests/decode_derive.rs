@@ -232,59 +232,6 @@ fn pass_newtype_variant() {
     assert_eq!(buf.len() as u64, de.get_ref().position());
 }
 
-#[cfg(disabled)] // This test doesn't actually compile anymore
-#[test]
-fn pass_enum_custom_policy() {
-    use rmp_serde::decode::VariantVisitor;
-    use std::io::Read;
-
-    // We expect enums to be endoded as id, [...] (without wrapping tuple).
-
-    let buf = [0x01, 0x90];
-    let cur = Cursor::new(&buf[..]);
-
-    #[derive(Debug, PartialEq, Deserialize)]
-    enum Enum {
-        A,
-        B,
-    }
-
-    struct CustomDeserializer<R: Read> {
-        inner: Deserializer<R>,
-    }
-
-    impl<R: Read> serde::Deserializer for CustomDeserializer<R> {
-        type Error = Error;
-
-        fn deserialize<V>(&mut self, visitor: V) -> Result<V::Value, Error>
-            where V: serde::de::Visitor
-        {
-            self.inner.deserialize(visitor)
-        }
-
-        fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V)
-            -> Result<V::Value, Error>
-            where V: serde::de::EnumVisitor
-        {
-            visitor.visit(VariantVisitor::new(&mut self.inner))
-        }
-
-        forward_to_deserialize! {
-            bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string unit seq
-            seq_fixed_size bytes map tuple_struct unit_struct struct struct_field
-            tuple option newtype_struct ignored_any
-        }
-    }
-
-    let mut de = CustomDeserializer {
-        inner: Deserializer::new(cur),
-    };
-    let actual: Enum = Deserialize::deserialize(&mut de).unwrap();
-
-    assert_eq!(Enum::B, actual);
-    assert_eq!(2, de.inner.get_ref().position());
-}
-
 #[test]
 fn pass_struct_variant() {
     #[derive(Debug, PartialEq, Deserialize)]
@@ -295,7 +242,10 @@ fn pass_struct_variant() {
     let out_first = vec![0x81, 0x00, 0x91, 0x2a];
     let out_second = vec![0x81, 0x01, 0x91, 0x2a];
 
-    for (expected, out) in [(Custom::First{ data: 42 }, out_first), (Custom::Second { data: 42 }, out_second)] {
+    for (expected, out) in [
+        (Custom::First { data: 42 }, out_first),
+        (Custom::Second { data: 42 }, out_second),
+    ] {
         let mut de = Deserializer::new(Cursor::new(&out[..]));
         let val: Custom = Deserialize::deserialize(&mut de).unwrap();
         assert_eq!(expected, val);

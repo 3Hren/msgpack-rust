@@ -67,14 +67,14 @@ fn from_complex_read_value(b: &mut Bencher) {
     b.bytes = COMPLEX.len() as u64;
 }
 
- #[bench]
- fn from_complex_read_value_ref(b: &mut Bencher) {
-     b.iter(|| {
-         let res = read_value_ref(&mut &COMPLEX[..]).unwrap();
-         test::black_box(res);
-     });
-     b.bytes = COMPLEX.len() as u64;
- }
+#[bench]
+fn from_complex_read_value_ref(b: &mut Bencher) {
+    b.iter(|| {
+        let res = read_value_ref(&mut &COMPLEX[..]).unwrap();
+        test::black_box(res);
+    });
+    b.bytes = COMPLEX.len() as u64;
+}
 
 #[bench]
 fn from_complex_write_value_ref(b: &mut Bencher) {

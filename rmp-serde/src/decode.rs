@@ -68,15 +68,15 @@ impl error::Error for Error {
     #[cold]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            Error::TypeMismatch(..) => None,
-            Error::InvalidMarkerRead(ref err) => Some(err),
-            Error::InvalidDataRead(ref err) => Some(err),
-            Error::LengthMismatch(..) => None,
-            Error::OutOfRange => None,
-            Error::Uncategorized(..) => None,
-            Error::Syntax(..) => None,
-            Error::Utf8Error(ref err) => Some(err),
-            Error::DepthLimitExceeded => None,
+            Self::TypeMismatch(..) => None,
+            Self::InvalidMarkerRead(ref err) => Some(err),
+            Self::InvalidDataRead(ref err) => Some(err),
+            Self::LengthMismatch(..) => None,
+            Self::OutOfRange => None,
+            Self::Uncategorized(..) => None,
+            Self::Syntax(..) => None,
+            Self::Utf8Error(ref err) => Some(err),
+            Self::DepthLimitExceeded => None,
         }
     }
 }
@@ -84,7 +84,7 @@ impl error::Error for Error {
 impl de::Error for Error {
     #[cold]
     fn custom<T: Display>(msg: T) -> Self {
-        Error::Syntax(msg.to_string())
+        Self::Syntax(msg.to_string())
     }
 }
 
@@ -92,72 +92,72 @@ impl Display for Error {
     #[cold]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
-            Error::InvalidMarkerRead(ref err) => write!(fmt, "IO error while reading marker: {err}"),
-            Error::InvalidDataRead(ref err) => write!(fmt, "IO error while reading data: {err}"),
-            Error::TypeMismatch(ref actual_marker) => {
+            Self::InvalidMarkerRead(ref err) => write!(fmt, "IO error while reading marker: {err}"),
+            Self::InvalidDataRead(ref err) => write!(fmt, "IO error while reading data: {err}"),
+            Self::TypeMismatch(ref actual_marker) => {
                 write!(fmt, "wrong msgpack marker {actual_marker:?}")
             }
-            Error::OutOfRange => fmt.write_str("numeric cast found out of range"),
-            Error::LengthMismatch(expected_length) => write!(
+            Self::OutOfRange => fmt.write_str("numeric cast found out of range"),
+            Self::LengthMismatch(expected_length) => write!(
                 fmt,
                 "array had incorrect length, expected {expected_length}"
             ),
-            Error::Uncategorized(ref msg) => write!(fmt, "uncategorized error: {msg}"),
-            Error::Syntax(ref msg) => fmt.write_str(msg),
-            Error::Utf8Error(ref err) => write!(fmt, "string found to be invalid utf8: {err}"),
-            Error::DepthLimitExceeded => fmt.write_str("depth limit exceeded"),
+            Self::Uncategorized(ref msg) => write!(fmt, "uncategorized error: {msg}"),
+            Self::Syntax(ref msg) => fmt.write_str(msg),
+            Self::Utf8Error(ref err) => write!(fmt, "string found to be invalid utf8: {err}"),
+            Self::DepthLimitExceeded => fmt.write_str("depth limit exceeded"),
         }
     }
 }
 
 impl From<MarkerReadError> for Error {
     #[cold]
-    fn from(err: MarkerReadError) -> Error {
+    fn from(err: MarkerReadError) -> Self {
         match err {
-            MarkerReadError(err) => Error::InvalidMarkerRead(err),
+            MarkerReadError(err) => Self::InvalidMarkerRead(err),
         }
     }
 }
 
 impl From<Utf8Error> for Error {
     #[cold]
-    fn from(err: Utf8Error) -> Error {
-        Error::Utf8Error(err)
+    fn from(err: Utf8Error) -> Self {
+        Self::Utf8Error(err)
     }
 }
 
 impl From<ValueReadError> for Error {
     #[cold]
-    fn from(err: ValueReadError) -> Error {
+    fn from(err: ValueReadError) -> Self {
         match err {
-            ValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
-            ValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            ValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
+            ValueReadError::TypeMismatch(marker) => Self::TypeMismatch(marker),
+            ValueReadError::InvalidMarkerRead(err) => Self::InvalidMarkerRead(err),
+            ValueReadError::InvalidDataRead(err) => Self::InvalidDataRead(err),
         }
     }
 }
 
 impl From<NumValueReadError> for Error {
     #[cold]
-    fn from(err: NumValueReadError) -> Error {
+    fn from(err: NumValueReadError) -> Self {
         match err {
-            NumValueReadError::TypeMismatch(marker) => Error::TypeMismatch(marker),
-            NumValueReadError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            NumValueReadError::InvalidDataRead(err) => Error::InvalidDataRead(err),
-            NumValueReadError::OutOfRange => Error::OutOfRange,
+            NumValueReadError::TypeMismatch(marker) => Self::TypeMismatch(marker),
+            NumValueReadError::InvalidMarkerRead(err) => Self::InvalidMarkerRead(err),
+            NumValueReadError::InvalidDataRead(err) => Self::InvalidDataRead(err),
+            NumValueReadError::OutOfRange => Self::OutOfRange,
         }
     }
 }
 
-impl<'a> From<DecodeStringError<'a>> for Error {
+impl From<DecodeStringError<'_>> for Error {
     #[cold]
-    fn from(err: DecodeStringError<'_>) -> Error {
+    fn from(err: DecodeStringError<'_>) -> Self {
         match err {
-            DecodeStringError::InvalidMarkerRead(err) => Error::InvalidMarkerRead(err),
-            DecodeStringError::InvalidDataRead(err) => Error::InvalidDataRead(err),
-            DecodeStringError::TypeMismatch(marker) => Error::TypeMismatch(marker),
-            DecodeStringError::BufferSizeTooSmall(..) => Error::Uncategorized("BufferSizeTooSmall".to_string()),
-            DecodeStringError::InvalidUtf8(..) => Error::Uncategorized("InvalidUtf8".to_string()),
+            DecodeStringError::InvalidMarkerRead(err) => Self::InvalidMarkerRead(err),
+            DecodeStringError::InvalidDataRead(err) => Self::InvalidDataRead(err),
+            DecodeStringError::TypeMismatch(marker) => Self::TypeMismatch(marker),
+            DecodeStringError::BufferSizeTooSmall(..) => Self::Uncategorized("BufferSizeTooSmall".to_string()),
+            DecodeStringError::InvalidUtf8(..) => Self::Uncategorized("InvalidUtf8".to_string()),
         }
     }
 }
@@ -165,7 +165,7 @@ impl<'a> From<DecodeStringError<'a>> for Error {
 impl From<TryFromIntError> for Error {
     #[cold]
     fn from(_: TryFromIntError) -> Self {
-        Error::OutOfRange
+        Self::OutOfRange
     }
 }
 
@@ -246,7 +246,7 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
     /// versions of `rmp-serde`.
     #[inline]
     pub fn with_human_readable(self) -> Deserializer<R, HumanReadableConfig<C>> {
-        let Deserializer { rd, _config: _, is_human_readable: _, marker, depth } = self;
+        let Self { rd, _config: _, is_human_readable: _, marker, depth } = self;
         Deserializer {
             rd,
             is_human_readable: true,
@@ -263,7 +263,7 @@ impl<R: Read, C: SerializerConfig> Deserializer<R, C> {
     /// representation.
     #[inline]
     pub fn with_binary(self) -> Deserializer<R, BinaryConfig<C>> {
-        let Deserializer { rd, _config: _, is_human_readable: _, marker, depth } = self;
+        let Self { rd, _config: _, is_human_readable: _, marker, depth } = self;
         Deserializer {
             rd,
             is_human_readable: false,
@@ -331,9 +331,7 @@ fn read_i128_marker<'de, R: ReadSlice<'de>>(marker: Marker, rd: &mut R) -> Resul
             let len = read_u8(&mut *rd)?;
             read_128_buf(rd, len)?
         },
-        Marker::FixArray(len) => {
-            read_128_buf(rd, len)?
-        },
+        Marker::FixArray(len) => read_128_buf(rd, len)?,
         marker => return Err(Error::TypeMismatch(marker)),
     })
 }
@@ -428,7 +426,7 @@ struct ExtDeserializer<'a, R, C> {
 }
 
 impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> ExtDeserializer<'a, R, C> {
-    fn new(d: &'a mut Deserializer<R, C>, len: u32) -> Self {
+    const fn new(d: &'a mut Deserializer<R, C>, len: u32) -> Self {
         ExtDeserializer {
             rd: &mut d.rd,
             _config: d._config,
@@ -551,7 +549,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                     Marker::FixStr(len) => Ok(len.into()),
                     Marker::Str8 => read_u8(&mut self.rd).map(u32::from),
                     Marker::Str16 => read_u16(&mut self.rd).map(u32::from),
-                    Marker::Str32 => read_u32(&mut self.rd).map(u32::from),
+                    Marker::Str32 => read_u32(&mut self.rd),
                     _ => return Err(Error::TypeMismatch(Marker::Reserved)),
                 }?;
                 read_str_data(&mut self.rd, len, visitor)
@@ -598,7 +596,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                 let len = match marker {
                     Marker::Bin8 => read_u8(&mut self.rd).map(u32::from),
                     Marker::Bin16 => read_u16(&mut self.rd).map(u32::from),
-                    Marker::Bin32 => read_u32(&mut self.rd).map(u32::from),
+                    Marker::Bin32 => read_u32(&mut self.rd),
                     _ => return Err(Error::TypeMismatch(Marker::Reserved)),
                 }?;
                 match read_bin_data(&mut self.rd, len)? {
@@ -625,7 +623,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &'a mut Deserializer<R, C> {
+impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &mut Deserializer<R, C> {
     type Error = Error;
 
     #[inline(always)]
@@ -821,7 +819,7 @@ struct SeqAccess<'a, R, C> {
 
 impl<'a, R: 'a, C> SeqAccess<'a, R, C> {
     #[inline]
-    fn new(de: &'a mut Deserializer<R, C>, len: u32) -> Self {
+    const fn new(de: &'a mut Deserializer<R, C>, len: u32) -> Self {
         SeqAccess { de, left: len }
     }
 }
@@ -854,7 +852,7 @@ struct MapAccess<'a, R, C> {
 
 impl<'a, R: 'a, C> MapAccess<'a, R, C> {
     #[inline]
-    fn new(de: &'a mut Deserializer<R, C>, len: u32) -> Self {
+    const fn new(de: &'a mut Deserializer<R, C>, len: u32) -> Self {
         MapAccess { de, left: len }
     }
 }
@@ -892,13 +890,13 @@ struct UnitVariantAccess<'a, R: 'a, C> {
 }
 
 impl<'a, R: 'a, C> UnitVariantAccess<'a, R, C> {
-    pub fn new(de: &'a mut Deserializer<R, C>) -> Self {
+    pub const fn new(de: &'a mut Deserializer<R, C>) -> Self {
         UnitVariantAccess { de }
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de>
-    for UnitVariantAccess<'a, R, C>
+impl<'de, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de>
+    for UnitVariantAccess<'_, R, C>
 {
     type Error = Error;
     type Variant = Self;
@@ -962,12 +960,12 @@ struct VariantAccess<'a, R, C> {
 }
 
 impl<'a, R: 'a, C> VariantAccess<'a, R, C> {
-    pub fn new(de: &'a mut Deserializer<R, C>) -> Self {
+    pub const fn new(de: &'a mut Deserializer<R, C>) -> Self {
         VariantAccess { de }
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de> for VariantAccess<'a, R, C> {
+impl<'de, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de> for VariantAccess<'_, R, C> {
     type Error = Error;
     type Variant = Self;
 
@@ -979,7 +977,7 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de> for Va
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::VariantAccess<'de> for VariantAccess<'a, R, C> {
+impl<'de, R: ReadSlice<'de>, C: SerializerConfig> de::VariantAccess<'de> for VariantAccess<'_, R, C> {
     type Error = Error;
 
     #[inline]
@@ -1037,7 +1035,7 @@ pub struct ReadReader<R: Read> {
 impl<R: Read> ReadReader<R> {
     #[inline]
     fn new(rd: R) -> Self {
-        ReadReader {
+        Self {
             rd,
             buf: Vec::with_capacity(128),
         }
@@ -1079,7 +1077,7 @@ pub struct ReadRefReader<'a, R: ?Sized> {
 impl<'a, T> ReadRefReader<'a, T> {
     /// Returns the part that hasn't been consumed yet
     #[must_use]
-    pub fn remaining_slice(&self) -> &'a [u8] {
+    pub const fn remaining_slice(&self) -> &'a [u8] {
         self.buf
     }
 }
@@ -1094,7 +1092,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ReadRefReader<'a, T> {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Read for ReadRefReader<'a, T> {
+impl<T: AsRef<[u8]> + ?Sized> Read for ReadRefReader<'_, T> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
         self.buf.read(buf)
