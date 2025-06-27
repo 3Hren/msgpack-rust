@@ -53,12 +53,16 @@ pub enum Error {
 macro_rules! depth_count(
     ( $counter:expr, $expr:expr ) => {
         {
-            $counter -= 1;
-            if $counter == 0 {
-                return Err(Error::DepthLimitExceeded)
+            if let Some(counter) = &mut $counter {
+                *counter -= 1;
+                if *counter == 0 {
+                    return Err(Error::DepthLimitExceeded)
+                }
             }
             let res = $expr;
-            $counter += 1;
+            if let Some(counter) = &mut $counter {
+                *counter += 1;
+            }
             res
         }
     }
@@ -181,7 +185,7 @@ pub struct Deserializer<R, C = DefaultConfig> {
     _config: PhantomData<C>,
     is_human_readable: bool,
     marker: Option<Marker>,
-    depth: u16,
+    depth: Option<u16>,
 }
 
 impl<R: Read, C> Deserializer<R, C> {
@@ -213,7 +217,7 @@ impl<R: Read> Deserializer<ReadReader<R>, DefaultConfig> {
             is_human_readable: DefaultConfig.is_human_readable(),
             // Cached marker in case of deserializing optional values.
             marker: None,
-            depth: 1024,
+            depth: Some(1024),
         }
     }
 }
@@ -294,7 +298,7 @@ where
             is_human_readable: DefaultConfig.is_human_readable(),
             _config: PhantomData,
             marker: None,
-            depth: 1024,
+            depth: Some(1024),
         }
     }
 
@@ -310,7 +314,12 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
     /// Changes the maximum nesting depth that is allowed
     #[inline(always)]
     pub fn set_max_depth(&mut self, depth: usize) {
-        self.depth = depth.min(u16::MAX as _) as u16;
+        self.depth = Some(depth.min(u16::MAX as _) as u16);
+    }
+    /// disable stack depth check
+    #[inline(always)]
+    pub fn set_depth_unlimit(&mut self) {
+        self.depth = None;
     }
 }
 
