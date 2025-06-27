@@ -23,6 +23,7 @@ rmp = { version = "0.8.14", path = "../rmp" }
 rmpv = { path = "../rmpv" }
 serde_bytes = "0.11.5"
 serde = { version = "1.0.197", features = ["derive"] }
+serde_stacker = "0.1.12"
 
 [badges]
 maintenance = { status = "looking-for-maintainer" }

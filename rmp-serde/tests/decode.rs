@@ -567,3 +567,32 @@ fn fail_depth_limit() {
         other => panic!("unexpected result: {other:?}"),
     }
 }
+
+
+
+#[test]
+fn depth_unlimit() {
+    #[allow(dead_code)]
+    struct Nested {
+        sub: Vec<Nested>,
+    }
+
+    impl<'de> de::Deserialize<'de> for Nested {
+        fn deserialize<D>(de: D) -> Result<Self, D::Error>
+            where D: de::Deserializer<'de>
+        {
+            let nested = Vec::deserialize(de)?;
+            Ok(Nested { sub: nested })
+        }
+    }
+    let mut data = Vec::new();
+    for _ in 0..(u16::MAX as u32 + 1) {
+        data.push(0x91u8);
+    }
+
+    let mut reader = rmp_serde::Deserializer::new(Cursor::new(data));
+    reader.set_depth_unlimit();
+    let deserializer = serde_stacker::Deserializer::new(&mut reader);
+    let res = Nested::deserialize(deserializer);
+    if let decode::Error::DepthLimitExceeded = res.err().unwrap() { panic!("unexpected DepthLimitExceeded") }
+}
