@@ -54,7 +54,7 @@ impl RmpReadErr for std::io::Error {}
 impl RmpReadErr for core::convert::Infallible {}
 
 macro_rules! read_byteorder_utils {
-    ($($name:ident => $tp:ident),* $(,)?) => {
+    ($($name:ident => $tp:ty => $func:ident),* $(,)?) => {
         $(
             #[inline]
             #[doc(hidden)]
@@ -62,9 +62,7 @@ macro_rules! read_byteorder_utils {
                 const SIZE: usize = core::mem::size_of::<$tp>();
                 let mut buf: [u8; SIZE] = [0u8; SIZE];
                 self.read_exact_buf(&mut buf).map_err(ValueReadError::InvalidDataRead)?;
-                Ok(paste::paste! {
-                    <byteorder::BigEndian as byteorder::ByteOrder>::[<read_ $tp>](&mut buf)
-                })
+                Ok(<byteorder::BigEndian as byteorder::ByteOrder>::$func(&mut buf))
             }
         )*
     };
@@ -119,14 +117,14 @@ pub trait RmpRead: sealed::Sealed {
     }
 
     read_byteorder_utils!(
-        read_data_u16 => u16,
-        read_data_u32 => u32,
-        read_data_u64 => u64,
-        read_data_i16 => i16,
-        read_data_i32 => i32,
-        read_data_i64 => i64,
-        read_data_f32 => f32,
-        read_data_f64 => f64
+        read_data_u16 => u16 => read_u16,
+        read_data_u32 => u32 => read_u32,
+        read_data_u64 => u64 => read_u64,
+        read_data_i16 => i16 => read_i16,
+        read_data_i32 => i32 => read_i32,
+        read_data_i64 => i64 => read_i64,
+        read_data_f32 => f32 => read_f32,
+        read_data_f64 => f64 => read_f64,
     );
 }
 
@@ -134,7 +132,7 @@ pub trait RmpRead: sealed::Sealed {
  * HACK: rmpv & rmp-erde used the internal read_data_* functions.
  *
  * Since adding no_std support moved these functions to the RmpRead trait,
- * this broke compatiblity  (despite changing no public APIs).
+ * this broke compatibility  (despite changing no public APIs).
  *
  * In theory, we could update rmpv and rmp-serde to use the new APIS,
  * but that would be needless churn (and might surprise users who just want to update rmp proper).
@@ -147,21 +145,21 @@ pub trait RmpRead: sealed::Sealed {
  */
 
 macro_rules! wrap_data_funcs_for_compatibility {
-    ($($tp:ident),* $(,)?) => {
-        $(paste::paste! {
+    ($($tp:ty => $func:ident),* $(,)?) => {
+        $(
             #[cfg(feature = "std")]
             #[doc(hidden)]
             #[deprecated(note = "internal function. rmpv & rmp-serde need to switch to RmpRead")]
-            pub fn [<read_data_ $tp>] <R: std::io::Read>(buf: &mut R) -> Result<$tp, ValueReadError> {
-                buf.[<read_data_ $tp>]()
+            pub fn $func<R: std::io::Read>(buf: &mut R) -> Result<$tp, ValueReadError> {
+                buf.$func()
             }
-        })*
+        )*
     };
 }
 wrap_data_funcs_for_compatibility!(
-    u8, u16, u32, u64,
-    i8, i16, i32, i64,
-    f32, f64
+    u8 => read_data_u8, u16 => read_data_u16, u32 => read_data_u32, u64 => read_data_u64,
+    i8 => read_data_i8, i16 => read_data_i16, i32 => read_data_i32, i64 => read_data_i64,
+    f32 => read_data_f32, f64 => read_data_f64,
 );
 
 #[cfg(feature = "std")]

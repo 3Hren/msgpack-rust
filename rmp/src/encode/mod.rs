@@ -114,16 +114,14 @@ mod sealed {
 }
 
 macro_rules! write_byteorder_utils {
-    ($($name:ident => $tp:ident),* $(,)?) => {
+    ($($name:ident => $tp:ty => $func:ident),* $(,)?) => {
         $(
             #[inline]
             #[doc(hidden)]
             fn $name(&mut self, val: $tp) -> Result<(), DataWriteError<Self::Error>> where Self: Sized {
                 const SIZE: usize = core::mem::size_of::<$tp>();
                 let mut buf: [u8; SIZE] = [0u8; SIZE];
-                paste::paste! {
-                    <byteorder::BigEndian as byteorder::ByteOrder>::[<write_ $tp>](&mut buf, val);
-                }
+                <byteorder::BigEndian as byteorder::ByteOrder>::$func(&mut buf, val);
                 self.write_bytes(&buf).map_err(DataWriteError)
             }
         )*
@@ -170,14 +168,14 @@ pub trait RmpWrite: sealed::Sealed {
     }
 
     write_byteorder_utils!(
-        write_data_u16 => u16,
-        write_data_u32 => u32,
-        write_data_u64 => u64,
-        write_data_i16 => i16,
-        write_data_i32 => i32,
-        write_data_i64 => i64,
-        write_data_f32 => f32,
-        write_data_f64 => f64
+        write_data_u16 => u16 => write_u16,
+        write_data_u32 => u32 => write_u32,
+        write_data_u64 => u64 => write_u64,
+        write_data_i16 => i16 => write_i16,
+        write_data_i32 => i32 => write_i32,
+        write_data_i64 => i64 => write_i64,
+        write_data_f32 => f32 => write_f32,
+        write_data_f64 => f64 => write_f64,
     );
 }
 
