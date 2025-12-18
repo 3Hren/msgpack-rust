@@ -1,3 +1,5 @@
+#![cfg(feature = "std")]
+
 use rmp::Marker;
 use rmp::decode::MessageLen;
 use rmp::decode::LenError;
