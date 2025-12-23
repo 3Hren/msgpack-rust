@@ -62,9 +62,7 @@ macro_rules! read_byteorder_utils {
                 const SIZE: usize = core::mem::size_of::<$tp>();
                 let mut buf: [u8; SIZE] = [0u8; SIZE];
                 self.read_exact_buf(&mut buf).map_err(ValueReadError::InvalidDataRead)?;
-                Ok(paste::paste! {
-                    <byteorder::BigEndian as byteorder::ByteOrder>::[<read_ $tp>](&mut buf)
-                })
+                Ok($tp::from_be_bytes(buf))
             }
         )*
     };
@@ -82,8 +80,6 @@ mod sealed {
 ///
 /// The methods of this trait should be considered an implementation detail (for now).
 /// It is currently sealed (can not be implemented by the user).
-///
-/// See also [`std::io::Read`] and [`byteorder::ReadBytesExt`]
 ///
 /// Its primary implementations are [`std::io::Read`] and [Bytes].
 pub trait RmpRead: sealed::Sealed {
@@ -129,40 +125,6 @@ pub trait RmpRead: sealed::Sealed {
         read_data_f64 => f64
     );
 }
-
-/*
- * HACK: rmpv & rmp-erde used the internal read_data_* functions.
- *
- * Since adding no_std support moved these functions to the RmpRead trait,
- * this broke compatiblity  (despite changing no public APIs).
- *
- * In theory, we could update rmpv and rmp-serde to use the new APIS,
- * but that would be needless churn (and might surprise users who just want to update rmp proper).
- *
- * Instead, we emulate these internal APIs for now,
- * so that rmpv and rmp-serde continue to compile without issue.
- *
- *
- * TODO: Remove this hack once we release a new version of rmp proper
- */
-
-macro_rules! wrap_data_funcs_for_compatibility {
-    ($($tp:ident),* $(,)?) => {
-        $(paste::paste! {
-            #[cfg(feature = "std")]
-            #[doc(hidden)]
-            #[deprecated(note = "internal function. rmpv & rmp-serde need to switch to RmpRead")]
-            pub fn [<read_data_ $tp>] <R: std::io::Read>(buf: &mut R) -> Result<$tp, ValueReadError> {
-                buf.[<read_data_ $tp>]()
-            }
-        })*
-    };
-}
-wrap_data_funcs_for_compatibility!(
-    u8, u16, u32, u64,
-    i8, i16, i32, i64,
-    f32, f64
-);
 
 #[cfg(feature = "std")]
 impl<T: std::io::Read> RmpRead for T {

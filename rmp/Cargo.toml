@@ -13,14 +13,11 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-byteorder = { version = "1.5.0", default-features = false }
 num-traits = { version = "0.2.19", default-features = false }
-# This is macro_only ;)
-paste = "1.0"
 
 [features]
 default = ["std"]
-std = ["byteorder/std", "num-traits/std"]
+std = ["num-traits/std"]
 
 [[example]]
 name = "inspect"

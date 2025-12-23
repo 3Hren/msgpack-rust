@@ -3,7 +3,7 @@ name = "rmp-serde"
 version = "1.3.1"
 authors = ["Evgeny Safronov <division494@gmail.com>"]
 license = "MIT"
-description = "Serde bindings for RMP"
+description = "Serde support for MessagePack"
 repository = "https://github.com/3Hren/msgpack-rust"
 documentation = "https://docs.rs/rmp-serde"
 readme = "README.md"
@@ -16,7 +16,6 @@ rust-version = "1.85"
 tag-prefix = "{{crate_name}}/"
 
 [dependencies]
-byteorder = "1.5.0"
 serde = "1.0.228"
 rmp = { version = "0.8.14", path = "../rmp" }
 

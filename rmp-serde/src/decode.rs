@@ -9,8 +9,6 @@ use std::marker::PhantomData;
 use std::num::TryFromIntError;
 use std::str::{self, Utf8Error};
 
-use byteorder::{self, ReadBytesExt};
-
 use serde;
 use serde::de::value::SeqDeserializer;
 use serde::de::{self, Deserialize, DeserializeOwned, DeserializeSeed, Unexpected, Visitor};
@@ -382,17 +380,21 @@ fn read_bin_data<'a, 'de, R: ReadSlice<'de>>(rd: &'a mut R, len: u32) -> Result<
 }
 
 fn read_u8<R: Read>(rd: &mut R) -> Result<u8, Error> {
-    byteorder::ReadBytesExt::read_u8(rd).map_err(Error::InvalidDataRead)
+    let mut buf = [0; 1];
+    rd.read_exact(&mut buf).map_err(Error::InvalidDataRead)?;
+    Ok(buf[0])
 }
 
 fn read_u16<R: Read>(rd: &mut R) -> Result<u16, Error> {
-    rd.read_u16::<byteorder::BigEndian>()
-        .map_err(Error::InvalidDataRead)
+    let mut buf = [0; 2];
+    rd.read_exact(&mut buf).map_err(Error::InvalidDataRead)?;
+    Ok(u16::from_be_bytes(buf))
 }
 
 fn read_u32<R: Read>(rd: &mut R) -> Result<u32, Error> {
-    rd.read_u32::<byteorder::BigEndian>()
-        .map_err(Error::InvalidDataRead)
+    let mut buf = [0; 4];
+    rd.read_exact(&mut buf).map_err(Error::InvalidDataRead)?;
+    Ok(u32::from_be_bytes(buf))
 }
 
 fn ext_len<R: Read>(rd: &mut R, marker: Marker) -> Result<u32, Error> {
