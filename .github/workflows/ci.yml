@@ -5,7 +5,7 @@ on:
 
 jobs:
     check:
-        name: Tests
+        name: Tests (${{ matrix.rust }})
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -13,18 +13,13 @@ jobs:
                     - stable
                     - beta
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions-rs/toolchain@v1
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@master
               with:
-                  profile: minimal
                   toolchain: ${{ matrix.rust }}
-                  override: true
-            - uses: actions-rs/cargo@v1
-              with:
-                  command: test
-                  args: --all --all-features
-            - uses: actions-rs/cargo@v1
-              with:
-                  command: test
-                  # Test no_std support
-                  args: -p rmp --no-default-features
+
+            - name: Test (all, all features)
+              run: cargo test --all --all-features
+
+            - name: Test no_std (no default features)
+              run: cargo test -p rmp --no-default-features
