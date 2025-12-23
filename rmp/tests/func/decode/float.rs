@@ -1,3 +1,4 @@
+#![allow(clippy::float_cmp)]
 use super::Cursor;
 
 use rmp::decode::*;
@@ -75,7 +76,6 @@ fn from_f64_zero_minus() {
 
 #[test]
 fn from_f64_inf() {
-    use std::f64;
 
     let buf: &[u8] = &[0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);
@@ -86,7 +86,6 @@ fn from_f64_inf() {
 
 #[test]
 fn from_f64_neg_inf() {
-    use std::f64;
 
     let buf: &[u8] = &[0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     let mut cur = Cursor::new(buf);

@@ -75,7 +75,6 @@ fn pass_pack_f32() {
 
 #[test]
 fn pass_pack_f64() {
-    use std::f64;
     check_packed_eq(
         &vec![0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
         &ValueRef::F64(f64::INFINITY),

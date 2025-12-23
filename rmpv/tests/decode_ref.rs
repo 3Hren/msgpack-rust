@@ -145,7 +145,6 @@ fn from_f32() {
 
 #[test]
 fn from_f64() {
-    use std::f64;
 
     let buf = [0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
@@ -240,7 +239,7 @@ fn from_empty_buffer_invalid_buffer_fill() {
 
     impl Read for ErrorRead {
         fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
-            Err(io::Error::new(io::ErrorKind::Other, "Mock Error"))
+            Err(io::Error::other("Mock Error"))
         }
     }
 
@@ -298,7 +297,7 @@ fn from_string_invalid_utf8() {
         ValueRef::String(s) => {
             assert!(s.is_err());
             assert_eq!([0xc3, 0x28], s.as_bytes());
-        }
+        },
         _ => panic!("wrong type"),
     }
 }

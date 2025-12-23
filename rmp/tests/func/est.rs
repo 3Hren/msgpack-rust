@@ -1,11 +1,10 @@
-use rmp::Marker;
-use rmp::decode::MessageLen;
-use rmp::decode::LenError;
+use rmp::decode::{LenError, MessageLen};
 use rmp::encode::*;
+use rmp::Marker;
 
 #[track_caller]
 fn check_estimates(msg: &[u8], expected: &[i32]) {
-    assert_eq!(msg.len()+1, expected.len(), "off by {}", msg.len() as isize + 1 - expected.len() as isize);
+    assert_eq!(msg.len() + 1, expected.len(), "off by {}", msg.len() as isize + 1 - expected.len() as isize);
 
     fn take_res(r: Result<usize, LenError>) -> (i32, usize) {
         match r {
@@ -18,24 +17,24 @@ fn check_estimates(msg: &[u8], expected: &[i32]) {
         .map(|partial_len| {
             let partial_msg = &msg[..partial_len];
             let (res, predicted) = take_res(MessageLen::len_of(partial_msg));
-            assert!(predicted > partial_len.min(msg.len()-1), "{predicted} > {partial_len}/{}", msg.len());
+            assert!(predicted > partial_len.min(msg.len() - 1), "{predicted} > {partial_len}/{}", msg.len());
             res
         })
         .collect::<Vec<_>>();
     assert_eq!(expected, predicted, "quadratic");
-    assert_eq!(msg.len(), MessageLen::len_of(&msg).expect("complete message"));
+    assert_eq!(msg.len(), MessageLen::len_of(msg).expect("complete message"));
 
     let mut incremental = MessageLen::with_limits(1024, 1<<16);
-    let predicted = [&[][..]].into_iter().chain(msg.chunks(1)).map(|mut chunk| {
-        let (res, _) = take_res(incremental.incremental_len(&mut chunk));
+    let predicted = [&[][..]].into_iter().chain(msg.chunks(1)).map(|chunk| {
+        let (res, _) = take_res(incremental.incremental_len(chunk));
         res
     }).collect::<Vec<_>>();
     assert_eq!(expected, predicted, "incremental");
 
     for frag_len in [1, 2, 3, 5, 7] {
         let mut incremental = MessageLen::with_limits(1024, msg.len());
-        let predicted = [&[][..]].into_iter().chain(msg.chunks(frag_len)).map(|mut chunk| {
-            match incremental.incremental_len(&mut chunk) {
+        let predicted = [&[][..]].into_iter().chain(msg.chunks(frag_len)).map(|chunk| {
+            match incremental.incremental_len(chunk) {
                 Err(r) => r.len(),
                 Ok(r) => r,
             }
@@ -56,7 +55,7 @@ fn array() {
     write_array_len(&mut out, 4).unwrap();
     write_u16(&mut out, 333).unwrap();
     write_bool(&mut out, true).unwrap();
-    write_u64(&mut out, 1<<33).unwrap();
+    write_u64(&mut out, 1 << 33).unwrap();
     write_bin_len(&mut out, 5).unwrap();
     out.extend(b"hello");
 
@@ -111,6 +110,6 @@ fn nested() {
 
     check_estimates(&out, &[1, 2, 3, 4, 8, 8, 8, 8, 9, 10, 11, 12, 14, 14, 16, 16, 17, 18, 19, 20, 21, 22, -22]);
 
-    assert!(MessageLen::with_limits(4, 1<<16).incremental_len(&mut out.as_slice()).is_err());
-    assert!(MessageLen::with_limits(14, 1<<16).incremental_len(&mut out.as_slice()).is_ok());
+    assert!(MessageLen::with_limits(4, 1 << 16).incremental_len(out.as_slice()).is_err());
+    assert!(MessageLen::with_limits(14, 1 << 16).incremental_len(out.as_slice()).is_ok());
 }

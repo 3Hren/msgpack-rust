@@ -5,8 +5,7 @@ use std::slice::Iter;
 use std::vec::IntoIter;
 
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
-use serde::forward_to_deserialize_any;
-use serde::{self, Deserialize, Deserializer};
+use serde::{self, forward_to_deserialize_any, Deserialize, Deserializer};
 
 use crate::{IntPriv, Integer, Utf8String, Utf8StringRef, Value, ValueRef};
 
@@ -335,7 +334,7 @@ impl<'de> Deserializer<'de> for Value {
                 } else {
                     Err(de::Error::invalid_length(len, &"fewer elements in array"))
                 }
-            }
+            },
             Self::Map(v) => {
                 let len = v.len();
                 let mut de = MapDeserializer::new(v.into_iter());
@@ -345,11 +344,11 @@ impl<'de> Deserializer<'de> for Value {
                 } else {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
-            }
+            },
             Self::Ext(tag, data) => {
                 let de = ExtDeserializer::new_owned(tag, data);
                 visitor.visit_newtype_struct(de)
-            }
+            },
         }
     }
 
@@ -376,7 +375,7 @@ impl<'de> Deserializer<'de> for Value {
                 Self::Ext(tag, data) => {
                     let ext_de = ExtDeserializer::new_owned(tag, data);
                     return visitor.visit_newtype_struct(ext_de);
-                }
+                },
                 other => return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext")),
             }
         }
@@ -428,7 +427,7 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
                 } else {
                     Err(de::Error::invalid_length(len, &"fewer elements in array"))
                 }
-            }
+            },
             ValueRef::Map(v) => {
                 let len = v.len();
                 let mut de = MapDeserializer::new(v.into_iter());
@@ -438,11 +437,11 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
                 } else {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
-            }
+            },
             ValueRef::Ext(tag, data) => {
                 let de = ExtDeserializer::new_ref(tag, data);
                 visitor.visit_newtype_struct(de)
-            }
+            },
         }
     }
 
@@ -469,7 +468,7 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
                 ValueRef::Ext(tag, data) => {
                     let ext_de = ExtDeserializer::new_ref(tag, data);
                     return visitor.visit_newtype_struct(ext_de);
-                }
+                },
                 other => return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext")),
             }
         }
@@ -521,7 +520,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
                 } else {
                     Err(de::Error::invalid_length(len, &"fewer elements in array"))
                 }
-            }
+            },
             ValueRef::Map(ref v) => {
                 let len = v.len();
                 let mut de = MapRefDeserializer::new(v.iter());
@@ -531,11 +530,11 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
                 } else {
                     Err(de::Error::invalid_length(len, &"fewer elements in map"))
                 }
-            }
+            },
             ValueRef::Ext(tag, data) => {
                 let de = ExtDeserializer::new_ref(tag, data);
                 visitor.visit_newtype_struct(de)
-            }
+            },
         }
     }
 
@@ -566,11 +565,11 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
                     Some(id) => deserialize_from(id)?,
                     None => {
                         return Err(de::Error::invalid_length(len, &"array with one or two elements"));
-                    }
+                    },
                 };
 
                 visitor.visit_enum(EnumRefDeserializer::new(id, iter.next()))
-            }
+            },
             other => Err(de::Error::invalid_type(other.unexpected(), &"array, map or int")),
         }
     }
@@ -584,7 +583,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
                 ValueRef::Ext(tag, data) => {
                     let ext_de = ExtDeserializer::new_ref(*tag, data);
                     return visitor.visit_newtype_struct(ext_de);
-                }
+                },
                 other => return Err(de::Error::invalid_type(other.unexpected(), &"expected Ext")),
             }
         }
@@ -603,7 +602,7 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
                 } else {
                     Err(de::Error::invalid_length(v.len(), &"empty array"))
                 }
-            }
+            },
             other => Err(de::Error::invalid_type(other.unexpected(), &"empty array")),
         }
     }
@@ -780,7 +779,7 @@ impl<'de, I, U> de::MapAccess<'de> for MapDeserializer<I, U>
             Some((key, val)) => {
                 self.val = Some(val);
                 seed.deserialize(key).map(Some)
-            }
+            },
             None => Ok(None),
         }
     }
@@ -944,7 +943,7 @@ impl<'de> de::MapAccess<'de> for MapRefDeserializer<'de> {
             Some((key, val)) => {
                 self.val = Some(val);
                 seed.deserialize(key).map(Some)
-            }
+            },
             None => Ok(None),
         }
     }
@@ -1017,7 +1016,7 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
                 } else {
                     Err(de::Error::invalid_value(Unexpected::Seq, &"empty array"))
                 }
-            }
+            },
             Some(v) => Err(de::Error::invalid_value(v.unexpected(), &"empty array")),
             None => Ok(()),
         }
@@ -1045,7 +1044,7 @@ impl<'de> de::VariantAccess<'de> for VariantRefDeserializer<'de> {
                         val
                     }
                 }
-            }
+            },
             Some(v) => seed.deserialize(v),
             None => Err(de::Error::invalid_type(Unexpected::UnitVariant, &"newtype variant")),
         }
@@ -1117,7 +1116,7 @@ trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
                     Some(id) => deserialize_from(id)?,
                     None => {
                         return Err(de::Error::invalid_value(Unexpected::Seq, &"array with one or two elements"));
-                    }
+                    },
                 };
 
                 visitor.visit_enum(EnumDeserializer::new(id, iter.next()))
@@ -1139,7 +1138,7 @@ trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
                 } else {
                     Err(de::Error::invalid_type(Unexpected::Seq, &"empty array"))
                 }
-            }
+            },
             Err(other) => Err(de::Error::invalid_type(other.unexpected(), &"empty array")),
         }
     }
@@ -1148,8 +1147,8 @@ trait ValueBase<'de>: Deserializer<'de, Error = Error> + ValueExt {
 impl ValueBase<'_> for Value {
     type Item = Self;
     type Iter = IntoIter<Self>;
-    type MapIter = IntoIter<(Self, Self)>;
     type MapDeserializer = MapDeserializer<Self::MapIter, Self::Item>;
+    type MapIter = IntoIter<(Self, Self)>;
 
     #[inline]
     fn is_nil(&self) -> bool {
@@ -1176,8 +1175,8 @@ impl ValueBase<'_> for Value {
 impl<'de> ValueBase<'de> for ValueRef<'de> {
     type Item = Self;
     type Iter = IntoIter<Self>;
-    type MapIter = IntoIter<(Self, Self)>;
     type MapDeserializer = MapDeserializer<Self::MapIter, Self::Item>;
+    type MapIter = IntoIter<(Self, Self)>;
 
     #[inline]
     fn is_nil(&self) -> bool {

@@ -17,8 +17,8 @@ use crate::{IntPriv, Integer, Utf8StringRef, ValueRef};
 ///
 /// # Examples
 /// ```
-/// use rmpv::ValueRef;
 /// use rmpv::encode::write_value_ref;
+/// use rmpv::ValueRef;
 ///
 /// let mut buf = Vec::new();
 /// let val = ValueRef::from("le message");
@@ -32,48 +32,48 @@ pub fn write_value_ref<W>(wr: &mut W, val: &ValueRef<'_>) -> Result<(), Error>
     match *val {
         ValueRef::Nil => {
             write_nil(wr).map_err(Error::InvalidMarkerWrite)?;
-        }
+        },
         ValueRef::Boolean(val) => {
             write_bool(wr, val).map_err(Error::InvalidMarkerWrite)?;
-        }
+        },
         ValueRef::Integer(Integer { n }) => match n {
             IntPriv::PosInt(n) => {
                 write_uint(wr, n)?;
-            }
+            },
             IntPriv::NegInt(n) => {
                 write_sint(wr, n)?;
-            }
+            },
         },
         ValueRef::F32(val) => {
             write_f32(wr, val)?;
-        }
+        },
         ValueRef::F64(val) => {
             write_f64(wr, val)?;
-        }
+        },
         ValueRef::String(Utf8StringRef { s }) => match s {
             Ok(val) => write_str(wr, val)?,
             Err(err) => write_bin(wr, err.0)?,
         },
         ValueRef::Binary(val) => {
             write_bin(wr, val)?;
-        }
+        },
         ValueRef::Array(ref vec) => {
             write_array_len(wr, vec.len() as u32)?;
             for v in vec {
                 write_value_ref(wr, v)?;
             }
-        }
+        },
         ValueRef::Map(ref map) => {
             write_map_len(wr, map.len() as u32)?;
             for (key, val) in map {
                 write_value_ref(wr, key)?;
                 write_value_ref(wr, val)?;
             }
-        }
+        },
         ValueRef::Ext(ty, data) => {
             write_ext_meta(wr, data.len() as u32, ty)?;
             wr.write_all(data).map_err(Error::InvalidDataWrite)?;
-        }
+        },
     }
 
     Ok(())

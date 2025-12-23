@@ -176,7 +176,7 @@ fn from_str_strfix_invalid_utf8() {
     match read_str(&mut cur, out) {
         Err(DecodeStringError::InvalidUtf8(raw, _)) => {
             assert_eq!(&[0xc3, 0x28], raw);
-        }
+        },
         other => panic!("unexpected result: {other:?}"),
     }
 
@@ -236,7 +236,7 @@ fn example_process_sequence_of_strings() {
             Ok((chunk, tail)) => {
                 chunks.push(chunk);
                 unparsed = tail;
-            }
+            },
             Err(..) => break,
         }
     }

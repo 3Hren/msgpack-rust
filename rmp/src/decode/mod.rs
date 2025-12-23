@@ -174,16 +174,6 @@ impl<T: std::io::Read> RmpRead for T {
     }
 }
 
-// An error returned from the `write_marker` and `write_fixval` functions.
-struct MarkerWriteError<E: RmpReadErr>(E);
-
-impl<E: RmpReadErr> From<E> for MarkerWriteError<E> {
-    #[cold]
-    fn from(err: E) -> Self {
-        Self(err)
-    }
-}
-
 /// An error that can occur when attempting to read a MessagePack marker from the reader.
 #[derive(Debug)]
 #[allow(deprecated)] // Needed for backwards compat

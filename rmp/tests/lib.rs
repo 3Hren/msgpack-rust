@@ -5,6 +5,6 @@ extern crate quickcheck;
 mod func {
     mod decode;
     mod encode;
-    mod mirror;
     mod est;
+    mod mirror;
 }

@@ -1,5 +1,10 @@
 //! Contains Value and `ValueRef` structs and its conversion traits.
 #![forbid(unsafe_code)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::match_same_arms)]
+#![allow(clippy::bool_assert_comparison)]
+#![allow(clippy::option_if_let_else)]
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 use std::borrow::Cow;
 use std::convert::TryFrom;
@@ -51,7 +56,7 @@ impl Integer {
     #[must_use]
     pub const fn is_i64(&self) -> bool {
         match self.n {
-            IntPriv::PosInt(n) => n <= std::i64::MAX as u64,
+            IntPriv::PosInt(n) => n <= i64::MAX as u64,
             IntPriv::NegInt(..) => true,
         }
     }
@@ -462,9 +467,9 @@ pub enum Value {
     /// Binary extending Raw type represents a byte array.
     Binary(Vec<u8>),
     /// Array represents a sequence of objects.
-    Array(Vec<Value>),
+    Array(Vec<Self>),
     /// Map represents key-value pairs of objects.
-    Map(Vec<(Value, Value)>),
+    Map(Vec<(Self, Self)>),
     /// Extended implements Extension interface: represents a tuple of type information and a byte
     /// array where type information is an integer whose meaning is defined by applications.
     Ext(i8, Vec<u8>),
@@ -484,17 +489,13 @@ impl Value {
     /// let val = Value::Array(vec![
     ///     Value::Nil,
     ///     Value::from(42),
-    ///     Value::Array(vec![
-    ///         Value::String("le message".into())
-    ///     ])
+    ///     Value::Array(vec![Value::String("le message".into())]),
     /// ]);
     ///
     /// let expected = ValueRef::Array(vec![
-    ///    ValueRef::Nil,
-    ///    ValueRef::from(42),
-    ///    ValueRef::Array(vec![
-    ///        ValueRef::from("le message"),
-    ///    ])
+    ///     ValueRef::Nil,
+    ///     ValueRef::from(42),
+    ///     ValueRef::Array(vec![ValueRef::from("le message")]),
     /// ]);
     ///
     /// assert_eq!(expected, val.as_ref());
@@ -531,7 +532,7 @@ impl Value {
     #[inline]
     #[must_use]
     pub const fn is_nil(&self) -> bool {
-        if let Self::Nil = *self {
+        if matches!(*self, Self::Nil) {
             true
         } else {
             false
@@ -613,11 +614,7 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn is_f32(&self) -> bool {
-        if let Self::F32(..) = *self {
-            true
-        } else {
-            false
-        }
+        matches!(*self, Self::F32(..))
     }
 
     /// Returns true if (and only if) the `Value` is a f64. Returns false otherwise.
@@ -635,11 +632,7 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn is_f64(&self) -> bool {
-        if let Self::F64(..) = *self {
-            true
-        } else {
-            false
-        }
+        matches!(*self, Self::F64(..))
     }
 
     /// Returns true if the `Value` is a Number. Returns false otherwise.
@@ -657,10 +650,7 @@ impl Value {
     /// ```
     #[must_use]
     pub fn is_number(&self) -> bool {
-        match *self {
-            Self::Integer(..) | Self::F32(..) | Self::F64(..) => true,
-            _ => false,
-        }
+        matches!(*self, Self::Integer(..) | Self::F32(..) | Self::F64(..))
     }
 
     /// Returns true if the `Value` is a String. Returns false otherwise.
@@ -932,6 +922,7 @@ impl Index<usize> for Value {
 
 impl Index<&str> for Value {
     type Output = Self;
+
     fn index(&self, index: &str) -> &Self {
         if let Self::Map(ref map) = *self {
             if let Some(found) = map.iter().find(|(key, _val)| {
@@ -1220,17 +1211,17 @@ impl Display for Value {
                     .join(", ");
 
                 write!(f, "[{res}]")
-            }
+            },
             Self::Map(ref vec) => {
                 write!(f, "{{")?;
 
                 match vec.iter().take(1).next() {
                     Some((k, v)) => {
                         write!(f, "{k}: {v}")?;
-                    }
+                    },
                     None => {
                         write!(f, "")?;
-                    }
+                    },
                 }
 
                 for (k, v) in vec.iter().skip(1) {
@@ -1238,10 +1229,10 @@ impl Display for Value {
                 }
 
                 write!(f, "}}")
-            }
+            },
             Self::Ext(ty, ref data) => {
                 write!(f, "[{ty}, {data:?}]")
-            }
+            },
         }
     }
 }
@@ -1265,9 +1256,9 @@ pub enum ValueRef<'a> {
     /// Binary extending Raw type represents a byte array.
     Binary(&'a [u8]),
     /// Array represents a sequence of objects.
-    Array(Vec<ValueRef<'a>>),
+    Array(Vec<Self>),
     /// Map represents key-value pairs of objects.
-    Map(Vec<(ValueRef<'a>, ValueRef<'a>)>),
+    Map(Vec<(Self, Self)>),
     /// Extended implements Extension interface: represents a tuple of type information and a byte
     /// array where type information is an integer whose meaning is defined by applications.
     Ext(i8, &'a [u8]),
@@ -1287,19 +1278,15 @@ impl ValueRef<'_> {
     /// use rmpv::{Value, ValueRef};
     ///
     /// let val = ValueRef::Array(vec![
-    ///    ValueRef::Nil,
-    ///    ValueRef::from(42),
-    ///    ValueRef::Array(vec![
-    ///        ValueRef::from("le message"),
-    ///    ])
+    ///     ValueRef::Nil,
+    ///     ValueRef::from(42),
+    ///     ValueRef::Array(vec![ValueRef::from("le message")]),
     /// ]);
     ///
     /// let expected = Value::Array(vec![
     ///     Value::Nil,
     ///     Value::from(42),
-    ///     Value::Array(vec![
-    ///         Value::String("le message".into())
-    ///     ])
+    ///     Value::Array(vec![Value::String("le message".into())]),
     /// ]);
     ///
     /// assert_eq!(expected, val.to_owned());
@@ -1572,17 +1559,17 @@ impl Display for ValueRef<'_> {
                     .join(", ");
 
                 write!(f, "[{res}]")
-            }
+            },
             ValueRef::Map(ref vec) => {
                 write!(f, "{{")?;
 
                 match vec.iter().take(1).next() {
                     Some((k, v)) => {
                         write!(f, "{k}: {v}")?;
-                    }
+                    },
                     None => {
                         write!(f, "")?;
-                    }
+                    },
                 }
 
                 for (k, v) in vec.iter().skip(1) {
@@ -1590,10 +1577,10 @@ impl Display for ValueRef<'_> {
                 }
 
                 write!(f, "}}")
-            }
+            },
             ValueRef::Ext(ty, data) => {
                 write!(f, "[{ty}, {data:?}]")
-            }
+            },
         }
     }
 }

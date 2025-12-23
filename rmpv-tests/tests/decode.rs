@@ -2,9 +2,8 @@ use serde::Deserialize;
 use serde_bytes::ByteBuf;
 use std::collections::BTreeMap;
 
-use rmpv::decode;
 use rmpv::ext::from_value;
-use rmpv::Value;
+use rmpv::{decode, Value};
 
 /// Tests that a `Value` is properly decoded from bytes using two different mechanisms: direct
 /// deserialization using `rmp::decode::read_value` and using `serde`.
@@ -28,7 +27,7 @@ fn test_stack_depth_checking() {
             match decode::read_value(&mut &buf[..]) {
                 Ok(_) => panic!("expected max stack depth to be exceeded"),
                 Err(decode::Error::DepthLimitExceeded) => {},
-                Err(err) => panic!("unexpected error: {}", err),
+                Err(err) => panic!("unexpected error: {err}"),
             }
         })
         .unwrap()
@@ -49,7 +48,7 @@ fn pass_bool() {
 
 #[test]
 fn pass_uint() {
-    test_decode(&[0x00], Value::from(u8::min_value()));
+    test_decode(&[0x00], Value::from(u8::MIN));
     test_decode(&[0xcc, 0xff], Value::from(u8::MAX));
     test_decode(&[0xcd, 0xff, 0xff], Value::from(u16::MAX));
     test_decode(&[0xce, 0xff, 0xff, 0xff, 0xff], Value::from(u32::MAX));
@@ -58,13 +57,13 @@ fn pass_uint() {
 
 #[test]
 fn pass_sint() {
-    test_decode(&[0xd0, 0x80], Value::from(i8::min_value()));
+    test_decode(&[0xd0, 0x80], Value::from(i8::MIN));
     test_decode(&[0x7f], Value::from(i8::MAX));
-    test_decode(&[0xd1, 0x80, 0x00], Value::from(i16::min_value()));
+    test_decode(&[0xd1, 0x80, 0x00], Value::from(i16::MIN));
     test_decode(&[0xcd, 0x7f, 0xff], Value::from(i16::MAX));
-    test_decode(&[0xd2, 0x80, 0x00, 0x00, 0x00], Value::from(i32::min_value()));
+    test_decode(&[0xd2, 0x80, 0x00, 0x00, 0x00], Value::from(i32::MIN));
     test_decode(&[0xce, 0x7f, 0xff, 0xff, 0xff], Value::from(i32::MAX));
-    test_decode(&[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], Value::from(i64::min_value()));
+    test_decode(&[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], Value::from(i64::MIN));
     test_decode(&[0xcf, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], Value::from(i64::MAX));
 }
 
@@ -110,13 +109,13 @@ fn pass_value_map() {
 
 #[test]
 fn pass_uint_from_value() {
-    assert_eq!(i8::min_value(), from_value(Value::from(i8::min_value())).unwrap());
+    assert_eq!(i8::MIN, from_value(Value::from(i8::MIN)).unwrap());
     assert_eq!(i8::MAX, from_value(Value::from(i8::MAX)).unwrap());
-    assert_eq!(i16::min_value(), from_value(Value::from(i16::min_value())).unwrap());
+    assert_eq!(i16::MIN, from_value(Value::from(i16::MIN)).unwrap());
     assert_eq!(i16::MAX, from_value(Value::from(i16::MAX)).unwrap());
-    assert_eq!(i32::min_value(), from_value(Value::from(i32::min_value())).unwrap());
+    assert_eq!(i32::MIN, from_value(Value::from(i32::MIN)).unwrap());
     assert_eq!(i32::MAX, from_value(Value::from(i32::MAX)).unwrap());
-    assert_eq!(i64::min_value(), from_value(Value::from(i64::min_value())).unwrap());
+    assert_eq!(i64::MIN, from_value(Value::from(i64::MIN)).unwrap());
     assert_eq!(i64::MAX, from_value(Value::from(i64::MAX)).unwrap());
 }
 
@@ -298,7 +297,7 @@ fn pass_tuple_struct_from_ext() {
     }
 
     impl<'de> serde::de::Deserialize<'de> for ExtStruct {
-        fn deserialize<D>(deserializer: D) -> Result<ExtStruct, D::Error>
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: serde::Deserializer<'de>,
         {

@@ -189,10 +189,9 @@ fn index_into_map() {
 #[test]
 fn try_from_val() {
     use rmpv::Utf8String;
-    use std::convert::TryInto;
 
-  assert_eq!(false, Value::Boolean(false).try_into().unwrap());
-  assert_eq!(Utf8String::from("spook"), Value::from("spook").try_into().unwrap());
-  assert_eq!(String::from("spook"), TryInto::<String>::try_into(Value::from("spook")).unwrap());
-  assert_eq!(vec![0], TryInto::<Vec<u8>>::try_into(Value::Binary(vec![0u8])).unwrap());
+    assert_eq!(false, Value::Boolean(false).try_into().unwrap());
+    assert_eq!(Utf8String::from("spook"), Value::from("spook").try_into().unwrap());
+    assert_eq!(String::from("spook"), TryInto::<String>::try_into(Value::from("spook")).unwrap());
+    assert_eq!(vec![0], TryInto::<Vec<u8>>::try_into(Value::Binary(vec![0u8])).unwrap());
 }

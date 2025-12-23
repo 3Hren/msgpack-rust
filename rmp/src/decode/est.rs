@@ -1,5 +1,5 @@
-use std::num::{NonZeroU32, NonZeroUsize};
 use crate::Marker;
+use std::num::{NonZeroU32, NonZeroUsize};
 
 /// Incremental MessagePack parser that can parse incomplete messages,
 /// and report their estimated total length.
@@ -32,6 +32,7 @@ pub enum LenError {
 
 impl LenError {
     /// Get expected min length or 0 on error
+    #[must_use]
     pub fn len(&self) -> usize {
         match *self {
             Self::ParseError => 0,
@@ -46,6 +47,7 @@ impl MessageLen {
     /// If you have all MessagePack data in memory already, you can use [`MessageLen::len_of`].
     /// If you're reading data in a streaming fashion, you can feed chunks of data
     /// to [`MessageLen::incremental_len`].
+    #[must_use]
     pub fn new() -> Self {
         Self::with_limits(1024, (u32::MAX as usize).min(isize::MAX as usize / 2))
     }
@@ -53,10 +55,11 @@ impl MessageLen {
     /// * `max_depth` limits nesting of arrays and maps
     ///
     /// * `max_len` is maximum size of any string, byte string, map, or array.
-    ///    For maps and arrays this is the number of items, not bytes.
+    ///   For maps and arrays this is the number of items, not bytes.
     ///
     /// Messages can be both deep and wide, being `max_depth` * `max_len` in size.
     /// You should also limit the maximum byte size of the message (outside of this parser).
+    #[must_use]
     pub fn with_limits(max_depth: usize, max_len: usize) -> Self {
         Self {
             max_position: NonZeroUsize::new(1).unwrap(),
@@ -83,7 +86,7 @@ impl MessageLen {
     ///
     /// Don't call this function in a loop. Use [`MessageLen::incremental_len`] instead.
     pub fn len_of(complete_message: &[u8]) -> Result<usize, LenError> {
-        Self::with_limits(1024, 1<<30).incremental_len(&mut complete_message.as_ref())
+        Self::with_limits(1024, 1 << 30).incremental_len(complete_message.as_ref())
     }
 
     /// Parse more bytes, and re-evaluate required message length.
@@ -105,9 +108,8 @@ impl MessageLen {
     ///   is a non-recoverable error. Any further calls to this function may return nonsense.
     pub fn incremental_len(&mut self, mut next_message_fragment: &[u8]) -> Result<usize, LenError> {
         let data = &mut next_message_fragment;
-        let wip = match self.wip.take() {
-            Some(wip) => wip,
-            None => return Ok(self.position), // must have succeded already
+        let Some(wip) = self.wip.take() else {
+            return Ok(self.position); // must have succeded already
         };
         match wip {
             WIP::Data(Data { bytes_left }) => self.skip_data(data, bytes_left.get()),
@@ -200,7 +202,7 @@ impl MessageLen {
             4 => u32::from_be_bytes(dest.try_into().unwrap()),
             _ => {
                 debug_assert!(false);
-                return None
+                return None;
             },
         };
         if len >= self.max_len {
@@ -229,7 +231,7 @@ impl MessageLen {
             _ => {
                 debug_assert!(false);
                 None
-            }
+            },
         }
     }
 
@@ -243,7 +245,10 @@ impl MessageLen {
             self.read_one_item(data).or_else(|| {
                 self.set_max_position(position_before_item + items_left as usize);
                 // -1, because it will increase depth again when resumed
-                self.sequences_wip.push(Seq { items_left: non_zero, depth: self.current_depth-1 });
+                self.sequences_wip.push(Seq {
+                    items_left: non_zero,
+                    depth: self.current_depth - 1,
+                });
                 None
             })?;
             items_left -= 1;

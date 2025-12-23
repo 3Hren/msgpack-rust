@@ -159,7 +159,6 @@ fn pass_i64_most_effective() {
     assert_eq!([0xcc, 0x80], buf);
 }
 
-
 #[test]
 fn pass_f32() {
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00];
@@ -235,7 +234,7 @@ fn pass_hash_array_bytes() {
     use std::collections::HashSet;
     let mut buf = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-    let val = [[255u8; 3], [1u8; 3]].into_iter().collect::<HashSet<[u8;3]>>();
+    let val = [[255u8; 3], [1u8; 3]].into_iter().collect::<HashSet<[u8; 3]>>();
     val.serialize(&mut Serializer::new(&mut &mut buf[..]).with_bytes(BytesMode::ForceAll)).ok().unwrap();
 }
 

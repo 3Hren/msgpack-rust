@@ -65,7 +65,7 @@ fn from_i32_decode_value() {
 #[test]
 fn from_f64_decode_value() {
     let buf = [0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-    assert_eq!(Value::F64(::std::f64::NEG_INFINITY), read_value(&mut &buf[..]).unwrap());
+    assert_eq!(Value::F64(f64::NEG_INFINITY), read_value(&mut &buf[..]).unwrap());
 }
 
 #[test]
@@ -94,7 +94,7 @@ fn from_fixarray_incomplete_decode_value() {
     ];
 
     match read_value(&mut &buf[..]) {
-        Err(Error::InvalidMarkerRead(..)) => {}
+        Err(Error::InvalidMarkerRead(..)) => {},
         other => panic!("unexpected result: {other:?}"),
     }
 }
@@ -285,7 +285,7 @@ fn from_str8_invalid_utf8() {
         Value::String(s) => {
             assert!(s.is_err());
             assert_eq!(vec![0xc3, 0x28], s.into_bytes());
-        }
+        },
         _ => panic!("wrong type"),
     }
 }
@@ -318,7 +318,7 @@ fn from_str16_invalid_utf8() {
         Value::String(s) => {
             assert!(s.is_err());
             assert_eq!(vec![0xc3, 0x28], s.into_bytes());
-        }
+        },
         _ => panic!("wrong type"),
     }
 }
@@ -353,7 +353,7 @@ fn from_str32_invalid_utf8() {
         Value::String(s) => {
             assert!(s.is_err());
             assert_eq!(vec![0xc3, 0x28], s.into_bytes());
-        }
+        },
         _ => panic!("wrong type"),
     }
 }

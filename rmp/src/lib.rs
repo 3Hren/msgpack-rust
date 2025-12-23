@@ -1,5 +1,10 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::bool_assert_comparison)]
+#![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::manual_range_contains)]
+#![allow(clippy::match_same_arms)]
 
 extern crate alloc;
 

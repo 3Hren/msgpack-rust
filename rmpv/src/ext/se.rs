@@ -1,8 +1,6 @@
 use std::fmt::Display;
 
-use serde::ser::{
-    self, SerializeMap, SerializeSeq, SerializeStruct, SerializeTuple, SerializeTupleStruct,
-};
+use serde::ser::{self, SerializeMap, SerializeSeq, SerializeStruct, SerializeTuple, SerializeTupleStruct};
 use serde::Serialize;
 use serde_bytes::Bytes;
 
@@ -35,18 +33,18 @@ impl Serialize for Value {
                     state.serialize_element(item)?;
                 }
                 state.end()
-            }
+            },
             Self::Map(ref map) => {
                 let mut state = s.serialize_map(Some(map.len()))?;
                 for (key, val) in map {
                     state.serialize_entry(key, val)?;
                 }
                 state.end()
-            }
+            },
             Self::Ext(ty, ref buf) => {
                 let value = (ty, Bytes::new(&buf[..]));
                 s.serialize_newtype_struct(MSGPACK_EXT_STRUCT_NAME, &value)
-            }
+            },
         }
     }
 }
@@ -77,16 +75,15 @@ pub fn to_value<T: Serialize>(value: T) -> Result<Value, Error> {
 }
 
 impl ser::Serializer for Serializer {
-    type Ok = Value;
     type Error = Error;
-
+    type Ok = Value;
+    type SerializeMap = DefaultSerializeMap;
     type SerializeSeq = SerializeVec;
+    type SerializeStruct = SerializeVec;
+    type SerializeStructVariant = SerializeStructVariant;
     type SerializeTuple = SerializeVec;
     type SerializeTupleStruct = SerializeVec;
     type SerializeTupleVariant = SerializeTupleVariant;
-    type SerializeMap = DefaultSerializeMap;
-    type SerializeStruct = SerializeVec;
-    type SerializeStructVariant = SerializeStructVariant;
 
     #[inline]
     fn serialize_bool(self, val: bool) -> Result<Self::Ok, Self::Error> {
@@ -180,8 +177,8 @@ impl ser::Serializer for Serializer {
     }
 
     #[inline]
-    fn serialize_newtype_struct<T: ?Sized>(self, name: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_struct<T>(self, name: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         if name == MSGPACK_EXT_STRUCT_NAME {
             let mut ext_se = ExtSerializer::new();
@@ -193,8 +190,8 @@ impl ser::Serializer for Serializer {
         to_value(value)
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_variant<T>(self, _name: &'static str, idx: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         let vec = vec![
             Value::from(idx),
@@ -209,8 +206,8 @@ impl ser::Serializer for Serializer {
     }
 
     #[inline]
-    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_some<T>(self, value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         value.serialize(self)
     }
@@ -266,16 +263,15 @@ pub struct ExtSerializer {
 }
 
 impl ser::Serializer for &mut ExtSerializer {
-    type Ok = ();
     type Error = Error;
-
+    type Ok = ();
+    type SerializeMap = ser::Impossible<(), Error>;
     type SerializeSeq = ser::Impossible<(), Error>;
+    type SerializeStruct = ser::Impossible<(), Error>;
+    type SerializeStructVariant = ser::Impossible<(), Error>;
     type SerializeTuple = Self;
     type SerializeTupleStruct = ser::Impossible<(), Error>;
     type SerializeTupleVariant = ser::Impossible<(), Error>;
-    type SerializeMap = ser::Impossible<(), Error>;
-    type SerializeStruct = ser::Impossible<(), Error>;
-    type SerializeStructVariant = ser::Impossible<(), Error>;
 
     #[inline]
     fn serialize_bytes(self, _val: &[u8]) -> Result<Self::Ok, Self::Error> {
@@ -363,15 +359,15 @@ impl ser::Serializer for &mut ExtSerializer {
     }
 
     #[inline]
-    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_struct<T>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         Err(<Error as ser::Error>::custom("expected tuple"))
     }
 
     #[inline]
-    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_variant<T>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         Err(<Error as ser::Error>::custom("expected tuple"))
     }
@@ -382,8 +378,8 @@ impl ser::Serializer for &mut ExtSerializer {
     }
 
     #[inline]
-    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_some<T>(self, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         Err(<Error as ser::Error>::custom("expected tuple"))
     }
@@ -428,12 +424,12 @@ impl ser::Serializer for &mut ExtSerializer {
 }
 
 impl SerializeTuple for &mut ExtSerializer {
-    type Ok = ();
     type Error = Error;
+    type Ok = ();
 
     #[inline]
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
-        where T: Serialize
+    fn serialize_element<T>(&mut self, value: &T) -> Result<(), Error>
+        where T: Serialize + ?Sized
     {
         if let Some(se) = &mut self.fields_se {
             value.serialize(se)
@@ -455,16 +451,15 @@ pub struct ExtFieldSerializer {
 }
 
 impl ser::Serializer for &mut ExtFieldSerializer {
-    type Ok = ();
     type Error = Error;
-
+    type Ok = ();
+    type SerializeMap = ser::Impossible<(), Error>;
     type SerializeSeq = ser::Impossible<(), Error>;
+    type SerializeStruct = ser::Impossible<(), Error>;
+    type SerializeStructVariant = ser::Impossible<(), Error>;
     type SerializeTuple = ser::Impossible<(), Error>;
     type SerializeTupleStruct = ser::Impossible<(), Error>;
     type SerializeTupleVariant = ser::Impossible<(), Error>;
-    type SerializeMap = ser::Impossible<(), Error>;
-    type SerializeStruct = ser::Impossible<(), Error>;
-    type SerializeStructVariant = ser::Impossible<(), Error>;
 
     #[inline]
     fn serialize_i8(self, value: i8) -> Result<Self::Ok, Self::Error> {
@@ -563,14 +558,14 @@ impl ser::Serializer for &mut ExtFieldSerializer {
     }
 
     #[inline]
-    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_struct<T>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         Err(<Error as ser::Error>::custom("expected i8 and bytes"))
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_variant<T>(self, _name: &'static str, _idx: u32, _variant: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         Err(<Error as ser::Error>::custom("expected i8 and bytes"))
     }
@@ -581,8 +576,8 @@ impl ser::Serializer for &mut ExtFieldSerializer {
     }
 
     #[inline]
-    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_some<T>(self, _value: &T) -> Result<Self::Ok, Self::Error>
+        where T: Serialize + ?Sized
     {
         Err(<Error as ser::Error>::custom("expected i8 and bytes"))
     }
@@ -632,7 +627,7 @@ impl ExtSerializer {
     fn value(self) -> Result<Value, Error> {
         match self.fields_se {
             Some(fields_se) => fields_se.value(),
-            None => Err(<Error as ser::Error>::custom("expected tuple"))
+            None => Err(<Error as ser::Error>::custom("expected tuple")),
         }
     }
 }
@@ -640,10 +635,7 @@ impl ExtSerializer {
 impl ExtFieldSerializer {
     #[inline]
     const fn new() -> Self {
-        Self {
-            tag: None,
-            binary: None,
-        }
+        Self { tag: None, binary: None }
     }
 
     fn value(self) -> Result<Value, Error> {
@@ -682,12 +674,12 @@ pub struct SerializeStructVariant {
 }
 
 impl SerializeSeq for SerializeVec {
-    type Ok = Value;
     type Error = Error;
+    type Ok = Value;
 
     #[inline]
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
-        where T: Serialize
+    fn serialize_element<T>(&mut self, value: &T) -> Result<(), Error>
+        where T: Serialize + ?Sized
     {
         self.vec.push(to_value(value)?);
         Ok(())
@@ -700,12 +692,12 @@ impl SerializeSeq for SerializeVec {
 }
 
 impl SerializeTuple for SerializeVec {
-    type Ok = Value;
     type Error = Error;
+    type Ok = Value;
 
     #[inline]
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
-        where T: Serialize
+    fn serialize_element<T>(&mut self, value: &T) -> Result<(), Error>
+        where T: Serialize + ?Sized
     {
         ser::SerializeSeq::serialize_element(self, value)
     }
@@ -717,12 +709,12 @@ impl SerializeTuple for SerializeVec {
 }
 
 impl SerializeTupleStruct for SerializeVec {
-    type Ok = Value;
     type Error = Error;
+    type Ok = Value;
 
     #[inline]
-    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
-        where T: Serialize
+    fn serialize_field<T>(&mut self, value: &T) -> Result<(), Error>
+        where T: Serialize + ?Sized
     {
         ser::SerializeSeq::serialize_element(self, value)
     }
@@ -734,12 +726,12 @@ impl SerializeTupleStruct for SerializeVec {
 }
 
 impl ser::SerializeTupleVariant for SerializeTupleVariant {
-    type Ok = Value;
     type Error = Error;
+    type Ok = Value;
 
     #[inline]
-    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
-        where T: Serialize
+    fn serialize_field<T>(&mut self, value: &T) -> Result<(), Error>
+        where T: Serialize + ?Sized
     {
         self.vec.push(to_value(value)?);
         Ok(())
@@ -752,19 +744,19 @@ impl ser::SerializeTupleVariant for SerializeTupleVariant {
 }
 
 impl ser::SerializeMap for DefaultSerializeMap {
-    type Ok = Value;
     type Error = Error;
+    type Ok = Value;
 
     #[inline]
-    fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Error>
-        where T: Serialize
+    fn serialize_key<T>(&mut self, key: &T) -> Result<(), Error>
+        where T: Serialize + ?Sized
     {
         self.next_key = Some(to_value(key)?);
         Ok(())
     }
 
-    fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
-        where T: ser::Serialize
+    fn serialize_value<T>(&mut self, value: &T) -> Result<(), Error>
+        where T: ser::Serialize + ?Sized
     {
         // Panic because this indicates a bug in the program rather than an
         // expected failure.
@@ -781,12 +773,12 @@ impl ser::SerializeMap for DefaultSerializeMap {
 }
 
 impl SerializeStruct for SerializeVec {
-    type Ok = Value;
     type Error = Error;
+    type Ok = Value;
 
     #[inline]
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Error>
-        where T: Serialize
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<(), Error>
+        where T: Serialize + ?Sized
     {
         ser::SerializeSeq::serialize_element(self, value)
     }
@@ -798,12 +790,12 @@ impl SerializeStruct for SerializeVec {
 }
 
 impl ser::SerializeStructVariant for SerializeStructVariant {
-    type Ok = Value;
     type Error = Error;
+    type Ok = Value;
 
     #[inline]
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Error>
-        where T: Serialize
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<(), Error>
+        where T: Serialize + ?Sized
     {
         self.vec.push(to_value(value)?);
         Ok(())

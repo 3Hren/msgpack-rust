@@ -24,7 +24,7 @@ pub fn read_fixext1<R: RmpRead>(rd: &mut R) -> Result<(i8, u8), ValueReadError<R
             let ty = rd.read_data_i8()?;
             let data = rd.read_data_u8()?;
             Ok((ty, data))
-        }
+        },
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -47,7 +47,7 @@ pub fn read_fixext2<R: RmpRead>(rd: &mut R) -> Result<(i8, [u8; 2]), ValueReadEr
         Marker::FixExt2 => {
             let mut buf = [0; 2];
             read_fixext_data(rd, &mut buf).map(|ty| (ty, buf))
-        }
+        },
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -70,7 +70,7 @@ pub fn read_fixext4<R: RmpRead>(rd: &mut R) -> Result<(i8, [u8; 4]), ValueReadEr
         Marker::FixExt4 => {
             let mut buf = [0; 4];
             read_fixext_data(rd, &mut buf).map(|ty| (ty, buf))
-        }
+        },
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -93,7 +93,7 @@ pub fn read_fixext8<R: RmpRead>(rd: &mut R) -> Result<(i8, [u8; 8]), ValueReadEr
         Marker::FixExt8 => {
             let mut buf = [0; 8];
             read_fixext_data(rd, &mut buf).map(|ty| (ty, buf))
-        }
+        },
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }
@@ -116,7 +116,7 @@ pub fn read_fixext16<R: RmpRead>(rd: &mut R) -> Result<(i8, [u8; 16]), ValueRead
         Marker::FixExt16 => {
             let mut buf = [0; 16];
             read_fixext_data(rd, &mut buf).map(|ty| (ty, buf))
-        }
+        },
         marker => Err(ValueReadError::TypeMismatch(marker)),
     }
 }

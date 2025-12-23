@@ -1,12 +1,15 @@
 #![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
 #![warn(missing_debug_implementations, missing_docs)]
+#![allow(clippy::bool_assert_comparison)]
+#![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::match_same_arms)]
 
 use std::fmt::{self, Display, Formatter};
 use std::str::{self, Utf8Error};
 
-use serde::de;
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Serialize};
 
 #[allow(deprecated)]
 pub use crate::decode::from_read_ref;
@@ -67,10 +70,8 @@ impl Raw {
             Ok(v) => Self::new(v),
             Err(err) => {
                 let e = err.utf8_error();
-                Self {
-                    s: Err((err.into_bytes(), e)),
-                }
-            }
+                Self { s: Err((err.into_bytes(), e)) }
+            },
         }
     }
 
@@ -192,7 +193,7 @@ impl de::Visitor<'_> for RawVisitor {
             Err(err) => {
                 let e = err.utf8_error();
                 Err((err.into_bytes(), e))
-            }
+            },
         };
 
         Ok(Raw { s })
@@ -231,11 +232,7 @@ impl<'a> RawRef<'a> {
     pub fn from_utf8(v: &'a [u8]) -> Self {
         match str::from_utf8(v) {
             Ok(v) => RawRef::new(v),
-            Err(err) => {
-                Self {
-                    s: Err((v, err))
-                }
-            }
+            Err(err) => Self { s: Err((v, err)) },
         }
     }
 

@@ -9,19 +9,19 @@ documentation = "https://docs.rs/rmpv"
 readme = "README.md"
 keywords = ["msgpack", "MessagePack", "serialization"]
 categories = ["encoding"]
-edition = "2021"
-rust-version = "1.70"
+edition = "2024"
+rust-version = "1.85"
 
 [features]
 with-serde = ["serde", "serde_bytes"]
 
 [dependencies]
-serde_bytes = { version = "0.11.5", optional = true }
+serde_bytes = { version = "0.11.19", optional = true }
 rmp = { version = "0.8.14", path = "../rmp" }
-serde = { version = "1.0.197", optional = true }
+serde = { version = "1.0.228", optional = true }
 
 [dev-dependencies]
-quickcheck = "1.0.2"
+quickcheck = "1.0.3"
 
 [package.metadata.release]
 tag-prefix = "{{crate_name}}/"

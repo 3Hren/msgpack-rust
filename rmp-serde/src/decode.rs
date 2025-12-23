@@ -96,12 +96,11 @@ impl Display for Error {
             Self::InvalidDataRead(ref err) => write!(fmt, "IO error while reading data: {err}"),
             Self::TypeMismatch(ref actual_marker) => {
                 write!(fmt, "wrong msgpack marker {actual_marker:?}")
-            }
+            },
             Self::OutOfRange => fmt.write_str("numeric cast found out of range"),
-            Self::LengthMismatch(expected_length) => write!(
-                fmt,
-                "array had incorrect length, expected {expected_length}"
-            ),
+            Self::LengthMismatch(expected_length) => {
+                write!(fmt, "array had incorrect length, expected {expected_length}")
+            },
             Self::Uncategorized(ref msg) => write!(fmt, "uncategorized error: {msg}"),
             Self::Syntax(ref msg) => fmt.write_str(msg),
             Self::Utf8Error(ref err) => write!(fmt, "string found to be invalid utf8: {err}"),
@@ -360,9 +359,9 @@ fn read_str_data<'de, V, R>(rd: &mut R, len: u32, visitor: V) -> Result<V::Value
                         Ok(buf) => Ok(buf),
                         Err(..) => Err(Error::Utf8Error(err)),
                     }
-                }
+                },
             }
-        }
+        },
         Reference::Copied(buf) => {
             match str::from_utf8(buf) {
                 Ok(s) => visitor.visit_str(s),
@@ -372,9 +371,9 @@ fn read_str_data<'de, V, R>(rd: &mut R, len: u32, visitor: V) -> Result<V::Value
                         Ok(buf) => Ok(buf),
                         Err(..) => Err(Error::Utf8Error(err)),
                     }
-                }
+                },
             }
-        }
+        },
     }
 }
 
@@ -480,7 +479,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
                 let tag = self.rd.read_data_i8()?;
                 self.state = ExtDeserializerState::ReadTag;
                 visitor.visit_i8(tag)
-            }
+            },
             ExtDeserializerState::ReadTag => {
                 let data = self.rd.read_slice(self.len as usize).map_err(Error::InvalidDataRead)?;
                 self.state = ExtDeserializerState::ReadBinary;
@@ -488,7 +487,7 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::Deserializer<'de>
                     Reference::Borrowed(bytes) => visitor.visit_borrowed_bytes(bytes),
                     Reference::Copied(bytes) => visitor.visit_bytes(bytes),
                 }
-            }
+            },
             ExtDeserializerState::ReadBinary => {
                 debug_assert!(false);
                 Err(Error::TypeMismatch(Marker::Reserved))
@@ -553,10 +552,8 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                     _ => return Err(Error::TypeMismatch(Marker::Reserved)),
                 }?;
                 read_str_data(&mut self.rd, len, visitor)
-            }
-            Marker::FixArray(_) |
-            Marker::Array16 |
-            Marker::Array32 => {
+            },
+            Marker::FixArray(_) | Marker::Array16 | Marker::Array32 => {
                 let len = match marker {
                     Marker::FixArray(len) => len.into(),
                     Marker::Array16 => read_u16(&mut self.rd)?.into(),
@@ -572,10 +569,8 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                         excess => Err(Error::LengthMismatch(len - excess)),
                     }
                 })
-            }
-            Marker::FixMap(_) |
-            Marker::Map16 |
-            Marker::Map32 => {
+            },
+            Marker::FixMap(_) | Marker::Map16 | Marker::Map32 => {
                 let len = match marker {
                     Marker::FixMap(len) => len.into(),
                     Marker::Map16 => read_u16(&mut self.rd)?.into(),
@@ -591,7 +586,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                         excess => Err(Error::LengthMismatch(len - excess)),
                     }
                 })
-            }
+            },
             Marker::Bin8 | Marker::Bin16 | Marker::Bin32 => {
                 let len = match marker {
                     Marker::Bin8 => read_u8(&mut self.rd).map(u32::from),
@@ -606,7 +601,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
                         visitor.visit_seq(SeqDeserializer::new(buf.iter().copied()))
                     },
                 }
-            }
+            },
             Marker::FixExt1 |
             Marker::FixExt2 |
             Marker::FixExt4 |
@@ -617,7 +612,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> Deserializer<R, C> {
             Marker::Ext32 => {
                 let len = ext_len(&mut self.rd, marker)?;
                 depth_count!(self.depth, visitor.visit_newtype_struct(ExtDeserializer::new(self, len)))
-            }
+            },
             Marker::Reserved => Err(Error::TypeMismatch(Marker::Reserved)),
         }
     }
@@ -677,7 +672,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
                 1 => {
                     self.marker = None;
                     visitor.visit_enum(VariantAccess::new(self))
-                }
+                },
                 n => Err(Error::LengthMismatch(n)),
             },
             // TODO: Check this is a string
@@ -710,7 +705,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
             marker => {
                 self.marker = Some(marker);
                 self.deserialize_any(visitor)
-            }
+            },
         }
     }
 
@@ -1163,8 +1158,8 @@ where R: Read,
 ///
 /// #[derive(Debug, Deserialize, PartialEq)]
 /// struct Dog<'a> {
-///    name: &'a str,
-///    age: u8,
+///     name: &'a str,
+///     age: u8,
 /// }
 ///
 /// assert_eq!(Dog { name: "Bobby", age: 8 }, rmp_serde::from_slice(&buf).unwrap());

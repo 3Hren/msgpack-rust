@@ -35,15 +35,15 @@ impl serde::de::Error for Nope {
 }
 
 impl serde::Serializer for OnlyBytes {
-    type Ok = u8;
     type Error = Nope;
+    type Ok = u8;
+    type SerializeMap = Impossible<u8, Nope>;
     type SerializeSeq = Impossible<u8, Nope>;
+    type SerializeStruct = Impossible<u8, Nope>;
+    type SerializeStructVariant = Impossible<u8, Nope>;
     type SerializeTuple = Impossible<u8, Nope>;
     type SerializeTupleStruct = Impossible<u8, Nope>;
     type SerializeTupleVariant = Impossible<u8, Nope>;
-    type SerializeMap = Impossible<u8, Nope>;
-    type SerializeStruct = Impossible<u8, Nope>;
-    type SerializeStructVariant = Impossible<u8, Nope>;
 
     fn serialize_u8(self, val: u8) -> Result<u8, Nope> {
         Ok(val)
@@ -105,7 +105,7 @@ impl serde::Serializer for OnlyBytes {
         Err(Nope)
     }
 
-    fn serialize_some<T: ?Sized>(self, _: &T) -> Result<u8, Nope> where T: Serialize {
+    fn serialize_some<T>(self, _: &T) -> Result<u8, Nope> where T: Serialize + ?Sized {
         Err(Nope)
     }
 
@@ -121,11 +121,11 @@ impl serde::Serializer for OnlyBytes {
         Err(Nope)
     }
 
-    fn serialize_newtype_struct<T: ?Sized>(self, _: &'static str, _: &T) -> Result<u8, Nope> where T: Serialize {
+    fn serialize_newtype_struct<T>(self, _: &'static str, _: &T) -> Result<u8, Nope> where T: Serialize + ?Sized {
         Err(Nope)
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, _: &'static str, _: u32, _: &'static str, _: &T) -> Result<u8, Nope> where T: Serialize {
+    fn serialize_newtype_variant<T>(self, _: &'static str, _: u32, _: &'static str, _: &T) -> Result<u8, Nope> where T: Serialize + ?Sized {
         Err(Nope)
     }
 
@@ -165,7 +165,7 @@ impl serde::Serializer for OnlyBytes {
         Err(Nope)
     }
 
-    fn collect_str<T: ?Sized>(self, _: &T) -> Result<u8, Nope> where T: fmt::Display {
+    fn collect_str<T>(self, _: &T) -> Result<u8, Nope> where T: fmt::Display + ?Sized {
         Err(Nope)
     }
 }

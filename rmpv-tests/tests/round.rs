@@ -1,8 +1,7 @@
 use std::fmt::Debug;
 
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 
 use rmpv::Value;
@@ -53,7 +52,7 @@ fn pass_bool() {
 
 #[test]
 fn pass_uint() {
-    test_round(u8::min_value(), Value::from(u8::min_value()));
+    test_round(u8::MIN, Value::from(u8::MIN));
     test_round(u8::MAX, Value::from(u8::MAX));
     test_round(u16::MAX, Value::from(u16::MAX));
     test_round(u32::MAX, Value::from(u32::MAX));
@@ -62,19 +61,19 @@ fn pass_uint() {
 
 #[test]
 fn pass_sint() {
-    test_round(i8::min_value(), Value::from(i8::min_value()));
+    test_round(i8::MIN, Value::from(i8::MIN));
     test_round(i8::MAX, Value::from(i8::MAX));
-    test_round(i16::min_value(), Value::from(i16::min_value()));
+    test_round(i16::MIN, Value::from(i16::MIN));
     test_round(i16::MAX, Value::from(i16::MAX));
-    test_round(i32::min_value(), Value::from(i32::min_value()));
+    test_round(i32::MIN, Value::from(i32::MIN));
     test_round(i32::MAX, Value::from(i32::MAX));
-    test_round(i64::min_value(), Value::from(i64::min_value()));
+    test_round(i64::MIN, Value::from(i64::MIN));
     test_round(i64::MAX, Value::from(i64::MAX));
 }
 
 #[test]
 fn pass_f32() {
-    test_round(std::f32::MAX, Value::from(std::f32::MAX));
+    test_round(f32::MAX, Value::from(f32::MAX));
 }
 
 #[test]
@@ -125,18 +124,18 @@ fn pass_ext_struct() {
             where S: serde::ser::Serializer
         {
             let value = match self {
-                ExtStruct::One(data) => {
+                Self::One(data) => {
                     let tag = 1_i8;
                     let byte_buf = ByteBuf::from(vec![*data]);
 
                     (tag, byte_buf)
-                }
-                ExtStruct::Two(data) => {
+                },
+                Self::Two(data) => {
                     let tag = 2_i8;
                     let byte_buf = ByteBuf::from(vec![*data]);
 
                     (tag, byte_buf)
-                }
+                },
             };
             s.serialize_newtype_struct(rmp_serde::MSGPACK_EXT_STRUCT_NAME, &value)
         }
@@ -175,7 +174,7 @@ fn pass_ext_struct() {
     }
 
     impl<'de> serde::de::Deserialize<'de> for ExtStruct {
-        fn deserialize<D>(deserializer: D) -> Result<ExtStruct, D::Error>
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
             where D: serde::Deserializer<'de>,
         {
             let visitor = ExtStructVisitor;

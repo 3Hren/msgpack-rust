@@ -22,9 +22,7 @@ fn bench_strings_10000(bencher: &mut Bencher) {
 }
 
 fn bench_strings(bencher: &mut Bencher, size: usize) {
-    let vec: Vec<String> = ::std::iter::repeat("abcdefghijklmnopqrstuvwxyz".into())
-        .take(size)
-        .collect();
+    let vec: Vec<String> = std::iter::repeat_n("abcdefghijklmnopqrstuvwxyz".into(), size).collect();
 
     let mut buf = Vec::new();
     vec.serialize(&mut rmp_serde::Serializer::new(&mut buf)).unwrap();

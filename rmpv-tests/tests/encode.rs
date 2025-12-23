@@ -5,9 +5,8 @@ use serde::Serialize;
 use serde_bytes::{ByteBuf, Bytes};
 
 use rmp_serde::Serializer;
-use rmpv::encode;
 use rmpv::ext::to_value;
-use rmpv::Value;
+use rmpv::{encode, Value};
 
 /// Tests that a `Value` is properly encoded using two different mechanisms: direct serialization
 /// using `rmp::encode::write_value` and using `serde`.
@@ -34,7 +33,7 @@ fn pass_bool() {
 
 #[test]
 fn pass_uint() {
-    test_encode(Value::from(u8::min_value()), &[0x00]);
+    test_encode(Value::from(u8::MIN), &[0x00]);
     test_encode(Value::from(u8::MAX), &[0xcc, 0xff]);
     test_encode(Value::from(u16::MAX), &[0xcd, 0xff, 0xff]);
     test_encode(Value::from(u32::MAX), &[0xce, 0xff, 0xff, 0xff, 0xff]);
@@ -43,13 +42,13 @@ fn pass_uint() {
 
 #[test]
 fn pass_sint() {
-    test_encode(Value::from(i8::min_value()), &[0xd0, 0x80]);
+    test_encode(Value::from(i8::MIN), &[0xd0, 0x80]);
     test_encode(Value::from(i8::MAX), &[0x7f]);
-    test_encode(Value::from(i16::min_value()), &[0xd1, 0x80, 0x00]);
+    test_encode(Value::from(i16::MIN), &[0xd1, 0x80, 0x00]);
     test_encode(Value::from(i16::MAX), &[0xcd, 0x7f, 0xff]);
-    test_encode(Value::from(i32::min_value()), &[0xd2, 0x80, 0x00, 0x00, 0x00]);
+    test_encode(Value::from(i32::MIN), &[0xd2, 0x80, 0x00, 0x00, 0x00]);
     test_encode(Value::from(i32::MAX), &[0xce, 0x7f, 0xff, 0xff, 0xff]);
-    test_encode(Value::from(i64::min_value()), &[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    test_encode(Value::from(i64::MIN), &[0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
     test_encode(Value::from(i64::MAX), &[0xcf, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
 }
 
@@ -101,13 +100,13 @@ fn pass_value_map() {
 
 #[test]
 fn pass_uint_to_value() {
-    assert_eq!(Value::from(i8::min_value()), to_value(i8::min_value()).unwrap());
+    assert_eq!(Value::from(i8::MIN), to_value(i8::MIN).unwrap());
     assert_eq!(Value::from(i8::MAX), to_value(i8::MAX).unwrap());
-    assert_eq!(Value::from(i16::min_value()), to_value(i16::min_value()).unwrap());
+    assert_eq!(Value::from(i16::MIN), to_value(i16::MIN).unwrap());
     assert_eq!(Value::from(i16::MAX), to_value(i16::MAX).unwrap());
-    assert_eq!(Value::from(i32::min_value()), to_value(i32::min_value()).unwrap());
+    assert_eq!(Value::from(i32::MIN), to_value(i32::MIN).unwrap());
     assert_eq!(Value::from(i32::MAX), to_value(i32::MAX).unwrap());
-    assert_eq!(Value::from(i64::min_value()), to_value(i64::min_value()).unwrap());
+    assert_eq!(Value::from(i64::MIN), to_value(i64::MIN).unwrap());
     assert_eq!(Value::from(i64::MAX), to_value(i64::MAX).unwrap());
 }
 

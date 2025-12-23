@@ -173,8 +173,7 @@ fn read_bin32_100mib(b: &mut Bencher) {
 fn read_large_array(b: &mut Bencher, element_count: usize) {
     // Creat buffer, fill it with bytes
     let size = element_count * 5 /* uint32 size */ + 5 /* array overhead */;
-    let mut buf = Vec::with_capacity(size);
-    buf.resize(size, 0);
+    let mut buf = vec![0; size];
 
     // Write header
     let size_bytes: [u8; 4] = (size as u32 - 5).to_be_bytes();

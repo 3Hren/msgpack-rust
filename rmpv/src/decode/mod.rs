@@ -58,13 +58,13 @@ impl Display for Error {
         match *self {
             Self::InvalidMarkerRead(ref err) => {
                 write!(fmt, "I/O error while reading marker byte: {err}")
-            }
+            },
             Self::InvalidDataRead(ref err) => {
                 write!(fmt, "I/O error while reading non-marker bytes: {err}")
-            }
+            },
             Self::DepthLimitExceeded => {
                 write!(fmt, "depth limit exceeded")
-            }
+            },
         }
     }
 }
@@ -83,8 +83,8 @@ impl From<ValueReadError> for Error {
             ValueReadError::InvalidMarkerRead(err) => Self::InvalidMarkerRead(err),
             ValueReadError::InvalidDataRead(err) => Self::InvalidDataRead(err),
             ValueReadError::TypeMismatch(..) => {
-                Self::InvalidMarkerRead(io::Error::new(ErrorKind::Other, "type mismatch"))
-            }
+                Self::InvalidMarkerRead(io::Error::other("type mismatch"))
+            },
         }
     }
 }

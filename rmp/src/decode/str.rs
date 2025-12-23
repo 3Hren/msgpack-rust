@@ -156,8 +156,8 @@ pub fn read_str_ref(rd: &[u8]) -> Result<&[u8], DecodeStringError<'_, super::byt
 /// # Examples
 ///
 /// ```
-/// use rmp::encode::write_str;
 /// use rmp::decode::read_str_from_slice;
+/// use rmp::encode::write_str;
 ///
 /// let mut buf = Vec::new();
 /// write_str(&mut buf, "Unpacking").unwrap();

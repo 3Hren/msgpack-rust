@@ -22,7 +22,7 @@ impl Display for BytesReadError {
         match *self {
             Self::InsufficientBytes { expected, actual, position } => {
                 write!(f, "Expected at least bytes {expected}, but only got {actual} (pos {position})")
-            }
+            },
         }
     }
 }
@@ -61,12 +61,14 @@ impl<'a> Bytes<'a> {
     pub const fn new(bytes: &'a [u8]) -> Self {
         Bytes { bytes, current_position: 0 }
     }
+
     /// Get a reference to the remaining bytes in the buffer.
     #[inline]
     #[must_use]
     pub const fn remaining_slice(&self) -> &'a [u8] {
         self.bytes
     }
+
     /// Return the position of the input buffer.
     ///
     /// This is not required for correctness, it only exists to help mimic

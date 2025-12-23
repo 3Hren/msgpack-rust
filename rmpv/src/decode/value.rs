@@ -51,7 +51,7 @@ fn read_str_data<R: Read>(rd: &mut R, len: usize, depth: u16) -> Result<Utf8Stri
                 s: Err((err.into_bytes(), e)),
             };
             Ok(s)
-        }
+        },
     }
 }
 
@@ -101,105 +101,105 @@ fn read_value_inner<R>(rd: &mut R, depth: u16) -> Result<Value, Error> where R: 
         Marker::FixStr(len) => {
             let res = read_str_data(rd, len as usize, depth)?;
             Value::String(res)
-        }
+        },
         Marker::Str8 => {
             let len = rd.read_data_u8()?;
             let res = read_str_data(rd, len as usize, depth)?;
             Value::String(res)
-        }
+        },
         Marker::Str16 => {
             let len = rd.read_data_u16()?;
             let res = read_str_data(rd, len as usize, depth)?;
             Value::String(res)
-        }
+        },
         Marker::Str32 => {
             let len = rd.read_data_u32()?;
             let res = read_str_data(rd, len as usize, depth)?;
             Value::String(res)
-        }
+        },
         Marker::FixArray(len) => {
             let vec = read_array_data(rd, len as usize, depth)?;
             Value::Array(vec)
-        }
+        },
         Marker::Array16 => {
             let len = rd.read_data_u16()?;
             let vec = read_array_data(rd, len as usize, depth)?;
             Value::Array(vec)
-        }
+        },
         Marker::Array32 => {
             let len = rd.read_data_u32()?;
             let vec = read_array_data(rd, len as usize, depth)?;
             Value::Array(vec)
-        }
+        },
         Marker::FixMap(len) => {
             let map = read_map_data(rd, len as usize, depth)?;
             Value::Map(map)
-        }
+        },
         Marker::Map16 => {
             let len = rd.read_data_u16()?;
             let map = read_map_data(rd, len as usize, depth)?;
             Value::Map(map)
-        }
+        },
         Marker::Map32 => {
             let len = rd.read_data_u32()?;
             let map = read_map_data(rd, len as usize, depth)?;
             Value::Map(map)
-        }
+        },
         Marker::Bin8 => {
             let len = rd.read_data_u8()?;
             let vec = read_bin_data(rd, len as usize, depth)?;
             Value::Binary(vec)
-        }
+        },
         Marker::Bin16 => {
             let len = rd.read_data_u16()?;
             let vec = read_bin_data(rd, len as usize, depth)?;
             Value::Binary(vec)
-        }
+        },
         Marker::Bin32 => {
             let len = rd.read_data_u32()?;
             let vec = read_bin_data(rd, len as usize, depth)?;
             Value::Binary(vec)
-        }
+        },
         Marker::FixExt1 => {
             let len = 1_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
-        }
+        },
         Marker::FixExt2 => {
             let len = 2_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
-        }
+        },
         Marker::FixExt4 => {
             let len = 4_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
-        }
+        },
         Marker::FixExt8 => {
             let len = 8_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
-        }
+        },
         Marker::FixExt16 => {
             let len = 16_usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
-        }
+        },
         Marker::Ext8 => {
             let len = rd.read_data_u8()? as usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
-        }
+        },
         Marker::Ext16 => {
             let len = rd.read_data_u16()? as usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
-        }
+        },
         Marker::Ext32 => {
             let len = rd.read_data_u32()? as usize;
             let (ty, vec) = read_ext_body(rd, len, depth)?;
             Value::Ext(ty, vec)
-        }
+        },
         Marker::Reserved => Value::Nil,
     };
 

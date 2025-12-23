@@ -122,7 +122,7 @@ impl fmt::Display for HexDump<'_> {
             f.write_fmt(format_args!("{}B ", self.0.len()))?;
         }
 
-        for &b in &self.0[0.. (if truncate { 50 } else { self.0.len() })] {
+        for &b in &self.0[0..(if truncate { 50 } else { self.0.len() })] {
             f.write_fmt(format_args!("{b:02x}"))?;
         }
 
