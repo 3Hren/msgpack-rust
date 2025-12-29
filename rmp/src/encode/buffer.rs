@@ -30,8 +30,8 @@ pub type FixedBufCapacityOverflow = std::io::Error;
 #[cfg(not(feature = "std"))]
 impl Display for FixedBufCapacityOverflow {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // This is intentionally vauge because std::io::Error is
-        // Doesn't make sense for no_std to have bettetr errors than std
+        // This is intentionally vague because std::io::Error is
+        // Doesn't make sense for no_std to have better errors than std
         f.write_str("Capacity overflow for fixed-size byte buffer")
     }
 }
@@ -69,7 +69,7 @@ impl<'a> RmpWrite for &'a mut [u8] {
 /// A wrapper around `Vec<u8>` to serialize more efficiently.
 ///
 /// This has a specialized implementation of `RmpWrite`
-/// It gives `std::convert::Infailable` for errors.
+/// It gives `std::convert::Infallible` for errors.
 /// This is because writing to `Vec<T>` can only fail due to allocation.
 ///
 /// This has the additional benefit of working on `#[no_std]`
