@@ -78,14 +78,14 @@ assert_eq!([0xcf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2a], bufs[4][..]);
 
 But they aren't planned to be widely used. Instead we often need to encode bytes compactly to
 save space. In these cases RMP provides functions that guarantee that for encoding the most
-compact representation will be chosen.
+compact representation with the specified sign will be chosen.
 
 ```rust
 let mut buf = Vec::new();
 
 rmp::encode::write_sint(&mut buf, 300).unwrap();
 
-assert_eq!([0xcd, 0x1, 0x2c], buf[..]);
+assert_eq!([0xd1, 0x1, 0x2c], buf[..]);
 ```
 
 On the other hand for deserialization it is not matter in which representation the value is

@@ -1,5 +1,5 @@
 use super::{write_marker, RmpWrite};
-use crate::encode::{write_pfix, write_u16, write_u32, write_u64, write_u8, ValueWriteError};
+use crate::encode::{write_pfix, ValueWriteError};
 use crate::Marker;
 
 /// Encodes and attempts to write a negative small integer value as a negative fixnum into the
@@ -151,18 +151,14 @@ pub fn write_sint<W: RmpWrite>(wr: &mut W, val: i64) -> Result<Marker, ValueWrit
                 .and(Ok(Marker::FixNeg(val as i8)))
                 .map_err(ValueWriteError::InvalidMarkerWrite)
         }
-        val if -128 <= val && val < -32 => write_i8(wr, val as i8).and(Ok(Marker::I8)),
-        val if -32768 <= val && val < -128 => write_i16(wr, val as i16).and(Ok(Marker::I16)),
-        val if -2147483648 <= val && val < -32768 => write_i32(wr, val as i32).and(Ok(Marker::I32)),
-        val if val < -2147483648 => write_i64(wr, val).and(Ok(Marker::I64)),
         val if 0 <= val && val < 128 => {
             write_pfix(wr, val as u8)
                 .and(Ok(Marker::FixPos(val as u8)))
                 .map_err(ValueWriteError::InvalidMarkerWrite)
         }
-        val if val < 256 => write_u8(wr, val as u8).and(Ok(Marker::U8)),
-        val if val < 65536 => write_u16(wr, val as u16).and(Ok(Marker::U16)),
-        val if val < 4294967296 => write_u32(wr, val as u32).and(Ok(Marker::U32)),
-        val => write_u64(wr, val as u64).and(Ok(Marker::U64)),
+        val if -128 <= val && val < 128 => write_i8(wr, val as i8).and(Ok(Marker::I8)),
+        val if -32768 <= val && val < 32768 => write_i16(wr, val as i16).and(Ok(Marker::I16)),
+        val if -2147483648 <= val && val < 2147483648 => write_i32(wr, val as i32).and(Ok(Marker::I32)),
+        val => write_i64(wr, val).and(Ok(Marker::I64)),
     }
 }
