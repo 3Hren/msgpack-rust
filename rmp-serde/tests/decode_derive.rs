@@ -3,7 +3,7 @@ use std::io::Cursor;
 use serde::Deserialize;
 
 use rmp_serde::decode::Error;
-use rmp_serde::Deserializer;
+use rmp_serde::{Deserializer, TimestampSerde};
 
 #[test]
 fn pass_newtype() {
@@ -64,6 +64,42 @@ fn pass_struct() {
     let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
 
     assert_eq!(Decoded { id: 42, value: 100500 }, actual);
+}
+
+#[test]
+fn pass_timestamp() {
+    #[derive(Debug, PartialEq, Deserialize)]
+    struct Decoded {
+        id: u32,
+        value: u32,
+        ts: TimestampSerde,
+    }
+
+    let vals = [
+        (Decoded {
+            id: 42,
+            value: 100500,
+            ts: TimestampSerde(rmp::Timestamp::from_32(9))
+        }, vec![0x93, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94, 0xd6, 0xff, 0x0, 0x0, 0x0, 0x9]),
+        (Decoded {
+            id: 42,
+            value: 100500,
+            ts: TimestampSerde(rmp::Timestamp::from_64(9, 1).unwrap())
+        }, vec![0x93, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94, 0xd7, 0xff, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x9]),
+        (Decoded {
+            id: 42,
+            value: 100500,
+            ts: TimestampSerde(rmp::Timestamp::from_96(9, 1).unwrap())
+        }, vec![0x93, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94, 0xc7, 0xc, 0xff, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x9]),
+    ];
+
+    for (val, raw) in vals {
+        let cur = Cursor::new(&raw[..]);
+        let mut de = Deserializer::new(cur);
+        let actual: Decoded = Deserialize::deserialize(&mut de).unwrap();
+
+        assert_eq!(val, actual);
+    }
 }
 
 #[test]

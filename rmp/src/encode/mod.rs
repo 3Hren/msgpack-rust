@@ -19,7 +19,7 @@ use core::fmt::{self, Debug, Display, Formatter};
 #[cfg(feature = "std")]
 use std::error;
 
-use crate::Marker;
+use crate::{Marker, Timestamp};
 
 pub mod buffer;
 pub use buffer::ByteBuf;
@@ -84,6 +84,64 @@ impl<E: RmpWriteErr> From<E> for DataWriteError<E> {
 #[inline]
 pub fn write_nil<W: RmpWrite>(wr: &mut W) -> Result<(), W::Error> {
     write_marker(wr, Marker::Null).map_err(|e| e.0)
+}
+
+/// Encodes and attempts to write a timestamp value into the given write.
+///
+/// According to the MessagePack specification, a timestamp value is represented as a 32, 64, or 96 bit Extension struct.
+///
+/// # Errors
+///
+/// This function will return `Error` on any I/O error occurred while writing the timestamp.
+///
+/// # Examples
+///
+/// ```
+/// use rmp::Timestamp;
+///
+/// let mut buf1 = Vec::new();
+/// let mut buf2 = Vec::new();
+/// let mut buf3 = Vec::new();
+///
+/// let ts1 = Timestamp::from_32(0x66c1de7c);
+/// let ts2 = Timestamp::from_64(0x66c1de7c, 0x3b9ac9ff).unwrap();
+/// let ts3 = Timestamp::from_96(0x66c1de7c, 0x3b9ac9ff).unwrap();
+///
+/// rmp::encode::write_timestamp(&mut buf1, ts1).ok();
+/// rmp::encode::write_timestamp(&mut buf2, ts2).ok();
+/// rmp::encode::write_timestamp(&mut buf3, ts3).ok();
+///
+/// // FixExt4 with a type of -1 (0xff)
+/// assert_eq!(vec![0xd6, 0xff, 0x66, 0xc1, 0xde, 0x7c], buf1);
+/// // FixExt8 with a type of -1 (0xff)
+/// assert_eq!(vec![0xd7, 0xff, 0xee, 0x6b, 0x27, 0xfc, 0x66, 0xc1, 0xde, 0x7c], buf2);
+/// // Ext8 with a size of 12 (0x0c) and a type of -1 (0xff)
+/// assert_eq!(vec![0xc7, 0x0c, 0xff, 0x3b, 0x9a, 0xc9, 0xff, 0x00, 0x00, 0x00, 0x00, 0x66, 0xc1, 0xde, 0x7c], buf3);
+/// ```
+#[inline]
+pub fn write_timestamp<W: RmpWrite>(wr: &mut W, timestamp: Timestamp) -> Result<(), DataWriteError<W::Error>> {
+    match timestamp.size {
+        32 => {
+            write_marker(wr, Marker::FixExt4).map_err(|e| e.0)?;
+            wr.write_data_i8(-1)?;
+            wr.write_data_u32(timestamp.secs as u32)?;
+        },
+        64 => {
+            write_marker(wr, Marker::FixExt8).map_err(|e| e.0)?;
+            let data = ((timestamp.nsecs as u64) << 34) | (timestamp.secs as u64);
+            wr.write_data_i8(-1)?;
+            wr.write_data_u64(data)?;
+        },
+        96 => {
+            write_marker(wr, Marker::Ext8).map_err(|e| e.0)?;
+            wr.write_data_u8(12)?;
+            wr.write_data_i8(-1)?;
+            wr.write_data_u32(timestamp.nsecs)?;
+            wr.write_data_i64(timestamp.secs)?;
+        },
+        _ => unreachable!(),
+    }
+    Ok(())
 }
 
 /// Encodes and attempts to write a bool value into the given write.

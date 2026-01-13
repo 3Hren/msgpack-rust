@@ -1,4 +1,4 @@
-use rmp_serde::Serializer;
+use rmp_serde::{Serializer, TimestampSerde};
 use serde::Serialize;
 
 #[test]
@@ -127,6 +127,40 @@ fn pass_struct() {
 
     // Expect: [42, 100500].
     assert_eq!(vec![0x92, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94], buf);
+}
+
+#[test]
+fn pass_timestamp() {
+    #[derive(Serialize)]
+    struct Struct {
+        f1: u32,
+        f2: u32,
+        ts: TimestampSerde,
+    }
+
+    let vals = [
+        (Struct {
+            f1: 42,
+            f2: 100500,
+            ts: TimestampSerde(rmp::Timestamp::from_32(9))
+        }, vec![0x93, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94, 0xd6, 0xff, 0x0, 0x0, 0x0, 0x9]),
+        (Struct {
+            f1: 42,
+            f2: 100500,
+            ts: TimestampSerde(rmp::Timestamp::from_64(9, 1).unwrap())
+        }, vec![0x93, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94, 0xd7, 0xff, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x9]),
+        (Struct {
+            f1: 42,
+            f2: 100500,
+            ts: TimestampSerde(rmp::Timestamp::from_96(9, 1).unwrap())
+        }, vec![0x93, 0x2a, 0xce, 0x0, 0x1, 0x88, 0x94, 0xc7, 0xc, 0xff, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x9]),
+    ];
+    for (val, raw) in vals {
+        let mut buf = Vec::new();
+        val.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+        assert_eq!(raw, buf);
+    }
 }
 
 #[test]
