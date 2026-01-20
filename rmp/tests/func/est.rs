@@ -115,3 +115,37 @@ fn nested() {
     assert!(MessageLen::with_limits(4, 1 << 16).incremental_len(out.as_slice()).is_err());
     assert!(MessageLen::with_limits(14, 1 << 16).incremental_len(out.as_slice()).is_ok());
 }
+
+#[test]
+fn extensions() {
+    let mut out = Vec::with_capacity(263);
+
+    let mut expected = Vec::with_capacity(264);
+    expected.push(1);
+
+    for len in (0i32..=17).chain([256,257]) {
+        const TOO_BIG_FOR_U8: i32 = u8::MAX as i32 + 1;
+        const TOO_BIG_FOR_U16: i32 = u16::MAX as i32 + 1;
+
+        let length_bytes = match len {
+            1 | 2 | 4 | 8 | 16 => 0,
+            ..TOO_BIG_FOR_U8 => 1,
+            TOO_BIG_FOR_U8..TOO_BIG_FOR_U16 => 2,
+            _ => 4,
+        };
+
+        let len_with_prefix = |len| 1 + length_bytes + 1 + len;
+        let msg_len = len_with_prefix(len);
+
+        expected.truncate(1);
+        expected.resize(1 + length_bytes as usize, 1 + length_bytes);
+        expected.resize(msg_len as usize, msg_len);
+        expected.push(-msg_len);
+
+        out.clear();
+        write_ext_meta(&mut out, len as u32, 0x67).unwrap();
+        out.resize(out.len() + len as usize, 0xab);
+
+        check_estimates(&out, &expected);
+    }
+}

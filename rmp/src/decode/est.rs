@@ -161,10 +161,10 @@ impl MessageLen {
             Marker::Array16 |
             Marker::Array32 |
             Marker::Map16 |
-            Marker::Map32 => self.read_marker_with_len(data, MarkerLen { marker, buf: [0; 4], has: 0 }),
+            Marker::Map32 |
             Marker::Ext8 |
             Marker::Ext16 |
-            Marker::Ext32 => todo!(),
+            Marker::Ext32 => self.read_marker_with_len(data, MarkerLen { marker, buf: [0; 4], has: 0 }),
             Marker::F32 => self.skip_data(data, 4),
             Marker::F64 => self.skip_data(data, 8),
             Marker::U8 => self.skip_data(data, 1),
@@ -175,11 +175,11 @@ impl MessageLen {
             Marker::I16 => self.skip_data(data, 2),
             Marker::I32 => self.skip_data(data, 4),
             Marker::I64 => self.skip_data(data, 8),
-            Marker::FixExt1 |
-            Marker::FixExt2 |
-            Marker::FixExt4 |
-            Marker::FixExt8 |
-            Marker::FixExt16 => todo!(),
+            Marker::FixExt1 => self.skip_data(data, 2),
+            Marker::FixExt2 => self.skip_data(data, 3),
+            Marker::FixExt4 => self.skip_data(data, 5),
+            Marker::FixExt8 => self.skip_data(data, 9),
+            Marker::FixExt16 => self.skip_data(data, 17),
             Marker::FixNeg(_) => Some(()),
         }
     }
@@ -217,7 +217,7 @@ impl MessageLen {
             Marker::Str32 => self.skip_data(data, len),
             Marker::Ext8 |
             Marker::Ext16 |
-            Marker::Ext32 => todo!(),
+            Marker::Ext32 => self.skip_data(data, len + 1),
             Marker::Array16 |
             Marker::Array32 => self.read_sequence(data, len),
             Marker::Map16 |
