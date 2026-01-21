@@ -28,7 +28,7 @@ This project consists of three crates:
 
 ## Why MessagePack?
 
-It's smaller and much simpler to parse than JSON. The encoded data is self-describing and extensible, without using any schema definitions. It supports the same data types as JSON, plus binary data, non-string map keys, all float values, and 64-bit numbers. Msgpack values use `<lenght><data>` encoding, so they can be safely concatenated and read from a stream.
+It's smaller and much simpler to parse than JSON. The encoded data is self-describing and extensible, without using any schema definitions. It supports the same data types as JSON, plus binary data, non-string map keys, all float values, and 64-bit numbers. Msgpack values use `<length><data>` encoding, so they can be safely concatenated and read from a stream.
 
 MessagePack is similar to CBOR, but has simpler data types (no bignums, decimal floats, dates, or indefinite-length sets, etc.)
 
