@@ -87,7 +87,7 @@ impl sealed::SerializerConfig for RuntimeConfig {
 ///
 /// This configuration:
 /// - Writes structs as a tuple, without field names
-/// - Writes enum variants as integers
+/// - Writes enum variants by their name, as a string
 /// - Writes and reads types as binary, not human-readable
 ///
 /// This is the most compact representation.
