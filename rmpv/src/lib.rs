@@ -1367,6 +1367,13 @@ impl ValueRef<'_> {
     }
 }
 
+impl From<bool> for ValueRef<'_> {
+    #[inline]
+    fn from(v: bool) -> Self {
+        Self::Boolean(v)
+    }
+}
+
 impl From<u8> for ValueRef<'_> {
     #[inline]
     fn from(v: u8) -> Self {

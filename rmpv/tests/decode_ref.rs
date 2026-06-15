@@ -16,7 +16,7 @@ fn from_bool_false() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Boolean(false), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(false), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -25,7 +25,7 @@ fn from_bool_true() {
 
     let mut rd = &buf[..];
 
-    assert_eq!(ValueRef::Boolean(true), read_value_ref(&mut rd).unwrap());
+    assert_eq!(ValueRef::from(true), read_value_ref(&mut rd).unwrap());
 }
 
 #[test]
@@ -596,7 +596,7 @@ fn get_complex_msgpack_value<'a>() -> ValueRef<'a> {
             (
                 ValueRef::from("map"),
                 ValueRef::Array(vec![
-                    ValueRef::Boolean(true),
+                    ValueRef::from(true),
                     ValueRef::Map(vec![(
                         ValueRef::from(42),
                         ValueRef::from(100500),
@@ -659,7 +659,7 @@ fn into_owned() {
             (
                 Value::from("map"),
                 Value::Array(vec![
-                    Value::Boolean(true),
+                    Value::from(true),
                     Value::Map(vec![(Value::from(42), Value::from(100500))]),
                 ]),
             ),
