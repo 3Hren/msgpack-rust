@@ -567,3 +567,126 @@ fn fail_depth_limit() {
         other => panic!("unexpected result: {other:?}"),
     }
 }
+
+#[test]
+fn fail_depth_limit_option() {
+    // `deserialize_option` forwarded to `visit_some` uncounted. Any non-nil marker (not just a
+    // deeply-nested one) drives unbounded recursion for an `Option<Box<Self>>`-shaped type,
+    // because the same cached marker byte is reinterpreted at every level without being consumed.
+    #[allow(dead_code)]
+    struct Nested(Option<Box<Nested>>);
+
+    impl<'de> de::Deserialize<'de> for Nested {
+        fn deserialize<D>(de: D) -> Result<Self, D::Error>
+            where D: de::Deserializer<'de>
+        {
+            Ok(Self(Option::deserialize(de)?))
+        }
+    }
+
+    // A single non-nil byte (a fixint 0, not the 0xc0 nil marker).
+    let data = vec![0x00u8];
+    let mut reader = rmp_serde::Deserializer::new(Cursor::new(data));
+    reader.set_max_depth(100);
+    let res = Nested::deserialize(&mut reader);
+    match res.err().unwrap() {
+        decode::Error::DepthLimitExceeded => (),
+        other => panic!("unexpected result: {other:?}"),
+    }
+}
+
+#[test]
+fn fail_depth_limit_newtype_struct() {
+    // `deserialize_newtype_struct`'s general (non-Ext) branch forwarded to
+    // `visit_newtype_struct` uncounted. For a newtype struct wrapping itself, this recurses
+    // without ever reading a byte -- even an EMPTY buffer drives unbounded recursion.
+    #[allow(dead_code)]
+    struct Wrap(Box<Wrap>);
+
+    impl<'de> de::Deserialize<'de> for Wrap {
+        fn deserialize<D>(de: D) -> Result<Self, D::Error>
+            where D: de::Deserializer<'de>
+        {
+            de.deserialize_newtype_struct("Wrap", WrapVisitor)
+        }
+    }
+
+    struct WrapVisitor;
+    impl<'de> de::Visitor<'de> for WrapVisitor {
+        type Value = Wrap;
+
+        fn expecting(&self, f: &mut Formatter) -> fmt::Result {
+            f.write_str("a Wrap")
+        }
+
+        fn visit_newtype_struct<D>(self, de: D) -> Result<Self::Value, D::Error>
+            where D: de::Deserializer<'de>
+        {
+            Ok(Wrap(Box::new(Wrap::deserialize(de)?)))
+        }
+    }
+
+    let data: &[u8] = &[];
+    let mut reader = rmp_serde::Deserializer::new(data);
+    reader.set_max_depth(100);
+    let res = Wrap::deserialize(&mut reader);
+    match res.err().unwrap() {
+        decode::Error::DepthLimitExceeded => (),
+        other => panic!("unexpected result: {other:?}"),
+    }
+}
+
+#[test]
+fn fail_depth_limit_newtype_variant() {
+    // `VariantAccess::newtype_variant_seed` (the map-as-single-variant-enum path) forwarded to
+    // `seed.deserialize` uncounted. A chain of `n` `{"Node": ...}` maps around a `"Leaf"` string
+    // drives `n` levels of recursion, one `depth_count!` tick apiece once fixed.
+    #[allow(dead_code)]
+    enum EList {
+        Leaf,
+        Node(Box<EList>),
+    }
+
+    impl<'de> de::Deserialize<'de> for EList {
+        fn deserialize<D>(de: D) -> Result<Self, D::Error>
+            where D: de::Deserializer<'de>
+        {
+            de.deserialize_enum("EList", &["Leaf", "Node"], EListVisitor)
+        }
+    }
+
+    struct EListVisitor;
+    impl<'de> de::Visitor<'de> for EListVisitor {
+        type Value = EList;
+
+        fn expecting(&self, f: &mut Formatter) -> fmt::Result {
+            f.write_str("an EList")
+        }
+
+        fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where A: de::EnumAccess<'de>
+        {
+            use de::VariantAccess;
+            let (tag, variant): (String, _) = data.variant()?;
+            if tag == "Node" {
+                Ok(EList::Node(Box::new(variant.newtype_variant()?)))
+            } else {
+                variant.unit_variant()?;
+                Ok(EList::Leaf)
+            }
+        }
+    }
+
+    let mut data = Vec::new();
+    for _ in 0..200 {
+        data.extend_from_slice(&[0x81, 0xa4, b'N', b'o', b'd', b'e']);
+    }
+    data.extend_from_slice(&[0xa4, b'L', b'e', b'a', b'f']);
+    let mut reader = rmp_serde::Deserializer::new(Cursor::new(data));
+    reader.set_max_depth(100);
+    let res = EList::deserialize(&mut reader);
+    match res.err().unwrap() {
+        decode::Error::DepthLimitExceeded => (),
+        other => panic!("unexpected result: {other:?}"),
+    }
+}

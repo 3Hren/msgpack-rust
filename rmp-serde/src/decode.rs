@@ -658,7 +658,7 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
         } else {
             // Keep the marker until `o`'s innermost type `t` is visited.
             self.marker = Some(marker);
-            visitor.visit_some(self)
+            depth_count!(self.depth, visitor.visit_some(&mut *self))
         }
     }
 
@@ -689,11 +689,10 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de> for &
             let marker = self.take_or_read_marker()?;
 
             let len = ext_len(&mut self.rd, marker)?;
-            let ext_de = ExtDeserializer::new(self, len);
-            return visitor.visit_newtype_struct(ext_de);
+            return depth_count!(self.depth, visitor.visit_newtype_struct(ExtDeserializer::new(self, len)));
         }
 
-        visitor.visit_newtype_struct(self)
+        depth_count!(self.depth, visitor.visit_newtype_struct(&mut *self))
     }
 
     fn deserialize_unit_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
@@ -987,7 +986,8 @@ impl<'de, R: ReadSlice<'de>, C: SerializerConfig> de::VariantAccess<'de> for Var
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
         where T: DeserializeSeed<'de>
     {
-        seed.deserialize(self.de)
+        let de = self.de;
+        depth_count!(de.depth, seed.deserialize(&mut *de))
     }
 
     #[inline]
