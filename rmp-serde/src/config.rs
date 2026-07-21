@@ -148,7 +148,7 @@ where
     }
 }
 
-/// Config wrapper that overrides struct serlization by packing as a tuple without field
+/// Config wrapper that overrides struct serialization by packing as a tuple without field
 /// names.
 #[derive(Copy, Clone, Debug)]
 pub struct StructTupleConfig<C>(C);
