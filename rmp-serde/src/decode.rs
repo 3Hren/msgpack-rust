@@ -295,7 +295,7 @@ where
         }
     }
 
-    /// Gets a reference to the underlying reader in this decoder.
+    /// Gets a reference to the original slice
     #[inline(always)]
     #[must_use]
     pub fn get_ref(&self) -> &R {
