@@ -295,11 +295,18 @@ where
         }
     }
 
-    /// Gets a reference to the underlying reader in this decoder.
+    /// Gets a reference to the original slice
     #[inline(always)]
     #[must_use]
     pub fn get_ref(&self) -> &R {
         self.rd.whole_slice
+    }
+
+    /// Returns the part that hasn't been consumed yet
+    #[inline(always)]
+    #[must_use]
+    pub fn remaining_slice(&self) -> &'de [u8] {
+        self.rd.remaining_slice()
     }
 }
 
@@ -1071,7 +1078,7 @@ pub struct ReadRefReader<'a, R: ?Sized> {
     buf: &'a [u8],
 }
 
-impl<'a, T> ReadRefReader<'a, T> {
+impl<'a, T: ?Sized> ReadRefReader<'a, T> {
     /// Returns the part that hasn't been consumed yet
     #[must_use]
     pub const fn remaining_slice(&self) -> &'a [u8] {
