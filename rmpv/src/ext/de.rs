@@ -3,6 +3,7 @@ use std::fmt::{self, Display, Formatter};
 use std::iter::ExactSizeIterator;
 use std::slice::Iter;
 use std::vec::IntoIter;
+use std::marker::PhantomData;
 
 use serde::de::{self, DeserializeSeed, IntoDeserializer, SeqAccess, Unexpected, Visitor};
 use serde::{self, forward_to_deserialize_any, Deserialize, Deserializer};
@@ -175,15 +176,15 @@ impl<'de> Deserialize<'de> for Value {
     }
 }
 
-impl<'de> Deserialize<'de> for ValueRef<'de> {
+impl<'a, 'de: 'a> Deserialize<'de> for ValueRef<'a> {
     #[inline]
     fn deserialize<D>(de: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
     {
-        struct ValueVisitor;
+        struct ValueVisitor<'a>(PhantomData<&'a ()>);
 
-        impl<'de> de::Visitor<'de> for ValueVisitor {
-            type Value = ValueRef<'de>;
+        impl<'a, 'de: 'a> de::Visitor<'de> for ValueVisitor<'a> {
+            type Value = ValueRef<'a>;
 
             #[cold]
             fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -276,16 +277,16 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
             fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
                 where D: Deserializer<'de>,
             {
-                struct ExtValueRefVisitor;
-                impl<'de> serde::de::Visitor<'de> for ExtValueRefVisitor {
-                    type Value = ValueRef<'de>;
+                struct ExtValueRefVisitor<'a>(PhantomData<&'a ()>);
+                impl<'a, 'de: 'a> serde::de::Visitor<'de> for ExtValueRefVisitor<'a> {
+                    type Value = ValueRef<'a>;
 
                     fn expecting(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
                         "a valid MessagePack Ext".fmt(fmt)
                     }
 
                     #[inline]
-                    fn visit_seq<V>(self, mut seq: V) -> Result<ValueRef<'de>, V::Error>
+                    fn visit_seq<V>(self, mut seq: V) -> Result<ValueRef<'a>, V::Error>
                         where V: SeqAccess<'de>
                     {
                         let tag = seq.next_element()?
@@ -297,11 +298,11 @@ impl<'de> Deserialize<'de> for ValueRef<'de> {
                     }
                 }
 
-                deserializer.deserialize_tuple(2, ExtValueRefVisitor)
+                deserializer.deserialize_tuple(2, ExtValueRefVisitor(PhantomData))
             }
         }
 
-        de.deserialize_any(ValueVisitor)
+        de.deserialize_any(ValueVisitor(PhantomData))
     }
 }
 
