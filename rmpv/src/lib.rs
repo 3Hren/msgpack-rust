@@ -225,6 +225,17 @@ pub struct Utf8String {
 }
 
 impl Utf8String {
+    /// Try to parse bytes as UTF-8.
+    #[must_use]
+    pub fn from_bytes(b: Vec<u8>) -> Self {
+        Self {
+            s: String::from_utf8(b).map_err(|e| {
+                let ue = e.utf8_error();
+                (e.into_bytes(), ue)
+            })
+        }
+    }
+
     /// Returns `true` if the string is valid UTF-8.
     #[inline]
     #[must_use]
@@ -337,6 +348,12 @@ pub struct Utf8StringRef<'a> {
 }
 
 impl<'a> Utf8StringRef<'a> {
+    /// Try to parse bytes as UTF-8.
+    #[must_use]
+    pub fn from_bytes(b: &'a [u8]) -> Self {
+        Self { s: str::from_utf8(b).map_err(|e| (b, e)) }
+    }
+
     /// Returns `true` if the string is valid UTF-8.
     #[inline]
     #[must_use]
