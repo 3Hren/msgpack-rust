@@ -138,7 +138,8 @@ fn extensions() {
         let msg_len = len_with_prefix(len);
 
         expected.truncate(1);
-        expected.resize(1 + length_bytes as usize, 1 + length_bytes);
+        // while the length is being read, the type byte is already known to follow it
+        expected.resize(1 + length_bytes as usize, 2 + length_bytes);
         expected.resize(msg_len as usize, msg_len);
         expected.push(-msg_len);
 
@@ -159,7 +160,7 @@ fn ext32() {
     out.push(7);
     out.extend_from_slice(&[0xEE; 3]);
     // marker + 4 len bytes + type byte + data
-    check_estimates(&out, &[1, 5, 5, 5, 5, 9, 9, 9, 9, -9]);
+    check_estimates(&out, &[1, 6, 6, 6, 6, 9, 9, 9, 9, -9]);
 
     // Canonical ext32 as produced by the encoder.
     let len = 70_000u32;
@@ -181,7 +182,7 @@ fn ext_in_array() {
     write_nil(&mut out).unwrap();
     assert_eq!(11, out.len());
 
-    check_estimates(&out, &[1, 4, 4, 4, 6, 6, 10, 10, 10, 10, 11, -11]);
+    check_estimates(&out, &[1, 4, 4, 4, 6, 7, 10, 10, 10, 10, 11, -11]);
 }
 
 #[test]
@@ -197,7 +198,7 @@ fn ext_in_map() {
 
     let mut expected = vec![1, 3];
     expected.extend(std::iter::repeat_n(11, 9)); // key: type byte + 8 data bytes
-    expected.extend([12, 14, 14]); // value: marker, then 2 length bytes
+    expected.extend([12, 15, 15]); // value: marker, then 2 length bytes + type byte
     expected.resize(315, 315);
     expected.push(-315);
     check_estimates(&out, &expected);

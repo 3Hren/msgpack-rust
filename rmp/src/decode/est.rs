@@ -54,7 +54,7 @@ impl MessageLen {
 
     /// * `max_depth` limits nesting of arrays and maps
     ///
-    /// * `max_len` is maximum size of any string, byte string, map, or array.
+    /// * `max_len` is maximum size of any string, byte string, ext payload, map, or array.
     ///   For maps and arrays this is the number of items, not bytes.
     ///
     /// Messages can be both deep and wide, being `max_depth` * `max_len` in size.
@@ -220,7 +220,10 @@ impl MessageLen {
             Marker::Str32 => self.skip_data(data, len),
             Marker::Ext8 |
             Marker::Ext16 |
-            Marker::Ext32 => self.skip_data(data, len + 1),
+            Marker::Ext32 => {
+                // type byte + payload; `len < max_len <= u32::MAX`, so this can't overflow
+                self.skip_data(data, len + 1)
+            },
             Marker::Array16 |
             Marker::Array32 => self.read_sequence(data, len),
             Marker::Map16 |
@@ -299,7 +302,7 @@ impl MessageLen {
         let pos = match self.wip.insert(wip) {
             WIP::NextMarker => self.position + 1,
             WIP::Data(Data { bytes_left }) => self.position + bytes_left.get() as usize,
-            WIP::MarkerLen(m) => self.position + (m.size() - m.has) as usize,
+            WIP::MarkerLen(m) => self.position + (m.size() - m.has) as usize + m.min_trailing(),
             WIP::LimitExceeded | WIP::Reserved => 0,
         };
         self.set_max_position(pos);
@@ -345,6 +348,15 @@ impl MarkerLen {
             Marker::Map16 => 2,
             Marker::Map32 => 4,
             _ => unimplemented!(),
+        }
+    }
+
+    /// Number of bytes that must follow the length, regardless of its value
+    fn min_trailing(&self) -> usize {
+        match self.marker {
+            // the type byte
+            Marker::Ext8 | Marker::Ext16 | Marker::Ext32 => 1,
+            _ => 0,
         }
     }
 }
