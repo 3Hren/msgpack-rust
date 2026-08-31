@@ -202,3 +202,73 @@ fn ext_in_map() {
     expected.push(-315);
     check_estimates(&out, &expected);
 }
+
+#[test]
+fn limit_exceeded_is_parse_error() {
+    // Nesting limit, all data available in the first call.
+    let mut out = Vec::new();
+    for _ in 0..5 {
+        write_array_len(&mut out, 1).unwrap();
+    }
+    write_nil(&mut out).unwrap();
+    let mut est = MessageLen::with_limits(4, 1 << 16);
+    assert!(matches!(est.incremental_len(&out), Err(LenError::ParseError)));
+    // The error is sticky.
+    assert!(matches!(est.incremental_len(&out), Err(LenError::ParseError)));
+    assert_eq!(6, MessageLen::with_limits(5, 1 << 16).incremental_len(&out).unwrap());
+
+    // Nesting limit hit while resuming from a truncated message.
+    let mut est = MessageLen::with_limits(2, 1 << 16);
+    assert_eq!(2, est.incremental_len(&[0x91]).unwrap_err().len());
+    assert!(matches!(est.incremental_len(&[0x91, 0x91, 0xc0]), Err(LenError::ParseError)));
+
+    // `len_of` has a fixed nesting limit of 1024.
+    let mut out = Vec::new();
+    for _ in 0..1025 {
+        write_array_len(&mut out, 1).unwrap();
+    }
+    write_nil(&mut out).unwrap();
+    assert!(matches!(MessageLen::len_of(&out), Err(LenError::ParseError)));
+
+    // Length limit is exclusive, for strings...
+    let mut out = Vec::new();
+    write_str_len(&mut out, 40).unwrap(); // str8
+    out.extend_from_slice(&[b'x'; 40]);
+    assert!(matches!(MessageLen::with_limits(1024, 40).incremental_len(&out), Err(LenError::ParseError)));
+    assert_eq!(42, MessageLen::with_limits(1024, 41).incremental_len(&out).unwrap());
+
+    // ...arrays (counted in items)...
+    let mut out = Vec::new();
+    write_array_len(&mut out, 40).unwrap(); // array16
+    out.extend(std::iter::repeat_n(0xc0, 40));
+    assert!(matches!(MessageLen::with_limits(1024, 40).incremental_len(&out), Err(LenError::ParseError)));
+    assert_eq!(43, MessageLen::with_limits(1024, 41).incremental_len(&out).unwrap());
+
+    // ...maps (counted in keys + values)...
+    let mut out = Vec::new();
+    write_map_len(&mut out, 20).unwrap(); // map16
+    out.extend(std::iter::repeat_n(0xc0, 40));
+    assert!(matches!(MessageLen::with_limits(1024, 40).incremental_len(&out), Err(LenError::ParseError)));
+    assert_eq!(43, MessageLen::with_limits(1024, 41).incremental_len(&out).unwrap());
+
+    // ...and ext payloads.
+    let mut out = Vec::new();
+    write_ext_meta(&mut out, 40, 7).unwrap(); // ext8
+    out.extend_from_slice(&[0xEE; 40]);
+    assert!(matches!(MessageLen::with_limits(1024, 40).incremental_len(&out), Err(LenError::ParseError)));
+    assert_eq!(43, MessageLen::with_limits(1024, 41).incremental_len(&out).unwrap());
+}
+
+#[test]
+fn reserved_marker_is_parse_error() {
+    assert!(matches!(MessageLen::len_of(&[0xc1]), Err(LenError::ParseError)));
+    assert!(matches!(MessageLen::len_of(&[0x92, 0xc0, 0xc1]), Err(LenError::ParseError)));
+    // Truncation before the reserved byte is still just truncation.
+    assert_eq!(3, MessageLen::len_of(&[0x92, 0xc0]).unwrap_err().len());
+
+    // The error is sticky.
+    let mut est = MessageLen::new();
+    assert_eq!(3, est.incremental_len(&[0x92, 0xc0]).unwrap_err().len());
+    assert!(matches!(est.incremental_len(&[0xc1]), Err(LenError::ParseError)));
+    assert!(matches!(est.incremental_len(&[0xc0]), Err(LenError::ParseError)));
+}

@@ -82,7 +82,8 @@ impl MessageLen {
     /// and it would need *at least* this many bytes to parse.
     /// The `len` is always the lower bound, and never exceeds actual message length.
     ///
-    /// `Err(LenError::ParseError)` — the end of the message is unknown.
+    /// `Err(LenError::ParseError)` — the message is malformed or exceeds the limits, so the end
+    /// of the message cannot be determined.
     ///
     /// Don't call this function in a loop. Use [`MessageLen::incremental_len`] instead.
     pub fn len_of(complete_message: &[u8]) -> Result<usize, LenError> {
@@ -104,8 +105,9 @@ impl MessageLen {
     ///   The `len` is always the lower bound, and never exceeds actual message length,
     ///   so it's safe to read the additional bytes without overshooting the end of the message.
     ///
-    /// * `Err(LenError::ParseError)` — the end of the message cannot be determined, and this
-    ///   is a non-recoverable error. Any further calls to this function may return nonsense.
+    /// * `Err(LenError::ParseError)` — the message is malformed or exceeds the limits, so the end
+    ///   of the message cannot be determined. This is a non-recoverable error: any further calls
+    ///   to this function will keep returning it until [`MessageLen::reset`] is called.
     pub fn incremental_len(&mut self, mut next_message_fragment: &[u8]) -> Result<usize, LenError> {
         let data = &mut next_message_fragment;
         let Some(wip) = self.wip.take() else {
@@ -115,16 +117,16 @@ impl MessageLen {
             WIP::Data(Data { bytes_left }) => self.skip_data(data, bytes_left.get()),
             WIP::MarkerLen(wip) => self.read_marker_with_len(data, wip),
             WIP::NextMarker => self.read_one_item(data),
-            WIP::LimitExceeded => {
-                self.wip = Some(WIP::LimitExceeded); // put it back!
+            kind @ (WIP::LimitExceeded | WIP::Reserved) => {
+                self.wip = Some(kind); // put it back!
                 return Err(LenError::ParseError);
             },
-        }.ok_or(LenError::Truncated(self.max_position))?;
+        }.ok_or_else(|| self.interrupted())?;
 
         while let Some(seq) = self.sequences_wip.pop() {
             self.current_depth = seq.depth;
             debug_assert!(self.wip.is_none());
-            self.read_sequence(data, seq.items_left.get() - 1).ok_or(LenError::Truncated(self.max_position))?;
+            self.read_sequence(data, seq.items_left.get() - 1).ok_or_else(|| self.interrupted())?;
         }
         debug_assert!(self.wip.is_none());
         debug_assert!(self.max_position.get() <= self.position);
@@ -149,9 +151,10 @@ impl MessageLen {
             Marker::FixArray(len) => self.read_sequence(data, u32::from(len)),
             Marker::FixStr(len) => self.skip_data(data, len.into()),
             Marker::Null |
-            Marker::Reserved |
             Marker::False |
             Marker::True => Some(()),
+            // 0xc1 is not a valid marker
+            Marker::Reserved => self.fail(WIP::Reserved),
             Marker::Str8 |
             Marker::Str16 |
             Marker::Str32 |
@@ -297,10 +300,18 @@ impl MessageLen {
             WIP::NextMarker => self.position + 1,
             WIP::Data(Data { bytes_left }) => self.position + bytes_left.get() as usize,
             WIP::MarkerLen(m) => self.position + (m.size() - m.has) as usize,
-            WIP::LimitExceeded => 0,
+            WIP::LimitExceeded | WIP::Reserved => 0,
         };
         self.set_max_position(pos);
         None
+    }
+
+    /// The error to report when an operation was interrupted (returned `None`)
+    fn interrupted(&self) -> LenError {
+        match self.wip {
+            Some(WIP::LimitExceeded | WIP::Reserved) => LenError::ParseError,
+            _ => LenError::Truncated(self.max_position),
+        }
     }
 }
 
@@ -309,6 +320,8 @@ enum WIP {
     Data(Data),
     MarkerLen(MarkerLen),
     LimitExceeded,
+    /// The message contains the reserved marker `0xc1`. Sticky, like `LimitExceeded`.
+    Reserved,
 }
 
 struct Seq { items_left: NonZeroU32, depth: u16 }
