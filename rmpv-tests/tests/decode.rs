@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 use std::collections::BTreeMap;
 
@@ -261,6 +261,97 @@ fn pass_enum_from_value() {
         from_value(Value::Array(vec![Value::from(2), Value::Array(vec![Value::from("John"), Value::from(42)])])).unwrap());
     assert_eq!(Enum::Struct { name: "John".into(), age: 42 },
         from_value(Value::Array(vec![Value::from(3), Value::Array(vec![Value::from("John"), Value::from(42)])])).unwrap());
+}
+
+#[test]
+fn pass_externally_tagged_enum_map_from_value() {
+    for result in [Ok(1), Err(2)] {
+        let encoded = rmp_serde::to_vec_named(&result).unwrap();
+        assert_eq!(
+            encoded,
+            if result.is_ok() {
+                vec![0x81, 0xa2, b'O', b'k', 0x01]
+            } else {
+                vec![0x81, 0xa3, b'E', b'r', b'r', 0x02]
+            }
+        );
+        let value: Value = rmp_serde::from_slice(&encoded).unwrap();
+        let decoded: Result<u32, u32> = from_value(value).unwrap();
+        assert_eq!(result, decoded);
+    }
+}
+
+#[test]
+fn pass_map_encoded_enum_variants_from_value() {
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Enum {
+        Unit,
+        EmptyTuple(),
+        EmptyStruct {},
+        Newtype(Vec<u32>),
+        Tuple(String, u32),
+        Struct { name: String, age: u32 },
+    }
+
+    assert_eq!(Enum::Unit, from_value(Value::Map(vec![(Value::from("Unit"), Value::Nil)])).unwrap());
+    assert_eq!(Enum::EmptyTuple(), from_value(Value::Map(vec![(Value::from("EmptyTuple"), Value::Array(vec![]))])).unwrap());
+    assert_eq!(Enum::EmptyStruct {}, from_value(Value::Map(vec![(Value::from("EmptyStruct"), Value::Array(vec![]))])).unwrap());
+    assert_eq!(Enum::EmptyStruct {}, from_value(Value::Map(vec![(
+        Value::from("EmptyStruct"),
+        Value::Map(vec![]),
+    )])).unwrap());
+    for values in [vec![], vec![1], vec![1, 2]] {
+        assert_eq!(Enum::Newtype(values.clone()), from_value(Value::Map(vec![
+            (Value::from("Newtype"), Value::Array(values.into_iter().map(Value::from).collect())),
+        ])).unwrap());
+    }
+    assert_eq!(Enum::Tuple("John".into(), 42), from_value(Value::Map(vec![
+        (Value::from("Tuple"), Value::Array(vec![Value::from("John"), Value::from(42)])),
+    ])).unwrap());
+    assert_eq!(Enum::Struct { name: "John".into(), age: 42 }, from_value(Value::Map(vec![
+        (Value::from("Struct"), Value::Map(vec![
+            (Value::from("name"), Value::from("John")),
+            (Value::from("age"), Value::from(42)),
+        ])),
+    ])).unwrap());
+}
+
+#[test]
+fn reject_malformed_enum_maps_from_value() {
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Enum {
+        Unit,
+    }
+
+    for value in [
+        Value::Map(vec![]),
+        Value::Map(vec![(Value::from("Unit"), Value::Nil), (Value::from("Unit"), Value::Nil)]),
+        Value::Map(vec![(Value::from("Unknown"), Value::Nil)]),
+        Value::Map(vec![(Value::from("Unit"), Value::from(1))]),
+    ] {
+        assert!(from_value::<Enum>(value).is_err());
+    }
+}
+
+#[test]
+fn pass_serializer_generated_empty_enum_variants_from_value() {
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    enum Enum {
+        Tuple(),
+        Struct {},
+    }
+
+    for expected in [Enum::Tuple(), Enum::Struct {}] {
+        let encoded = rmp_serde::to_vec_named(&expected).unwrap();
+        let fixture = match &expected {
+            Enum::Tuple() => vec![0x81, 0xa5, b'T', b'u', b'p', b'l', b'e', 0x90],
+            Enum::Struct {} => vec![0x81, 0xa6, b'S', b't', b'r', b'u', b'c', b't', 0x80],
+        };
+        assert_eq!(encoded, fixture);
+        let value: Value = rmp_serde::from_slice(&encoded).unwrap();
+        let decoded: Enum = from_value(value).unwrap();
+        assert_eq!(expected, decoded);
+    }
 }
 
 #[test]
