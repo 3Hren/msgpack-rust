@@ -281,6 +281,106 @@ fn pass_enum_from_value() {
 }
 
 #[test]
+fn pass_map_encoded_enum_variants_from_value_ref() {
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Enum<'a> {
+        Unit,
+        EmptyTuple(),
+        EmptyStruct {},
+        Newtype(Vec<u32>),
+        Tuple(&'a str, u32),
+        Struct { name: &'a str, age: u32 },
+    }
+
+    let unit = ValueRef::Map(vec![(ValueRef::from("Unit"), ValueRef::Nil)]);
+    assert_eq!(Enum::Unit, deserialize_from(unit).unwrap());
+    for payload in [ValueRef::Array(vec![]), ValueRef::Map(vec![])] {
+        let value = ValueRef::Map(vec![(ValueRef::from("EmptyStruct"), payload)]);
+        assert_eq!(Enum::EmptyStruct {}, deserialize_from(value).unwrap());
+    }
+    let value = ValueRef::Map(vec![(ValueRef::from("EmptyTuple"), ValueRef::Array(vec![]))]);
+    assert_eq!(Enum::EmptyTuple(), deserialize_from(value).unwrap());
+    for values in [vec![], vec![1], vec![1, 2]] {
+        let expected = values.clone();
+        let value = ValueRef::Map(vec![
+            (ValueRef::from("Newtype"), ValueRef::Array(values.into_iter().map(ValueRef::from).collect())),
+        ]);
+        let decoded: Enum<'_> = deserialize_from(value).unwrap();
+        match decoded {
+            Enum::Newtype(actual) => assert_eq!(expected, actual),
+            _ => panic!("unexpected enum variant"),
+        }
+    }
+    let value = ValueRef::Map(vec![
+        (ValueRef::from("Tuple"), ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from(42)])),
+    ]);
+    assert_eq!(Enum::Tuple("John", 42), deserialize_from(value).unwrap());
+
+    let value = ValueRef::Map(vec![
+        (ValueRef::from("Struct"), ValueRef::Map(vec![
+            (ValueRef::from("name"), ValueRef::from("John")),
+            (ValueRef::from("age"), ValueRef::from(42)),
+        ])),
+    ]);
+    let decoded: Enum<'_> = deserialize_from(value).unwrap();
+    assert_eq!(Enum::Struct { name: "John", age: 42 }, decoded);
+
+    for (index, value) in [
+        ValueRef::Map(vec![]),
+        ValueRef::Map(vec![(ValueRef::from("Unit"), ValueRef::Nil), (ValueRef::from("Unit"), ValueRef::Nil)]),
+        ValueRef::Map(vec![(ValueRef::Array(vec![]), ValueRef::Nil)]),
+        ValueRef::Map(vec![(ValueRef::from("Unknown"), ValueRef::Nil)]),
+        ValueRef::Map(vec![(ValueRef::from("Tuple"), ValueRef::from(1))]),
+    ].into_iter().enumerate() {
+        assert!(deserialize_from::<Enum<'_>, _>(value).is_err(), "case {index}");
+    }
+}
+
+#[test]
+fn pass_borrowed_map_enum_from_reference() {
+    #[derive(Debug, PartialEq, Deserialize)]
+    enum Enum<'a> {
+        Unit,
+        EmptyTuple(),
+        EmptyStruct {},
+        Newtype(&'a str),
+        Tuple(&'a str, u32),
+        Struct { name: &'a str, age: u32 },
+    }
+
+    let value = ValueRef::Map(vec![(ValueRef::from("Unit"), ValueRef::Nil)]);
+    assert_eq!(Enum::Unit, serde::Deserialize::deserialize(&value).unwrap());
+    for payload in [ValueRef::Array(vec![]), ValueRef::Map(vec![])] {
+        let value = ValueRef::Map(vec![(ValueRef::from("EmptyStruct"), payload)]);
+        let decoded: Enum<'_> = serde::Deserialize::deserialize(&value).unwrap();
+        assert_eq!(Enum::EmptyStruct {}, decoded);
+    }
+    let value = ValueRef::Map(vec![(ValueRef::from("EmptyTuple"), ValueRef::Array(vec![]))]);
+    assert_eq!(Enum::EmptyTuple(), serde::Deserialize::deserialize(&value).unwrap());
+    let value = ValueRef::Map(vec![(ValueRef::from("Newtype"), ValueRef::from("borrowed"))]);
+    let decoded: Enum<'_> = serde::Deserialize::deserialize(&value).unwrap();
+    assert_eq!(Enum::Newtype("borrowed"), decoded);
+    let value = ValueRef::Map(vec![(ValueRef::from("Tuple"), ValueRef::Array(vec![ValueRef::from("John"), ValueRef::from(42)]))]);
+    assert_eq!(Enum::Tuple("John", 42), serde::Deserialize::deserialize(&value).unwrap());
+    let value = ValueRef::Map(vec![(ValueRef::from("Struct"), ValueRef::Map(vec![
+        (ValueRef::from("name"), ValueRef::from("John")),
+        (ValueRef::from("age"), ValueRef::from(42)),
+    ]))]);
+    assert_eq!(Enum::Struct { name: "John", age: 42 }, serde::Deserialize::deserialize(&value).unwrap());
+
+    for (index, value) in [
+        ValueRef::Map(vec![]),
+        ValueRef::Map(vec![(ValueRef::from("Unit"), ValueRef::Nil), (ValueRef::from("Unit"), ValueRef::Nil)]),
+        ValueRef::Map(vec![(ValueRef::Array(vec![]), ValueRef::Nil)]),
+        ValueRef::Map(vec![(ValueRef::from("Unknown"), ValueRef::Nil)]),
+        ValueRef::Map(vec![(ValueRef::from("Tuple"), ValueRef::from(1))]),
+    ].into_iter().enumerate() {
+        let decoded: Result<Enum<'_>, _> = serde::Deserialize::deserialize(&value);
+        assert!(decoded.is_err(), "case {index}");
+    }
+}
+
+#[test]
 fn pass_from_slice() {
     let buf = [0x93, 0xa4, 0x4a, 0x6f, 0x68, 0x6e, 0xa5, 0x53, 0x6d, 0x69, 0x74, 0x68, 0x2a];
 

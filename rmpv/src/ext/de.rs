@@ -363,7 +363,16 @@ impl<'de> Deserializer<'de> for Value {
     fn deserialize_enum<V>(self, _name: &str, _variants: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        ValueBase::deserialize_enum(self, visitor)
+        match self {
+            Self::Map(mut values) if values.len() == 1 => {
+                match values.pop() {
+                    Some((key, value)) => visitor.visit_enum(MapEnumDeserializer::new(key, value)),
+                    None => Err(de::Error::invalid_length(0, &"map with one element")),
+                }
+            },
+            Self::Map(values) => Err(de::Error::invalid_length(values.len(), &"map with one element")),
+            value => ValueBase::deserialize_enum(value, visitor),
+        }
     }
 
     #[inline]
@@ -456,7 +465,16 @@ impl<'de> Deserializer<'de> for ValueRef<'de> {
     fn deserialize_enum<V>(self, _name: &str, _variants: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        ValueBase::deserialize_enum(self, visitor)
+        match self {
+            ValueRef::Map(mut values) if values.len() == 1 => {
+                match values.pop() {
+                    Some((key, value)) => visitor.visit_enum(MapEnumDeserializer::new(key, value)),
+                    None => Err(de::Error::invalid_length(0, &"map with one element")),
+                }
+            },
+            ValueRef::Map(values) => Err(de::Error::invalid_length(values.len(), &"map with one element")),
+            value => ValueBase::deserialize_enum(value, visitor),
+        }
     }
 
     #[inline]
@@ -570,6 +588,11 @@ impl<'de> Deserializer<'de> for &'de ValueRef<'de> {
 
                 visitor.visit_enum(EnumRefDeserializer::new(id, iter.next()))
             },
+            ValueRef::Map(v) if v.len() == 1 => {
+                let (key, value) = &v[0];
+                visitor.visit_enum(MapEnumDeserializer::new(key, value))
+            },
+            ValueRef::Map(v) => Err(de::Error::invalid_length(v.len(), &"map with one element")),
             other => Err(de::Error::invalid_type(other.unexpected(), &"array, map or int")),
         }
     }
@@ -835,6 +858,84 @@ impl<'de, U: ValueBase<'de> + ValueExt> de::EnumAccess<'de> for EnumDeserializer
         let variant = self.id.into_deserializer();
         let visitor = VariantDeserializer { value: self.value };
         seed.deserialize(variant).map(|v| (v, visitor))
+    }
+}
+
+struct MapEnumDeserializer<K, V> {
+    key: K,
+    value: V,
+}
+
+impl<K, V> MapEnumDeserializer<K, V> {
+    const fn new(key: K, value: V) -> Self {
+        Self { key, value }
+    }
+}
+
+impl<'de, K, V> de::EnumAccess<'de> for MapEnumDeserializer<K, V>
+where
+    K: Deserializer<'de, Error = Error>,
+    V: Deserializer<'de, Error = Error>,
+{
+    type Error = Error;
+    type Variant = MapVariantDeserializer<V>;
+
+    fn variant_seed<S>(self, seed: S) -> Result<(S::Value, Self::Variant), Self::Error>
+    where
+        S: de::DeserializeSeed<'de>,
+    {
+        seed.deserialize(self.key)
+            .map(|variant| (variant, MapVariantDeserializer { value: self.value }))
+    }
+}
+
+struct MapVariantDeserializer<V> {
+    value: V,
+}
+
+impl<'de, V> de::VariantAccess<'de> for MapVariantDeserializer<V>
+where
+    V: Deserializer<'de, Error = Error>,
+{
+    type Error = Error;
+
+    fn unit_variant(self) -> Result<(), Error> {
+        struct UnitVisitor;
+
+        impl<'de> Visitor<'de> for UnitVisitor {
+            type Value = ();
+
+            fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+                formatter.write_str("unit variant")
+            }
+
+            fn visit_unit<E>(self) -> Result<(), E> {
+                Ok(())
+            }
+        }
+
+        self.value.deserialize_unit(UnitVisitor)
+    }
+
+    fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Error>
+    where
+        T: de::DeserializeSeed<'de>,
+    {
+        seed.deserialize(self.value)
+    }
+
+    fn tuple_variant<A>(self, _len: usize, visitor: A) -> Result<A::Value, Error>
+    where
+        A: Visitor<'de>,
+    {
+        self.value.deserialize_seq(visitor)
+    }
+
+    fn struct_variant<A>(self, _fields: &'static [&'static str], visitor: A) -> Result<A::Value, Error>
+    where
+        A: Visitor<'de>,
+    {
+        self.value.deserialize_any(visitor)
     }
 }
 
