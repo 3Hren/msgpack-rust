@@ -1261,7 +1261,6 @@ impl Write for FallibleWriter {
 
     #[inline]
     fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
-        self.0.try_reserve(buf.len()).map_err(|_| std::io::ErrorKind::OutOfMemory)?;
         self.0.extend_from_slice(buf);
         Ok(())
     }
