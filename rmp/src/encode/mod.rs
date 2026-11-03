@@ -48,6 +48,7 @@ impl<E: RmpWriteErr> From<E> for MarkerWriteError<E> {
 }
 
 /// Attempts to write the given marker into the writer.
+#[inline(always)]
 fn write_marker<W: RmpWrite>(wr: &mut W, marker: Marker) -> Result<(), MarkerWriteError<W::Error>> {
     wr.write_u8(marker.to_u8()).map_err(MarkerWriteError)
 }
