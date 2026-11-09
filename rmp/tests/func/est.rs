@@ -89,6 +89,20 @@ fn map() {
 }
 
 #[test]
+fn incremental_depth() {
+    let msg = [0x92, 0x91, 0xc0, 0x90]; // [[nil], []]
+
+    // Given `msg` is a valid message
+    assert_eq!(msg.len(), MessageLen::with_limits(2, 16).incremental_len(&msg).unwrap());
+
+    // Regression test: when reading the message in chunks, we used to fail due
+    // to incorrect depth tracking
+    let mut incremental = MessageLen::with_limits(2, 16);
+    assert!(matches!(incremental.incremental_len(&msg[..2]), Err(LenError::Truncated(_))));
+    assert_eq!(msg.len(), incremental.incremental_len(&msg[2..]).unwrap());
+}
+
+#[test]
 fn nested() {
     let mut out = Vec::new();
     write_array_len(&mut out, 1).unwrap();
