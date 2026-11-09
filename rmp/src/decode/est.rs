@@ -236,6 +236,7 @@ impl MessageLen {
     }
 
     fn read_sequence(&mut self, data: &mut &[u8], mut items_left: u32) -> Option<()> {
+        let parent_depth = self.current_depth;
         self.current_depth += 1;
         if self.current_depth > self.max_depth {
             return self.fail(WIP::LimitExceeded);
@@ -244,17 +245,16 @@ impl MessageLen {
             let position_before_item = self.position;
             self.read_one_item(data).or_else(|| {
                 self.set_max_position(position_before_item + items_left as usize);
-                // -1, because it will increase depth again when resumed
                 self.sequences_wip.push(Seq {
                     items_left: non_zero,
-                    depth: self.current_depth - 1,
+                    depth: parent_depth,
                 });
                 None
             })?;
             items_left -= 1;
         }
         debug_assert!(self.current_depth > 0);
-        self.current_depth -= 1;
+        self.current_depth = parent_depth;
         Some(())
     }
 
